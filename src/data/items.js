@@ -21,4 +21,7 @@ const WEAPON_BASE = [0, 6, 12, 20, 32, 50];
 const ARMOR_BASE  = [0, 3, 6, 10, 16, 25];
 const WEAPON_NAMES = ['', '見習いの剣', '鉄の剣', '鋼の長剣', '魔銀の大剣', '星砕きの聖剣'];
 const ARMOR_NAMES  = ['', '布の服', '革の鎧', '鎖かたびら', '魔銀の鎧', '竜鱗の鎧'];
+// 装備の最大★ / 最大レア度（配列の長さから導く。★やレア度を足すときはデータだけ増やせばよい）
+const MAX_STAR = WEAPON_BASE.length - 1;
+const MAX_RARITY = RARITY.length - 1;
 const PREFIX = ['', '上質な', '名工の', '伝説の'];

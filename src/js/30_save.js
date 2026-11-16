@@ -7,7 +7,7 @@ function cleanItem(it) {
   if (!it || typeof it !== 'object') return null;
   const slot = it.slot === 'weapon' || it.slot === 'armor' ? it.slot : null;
   const star = Math.round(Number(it.star)), rarity = Math.round(Number(it.rarity)), roll = Number(it.roll);
-  if (!slot || !(star >= 1 && star <= 5) || !(rarity >= 0 && rarity <= 3) || !isFinite(roll)) return null;
+  if (!slot || !(star >= 1 && star <= MAX_STAR) || !(rarity >= 0 && rarity <= MAX_RARITY) || !isFinite(roll)) return null;
   return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: slot === 'weapon' && PROPS[it.prop] ? it.prop : null, locked: !!it.locked };
 }
 function load() {
@@ -48,7 +48,7 @@ function load() {
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
     if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; }
-    if (d.sel) for (const k of ['A', 'B', 'C']) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
+    if (d.sel) for (const { id: k } of DUNGEONS) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
     if (Array.isArray(d.shopSel) && d.shopSel.length === 4) G.shopSel = d.shopSel.map(Boolean);
     if (typeof d.autoSellRarity === 'number' && d.autoSellRarity >= -1 && d.autoSellRarity <= 3) G.autoSellRarity = d.autoSellRarity;
     return true;

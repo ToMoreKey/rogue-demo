@@ -431,6 +431,9 @@ const WEAPON_BASE = [0, 6, 12, 20, 32, 50];
 const ARMOR_BASE  = [0, 3, 6, 10, 16, 25];
 const WEAPON_NAMES = ['', '見習いの剣', '鉄の剣', '鋼の長剣', '魔銀の大剣', '星砕きの聖剣'];
 const ARMOR_NAMES  = ['', '布の服', '革の鎧', '鎖かたびら', '魔銀の鎧', '竜鱗の鎧'];
+// 装備の最大★ / 最大レア度（配列の長さから導く。★やレア度を足すときはデータだけ増やせばよい）
+const MAX_STAR = WEAPON_BASE.length - 1;
+const MAX_RARITY = RARITY.length - 1;
 const PREFIX = ['', '上質な', '名工の', '伝説の'];
 // 装備アイコン（★1〜5。レア度は枠の色で表現）
 const ITEM_ICON = {
@@ -808,7 +811,7 @@ function spriteSVG(shape, pal) {
 const G = {
   p: null, view: 'town', run: null, last: null, modalOpen: false, noTimer: false, headless: false,
   opts: { speed: 1, autoSkill: true, autoEquip: true },
-  sel: { A: 'novice', B: 'novice', C: 'novice' },
+  sel: Object.fromEntries(DUNGEONS.map(d => [d.id, DIFFS[0].id])),
   shopSel: [true, true, true, false],
   autoSellRarity: 2,   // -1=売却しない 0=コモン以下 1=アンコモン以下 2=レア以下 3=全て
   resetArm: false,
@@ -856,7 +859,7 @@ function cleanItem(it) {
   if (!it || typeof it !== 'object') return null;
   const slot = it.slot === 'weapon' || it.slot === 'armor' ? it.slot : null;
   const star = Math.round(Number(it.star)), rarity = Math.round(Number(it.rarity)), roll = Number(it.roll);
-  if (!slot || !(star >= 1 && star <= 5) || !(rarity >= 0 && rarity <= 3) || !isFinite(roll)) return null;
+  if (!slot || !(star >= 1 && star <= MAX_STAR) || !(rarity >= 0 && rarity <= MAX_RARITY) || !isFinite(roll)) return null;
   return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: slot === 'weapon' && PROPS[it.prop] ? it.prop : null, locked: !!it.locked };
 }
 function load() {
@@ -897,7 +900,7 @@ function load() {
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
     if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; }
-    if (d.sel) for (const k of ['A', 'B', 'C']) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
+    if (d.sel) for (const { id: k } of DUNGEONS) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
     if (Array.isArray(d.shopSel) && d.shopSel.length === 4) G.shopSel = d.shopSel.map(Boolean);
     if (typeof d.autoSellRarity === 'number' && d.autoSellRarity >= -1 && d.autoSellRarity <= 3) G.autoSellRarity = d.autoSellRarity;
     return true;
@@ -1528,7 +1531,7 @@ const ACTS = {
   debugAllGear() {
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
-    for (const slot of ['weapon', 'armor']) for (let star = 1; star <= 5; star++) for (let r = 0; r < 4; r++) {
+    for (const slot of ['weapon', 'armor']) for (let star = 1; star <= MAX_STAR; star++) for (let r = 0; r < 4; r++) {
       if (p.bag.length >= BAG_CAP) break;
       p.bag.push(mkItem(p, { slot, star, rarity: r, roll: 1 })); n++;
     }

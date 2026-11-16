@@ -3,7 +3,7 @@
 const G = {
   p: null, view: 'town', run: null, last: null, modalOpen: false, noTimer: false, headless: false,
   opts: { speed: 1, autoSkill: true, autoEquip: true },
-  sel: { A: 'novice', B: 'novice', C: 'novice' },
+  sel: Object.fromEntries(DUNGEONS.map(d => [d.id, DIFFS[0].id])),
   shopSel: [true, true, true, false],
   autoSellRarity: 2,   // -1=売却しない 0=コモン以下 1=アンコモン以下 2=レア以下 3=全て
   resetArm: false,

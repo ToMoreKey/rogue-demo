@@ -199,7 +199,7 @@ const ACTS = {
   debugAllGear() {
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
-    for (const slot of ['weapon', 'armor']) for (let star = 1; star <= 5; star++) for (let r = 0; r < 4; r++) {
+    for (const slot of ['weapon', 'armor']) for (let star = 1; star <= MAX_STAR; star++) for (let r = 0; r < 4; r++) {
       if (p.bag.length >= BAG_CAP) break;
       p.bag.push(mkItem(p, { slot, star, rarity: r, roll: 1 })); n++;
     }
