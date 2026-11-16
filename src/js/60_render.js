@@ -92,8 +92,7 @@ function renderFacility(fac) {
   } else if (fac === 'smith') {
     const smithItems = [p.weapon, p.armor, ...p.bag].filter(Boolean);
     const smithHTML = smithItems.length ? smithItems.map(it => {
-      const MAX_STAR = 5;
-      const maxed = it.star >= MAX_STAR;
+      const maxed = it.star >= SMITH_MAX_STAR;
       const cost = smithCost(it);
       const stoneId = STONE_REQ[it.star];
       const stReq = stoneId ? STONES.find(s => s.id === stoneId) : null;
@@ -102,14 +101,14 @@ function renderFacility(fac) {
       const canUpgrade = !maxed && canAfford && hasStone;
       const loc = it === p.weapon ? '【装備中・武器】' : it === p.armor ? '【装備中・防具】' : '【バッグ】';
       return `<div class="smith-item">
-        <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}${maxed ? '' : '☆'.repeat(MAX_STAR - it.star)}</span><span class="sub" style="margin-left:4px">${loc}</span></div>
-        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
+        <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}${maxed ? '' : '☆'.repeat(SMITH_MAX_STAR - it.star)}</span><span class="sub" style="margin-left:4px">${loc}</span></div>
+        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>戦力 <b>${fmt(gearPower(it))}</b></span><span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
         ${maxed ? '' : `<button class="btn small${canUpgrade ? ' primary' : ''}" data-act="smithUpgrade" data-id="${it.id}" ${canUpgrade ? '' : 'disabled'}>★${it.star + 1}に強化</button>`}
       </div>`;
     }).join('') : '<p class="empty">強化できる装備がありません。</p>';
     content = `
       <h2>鍛冶屋「鉄の大地」</h2>
-      <p class="sub">Gold と強化石を使って、武器・防具を強化します。★3→★4には初級の強化石、★4→★5には中級の強化石が必要です。</p>
+      <p class="sub">Gold と強化石を使って、武器・防具を強化します。★3→4は初級石、★4→5は中級石、★5→6は上級石が必要です。</p>
       <div id="smith-items" class="stack" style="gap:8px;margin-top:8px">${smithHTML}</div>`;
   } else if (fac === 'bank') {
     content = `
@@ -261,12 +260,13 @@ function hitFlash(who) {
 /* ================= render: status ================= */
 function itemCard(it, o = {}) {
   const pw = itemPower(it), isW = it.slot === 'weapon';
-  const eff = isW ? weaponAtk(it) : pw;
-  const better = o.compare && gearScore(it) > gearScore(G.p[it.slot]);
+  const gp = gearPower(it);
+  const better = o.compare && gp > gearPower(G.p[it.slot]);
+  const isRec = o.showRec !== false && bestGearItem(G.p, it.slot) === it;
   return `<div class="item r${it.rarity}">
     <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}</span></div>
-    <div class="it-stat">${isW ? '攻撃力' : '防御力'} +${pw}${it.prop && PROPS[it.prop].atkMult !== 1 ? `<span class="it-desc">（実効 +${eff}）</span>` : ''}</div>
-    <div class="it-meta"><span class="rc">${RARITY[it.rarity].name}</span><span>品質 ${Math.round(it.roll * 100)}%</span>${o.sell === false ? '' : `<span>売値 ${fmt(sellValue(it))}G</span>`}${better ? '<span class="badge up">今の装備より強い</span>' : ''}</div>
+    <div class="it-stat">${isW ? '攻撃力' : '防御力'} +${pw}${it.prop && PROPS[it.prop].atkMult !== 1 ? `<span class="it-desc">（実効 +${gp}）</span>` : ''}　<span class="it-desc">戦力 ${fmt(gp)}</span></div>
+    <div class="it-meta"><span class="rc">${RARITY[it.rarity].name}</span><span>品質 ${Math.round(it.roll * 100)}%</span>${o.sell === false ? '' : `<span>売値 ${fmt(sellValue(it))}G</span>`}${isRec ? '<span class="badge rec">おすすめ</span>' : ''}${better ? '<span class="badge up">今の装備より強い</span>' : ''}</div>
     ${it.prop ? `<div><span class="badge ${it.prop}">${PROPS[it.prop].name}</span> <span class="it-desc">${PROPS[it.prop].desc}</span></div>` : ''}
     ${o.actions ? `<div class="it-act"><button class="btn small" data-act="equip" data-id="${it.id}">装備する</button><button class="btn small ${it.locked ? 'on' : ''}" data-act="lock" data-id="${it.id}" aria-pressed="${it.locked}">${it.locked ? 'ロック中' : 'ロック'}</button></div>` : ''}
   </div>`;

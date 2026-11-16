@@ -11,11 +11,13 @@ function rollRarity(diff, boost) {
   const w = diff.rar.map((x, i) => [i, x * (boost ? (i === 0 ? 0.35 : 1 + 0.5 * i) : 1)]);
   return weighted(w);
 }
-function genItem(diff, boost = false, slot = null) {
+function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR) {
   const p = G.p;
+  const pairs = diff.stars.filter(([s]) => s <= maxStar);
+  const star = weighted(pairs.length ? pairs : [[maxStar, 100]]);
   const it = mkItem(p, {
     slot: slot || (rnd() < 0.5 ? 'weapon' : 'armor'),
-    star: weighted(diff.stars),
+    star,
     rarity: rollRarity(diff, boost),
     roll: Math.round((0.5 + rnd() * 0.5) * 100) / 100,
     prop: null
@@ -111,7 +113,7 @@ function runEvent() {
   const run = G.run, p = G.p;
   const type = weighted([['chest', 40], ['spring', 30], ['bless', 30]]);
   if (type === 'chest') {
-    const it = genItem(run.df, true);
+    const it = genItem(run.df, true, null, run.d.maxStar || MAX_STAR);
     const out = receiveItem(it); run.items.push(it);
     addLog(`【${run.floor}F】宝箱を見つけた！`, 'l-good');
     logDrop(it, out);
@@ -268,8 +270,9 @@ function onKill() {
   // drops (チュートリアル中はドロップなし)
   const drops = [];
   if (!G.tutorial || G.tutorial.done) {
-    if (en.boss) { drops.push(genItem(run.df, true)); drops.push(genItem(run.df, true)); }
-    else if (rnd() < 0.3) drops.push(genItem(run.df, false));
+    const capStar = run.d.maxStar || MAX_STAR;
+    if (en.boss) { drops.push(genItem(run.df, true, null, capStar)); drops.push(genItem(run.df, true, null, capStar)); }
+    else if (rnd() < 0.3) drops.push(genItem(run.df, false, null, capStar));
     for (const it of drops) { const out = receiveItem(it); run.items.push(it); logDrop(it, out); }
     const r = rnd();
     if (r < 0.05) { p.potions.hp = Math.min(99, p.potions.hp + 1); run.potions.hp++; addLog('生命の薬を手に入れた！', 'l-good'); }
@@ -400,8 +403,7 @@ function smithUpgrade(id) {
   const p = G.p;
   const it = [p.weapon, p.armor, ...p.bag].find(x => x && x.id === Number(id));
   if (!it) { toast('アイテムが見つかりません'); return; }
-  const MAX_STAR = 5;
-  if (it.star >= MAX_STAR) { toast('これ以上強化できません'); return; }
+  if (it.star >= SMITH_MAX_STAR) { toast('これ以上強化できません'); return; }
   const cost = smithCost(it);
   if (p.gold < cost) { toast(`所持金が足りません（${fmt(cost)}G必要）`); return; }
   const stoneId = STONE_REQ[it.star];

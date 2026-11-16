@@ -20,13 +20,22 @@ const expNeed = lv => Math.round(20 * Math.pow(lv, 1.6));
 
 const itemPower = it => Math.max(1, Math.round((it.slot === 'weapon' ? WEAPON_BASE : ARMOR_BASE)[it.star] * RARITY[it.rarity].mult * it.roll));
 const weaponAtk = it => it ? Math.round(itemPower(it) * ((it.prop && PROPS[it.prop].atkMult) || 1)) : 0;
-const itemName = it => PREFIX[it.rarity] + (it.slot === 'weapon' ? WEAPON_NAMES : ARMOR_NAMES)[it.star];
+const itemName = (it, skinId) => {
+  const sk = skinId || (G.p && G.p.skin) || 'ruby';
+  const base = it.slot === 'weapon'
+    ? WEAPON_NAMES[it.star]
+    : (it.star === 5 && ARMOR_STAR5_NAMES[sk]) || ARMOR_NAMES[it.star];
+  return PREFIX[it.rarity] + base;
+};
 const sellValue = it => Math.max(1, Math.round(RARITY[it.rarity].sell * (1 + (it.star - 1) * 0.5) * (0.6 + 0.4 * it.roll)));
-const gearScore = it => {
-  if (!it) return 0;
-  const pw = itemPower(it);
-  if (it.slot === 'armor') return pw;
-  return pw * (it.prop === 'flame' ? 1.2 : it.prop === 'vamp' ? 1.05 : 1);
+// 戦力値（1か所で定義）: 武器は実効攻撃力、防具は実効防御力。equipBest() の判定と一致させる。
+const gearPower = it => !it ? 0 : (it.slot === 'weapon' ? weaponAtk(it) : itemPower(it));
+const gearScore = gearPower;
+const bestGearItem = (p, slot) => {
+  if (!p) return null;
+  let best = p[slot] && p[slot].slot === slot ? p[slot] : null;
+  for (const it of (p.bag || [])) if (it && it.slot === slot && gearPower(it) > gearPower(best)) best = it;
+  return best;
 };
 const playerAtk = p => baseAtk(p) + weaponAtk(p.weapon);
 const playerDef = p => baseDef(p) + (p.armor ? itemPower(p.armor) : 0);
