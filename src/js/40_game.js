@@ -101,7 +101,7 @@ function spawnEnemy(boss) {
     id: base.id, name, shape: base.shape, boss, bossFilter, hp, maxHp: hp,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : 1))),
     def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : 1)),
-    exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale)),
+    exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1))),
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4)))
   };
   run.phase = 'battle';
