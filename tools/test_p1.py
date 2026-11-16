@@ -73,7 +73,7 @@ with sync_playwright() as pw:
       G.p.cleared.A.super = true;
       const e1 = R.isDiffUnlocked(G.p, d, R.DIFFS[4]); // extreme after super
       R.startRun('A', 'extreme');
-      const startedExtreme = G.run !== null && G.run.floors === 40;
+      const startedExtreme = G.run !== null && G.run.floors === 80;
       return { s0, blockedSuper, s1, e0, blockedExtreme, e1, startedExtreme };
     }''')
     check('super locked & blocked before high clear', not unlock_res['s0'] and unlock_res['blockedSuper'], unlock_res)

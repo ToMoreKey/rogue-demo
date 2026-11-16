@@ -83,29 +83,30 @@ function nextFloor() {
   run.floor++;
   if (run.floor > run.floors) { finishRun('clear'); return; }
   const boss = run.floor === run.floors;
-  if (!boss && run.floor >= 2 && rnd() < 0.16) { runEvent(); run.phase = 'pause'; run.cleared++; }
-  else spawnEnemy(boss);
+  const miniboss = !boss && run.floor >= 10 && run.floor % 10 === 0;
+  if (!boss && !miniboss && run.floor >= 2 && rnd() < 0.16) { runEvent(); run.phase = 'pause'; run.cleared++; }
+  else spawnEnemy(boss, miniboss);
 }
 
 const cellPow = run => run.d.pow[DIFFS.indexOf(run.df)];
 function scaleOf(run, floor) { return cellPow(run) * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1)); }
-function spawnEnemy(boss) {
+function spawnEnemy(boss, miniboss = false) {
   const run = G.run, d = run.d;
-  const base = boss ? d.boss : pick(d.mobs);
-  const name = (boss && run.df.bossPrefix ? run.df.bossPrefix : '') + base.name;
-  const bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : '';
+  const base = boss ? d.boss : (miniboss ? d.mobs.reduce((a, b) => b.hp > a.hp ? b : a) : pick(d.mobs));
+  const name = (boss && run.df.bossPrefix ? run.df.bossPrefix : miniboss ? '強敵 ' : '') + base.name;
+  const bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
   const S = scaleOf(run, run.floor);
   const Sa = Math.pow(S, TUNE.atkExp);
-  const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : 1)));
+  const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
   run.enemy = {
-    id: base.id, name, shape: base.shape, boss, bossFilter, hp, maxHp: hp,
-    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : 1))),
-    def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : 1)),
-    exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1))),
-    gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4)))
+    id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp,
+    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1))),
+    def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : miniboss ? 1.1 : 1)),
+    exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (miniboss ? 1.5 : 1))),
+    gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
   run.phase = 'battle';
-  addLog(`【${run.floor}F】${boss ? 'ボス ' : ''}${name}が現れた！`, boss ? 'l-gold' : 'l-sys');
+  addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
   renderEnemy(true);
 }
 
@@ -272,6 +273,7 @@ function onKill() {
   if (!G.tutorial || G.tutorial.done) {
     const capStar = run.d.maxStar || MAX_STAR;
     if (en.boss) { drops.push(genItem(run.df, true, null, capStar)); drops.push(genItem(run.df, true, null, capStar)); }
+    else if (en.miniboss) drops.push(genItem(run.df, true, null, capStar));
     else if (rnd() < 0.3) drops.push(genItem(run.df, false, null, capStar));
     for (const it of drops) { const out = receiveItem(it); run.items.push(it); logDrop(it, out); }
     const r = rnd();

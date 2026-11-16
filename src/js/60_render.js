@@ -193,7 +193,14 @@ function renderBattle() {
   $('#arena').style.setProperty('--a1', run.d.a1); $('#arena').style.setProperty('--a2', run.d.a2);
   $('#b-title').textContent = `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
   let pips = '';
-  for (let i = 1; i <= run.floors; i++) pips += `<i class="pip ${i <= run.cleared ? 'done' : i === run.floor ? 'cur' : ''} ${i === run.floors ? 'boss' : ''}"></i>`;
+  const pipCount = Math.min(run.floors, 20);
+  for (let k = 1; k <= pipCount; k++) {
+    const fEnd = Math.round(k * run.floors / pipCount);
+    const fStart = Math.round((k - 1) * run.floors / pipCount) + 1;
+    const isDone = run.cleared >= fEnd;
+    const isCur = !isDone && run.floor >= fStart && run.floor <= fEnd;
+    pips += `<i class="pip ${isDone ? 'done' : isCur ? 'cur' : ''} ${k === pipCount ? 'boss' : ''}"></i>`;
+  }
   $('#b-pips').innerHTML = pips;
   $('#b-lv').textContent = p.lv;
   $('#b-php').style.width = clamp(p.hp / maxHp(p) * 100, 0, 100) + '%';
