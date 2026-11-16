@@ -11,5 +11,9 @@
 - `manifest.json` / `sw.js` … PWA設定・オフライン対応
 - `icon-*.png` ほか … アイコン
 
+## ドキュメント
+- `docs/spec_volume_expansion.md` … ボリューム拡張・エンドコンテンツ仕様書（開発の正本。他のAI・メンバーもこれを参照）
+- 方針: 設計や仕様を作成したら `docs/` にMarkdownで保存してコミットする
+
 ## 更新するとき
 `index.html` を差し替えたら、`sw.js` の `CACHE` のバージョン（`rogue-v1`→`rogue-v2`）を上げてください。
