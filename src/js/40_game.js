@@ -394,10 +394,19 @@ function sellBag() {
   toast(`${targets.length}個を売却して ${fmt(total)}G を手に入れた`);
   renderAll();
 }
-/* --- 鍛冶屋 --- */
+/* --- 鍛冶屋・ショップ・バッグ拡張・スキルリセット費用 --- */
 function smithCost(it) {
-  // star² × 30 × rarityMult（小数切り捨て）
-  return Math.floor(it.star * it.star * 30 * RARITY[it.rarity].mult);
+  // star³ × 18 × rarityMult（★2→3は現行とほぼ同水準、★5→6など高★は高額）
+  return Math.floor(Math.pow(it.star, 3) * 18 * RARITY[it.rarity].mult);
+}
+function reforgeCost(it) {
+  return Math.max(50, Math.floor(smithCost(it) * 0.8));
+}
+function bagExpandCost(cap) {
+  return BAG_EXPAND_COSTS[cap] || 0;
+}
+function skillResetCost(p) {
+  return Math.max(50, (p ? p.lv : 1) * 50);
 }
 function smithUpgrade(id) {
   const p = G.p;
@@ -419,6 +428,41 @@ function smithUpgrade(id) {
   save();
   toast(`${itemName(it)} を ★${it.star} に強化した！`);
   renderAll();
+}
+function smithReforge(id) {
+  const p = G.p;
+  const it = [p.weapon, p.armor, ...p.bag].find(x => x && x.id === Number(id));
+  if (!it) { toast('アイテムが見つかりません'); return; }
+  if (it.slot !== 'weapon') { toast('特性の付与は武器のみ行えます'); return; }
+  const cost = reforgeCost(it);
+  if (p.gold < cost) { toast(`所持金が足りません（${fmt(cost)}G必要）`); return; }
+  p.gold -= cost;
+  it.prop = rnd() < 0.72 ? pick(Object.keys(PROPS)) : null;
+  save();
+  toast(it.prop ? `再鍛造で［${PROPS[it.prop].name}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
+  renderAll();
+}
+function buyShopItem(id) {
+  const p = G.p, item = SHOP_ITEMS.find(x => x.id === id);
+  if (!item) return;
+  if (p.gold < item.price) { toast(`所持金が足りません（${fmt(item.price)}G必要）`); return; }
+  if (item.kind === 'potion') {
+    if ((p.potions[item.key] || 0) >= 99) { toast('これ以上持てません'); return; }
+    p.gold -= item.price; p.potions[item.key] = (p.potions[item.key] || 0) + 1;
+  } else if (item.kind === 'stone') {
+    if ((p.stones[item.key] || 0) >= 999) { toast('これ以上持てません'); return; }
+    p.gold -= item.price; p.stones[item.key] = (p.stones[item.key] || 0) + 1;
+  }
+  save(); toast(`${item.name}を1個購入した`); renderAll();
+}
+function expandBag() {
+  const p = G.p, cap = p.bagCap || BAG_CAP;
+  if (cap >= MAX_BAG_CAP) { toast('バッグは最大サイズです'); return; }
+  const cost = bagExpandCost(cap);
+  if (p.gold < cost) { toast(`所持金が足りません（${fmt(cost)}G必要）`); return; }
+  p.gold -= cost;
+  p.bagCap = cap + 10;
+  save(); toast(`バッグ容量が ${p.bagCap} 枠に拡張された！`); renderAll();
 }
 
 function bankMove(dir, all) {

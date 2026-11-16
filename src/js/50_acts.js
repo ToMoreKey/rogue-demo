@@ -122,6 +122,9 @@ const ACTS = {
     delete G[key];
     const tree = SKILL_TREES.find(t => t.id === d.tree);
     if (!tree) return;
+    const cost = skillResetCost(p);
+    if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
+    p.gold -= cost;
     const pts = p.skillPts[d.tree] || 0;
     // SPを返還
     p.sp += pts;
@@ -210,6 +213,9 @@ const ACTS = {
     save(); toast(`テスト用装備を${n}個追加しました`); renderAll();
   },
   smithUpgrade(d) { smithUpgrade(d.id); },
+  smithReforge(d) { smithReforge(d.id); },
+  buyShop(d) { buyShopItem(d.id); },
+  expandBag() { expandBag(); },
   autoSellRaritySet(d) {
     const v = Number(d.v);
     if (v >= -1 && v <= 3) { G.autoSellRarity = v; save(); renderTown(); }

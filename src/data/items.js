@@ -33,3 +33,12 @@ const MAX_STAR = WEAPON_BASE.length - 1;
 const SMITH_MAX_STAR = 6;
 const MAX_RARITY = RARITY.length - 1;
 const PREFIX = ['', '上質な', '名工の', '伝説の'];
+// ショップ販売品（薬・強化石）
+const SHOP_ITEMS = [
+  { id: 'hp',        kind: 'potion', key: 'hp',        name: '生命の薬',     desc: 'HP30%回復',   price: 180 },
+  { id: 'mp',        kind: 'potion', key: 'mp',        name: '魔力の薬',     desc: 'MP50%回復',   price: 220 },
+  { id: 'stone_nov', kind: 'stone',  key: 'stone_nov', name: '初級の強化石', desc: '★3→4強化用', price: 800 },
+  { id: 'stone_mid', kind: 'stone',  key: 'stone_mid', name: '中級の強化石', desc: '★4→5強化用', price: 2400 },
+  { id: 'stone_hi',  kind: 'stone',  key: 'stone_hi',  name: '上級の強化石', desc: '★5→6強化用', price: 7500 }
+];
+const BAG_EXPAND_COSTS = { 60: 2000, 70: 4000, 80: 8000, 90: 14000, 100: 22000, 110: 32000 };

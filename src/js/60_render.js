@@ -78,8 +78,23 @@ function renderFacility(fac) {
     const autoNote = G.autoSellRarity === -1
       ? '自動売却は無効です。'
       : `ダンジョンで入手した装備のうち、${autoLabels[G.autoSellRarity + 1]}を自動売却します。`;
+    const shopBuyHtml = SHOP_ITEMS.map(it => {
+      const owned = it.kind === 'potion' ? (p.potions[it.key] || 0) : (p.stones[it.key] || 0);
+      const maxOwned = it.kind === 'potion' ? 99 : 999;
+      const canBuy = p.gold >= it.price && owned < maxOwned;
+      return `<div class="smith-item">
+        <div class="it-h"><span class="it-name">${esc(it.name)}</span><span class="sub" style="margin-left:auto">所持: <b>${owned}</b></span></div>
+        <div class="it-meta"><span>${esc(it.desc)}</span><span>価格 <b>${fmt(it.price)}G</b></span></div>
+        <button class="btn small${canBuy ? ' primary' : ''}" data-act="buyShop" data-id="${it.id}" ${canBuy ? '' : 'disabled'}>購入 (${fmt(it.price)}G)</button>
+      </div>`;
+    }).join('');
     content = `
-      <h2>売却専門ショップ</h2>
+      <h2>ショップ</h2>
+      <h3 style="font-size:14px;margin:4px 0">購入（薬・強化石）</h3>
+      <p class="sub" style="margin:0 0 8px">ダンジョン攻略に使う薬や、鍛冶屋で使う強化石を購入できます。</p>
+      <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}</div>
+      <hr style="margin:14px 0;border:none;border-top:1px solid var(--bd)">
+      <h3 style="font-size:14px;margin:0 0 4px">装備の一括売却</h3>
       <p class="sub">バッグの装備を一括で売却します。装備中とロック中の品は売りません。</p>
       <div class="pill-row" id="shop-pills">${shopPills}</div>
       <p class="sub" id="shop-sum" style="margin:0 0 10px">${shopSum}</p>
@@ -99,11 +114,13 @@ function renderFacility(fac) {
       const hasStone = stReq ? (p.stones[stReq.id] || 0) >= 1 : true;
       const canAfford = p.gold >= cost;
       const canUpgrade = !maxed && canAfford && hasStone;
+      const rfCost = reforgeCost(it);
+      const canReforge = it.slot === 'weapon' && p.gold >= rfCost;
       const loc = it === p.weapon ? '【装備中・武器】' : it === p.armor ? '【装備中・防具】' : '【バッグ】';
       return `<div class="smith-item">
         <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}${maxed ? '' : '☆'.repeat(SMITH_MAX_STAR - it.star)}</span><span class="sub" style="margin-left:4px">${loc}</span></div>
-        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>戦力 <b>${fmt(gearPower(it))}</b></span><span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
-        ${maxed ? '' : `<button class="btn small${canUpgrade ? ' primary' : ''}" data-act="smithUpgrade" data-id="${it.id}" ${canUpgrade ? '' : 'disabled'}>★${it.star + 1}に強化</button>`}
+        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>戦力 <b>${fmt(gearPower(it))}</b></span>${it.prop ? `<span class="badge ${it.prop}">${PROPS[it.prop].name}</span>` : ''}<span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
+        <div class="row">${maxed ? '' : `<button class="btn small${canUpgrade ? ' primary' : ''}" data-act="smithUpgrade" data-id="${it.id}" ${canUpgrade ? '' : 'disabled'}>★${it.star + 1}に強化</button>`}${it.slot === 'weapon' ? `<button class="btn small" data-act="smithReforge" data-id="${it.id}" ${canReforge ? '' : 'disabled'}>再鍛造 (${fmt(rfCost)}G)</button>` : ''}</div>
       </div>`;
     }).join('') : '<p class="empty">強化できる装備がありません。</p>';
     content = `
@@ -337,7 +354,7 @@ function renderSkillTrees(p) {
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="1" ${canAdd1 ? '' : 'disabled'}>+1 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="5" ${canAdd5 ? '' : 'disabled'}>+5 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="${remaining}" ${canAddAll && remaining > 1 ? '' : 'disabled'}>全て割り振る (+${remaining})</button>
-        ${cur > 0 ? `<button class="btn small danger" data-act="spAllocReset" data-tree="${tree.id}">${resetArming ? '⚠️ もう一度押すとリセット' : 'リセット'}</button>` : ''}
+        ${cur > 0 ? `<button class="btn small danger" data-act="spAllocReset" data-tree="${tree.id}">${resetArming ? `⚠️ もう一度押すとリセット (${fmt(skillResetCost(p))}G)` : `リセット (${fmt(skillResetCost(p))}G)`}</button>` : ''}
       </div>
     </div>`;
   };
@@ -442,6 +459,7 @@ function renderStatus() {
       </div></div>
     <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
       <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>
+      ${(p.bagCap || BAG_CAP) < MAX_BAG_CAP ? `<div class="row" style="margin-bottom:10px"><button class="btn small" data-act="expandBag" ${p.gold >= bagExpandCost(p.bagCap || BAG_CAP) ? '' : 'disabled'}>バッグ拡張 +10枠（${fmt(bagExpandCost(p.bagCap || BAG_CAP))}G）</button></div>` : ''}
       ${bag.length ? `<div class="items">${bag.map(it => itemCard(it, { actions: true, compare: true })).join('')}</div>` : '<p class="empty">バッグは空です。ダンジョンで装備を入手しましょう。</p>'}</div>
     ${renderSkillSlots(p)}
     ${renderSkillTrees(p)}

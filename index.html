@@ -447,6 +447,15 @@ const MAX_STAR = WEAPON_BASE.length - 1;
 const SMITH_MAX_STAR = 6;
 const MAX_RARITY = RARITY.length - 1;
 const PREFIX = ['', '上質な', '名工の', '伝説の'];
+// ショップ販売品（薬・強化石）
+const SHOP_ITEMS = [
+  { id: 'hp',        kind: 'potion', key: 'hp',        name: '生命の薬',     desc: 'HP30%回復',   price: 180 },
+  { id: 'mp',        kind: 'potion', key: 'mp',        name: '魔力の薬',     desc: 'MP50%回復',   price: 220 },
+  { id: 'stone_nov', kind: 'stone',  key: 'stone_nov', name: '初級の強化石', desc: '★3→4強化用', price: 800 },
+  { id: 'stone_mid', kind: 'stone',  key: 'stone_mid', name: '中級の強化石', desc: '★4→5強化用', price: 2400 },
+  { id: 'stone_hi',  kind: 'stone',  key: 'stone_hi',  name: '上級の強化石', desc: '★5→6強化用', price: 7500 }
+];
+const BAG_EXPAND_COSTS = { 60: 2000, 70: 4000, 80: 8000, 90: 14000, 100: 22000, 110: 32000 };
 // 装備アイコン（★1〜5。レア度は枠の色で表現）
 const ITEM_ICON = {
   weapon: ['', 'data:image/png;base64,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', 'data:image/png;base64,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', 'data:image/png;base64,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', 'data:image/png;base64,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', 'data:image/png;base64,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'],
@@ -1396,10 +1405,19 @@ function sellBag() {
   toast(`${targets.length}個を売却して ${fmt(total)}G を手に入れた`);
   renderAll();
 }
-/* --- 鍛冶屋 --- */
+/* --- 鍛冶屋・ショップ・バッグ拡張・スキルリセット費用 --- */
 function smithCost(it) {
-  // star² × 30 × rarityMult（小数切り捨て）
-  return Math.floor(it.star * it.star * 30 * RARITY[it.rarity].mult);
+  // star³ × 18 × rarityMult（★2→3は現行とほぼ同水準、★5→6など高★は高額）
+  return Math.floor(Math.pow(it.star, 3) * 18 * RARITY[it.rarity].mult);
+}
+function reforgeCost(it) {
+  return Math.max(50, Math.floor(smithCost(it) * 0.8));
+}
+function bagExpandCost(cap) {
+  return BAG_EXPAND_COSTS[cap] || 0;
+}
+function skillResetCost(p) {
+  return Math.max(50, (p ? p.lv : 1) * 50);
 }
 function smithUpgrade(id) {
   const p = G.p;
@@ -1421,6 +1439,41 @@ function smithUpgrade(id) {
   save();
   toast(`${itemName(it)} を ★${it.star} に強化した！`);
   renderAll();
+}
+function smithReforge(id) {
+  const p = G.p;
+  const it = [p.weapon, p.armor, ...p.bag].find(x => x && x.id === Number(id));
+  if (!it) { toast('アイテムが見つかりません'); return; }
+  if (it.slot !== 'weapon') { toast('特性の付与は武器のみ行えます'); return; }
+  const cost = reforgeCost(it);
+  if (p.gold < cost) { toast(`所持金が足りません（${fmt(cost)}G必要）`); return; }
+  p.gold -= cost;
+  it.prop = rnd() < 0.72 ? pick(Object.keys(PROPS)) : null;
+  save();
+  toast(it.prop ? `再鍛造で［${PROPS[it.prop].name}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
+  renderAll();
+}
+function buyShopItem(id) {
+  const p = G.p, item = SHOP_ITEMS.find(x => x.id === id);
+  if (!item) return;
+  if (p.gold < item.price) { toast(`所持金が足りません（${fmt(item.price)}G必要）`); return; }
+  if (item.kind === 'potion') {
+    if ((p.potions[item.key] || 0) >= 99) { toast('これ以上持てません'); return; }
+    p.gold -= item.price; p.potions[item.key] = (p.potions[item.key] || 0) + 1;
+  } else if (item.kind === 'stone') {
+    if ((p.stones[item.key] || 0) >= 999) { toast('これ以上持てません'); return; }
+    p.gold -= item.price; p.stones[item.key] = (p.stones[item.key] || 0) + 1;
+  }
+  save(); toast(`${item.name}を1個購入した`); renderAll();
+}
+function expandBag() {
+  const p = G.p, cap = p.bagCap || BAG_CAP;
+  if (cap >= MAX_BAG_CAP) { toast('バッグは最大サイズです'); return; }
+  const cost = bagExpandCost(cap);
+  if (p.gold < cost) { toast(`所持金が足りません（${fmt(cost)}G必要）`); return; }
+  p.gold -= cost;
+  p.bagCap = cap + 10;
+  save(); toast(`バッグ容量が ${p.bagCap} 枠に拡張された！`); renderAll();
 }
 
 function bankMove(dir, all) {
@@ -1556,6 +1609,9 @@ const ACTS = {
     delete G[key];
     const tree = SKILL_TREES.find(t => t.id === d.tree);
     if (!tree) return;
+    const cost = skillResetCost(p);
+    if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
+    p.gold -= cost;
     const pts = p.skillPts[d.tree] || 0;
     // SPを返還
     p.sp += pts;
@@ -1644,6 +1700,9 @@ const ACTS = {
     save(); toast(`テスト用装備を${n}個追加しました`); renderAll();
   },
   smithUpgrade(d) { smithUpgrade(d.id); },
+  smithReforge(d) { smithReforge(d.id); },
+  buyShop(d) { buyShopItem(d.id); },
+  expandBag() { expandBag(); },
   autoSellRaritySet(d) {
     const v = Number(d.v);
     if (v >= -1 && v <= 3) { G.autoSellRarity = v; save(); renderTown(); }
@@ -1735,8 +1794,23 @@ function renderFacility(fac) {
     const autoNote = G.autoSellRarity === -1
       ? '自動売却は無効です。'
       : `ダンジョンで入手した装備のうち、${autoLabels[G.autoSellRarity + 1]}を自動売却します。`;
+    const shopBuyHtml = SHOP_ITEMS.map(it => {
+      const owned = it.kind === 'potion' ? (p.potions[it.key] || 0) : (p.stones[it.key] || 0);
+      const maxOwned = it.kind === 'potion' ? 99 : 999;
+      const canBuy = p.gold >= it.price && owned < maxOwned;
+      return `<div class="smith-item">
+        <div class="it-h"><span class="it-name">${esc(it.name)}</span><span class="sub" style="margin-left:auto">所持: <b>${owned}</b></span></div>
+        <div class="it-meta"><span>${esc(it.desc)}</span><span>価格 <b>${fmt(it.price)}G</b></span></div>
+        <button class="btn small${canBuy ? ' primary' : ''}" data-act="buyShop" data-id="${it.id}" ${canBuy ? '' : 'disabled'}>購入 (${fmt(it.price)}G)</button>
+      </div>`;
+    }).join('');
     content = `
-      <h2>売却専門ショップ</h2>
+      <h2>ショップ</h2>
+      <h3 style="font-size:14px;margin:4px 0">購入（薬・強化石）</h3>
+      <p class="sub" style="margin:0 0 8px">ダンジョン攻略に使う薬や、鍛冶屋で使う強化石を購入できます。</p>
+      <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}</div>
+      <hr style="margin:14px 0;border:none;border-top:1px solid var(--bd)">
+      <h3 style="font-size:14px;margin:0 0 4px">装備の一括売却</h3>
       <p class="sub">バッグの装備を一括で売却します。装備中とロック中の品は売りません。</p>
       <div class="pill-row" id="shop-pills">${shopPills}</div>
       <p class="sub" id="shop-sum" style="margin:0 0 10px">${shopSum}</p>
@@ -1756,11 +1830,13 @@ function renderFacility(fac) {
       const hasStone = stReq ? (p.stones[stReq.id] || 0) >= 1 : true;
       const canAfford = p.gold >= cost;
       const canUpgrade = !maxed && canAfford && hasStone;
+      const rfCost = reforgeCost(it);
+      const canReforge = it.slot === 'weapon' && p.gold >= rfCost;
       const loc = it === p.weapon ? '【装備中・武器】' : it === p.armor ? '【装備中・防具】' : '【バッグ】';
       return `<div class="smith-item">
         <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}${maxed ? '' : '☆'.repeat(SMITH_MAX_STAR - it.star)}</span><span class="sub" style="margin-left:4px">${loc}</span></div>
-        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>戦力 <b>${fmt(gearPower(it))}</b></span><span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
-        ${maxed ? '' : `<button class="btn small${canUpgrade ? ' primary' : ''}" data-act="smithUpgrade" data-id="${it.id}" ${canUpgrade ? '' : 'disabled'}>★${it.star + 1}に強化</button>`}
+        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>戦力 <b>${fmt(gearPower(it))}</b></span>${it.prop ? `<span class="badge ${it.prop}">${PROPS[it.prop].name}</span>` : ''}<span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
+        <div class="row">${maxed ? '' : `<button class="btn small${canUpgrade ? ' primary' : ''}" data-act="smithUpgrade" data-id="${it.id}" ${canUpgrade ? '' : 'disabled'}>★${it.star + 1}に強化</button>`}${it.slot === 'weapon' ? `<button class="btn small" data-act="smithReforge" data-id="${it.id}" ${canReforge ? '' : 'disabled'}>再鍛造 (${fmt(rfCost)}G)</button>` : ''}</div>
       </div>`;
     }).join('') : '<p class="empty">強化できる装備がありません。</p>';
     content = `
@@ -1994,7 +2070,7 @@ function renderSkillTrees(p) {
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="1" ${canAdd1 ? '' : 'disabled'}>+1 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="5" ${canAdd5 ? '' : 'disabled'}>+5 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="${remaining}" ${canAddAll && remaining > 1 ? '' : 'disabled'}>全て割り振る (+${remaining})</button>
-        ${cur > 0 ? `<button class="btn small danger" data-act="spAllocReset" data-tree="${tree.id}">${resetArming ? '⚠️ もう一度押すとリセット' : 'リセット'}</button>` : ''}
+        ${cur > 0 ? `<button class="btn small danger" data-act="spAllocReset" data-tree="${tree.id}">${resetArming ? `⚠️ もう一度押すとリセット (${fmt(skillResetCost(p))}G)` : `リセット (${fmt(skillResetCost(p))}G)`}</button>` : ''}
       </div>
     </div>`;
   };
@@ -2099,6 +2175,7 @@ function renderStatus() {
       </div></div>
     <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
       <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>
+      ${(p.bagCap || BAG_CAP) < MAX_BAG_CAP ? `<div class="row" style="margin-bottom:10px"><button class="btn small" data-act="expandBag" ${p.gold >= bagExpandCost(p.bagCap || BAG_CAP) ? '' : 'disabled'}>バッグ拡張 +10枠（${fmt(bagExpandCost(p.bagCap || BAG_CAP))}G）</button></div>` : ''}
       ${bag.length ? `<div class="items">${bag.map(it => itemCard(it, { actions: true, compare: true })).join('')}</div>` : '<p class="empty">バッグは空です。ダンジョンで装備を入手しましょう。</p>'}</div>
     ${renderSkillSlots(p)}
     ${renderSkillTrees(p)}
@@ -2537,7 +2614,7 @@ window.__rogue = {
   migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, G, ACTS, tick, startRun, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, passiveBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
