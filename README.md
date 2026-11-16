@@ -15,6 +15,7 @@
   - `assets/` … base64画像（敵・装備アイコン・キャラ）。中身は書き換えない
   - `js/` … ロジック（`30_save.js` がセーブとバージョン移行）
 - `tools/build.py` … `src/` から `index.html` を生成
+- `docs/gemini_prompt_P1c.md` … P1bの検証で見つかった修正（狂気武器の自動装備・金策の圧縮）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P1b.md` … P1のペース再調整（時間の見積もりモデルに合わせる）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P1.md` … P1（A〜C拡張）をGeminiに依頼するための指示書
 - `tools/bot.py` … 自動プレイBOT（回帰テスト）
