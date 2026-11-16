@@ -291,7 +291,7 @@ function itemCard(it, o = {}) {
     <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}</span></div>
     <div class="it-stat">${isW ? '攻撃力' : '防御力'} +${pw}${it.prop && PROPS[it.prop].atkMult !== 1 ? `<span class="it-desc">（実効 +${gp}）</span>` : ''}　<span class="it-desc">戦力 ${fmt(gp)}</span></div>
     <div class="it-meta"><span class="rc">${RARITY[it.rarity].name}</span><span>品質 ${Math.round(it.roll * 100)}%</span>${o.sell === false ? '' : `<span>売値 ${fmt(sellValue(it))}G</span>`}${isRec ? '<span class="badge rec">おすすめ</span>' : ''}${better ? '<span class="badge up">今の装備より強い</span>' : ''}</div>
-    ${it.prop ? `<div><span class="badge ${it.prop}">${PROPS[it.prop].name}</span> <span class="it-desc">${PROPS[it.prop].desc}</span></div>` : ''}
+    ${it.prop ? `<div><span class="badge ${it.prop}">${PROPS[it.prop].name}</span> <span class="it-desc">${PROPS[it.prop].desc}</span>${it.prop === 'madness' ? '<div class="it-desc">※自動装備の対象外（手動で装備）</div>' : ''}</div>` : ''}
     ${o.actions ? `<div class="it-act"><button class="btn small" data-act="equip" data-id="${it.id}">装備する</button><button class="btn small ${it.locked ? 'on' : ''}" data-act="lock" data-id="${it.id}" aria-pressed="${it.locked}">${it.locked ? 'ロック中' : 'ロック'}</button></div>` : ''}
   </div>`;
 }

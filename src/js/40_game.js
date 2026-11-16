@@ -28,7 +28,7 @@ function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR) {
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
-  if (G.opts.autoEquip && gearScore(it) > gearScore(p[slot])) {
+  if (G.opts.autoEquip && it.prop !== 'madness' && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
     if (old) {
@@ -47,11 +47,12 @@ function receiveItem(it) {
 function equipBest() {
   const p = G.p; let n = 0;
   for (const slot of ['weapon', 'armor']) {
-    let best = p[slot];
-    for (const it of p.bag) if (it.slot === slot && gearScore(it) > gearScore(best)) best = it;
-    if (best !== p[slot]) {
+    const cur = p[slot];
+    let best = cur && cur.prop !== 'madness' ? cur : null;
+    for (const it of p.bag) if (it.slot === slot && it.prop !== 'madness' && gearScore(it) > gearScore(best)) best = it;
+    if (best && best !== cur) {
       p.bag = p.bag.filter(x => x !== best);
-      if (p[slot]) p.bag.push(p[slot]);
+      if (cur) p.bag.push(cur);
       p[slot] = best; n++;
     }
   }
@@ -398,11 +399,11 @@ function sellBag() {
 }
 /* --- 鍛冶屋・ショップ・バッグ拡張・スキルリセット費用 --- */
 function smithCost(it) {
-  // star³ × 18 × rarityMult（★2→3は現行とほぼ同水準、★5→6など高★は高額）
-  return Math.floor(Math.pow(it.star, 3) * 18 * RARITY[it.rarity].mult);
+  // star³ × 28 × rarityMult
+  return Math.floor(Math.pow(it.star, 3) * 28 * RARITY[it.rarity].mult);
 }
 function reforgeCost(it) {
-  return Math.max(50, Math.floor(smithCost(it) * 0.8));
+  return Math.max(80, Math.floor(smithCost(it) * 0.9));
 }
 function bagExpandCost(cap) {
   return BAG_EXPAND_COSTS[cap] || 0;

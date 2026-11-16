@@ -48,18 +48,13 @@ BOT = r"""
        }
      }
    }
-   // 特性厳選（特性なしなら再鍛造、狂気を引いたら振り直す。なお振り直せない狂気はバッグの別武器へ退避）
+   // 特性がない武器に再鍛造（余りゴールドが多ければ炎上を狙う）
    if(R.smithReforge && p.weapon){
      if(!p.weapon.prop && p.gold>=R.reforgeCost(p.weapon)*2) R.smithReforge(p.weapon.id);
-     for(let k=0;k<15 && p.weapon.prop==='madness' && p.gold>=R.reforgeCost(p.weapon);k++) R.smithReforge(p.weapon.id);
-     if(p.weapon.prop==='madness'){
-       const alt=p.bag.filter(x=>x.slot==='weapon'&&x.prop!=='madness').sort((a,b)=>R.gearPower(b)-R.gearPower(a))[0];
-       if(alt) R.ACTS.equip({id:alt.id});
-     }
    }
    if(R.buyShopItem){
-     while(p.potions.hp<8 && p.gold>=180) R.buyShopItem('hp');
-     while(p.potions.mp<8 && p.gold>=220) R.buyShopItem('mp');
+     while(p.potions.hp<8 && p.gold>=200) R.buyShopItem('hp');
+     while(p.potions.mp<8 && p.gold>=250) R.buyShopItem('mp');
    }
    if(R.expandBag){
      while((p.bagCap||60)<(R.MAX_BAG_CAP||60) && p.gold>=R.bagExpandCost(p.bagCap||60)) R.expandBag();

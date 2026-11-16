@@ -27,14 +27,22 @@ const itemName = (it, skinId) => {
     : (it.star === 5 && ARMOR_STAR5_NAMES[sk]) || ARMOR_NAMES[it.star];
   return PREFIX[it.rarity] + base;
 };
-const sellValue = it => Math.max(1, Math.round(RARITY[it.rarity].sell * 0.36 * (1 + (it.star - 1) * 0.5) * (0.6 + 0.4 * it.roll)));
-// 戦力値（1か所で定義）: 武器は実効攻撃力、防具は実効防御力。equipBest() の判定と一致させる。
+const sellValue = it => Math.max(1, Math.round(RARITY[it.rarity].sell * 0.65 * (1 + (it.star - 1) * 0.5) * (0.6 + 0.4 * it.roll)));
+// 戦力値（表示用）: 武器は実効攻撃力、防具は実効防御力
 const gearPower = it => !it ? 0 : (it.slot === 'weapon' ? weaponAtk(it) : itemPower(it));
-const gearScore = gearPower;
+// 自動装備・おすすめ判定用スコア（P1前と同等: 狂気はHP消費リスクのため攻撃2倍を評価せず倍率1.0）
+const gearScore = it => {
+  if (!it) return 0;
+  const pw = itemPower(it);
+  if (it.slot === 'armor') return pw;
+  return pw * (it.prop === 'flame' ? 1.2 : it.prop === 'vamp' ? 1.05 : 1);
+};
 const bestGearItem = (p, slot) => {
   if (!p) return null;
-  let best = p[slot] && p[slot].slot === slot ? p[slot] : null;
-  for (const it of (p.bag || [])) if (it && it.slot === slot && gearPower(it) > gearPower(best)) best = it;
+  let best = p[slot] && p[slot].slot === slot && p[slot].prop !== 'madness' ? p[slot] : null;
+  for (const it of (p.bag || [])) {
+    if (it && it.slot === slot && it.prop !== 'madness' && gearScore(it) > gearScore(best)) best = it;
+  }
   return best;
 };
 const playerAtk = p => baseAtk(p) + weaponAtk(p.weapon);

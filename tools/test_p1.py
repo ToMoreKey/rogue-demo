@@ -81,37 +81,44 @@ with sync_playwright() as pw:
     check('extreme locked & blocked before super clear', not unlock_res['e0'] and unlock_res['blockedExtreme'], unlock_res)
     check('extreme unlocked & startable after super clear', unlock_res['e1'] and unlock_res['startedExtreme'], unlock_res)
 
-    # 3. 戦力値 (gearPower) と equipBest() の判定一致
+    # 3. 戦力値・おすすめ(bestGearItem)と equipBest() の判定一致、および狂気武器が自動装備されないこと
     gear_res = pg.evaluate('''()=>{
       const R = window.__rogue, G = window.G; G.tutorial = null; G.p = R.newPlayer();
       const p = G.p;
       p.bag = [];
       let id = 100;
       const mk = (slot, star, rarity, roll, prop) => ({ id: id++, slot, star, rarity, roll, prop, locked: false });
-      const ws = [
-        mk('weapon', 3, 1, 0.8, null),
-        mk('weapon', 3, 2, 0.9, 'flame'),
-        mk('weapon', 4, 1, 0.85, 'vamp'),
-        mk('weapon', 3, 3, 0.95, 'madness'),
-      ];
+      const wBase = mk('weapon', 3, 1, 0.8, null);
+      const wFlame = mk('weapon', 3, 2, 0.9, 'flame');
+      const wVamp = mk('weapon', 4, 1, 0.85, 'vamp');
+      const wMadness = mk('weapon', 6, 3, 1.0, 'madness'); // 実効ATKは最大だが自動装備されない
       const as = [
         mk('armor', 2, 2, 0.9, null),
         mk('armor', 5, 1, 0.7, null),
         mk('armor', 4, 3, 0.8, null),
       ];
-      p.weapon = ws[0]; p.armor = as[0];
-      p.bag = [...ws.slice(1), ...as.slice(1)];
-      const maxW = ws.reduce((a, b) => R.gearPower(b) > R.gearPower(a) ? b : a);
-      const maxA = as.reduce((a, b) => R.gearPower(b) > R.gearPower(a) ? b : a);
+      p.weapon = wBase; p.armor = as[0];
+      p.bag = [wFlame, wVamp, wMadness, ...as.slice(1)];
+      const maxNonMadnessW = [wBase, wFlame, wVamp].reduce((a, b) => R.gearScore(b) > R.gearScore(a) ? b : a);
+      const maxA = as.reduce((a, b) => R.gearScore(b) > R.gearScore(a) ? b : a);
       R.equipBest();
+      const afterEquipBestW = p.weapon.id;
+      const recW = R.bestGearItem(p, 'weapon').id;
+      const madnessNotEquippedByEquipBest = afterEquipBestW === maxNonMadnessW.id && afterEquipBestW !== wMadness.id;
+      // receiveItem でも狂気武器が自動装備されないことを確認
+      const dropMadness = mk('weapon', 6, 3, 1.0, 'madness');
+      const out = R.receiveItem(dropMadness);
+      const madnessNotAutoEquippedOnDrop = p.weapon.id === afterEquipBestW && out !== 'equipped';
       return {
-        wMatch: p.weapon.id === maxW.id && R.bestGearItem(p, 'weapon').id === p.weapon.id,
+        wMatch: madnessNotEquippedByEquipBest && recW === afterEquipBestW,
         aMatch: p.armor.id === maxA.id && R.bestGearItem(p, 'armor').id === p.armor.id,
-        wPow: R.gearPower(p.weapon), aPow: R.gearPower(p.armor)
+        madnessNotAutoEquippedOnDrop,
+        madnessPowerHigher: R.gearPower(wMadness) > R.gearPower(p.weapon)
       };
     }''')
-    check('gearPower matches equipBest() & bestGearItem() for weapon', gear_res['wMatch'], gear_res)
-    check('gearPower matches equipBest() & bestGearItem() for armor', gear_res['aMatch'], gear_res)
+    check('bestGearItem matches equipBest() & madness excluded (weapon)', gear_res['wMatch'] and gear_res['madnessPowerHigher'], gear_res)
+    check('madness weapon is not auto-equipped on receiveItem()', gear_res['madnessNotAutoEquippedOnDrop'], gear_res)
+    check('bestGearItem matches equipBest() for armor', gear_res['aMatch'], gear_res)
     check('no page errors', errs == [], errs)
     b.close()
 
