@@ -269,7 +269,13 @@ function battleRound() {
   playerAct();
   if (en.hp <= 0) { onKill(); return; }
   enemyAct();
-  if (p.hp <= 0) finishRun('defeat');
+  if (p.hp <= 0) { finishRun('defeat'); return; }
+  if (run.regenTurns > 0) {
+    run.regenTurns--;
+    const h = Math.max(1, Math.round(maxHp(p) * (run.regenPct || 0.15))), b = p.hp;
+    p.hp = Math.min(maxHp(p), p.hp + h);
+    if (p.hp > b) { addLog(`リジェネ効果でHPが${p.hp - b}回復した。`, 'l-good'); popDamage('player', `+${p.hp - b}`, 'heal'); }
+  }
 }
 
 function onKill() {
@@ -336,10 +342,12 @@ function finishRun(result) {
   if (!run) return;
   let clearGold = 0, clearSp = 0, lost = 0;
   if (result === 'clear') {
-    clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]); clearSp = run.df.clearSp;
-    p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
+    const firstClear = !p.cleared[run.d.id][run.df.id];
+    clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]);
+    clearSp = firstClear ? run.df.clearSp : 0;
+    p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared[run.d.id][run.df.id] = true;
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {

@@ -614,14 +614,14 @@ const SKILL_TREES = [
 
 
 const DIFFS = [
-  { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2,  expMult: 1.60, reqDiff: null },
-  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4,  expMult: 1.80, reqDiff: null },
-  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 650,  clearSp: 8,  expMult: 1.40, reqDiff: null },
-  { id: 'super',   name: '超級', tag: '深層',   floors: 50, stars: [[4, 55], [5, 35], [6, 10]], rar: [28, 39, 23, 10],   clearGold: 1000, clearSp: 12, expMult: 0.37, reqDiff: 'high',  bossPrefix: '古の',         bossFilter: 'hue-rotate(38deg) saturate(1.35) contrast(1.08)' },
-  { id: 'extreme', name: '極級', tag: '極致',   floors: 80, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 1800, clearSp: 16, expMult: 1.25, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
+  { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 1, expMult: 1.60, reqDiff: null },
+  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 1, expMult: 1.80, reqDiff: null },
+  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 650,  clearSp: 2, expMult: 1.40, reqDiff: null },
+  { id: 'super',   name: '超級', tag: '深層',   floors: 50, stars: [[4, 55], [5, 35], [6, 10]], rar: [28, 39, 23, 10],   clearGold: 1000, clearSp: 2, expMult: 0.37, reqDiff: 'high',  bossPrefix: '古の',         bossFilter: 'hue-rotate(38deg) saturate(1.35) contrast(1.08)' },
+  { id: 'extreme', name: '極級', tag: '極致',   floors: 80, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 1800, clearSp: 3, expMult: 1.25, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
 ];
 
-const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8, D: 2.3, E: 2.9, F: 3.6 };
+const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8, D: 0.45, E: 0.45, F: 0.45 };
 const DUNGEONS = [
   { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.35, 2.9, 5.2, 8.8], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18, 30, 42], maxStar: 4, unlock: null,
     mobs: [
@@ -647,30 +647,30 @@ const DUNGEONS = [
       { id: 'c_spider',  name: 'クリスタルスパイダー', shape: 'skull', hp: 44, atk: 14, def: 5, exp: 12, gold: 11 },
       { id: 'c_witch',   name: '吹雪の魔女',       shape: 'bat',   hp: 30, atk: 17, def: 2, exp: 12, gold: 11 }],
     boss: { id: 'c_boss', name: '氷帝グラシア', shape: 'boss', hp: 150, atk: 20, def: 10, exp: 105, gold: 105 } },
-  { id: 'D', name: '古代樹の森', blurb: '巨木の根が絡み合い、濃い瘴気と精霊が息づく森。', pow: [2.2, 4.0, 7.0, 11.0, 16.5], a1: '#14281a', a2: '#0c1a10', rec: [24, 33, 44, 56, 68], maxStar: 5, bossMaxStar: 6, unlock: { d: 'C', df: 'high' },
+  { id: 'D', name: '古代樹の森', blurb: '巨木の根が絡み合い、濃い瘴気と精霊が息づく森。', pow: [1.35, 2.35, 3.8, 5.8, 7.8], a1: '#14281a', a2: '#0c1a10', rec: [24, 33, 44, 56, 68], maxStar: 5, bossMaxStar: 6, unlock: { d: 'C', df: 'high' },
     mobs: [
-      { id: 'd_mushroom', name: 'マッドマッシュ', shape: 'slime', hp: 44, atk: 14, def: 4, exp: 13, gold: 12 },
-      { id: 'd_moth',     name: '毒蛾の群れ',     shape: 'bat',   hp: 34, atk: 20, def: 3, exp: 14, gold: 13 },
-      { id: 'd_treant',   name: '若木の番人',     shape: 'skull', hp: 62, atk: 18, def: 9, exp: 17, gold: 16 },
-      { id: 'd_beetle',   name: '鎧甲虫',         shape: 'skull', hp: 54, atk: 17, def: 8, exp: 15, gold: 14 },
-      { id: 'd_dryad',    name: '森の精霊',       shape: 'bat',   hp: 38, atk: 21, def: 4, exp: 15, gold: 14 }],
-    boss: { id: 'd_boss', name: '古樹の王ユグ', shape: 'boss', hp: 185, atk: 25, def: 12, exp: 130, gold: 130 } },
-  { id: 'E', name: '砂塵の遺跡', blurb: '砂嵐に埋もれた古代王朝の石造迷宮。', pow: [2.8, 5.0, 8.5, 13.5, 19.5], a1: '#33281a', a2: '#211a10', rec: [30, 39, 50, 62, 72], maxStar: 5, bossMaxStar: 6, unlock: { d: 'D', df: 'high' },
+      { id: 'd_mushroom', name: 'マッドマッシュ', shape: 'slime', hp: 44, atk: 14, def: 4, exp: 13, gold: 1 },
+      { id: 'd_moth',     name: '毒蛾の群れ',     shape: 'bat',   hp: 34, atk: 20, def: 3, exp: 14, gold: 1 },
+      { id: 'd_treant',   name: '若木の番人',     shape: 'skull', hp: 62, atk: 18, def: 9, exp: 17, gold: 2 },
+      { id: 'd_beetle',   name: '鎧甲虫',         shape: 'skull', hp: 54, atk: 17, def: 8, exp: 15, gold: 2 },
+      { id: 'd_dryad',    name: '森の精霊',       shape: 'bat',   hp: 38, atk: 21, def: 4, exp: 15, gold: 2 }],
+    boss: { id: 'd_boss', name: '古樹の王ユグ', shape: 'boss', hp: 185, atk: 25, def: 12, exp: 130, gold: 15 } },
+  { id: 'E', name: '砂塵の遺跡', blurb: '砂嵐に埋もれた古代王朝の石造迷宮。', pow: [1.6, 2.7, 4.2, 6.2, 8.3], a1: '#33281a', a2: '#211a10', rec: [30, 39, 50, 62, 72], maxStar: 5, bossMaxStar: 6, unlock: { d: 'D', df: 'high' },
     mobs: [
-      { id: 'e_scarab',  name: 'スカラベ',       shape: 'slime', hp: 52, atk: 17, def: 6,  exp: 16, gold: 15 },
-      { id: 'e_vulture', name: '砂漠コンドル',   shape: 'bat',   hp: 40, atk: 24, def: 4,  exp: 17, gold: 16 },
-      { id: 'e_mummy',   name: 'ミイラ兵',       shape: 'skull', hp: 74, atk: 22, def: 11, exp: 21, gold: 19 },
-      { id: 'e_golem',   name: '砂岩のゴーレム', shape: 'skull', hp: 66, atk: 21, def: 10, exp: 19, gold: 17 },
-      { id: 'e_djinn',   name: '砂塵の精霊',     shape: 'bat',   hp: 46, atk: 25, def: 5,  exp: 19, gold: 17 }],
-    boss: { id: 'e_boss', name: '砂王ネフェル', shape: 'boss', hp: 220, atk: 30, def: 15, exp: 160, gold: 160 } },
-  { id: 'F', name: '水没神殿', blurb: '蒼い深淵に沈んだ、太古の海神を祀る神殿。', pow: [3.5, 6.2, 10.5, 16.5, 23.0], a1: '#103038', a2: '#0a2028', rec: [36, 45, 55, 66, 76], maxStar: 5, bossMaxStar: 6, unlock: { d: 'E', df: 'high' },
+      { id: 'e_scarab',  name: 'スカラベ',       shape: 'slime', hp: 52, atk: 17, def: 6,  exp: 16, gold: 1 },
+      { id: 'e_vulture', name: '砂漠コンドル',   shape: 'bat',   hp: 40, atk: 24, def: 4,  exp: 17, gold: 1 },
+      { id: 'e_mummy',   name: 'ミイラ兵',       shape: 'skull', hp: 74, atk: 22, def: 11, exp: 21, gold: 2 },
+      { id: 'e_golem',   name: '砂岩のゴーレム', shape: 'skull', hp: 66, atk: 21, def: 10, exp: 19, gold: 2 },
+      { id: 'e_djinn',   name: '砂塵の精霊',     shape: 'bat',   hp: 46, atk: 25, def: 5,  exp: 19, gold: 2 }],
+    boss: { id: 'e_boss', name: '砂王ネフェル', shape: 'boss', hp: 220, atk: 30, def: 15, exp: 160, gold: 18 } },
+  { id: 'F', name: '水没神殿', blurb: '蒼い深淵に沈んだ、太古の海神を祀る神殿。', pow: [1.85, 3.05, 4.6, 6.6, 8.7], a1: '#103038', a2: '#0a2028', rec: [36, 45, 55, 66, 76], maxStar: 5, bossMaxStar: 6, unlock: { d: 'E', df: 'high' },
     mobs: [
-      { id: 'f_jelly',   name: 'ディープジェリー', shape: 'slime', hp: 62, atk: 20, def: 7,  exp: 20, gold: 18 },
-      { id: 'f_piranha', name: '牙魚',             shape: 'bat',   hp: 48, atk: 28, def: 5,  exp: 21, gold: 19 },
-      { id: 'f_priest',  name: '溺れた神官',       shape: 'skull', hp: 88, atk: 26, def: 13, exp: 25, gold: 23 },
-      { id: 'f_crab',    name: '珊瑚蟹の戦士',     shape: 'skull', hp: 78, atk: 25, def: 12, exp: 23, gold: 21 },
-      { id: 'f_siren',   name: 'セイレーン',       shape: 'bat',   hp: 54, atk: 30, def: 6,  exp: 23, gold: 21 }],
-    boss: { id: 'f_boss', name: '深海王クラーケン', shape: 'boss', hp: 260, atk: 36, def: 18, exp: 200, gold: 200 } }
+      { id: 'f_jelly',   name: 'ディープジェリー', shape: 'slime', hp: 62, atk: 20, def: 7,  exp: 20, gold: 1 },
+      { id: 'f_piranha', name: '牙魚',             shape: 'bat',   hp: 48, atk: 28, def: 5,  exp: 21, gold: 1 },
+      { id: 'f_priest',  name: '溺れた神官',       shape: 'skull', hp: 88, atk: 26, def: 13, exp: 25, gold: 2 },
+      { id: 'f_crab',    name: '珊瑚蟹の戦士',     shape: 'skull', hp: 78, atk: 25, def: 12, exp: 23, gold: 2 },
+      { id: 'f_siren',   name: 'セイレーン',       shape: 'bat',   hp: 54, atk: 30, def: 6,  exp: 23, gold: 2 }],
+    boss: { id: 'f_boss', name: '深海王クラーケン', shape: 'boss', hp: 260, atk: 36, def: 18, exp: 200, gold: 20 } }
 ];
 /* 敵の画像（高品質PNG）。id をキーに data URI を登録。無い敵は従来のドット絵(shape)で表示 */
 const ENEMY_IMG = {
@@ -897,7 +897,7 @@ const maxHp = p => Math.round((60 + p.lv * 12) * (p.passiveSkills ? passiveBonus
 const maxMp = p => Math.round((16 + p.lv * 4) * (p.passiveSkills ? passiveBonus(p).mpMult : 1));
 const baseAtk = p => 8 + p.lv * 2;
 const baseDef = p => 2 + p.lv;
-const expNeed = lv => Math.round(17.5 * Math.pow(lv, 1.55) * (lv >= 30 ? 1 + (lv - 29) * 0.015 : 1));
+const expNeed = lv => Math.round(17.5 * Math.pow(lv, 1.55) * (lv >= 30 ? 1 + (lv - 29) * 0.015 : 1) * (lv >= 56 ? 1 + (lv - 55) * 0.022 : 1));
 
 const itemPower = it => Math.max(1, Math.round((it.slot === 'weapon' ? WEAPON_BASE : ARMOR_BASE)[it.star] * RARITY[it.rarity].mult * it.roll));
 const weaponAtk = it => it ? Math.round(itemPower(it) * ((it.prop && PROPS[it.prop].atkMult) || 1)) : 0;
@@ -1336,7 +1336,13 @@ function battleRound() {
   playerAct();
   if (en.hp <= 0) { onKill(); return; }
   enemyAct();
-  if (p.hp <= 0) finishRun('defeat');
+  if (p.hp <= 0) { finishRun('defeat'); return; }
+  if (run.regenTurns > 0) {
+    run.regenTurns--;
+    const h = Math.max(1, Math.round(maxHp(p) * (run.regenPct || 0.15))), b = p.hp;
+    p.hp = Math.min(maxHp(p), p.hp + h);
+    if (p.hp > b) { addLog(`リジェネ効果でHPが${p.hp - b}回復した。`, 'l-good'); popDamage('player', `+${p.hp - b}`, 'heal'); }
+  }
 }
 
 function onKill() {
@@ -1403,10 +1409,12 @@ function finishRun(result) {
   if (!run) return;
   let clearGold = 0, clearSp = 0, lost = 0;
   if (result === 'clear') {
-    clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]); clearSp = run.df.clearSp;
-    p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
+    const firstClear = !p.cleared[run.d.id][run.df.id];
+    clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]);
+    clearSp = firstClear ? run.df.clearSp : 0;
+    p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared[run.d.id][run.df.id] = true;
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {
