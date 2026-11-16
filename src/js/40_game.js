@@ -11,10 +11,10 @@ function rollRarity(diff, boost) {
   const w = diff.rar.map((x, i) => [i, x * (boost ? (i === 0 ? 0.35 : 1 + 0.5 * i) : 1)]);
   return weighted(w);
 }
-function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR) {
+function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR, forceStar = null) {
   const p = G.p;
   const pairs = diff.stars.filter(([s]) => s <= maxStar);
-  const star = weighted(pairs.length ? pairs : [[maxStar, 100]]);
+  const star = forceStar || weighted(pairs.length ? pairs : [[maxStar, 100]]);
   const it = mkItem(p, {
     slot: slot || (rnd() < 0.5 ? 'weapon' : 'armor'),
     star,
@@ -273,15 +273,25 @@ function onKill() {
   const drops = [];
   if (!G.tutorial || G.tutorial.done) {
     const capStar = run.d.maxStar || MAX_STAR;
-    if (en.boss) { drops.push(genItem(run.df, true, null, capStar)); drops.push(genItem(run.df, true, null, capStar)); }
-    else if (en.miniboss) drops.push(genItem(run.df, true, null, capStar));
+    const bStar = run.d.bossMaxStar;
+    const rollBossItem = () => {
+      const fs = (bStar && bStar > capStar && rnd() < 0.08) ? bStar : null;
+      return genItem(run.df, true, null, capStar, fs);
+    };
+    if (en.boss) { drops.push(rollBossItem()); drops.push(rollBossItem()); }
+    else if (en.miniboss) drops.push(rollBossItem());
     else if (rnd() < 0.3) drops.push(genItem(run.df, false, null, capStar));
     for (const it of drops) { const out = receiveItem(it); run.items.push(it); logDrop(it, out); }
     const r = rnd();
     if (r < 0.05) { p.potions.hp = Math.min(99, p.potions.hp + 1); run.potions.hp++; addLog('生命の薬を手に入れた！', 'l-good'); }
     else if (r < 0.10) { p.potions.mp = Math.min(99, p.potions.mp + 1); run.potions.mp++; addLog('魔力の薬を手に入れた！', 'l-good'); }
-    // 強化石ドロップ（ダンジョンA→初級、B→中級、C→上級、8%）
-    if (rnd() < 0.08) {
+    // 強化石ドロップ（ダンジョンA→初級、B→中級、C→上級 8% ／ D〜Fボス80%・強敵40%→時の欠片）
+    if ((en.boss || en.miniboss) && ['D', 'E', 'F'].includes(run.d.id)) {
+      if (rnd() < (en.boss ? 0.8 : 0.4)) {
+        p.stones.stone_time = Math.min(999, (p.stones.stone_time || 0) + 1);
+        addLog('時の欠片を手に入れた！', 'l-good');
+      }
+    } else if (rnd() < 0.08) {
       const st = STONES.find(s => s.dId === run.d.id);
       if (st) { p.stones[st.id] = Math.min(999, (p.stones[st.id] || 0) + 1); addLog(`${st.name}を手に入れた！`, 'l-good'); }
     }

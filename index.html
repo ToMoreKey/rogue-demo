@@ -418,14 +418,15 @@ const RARITY = [
   { id: 'unique', name: 'ユニーク',   mult: 2.0, sell: 80 },
   { id: 'legend', name: 'レジェンド', mult: 3.5, sell: 250 }
 ];
-// 強化石: 各ダンジョンでドロップ。★3→4に初級石、★4→5に中級石が必要
+// 強化石: A→初級, B→中級, C→上級, D〜Fボス/強敵→時の欠片
 const STONES = [
-  { id: 'stone_nov', name: '初級の強化石', dId: 'A', color: '#8fd1a8' },
-  { id: 'stone_mid', name: '中級の強化石', dId: 'B', color: '#ffb06e' },
-  { id: 'stone_hi',  name: '上級の強化石', dId: 'C', color: '#9dd0ff' }
+  { id: 'stone_nov',  name: '初級の強化石', dId: 'A',     color: '#8fd1a8' },
+  { id: 'stone_mid',  name: '中級の強化石', dId: 'B',     color: '#ffb06e' },
+  { id: 'stone_hi',   name: '上級の強化石', dId: 'C',     color: '#9dd0ff' },
+  { id: 'stone_time', name: '時の欠片',     dId: 'D,E,F', color: '#e6b8ff' }
 ];
-// ★3→4: stone_nov, ★4→5: stone_mid, ★5→6: stone_hi
-const STONE_REQ = { 3: 'stone_nov', 4: 'stone_mid', 5: 'stone_hi' };
+// ★3→4: stone_nov, ★4→5: stone_mid, ★5→6: stone_hi, ★6→7: stone_time
+const STONE_REQ = { 3: 'stone_nov', 4: 'stone_mid', 5: 'stone_hi', 6: 'stone_time' };
 const PROPS = {
   madness: { name: '狂気', desc: '攻撃するたびHPが1割減る代わりに、武器攻撃力が2倍', atkMult: 2 },
   flame:   { name: '炎上', desc: '武器攻撃力が1.2倍', atkMult: 1.2 },
@@ -442,9 +443,9 @@ const ARMOR_STAR5_NAMES = {
   silia:  '聖女の法衣',
   chloe:  '影縫いの忍装束'
 };
-// 装備の最大★（データ定義上限） / 鍛冶屋での強化上限（★7強化はP2で解放）
+// 装備の最大★（データ定義上限） / 鍛冶屋での強化上限（★7は時の欠片で強化解放）
 const MAX_STAR = WEAPON_BASE.length - 1;
-const SMITH_MAX_STAR = 6;
+const SMITH_MAX_STAR = 7;
 const MAX_RARITY = RARITY.length - 1;
 const PREFIX = ['', '上質な', '名工の', '伝説の'];
 // ショップ販売品（薬・強化石）
@@ -1057,10 +1058,10 @@ function rollRarity(diff, boost) {
   const w = diff.rar.map((x, i) => [i, x * (boost ? (i === 0 ? 0.35 : 1 + 0.5 * i) : 1)]);
   return weighted(w);
 }
-function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR) {
+function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR, forceStar = null) {
   const p = G.p;
   const pairs = diff.stars.filter(([s]) => s <= maxStar);
-  const star = weighted(pairs.length ? pairs : [[maxStar, 100]]);
+  const star = forceStar || weighted(pairs.length ? pairs : [[maxStar, 100]]);
   const it = mkItem(p, {
     slot: slot || (rnd() < 0.5 ? 'weapon' : 'armor'),
     star,
@@ -1319,15 +1320,25 @@ function onKill() {
   const drops = [];
   if (!G.tutorial || G.tutorial.done) {
     const capStar = run.d.maxStar || MAX_STAR;
-    if (en.boss) { drops.push(genItem(run.df, true, null, capStar)); drops.push(genItem(run.df, true, null, capStar)); }
-    else if (en.miniboss) drops.push(genItem(run.df, true, null, capStar));
+    const bStar = run.d.bossMaxStar;
+    const rollBossItem = () => {
+      const fs = (bStar && bStar > capStar && rnd() < 0.08) ? bStar : null;
+      return genItem(run.df, true, null, capStar, fs);
+    };
+    if (en.boss) { drops.push(rollBossItem()); drops.push(rollBossItem()); }
+    else if (en.miniboss) drops.push(rollBossItem());
     else if (rnd() < 0.3) drops.push(genItem(run.df, false, null, capStar));
     for (const it of drops) { const out = receiveItem(it); run.items.push(it); logDrop(it, out); }
     const r = rnd();
     if (r < 0.05) { p.potions.hp = Math.min(99, p.potions.hp + 1); run.potions.hp++; addLog('生命の薬を手に入れた！', 'l-good'); }
     else if (r < 0.10) { p.potions.mp = Math.min(99, p.potions.mp + 1); run.potions.mp++; addLog('魔力の薬を手に入れた！', 'l-good'); }
-    // 強化石ドロップ（ダンジョンA→初級、B→中級、C→上級、8%）
-    if (rnd() < 0.08) {
+    // 強化石ドロップ（ダンジョンA→初級、B→中級、C→上級 8% ／ D〜Fボス80%・強敵40%→時の欠片）
+    if ((en.boss || en.miniboss) && ['D', 'E', 'F'].includes(run.d.id)) {
+      if (rnd() < (en.boss ? 0.8 : 0.4)) {
+        p.stones.stone_time = Math.min(999, (p.stones.stone_time || 0) + 1);
+        addLog('時の欠片を手に入れた！', 'l-good');
+      }
+    } else if (rnd() < 0.08) {
       const st = STONES.find(s => s.dId === run.d.id);
       if (st) { p.stones[st.id] = Math.min(999, (p.stones[st.id] || 0) + 1); addLog(`${st.name}を手に入れた！`, 'l-good'); }
     }
@@ -1879,7 +1890,7 @@ function renderFacility(fac) {
     }).join('') : '<p class="empty">強化できる装備がありません。</p>';
     content = `
       <h2>鍛冶屋「鉄の大地」</h2>
-      <p class="sub">Gold と強化石を使って、武器・防具を強化します。★3→4は初級石、★4→5は中級石、★5→6は上級石が必要です。</p>
+      <p class="sub">Gold と強化石を使って、武器・防具を強化します。★3→4初級石、★4→5中級石、★5→6上級石、★6→7時の欠片が必要です。</p>
       <div id="smith-items" class="stack" style="gap:8px;margin-top:8px">${smithHTML}</div>`;
   } else if (fac === 'bank') {
     content = `
@@ -2233,9 +2244,9 @@ function renderStatus() {
         <button class="btn small" data-act="potion" data-k="hp" ${p.potions.hp > 0 ? '' : 'disabled'}>生命の薬 ×${p.potions.hp}（HP30%）</button>
         <button class="btn small" data-act="potion" data-k="mp" ${p.potions.mp > 0 ? '' : 'disabled'}>魔力の薬 ×${p.potions.mp}（MP50%）</button>
       </div></div>
-    <div class="panel"><h2>強化石</h2><p class="sub">ダンジョンで8%の確率でドロップします。鍛冶屋での強化に使います。</p>
+    <div class="panel"><h2>強化石</h2><p class="sub">鍛冶屋での強化に使います。</p>
       <div class="row" style="flex-wrap:wrap;gap:8px">${STONES.map(st => `<span style="background:${st.color}22;border:1px solid ${st.color};border-radius:6px;padding:4px 10px;font-size:13px"><span style="color:${st.color}">●</span> ${st.name} <b>×${p.stones[st.id] || 0}</b></span>`).join('')}</div>
-      <p class="sub" style="margin:8px 0 0">初級：ダンジョンA　中級：ダンジョンB　上級：ダンジョンC</p></div>
+      <p class="sub" style="margin:8px 0 0">初級：A　中級：B　上級：C　時の欠片：D〜Fのボス・強敵</p></div>
     <div class="panel"><h2>外見変更</h2>
       <p class="sub" style="margin:0 0 12px">主人公の外見を選択できます。</p>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">

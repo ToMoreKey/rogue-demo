@@ -125,7 +125,7 @@ function renderFacility(fac) {
     }).join('') : '<p class="empty">強化できる装備がありません。</p>';
     content = `
       <h2>鍛冶屋「鉄の大地」</h2>
-      <p class="sub">Gold と強化石を使って、武器・防具を強化します。★3→4は初級石、★4→5は中級石、★5→6は上級石が必要です。</p>
+      <p class="sub">Gold と強化石を使って、武器・防具を強化します。★3→4初級石、★4→5中級石、★5→6上級石、★6→7時の欠片が必要です。</p>
       <div id="smith-items" class="stack" style="gap:8px;margin-top:8px">${smithHTML}</div>`;
   } else if (fac === 'bank') {
     content = `
@@ -479,9 +479,9 @@ function renderStatus() {
         <button class="btn small" data-act="potion" data-k="hp" ${p.potions.hp > 0 ? '' : 'disabled'}>生命の薬 ×${p.potions.hp}（HP30%）</button>
         <button class="btn small" data-act="potion" data-k="mp" ${p.potions.mp > 0 ? '' : 'disabled'}>魔力の薬 ×${p.potions.mp}（MP50%）</button>
       </div></div>
-    <div class="panel"><h2>強化石</h2><p class="sub">ダンジョンで8%の確率でドロップします。鍛冶屋での強化に使います。</p>
+    <div class="panel"><h2>強化石</h2><p class="sub">鍛冶屋での強化に使います。</p>
       <div class="row" style="flex-wrap:wrap;gap:8px">${STONES.map(st => `<span style="background:${st.color}22;border:1px solid ${st.color};border-radius:6px;padding:4px 10px;font-size:13px"><span style="color:${st.color}">●</span> ${st.name} <b>×${p.stones[st.id] || 0}</b></span>`).join('')}</div>
-      <p class="sub" style="margin:8px 0 0">初級：ダンジョンA　中級：ダンジョンB　上級：ダンジョンC</p></div>
+      <p class="sub" style="margin:8px 0 0">初級：A　中級：B　上級：C　時の欠片：D〜Fのボス・強敵</p></div>
     <div class="panel"><h2>外見変更</h2>
       <p class="sub" style="margin:0 0 12px">主人公の外見を選択できます。</p>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
