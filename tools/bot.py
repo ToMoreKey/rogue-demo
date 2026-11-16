@@ -48,7 +48,15 @@ BOT = r"""
        }
      }
    }
-   if(R.smithReforge && p.weapon && !p.weapon.prop && p.gold>=R.reforgeCost(p.weapon)*2) R.smithReforge(p.weapon.id);
+   // 特性厳選（特性なしなら再鍛造、狂気を引いたら振り直す。なお振り直せない狂気はバッグの別武器へ退避）
+   if(R.smithReforge && p.weapon){
+     if(!p.weapon.prop && p.gold>=R.reforgeCost(p.weapon)*2) R.smithReforge(p.weapon.id);
+     for(let k=0;k<15 && p.weapon.prop==='madness' && p.gold>=R.reforgeCost(p.weapon);k++) R.smithReforge(p.weapon.id);
+     if(p.weapon.prop==='madness'){
+       const alt=p.bag.filter(x=>x.slot==='weapon'&&x.prop!=='madness').sort((a,b)=>R.gearPower(b)-R.gearPower(a))[0];
+       if(alt) R.ACTS.equip({id:alt.id});
+     }
+   }
    if(R.buyShopItem){
      while(p.potions.hp<8 && p.gold>=180) R.buyShopItem('hp');
      while(p.potions.mp<8 && p.gold>=220) R.buyShopItem('mp');

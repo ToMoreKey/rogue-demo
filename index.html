@@ -411,7 +411,7 @@ const MAX_BAG_CAP = 120;
 const TICK_MS = 650;
 
 const LV_CAP = 99;
-const TUNE = { floorSpan: 0.8, atkExp: 0.92, hpScale: 1, atkScale: 1, defScale: 1, bossHp: 2.2, bossAtk: 1.25, bossDef: 1, expScale: 1, goldScale: 1, floorRegen: 0 };
+const TUNE = { floorSpan: 0.8, atkExp: 0.92, hpScale: 1, atkScale: 1, defScale: 1, bossHp: 2.2, bossAtk: 1.25, bossDef: 1, expScale: 1, goldScale: 0.12, floorRegen: 0 };
 const RARITY = [
   { id: 'common', name: 'コモン',     mult: 1.0, sell: 10 },
   { id: 'rare',   name: 'レア',       mult: 1.4, sell: 30 },
@@ -594,16 +594,16 @@ const SKILL_TREES = [
 
 
 const DIFFS = [
-  { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2,  expMult: 2.8, reqDiff: null },
-  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4,  expMult: 4.8, reqDiff: null },
-  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 1100, clearSp: 8,  expMult: 5.8, reqDiff: null },
-  { id: 'super',   name: '超級', tag: '深層',   floors: 50, stars: [[4, 55], [5, 35], [6, 10]], rar: [28, 39, 23, 10],   clearGold: 3200, clearSp: 12, expMult: 5.2, reqDiff: 'high',  bossPrefix: '古の',         bossFilter: 'hue-rotate(38deg) saturate(1.35) contrast(1.08)' },
-  { id: 'extreme', name: '極級', tag: '極致',   floors: 80, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 8000, clearSp: 16, expMult: 6.2, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
+  { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2,  expMult: 1.70, reqDiff: null },
+  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4,  expMult: 1.95, reqDiff: null },
+  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 650,  clearSp: 8,  expMult: 1.40, reqDiff: null },
+  { id: 'super',   name: '超級', tag: '深層',   floors: 50, stars: [[4, 55], [5, 35], [6, 10]], rar: [28, 39, 23, 10],   clearGold: 1000, clearSp: 12, expMult: 0.40, reqDiff: 'high',  bossPrefix: '古の',         bossFilter: 'hue-rotate(38deg) saturate(1.35) contrast(1.08)' },
+  { id: 'extreme', name: '極級', tag: '極致',   floors: 80, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 1800, clearSp: 16, expMult: 1.15, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
 ];
 
 const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8 };
 const DUNGEONS = [
-  { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.35, 3.05, 5.8, 9.8], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18, 30, 42], maxStar: 4, unlock: null,
+  { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.35, 2.9, 5.2, 8.8], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18, 30, 42], maxStar: 4, unlock: null,
     mobs: [
       { id: 'a_slime',  name: 'モスライム',   shape: 'slime', hp: 22, atk: 7,  def: 1, exp: 6, gold: 5 },
       { id: 'a_bat',    name: 'ホラーバット', shape: 'bat',   hp: 16, atk: 9,  def: 0, exp: 7, gold: 6 },
@@ -611,7 +611,7 @@ const DUNGEONS = [
       { id: 'a_zombie', name: '這い出る亡者', shape: 'skull', hp: 26, atk: 8,  def: 2, exp: 8, gold: 7 },
       { id: 'a_ghost',  name: '迷える亡霊',   shape: 'bat',   hp: 18, atk: 10, def: 1, exp: 8, gold: 7 }],
     boss: { id: 'a_boss', name: '墓守の王', shape: 'boss', hp: 90, atk: 11, def: 5, exp: 60, gold: 60 } },
-  { id: 'B', name: '灼熱の火山窟', blurb: '溶岩の熱が壁を赤く照らす坑道。', pow: [0.8, 1.7, 3.3, 5.9, 9.8], a1: '#2a1713', a2: '#190e0b', rec: [6, 14, 25, 37, 48], maxStar: 4, unlock: null,
+  { id: 'B', name: '灼熱の火山窟', blurb: '溶岩の熱が壁を赤く照らす坑道。', pow: [0.75, 1.65, 3.1, 5.3, 8.5], a1: '#2a1713', a2: '#190e0b', rec: [6, 14, 25, 37, 48], maxStar: 4, unlock: null,
     mobs: [
       { id: 'b_imp',     name: 'ファイアインプ',   shape: 'slime', hp: 26, atk: 8,  def: 2, exp: 7,  gold: 6 },
       { id: 'b_sala',    name: 'サラマンダー',     shape: 'bat',   hp: 19, atk: 11, def: 1, exp: 8,  gold: 7 },
@@ -619,7 +619,7 @@ const DUNGEONS = [
       { id: 'b_golem',   name: 'ラヴァゴーレム',   shape: 'skull', hp: 31, atk: 10, def: 3, exp: 9,  gold: 8 },
       { id: 'b_spirit',  name: 'フレイムスピリット', shape: 'bat', hp: 22, atk: 12, def: 1, exp: 9,  gold: 8 }],
     boss: { id: 'b_boss', name: '炎竜ヴォルカ', shape: 'boss', hp: 105, atk: 13, def: 6, exp: 70, gold: 70 } },
-  { id: 'C', name: '凍てつく氷晶窟', blurb: '音まで凍る、青白い結晶の回廊。', pow: [1.0, 2.1, 3.8, 7.2, 11.4], a1: '#14243a', a2: '#0c1624', rec: [10, 20, 33, 45, 56], maxStar: 5, unlock: null,
+  { id: 'C', name: '凍てつく氷晶窟', blurb: '音まで凍る、青白い結晶の回廊。', pow: [0.85, 1.95, 3.5, 6.4, 9.8], a1: '#14243a', a2: '#0c1624', rec: [10, 20, 33, 45, 56], maxStar: 5, unlock: null,
     mobs: [
       { id: 'c_snowman', name: 'ユキダルマ',       shape: 'slime', hp: 36, atk: 11, def: 3, exp: 10, gold: 9 },
       { id: 'c_wolf',    name: 'フロストウルフ',   shape: 'bat',   hp: 26, atk: 16, def: 2, exp: 11, gold: 10 },
@@ -850,7 +850,7 @@ const maxHp = p => Math.round((60 + p.lv * 12) * (p.passiveSkills ? passiveBonus
 const maxMp = p => Math.round((16 + p.lv * 4) * (p.passiveSkills ? passiveBonus(p).mpMult : 1));
 const baseAtk = p => 8 + p.lv * 2;
 const baseDef = p => 2 + p.lv;
-const expNeed = lv => Math.round(14 * Math.pow(lv, 1.45) * (lv >= 30 ? 1 + (lv - 29) * 0.04 : 1));
+const expNeed = lv => Math.round(17.5 * Math.pow(lv, 1.55) * (lv >= 30 ? 1 + (lv - 29) * 0.015 : 1));
 
 const itemPower = it => Math.max(1, Math.round((it.slot === 'weapon' ? WEAPON_BASE : ARMOR_BASE)[it.star] * RARITY[it.rarity].mult * it.roll));
 const weaponAtk = it => it ? Math.round(itemPower(it) * ((it.prop && PROPS[it.prop].atkMult) || 1)) : 0;
@@ -861,7 +861,7 @@ const itemName = (it, skinId) => {
     : (it.star === 5 && ARMOR_STAR5_NAMES[sk]) || ARMOR_NAMES[it.star];
   return PREFIX[it.rarity] + base;
 };
-const sellValue = it => Math.max(1, Math.round(RARITY[it.rarity].sell * (1 + (it.star - 1) * 0.5) * (0.6 + 0.4 * it.roll)));
+const sellValue = it => Math.max(1, Math.round(RARITY[it.rarity].sell * 0.36 * (1 + (it.star - 1) * 0.5) * (0.6 + 0.4 * it.roll)));
 // 戦力値（1か所で定義）: 武器は実効攻撃力、防具は実効防御力。equipBest() の判定と一致させる。
 const gearPower = it => !it ? 0 : (it.slot === 'weapon' ? weaponAtk(it) : itemPower(it));
 const gearScore = gearPower;
