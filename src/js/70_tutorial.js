@@ -3,7 +3,9 @@ const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
 function tutInit() {
   // 初回のみ（localStorageに完了フラグがなければ）
-  try { if (localStorage.getItem(TUT_SAVE_KEY)) return; } catch (e) {}
+  try { if (localStorage.getItem(TUT_SAVE_KEY)) { tutHide(); return; } } catch (e) {}
+  // 既存セーブで進行済みならチュートリアル済み扱いにして非表示にする
+  if (G.p && (G.p.lv > 1 || (G.p.stats && G.p.stats.runs > 0))) { tutDone(); return; }
   G.tutorial = { step: 0, done: false };
   // DOM描画完了後に即表示（遅延を最小化）
   requestAnimationFrame(() => requestAnimationFrame(() => tutStep(0)));
@@ -162,6 +164,8 @@ function renderTutorial() {
 
   // ナビバー要素（fixed配置）はスクロール不要 → 直接描画
   const rect = el.getBoundingClientRect();
+  // 非表示タブ内などでサイズ0のときは左上(0,0)に穴を開けない
+  if (rect.width === 0 && rect.height === 0) { tutHide(); return; }
   const isFixed = getComputedStyle(el.closest('[style*="position:fixed"]') || el).position === 'fixed'
     || el.closest('nav, #nav-bar') !== null;
   if (!isFixed) {
