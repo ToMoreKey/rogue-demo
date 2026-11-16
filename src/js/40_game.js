@@ -195,13 +195,15 @@ function useSkillEffect(id) {
     const h = Math.max(1, Math.round(maxHp(p) * s.pct)); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
+    if (s.regen) { run.regenTurns = s.regen; run.regenPct = s.pct; }
     return true;
   }
   if (s.type === 'buff') {
     if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
     else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 魔法防御力が上がった。', 'l-good'); }
     else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
-    else if (id === 'barrier') { run.barrier = s.barrier; addLog(`バリア！ ダメージを${s.barrier}回無効化する。`, 'l-good'); }
+    else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
+    else if (s.barrier) { run.barrier = s.barrier; addLog(`${s.name}！ ダメージを${s.barrier}回無効化する。`, 'l-good'); }
     else addLog(`${s.name}を発動した！`, 'l-good');
     return true;
   }
@@ -227,7 +229,8 @@ function playerAct() {
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p);
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1);
+  if (run.warGod > 0) run.warGod--;
   let dealt = 0, crits = 0, hits = 0;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
@@ -247,6 +250,12 @@ function playerAct() {
 
 function enemyAct() {
   const p = G.p, run = G.run, en = run.enemy;
+  if (run.barrier > 0) {
+    run.barrier--;
+    addLog(`バリアが${en.name}の攻撃を防いだ！（残り${run.barrier}回）`, 'l-good');
+    popDamage('player', 'BLOCK', 'heal');
+    return;
+  }
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1);
   const dmg = calcDmg(en.atk, def);
   p.hp = Math.max(0, p.hp - dmg);

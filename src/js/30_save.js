@@ -77,7 +77,8 @@ function load() {
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
       for (const k of ['sword','magic','life','warrior','mage','cleric','hero']) {
-        p.skillPts[k] = num(s.skillPts[k], 0, 0, 20);
+        const tree = SKILL_TREES.find(t => t.id === k);
+        p.skillPts[k] = num(s.skillPts[k], 0, 0, tree ? tree.maxSp : 30);
       }
     }
     p.passiveSkills = {};

@@ -484,9 +484,19 @@ const SK = {
   // 進化枠（詠唱）スキル
   resurrection: { id: 'resurrection', name: 'リザレクション', mp: 40, ct: 8, type: 'heal', pct: 1.0, desc: '全回復＋次の致死ダメージを1で耐える', revive: true },
   // 進化枠（英雄）スキル
-  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, desc: '全ステータス2倍で3回攻撃（英雄のみ）' }
+  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
+  // 拡張（SP23〜30）スキル
+  flameSlash:     { id: 'flameSlash',     name: '烈火斬',               mp: 20, ct: 4, type: 'atk',  hits: 2, mult: 1.6, desc: '炎の斬撃を2回放つ（各1.6倍）' },
+  warGod:         { id: 'warGod',         name: '鬼神の構え',           mp: 22, ct: 6, type: 'buff', turns: 4,            desc: '4ターン攻撃力1.8倍（防御は下がらない）' },
+  skySlash:       { id: 'skySlash',       name: '天翔斬',               mp: 40, ct: 7, type: 'atk',  hits: 1, mult: 7.0, desc: '7倍の秘剣の一撃' },
+  blaze:          { id: 'blaze',          name: 'ブレイズ',             mp: 18, ct: 3, type: 'atk',  hits: 1, mult: 2.6, desc: '業火で2.6倍のダメージ' },
+  lightningStorm: { id: 'lightningStorm', name: 'ライトニングストーム', mp: 34, ct: 5, type: 'atk',  hits: 4, mult: 1.0, desc: '雷撃を4回放つ（各1.0倍）' },
+  ultima:         { id: 'ultima',         name: 'アルテマ',             mp: 55, ct: 8, type: 'atk',  hits: 1, mult: 9.0, desc: '9倍の究極魔法攻撃' },
+  highRegen:      { id: 'highRegen',      name: 'ハイリジェネ',         mp: 14, ct: 4, type: 'heal', pct: 0.25,           desc: '毎ターン最大HPの25%回復（3ターン）', regen: 3 },
+  holyBarrier:    { id: 'holyBarrier',    name: 'ホーリーバリア',       mp: 18, ct: 6, type: 'buff', turns: 5,            desc: 'ダメージを5回無効化するバリアを張る', barrier: 5 },
+  saintPrayer:    { id: 'saintPrayer',    name: '聖女の祈り',           mp: 45, ct: 8, type: 'heal', pct: 1.0,            desc: '最大HPを全回復する' }
 };
-const SK_ORDER = ['strike', 'heal', 'guard', 'multi', 'ult', 'fireball', 'magicshield', 'thunder', 'meteor', 'regen', 'barrier', 'fullheal', 'berserk', 'blizzard', 'resurrection', 'heroic'];
+const SK_ORDER = ['strike', 'heal', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'blizzard', 'resurrection', 'heroic'];
 
 // ============ DQ8スタイル スキルツリー定義 ============
 const SKILL_TREES = [
@@ -494,48 +504,57 @@ const SKILL_TREES = [
     id: 'sword',
     name: '剣枠',
     icon: '⚔️',
-    maxSp: 20,
+    maxSp: 30,
     color: '#e88b5a',
     desc: '剣技を極める。攻撃特化スキルを習得。',
     unlockWhen: () => true,  // 常に解放
     milestones: [
-      { sp: 3,  id: 'strike',  name: '強撃',     desc: '2倍のダメージを与える' },
-      { sp: 6,  id: 'guard',   name: '鉄壁',     desc: '3回の被攻撃のあいだ防御力2倍' },
-      { sp: 10, id: 'multi',   name: '連続斬り', desc: '0.8倍の斬撃を3回放つ' },
-      { sp: 15, id: null,      name: '攻撃力+15%',  desc: 'パッシブ：攻撃力が15%上昇する', passive: 'sword15' },
-      { sp: 20, id: 'ult',     name: '必殺剣',   desc: '4倍の渾身の一撃' }
+      { sp: 3,  id: 'strike',     name: '強撃',       desc: '2倍のダメージを与える' },
+      { sp: 6,  id: 'guard',      name: '鉄壁',       desc: '3回の被攻撃のあいだ防御力2倍' },
+      { sp: 10, id: 'multi',      name: '連続斬り',   desc: '0.8倍の斬撃を3回放つ' },
+      { sp: 15, id: null,         name: '攻撃力+15%', desc: 'パッシブ：攻撃力が15%上昇する', passive: 'sword15' },
+      { sp: 20, id: 'ult',        name: '必殺剣',     desc: '4倍の渾身の一撃' },
+      { sp: 23, id: 'flameSlash', name: '烈火斬',     desc: '炎の斬撃を2回放つ（各1.6倍）' },
+      { sp: 26, id: 'warGod',     name: '鬼神の構え', desc: '4ターン攻撃力1.8倍（防御は下がらない）' },
+      { sp: 30, id: 'skySlash',   name: '天翔斬',     desc: '7倍の秘剣の一撃' }
     ]
   },
   {
     id: 'magic',
     name: '魔法枠',
     icon: '✨',
-    maxSp: 20,
+    maxSp: 30,
     color: '#7a9ff5',
     desc: '魔法を極める。高威力の魔法スキルを習得。',
     unlockWhen: () => true,
     milestones: [
-      { sp: 3,  id: 'fireball',    name: 'ファイアボール',    desc: '炎の魔力で1.8倍のダメージ' },
-      { sp: 6,  id: 'magicshield', name: 'マジックシールド', desc: '5ターン魔法防御力1.5倍' },
-      { sp: 10, id: 'thunder',     name: 'サンダー',          desc: '雷撃を2回放つ（各1.2倍）' },
-      { sp: 15, id: null,          name: 'MP最大値+20%',    desc: 'パッシブ：最大MPが20%上昇する', passive: 'magic15' },
-      { sp: 20, id: 'meteor',      name: 'メテオ',            desc: '5倍の超高威力魔法攻撃' }
+      { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で1.8倍のダメージ' },
+      { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン魔法防御力1.5倍' },
+      { sp: 10, id: 'thunder',        name: 'サンダー',             desc: '雷撃を2回放つ（各1.2倍）' },
+      { sp: 15, id: null,             name: 'MP最大値+20%',       desc: 'パッシブ：最大MPが20%上昇する', passive: 'magic15' },
+      { sp: 20, id: 'meteor',         name: 'メテオ',               desc: '5倍の超高威力魔法攻撃' },
+      { sp: 23, id: 'blaze',          name: 'ブレイズ',             desc: '業火で2.6倍のダメージ' },
+      { sp: 26, id: 'lightningStorm', name: 'ライトニングストーム', desc: '雷撃を4回放つ（各1.0倍）' },
+      { sp: 30, id: 'ultima',         name: 'アルテマ',             desc: '9倍の究極魔法攻撃' }
     ]
   },
   {
     id: 'life',
     name: '生命枠',
     icon: '💚',
-    maxSp: 20,
+    maxSp: 30,
     color: '#58c98a',
     desc: '生命力を極める。回復・防御スキルを習得。',
     unlockWhen: () => true,
     milestones: [
-      { sp: 3,  id: 'heal',     name: 'ヒール',    desc: '最大HPの35%を回復する' },
-      { sp: 6,  id: 'regen',    name: 'リジェネ',  desc: '3ターン間毎ターン最大HPの15%回復' },
-      { sp: 10, id: 'barrier',  name: 'バリア',    desc: 'ダメージを3回無効化するバリアを張る' },
-      { sp: 15, id: null,       name: 'HP最大値+20%', desc: 'パッシブ：最大HPが20%上昇する', passive: 'life15' },
-      { sp: 20, id: 'fullheal', name: 'フルヒール', desc: '最大HPの70%を回復する' }
+      { sp: 3,  id: 'heal',        name: 'ヒール',         desc: '最大HPの35%を回復する' },
+      { sp: 6,  id: 'regen',       name: 'リジェネ',       desc: '3ターン間毎ターン最大HPの15%回復' },
+      { sp: 10, id: 'barrier',     name: 'バリア',         desc: 'ダメージを3回無効化するバリアを張る' },
+      { sp: 15, id: null,          name: 'HP最大値+20%',   desc: 'パッシブ：最大HPが20%上昇する', passive: 'life15' },
+      { sp: 20, id: 'fullheal',    name: 'フルヒール',     desc: '最大HPの70%を回復する' },
+      { sp: 23, id: 'highRegen',   name: 'ハイリジェネ',   desc: '3ターン間毎ターン最大HPの25%回復' },
+      { sp: 26, id: 'holyBarrier', name: 'ホーリーバリア', desc: 'ダメージを5回無効化するバリアを張る' },
+      { sp: 30, id: 'saintPrayer', name: '聖女の祈り',     desc: '最大HPを全回復する' }
     ]
   },
   // 進化枠（解放条件あり）
@@ -1010,7 +1029,8 @@ function load() {
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
       for (const k of ['sword','magic','life','warrior','mage','cleric','hero']) {
-        p.skillPts[k] = num(s.skillPts[k], 0, 0, 20);
+        const tree = SKILL_TREES.find(t => t.id === k);
+        p.skillPts[k] = num(s.skillPts[k], 0, 0, tree ? tree.maxSp : 30);
       }
     }
     p.passiveSkills = {};
@@ -1242,13 +1262,15 @@ function useSkillEffect(id) {
     const h = Math.max(1, Math.round(maxHp(p) * s.pct)); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
+    if (s.regen) { run.regenTurns = s.regen; run.regenPct = s.pct; }
     return true;
   }
   if (s.type === 'buff') {
     if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
     else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 魔法防御力が上がった。', 'l-good'); }
     else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
-    else if (id === 'barrier') { run.barrier = s.barrier; addLog(`バリア！ ダメージを${s.barrier}回無効化する。`, 'l-good'); }
+    else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
+    else if (s.barrier) { run.barrier = s.barrier; addLog(`${s.name}！ ダメージを${s.barrier}回無効化する。`, 'l-good'); }
     else addLog(`${s.name}を発動した！`, 'l-good');
     return true;
   }
@@ -1274,7 +1296,8 @@ function playerAct() {
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p);
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1);
+  if (run.warGod > 0) run.warGod--;
   let dealt = 0, crits = 0, hits = 0;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
@@ -1294,6 +1317,12 @@ function playerAct() {
 
 function enemyAct() {
   const p = G.p, run = G.run, en = run.enemy;
+  if (run.barrier > 0) {
+    run.barrier--;
+    addLog(`バリアが${en.name}の攻撃を防いだ！（残り${run.barrier}回）`, 'l-good');
+    popDamage('player', 'BLOCK', 'heal');
+    return;
+  }
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1);
   const dmg = calcDmg(en.atk, def);
   p.hp = Math.max(0, p.hp - dmg);
