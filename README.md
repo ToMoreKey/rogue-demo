@@ -13,6 +13,8 @@
 
 ## ドキュメント
 - `docs/spec_volume_expansion.md` … ボリューム拡張・エンドコンテンツ仕様書（開発の正本。他のAI・メンバーもこれを参照）
+- `docs/gemini_prompt_P0.md` … P0（基盤整備）をGeminiに依頼するための指示書
+- `tools/bot.py` … 自動プレイBOT（回帰テスト）。`python3 tools/bot.py`
 - 方針: 設計や仕様を作成したら `docs/` にMarkdownで保存してコミットする
 
 ## 更新するとき
