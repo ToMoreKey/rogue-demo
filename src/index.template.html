@@ -1,0 +1,112 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>rogue_test</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0e151b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+{{CSS}}
+</style>
+
+<div id="app" class="wrap">
+  <header class="hud">
+    <div class="hud-top">
+      <div class="brand"><span class="moon" aria-hidden="true"></span><h1>rogue_test</h1></div>
+      <div class="purse">
+        <span class="chip">G <b id="h-gold">0</b></span>
+        <span class="chip">預金 <b id="h-bank">0</b></span>
+        <span class="chip">SP <b id="h-sp">0</b></span>
+      </div>
+    </div>
+    <div class="gauges">
+      <div class="g wide"><div class="g-label"><span>LV <span id="h-lv">1</span></span><span id="h-exp">0/0</span></div><div class="gauge exp"><i id="h-expbar"></i></div></div>
+      <div class="g"><div class="g-label"><span>HP</span><span id="h-hp">0/0</span></div><div class="gauge hp" id="h-hpg"><i id="h-hpbar"></i></div></div>
+      <div class="g"><div class="g-label"><span>MP</span><span id="h-mp">0/0</span></div><div class="gauge mp"><i id="h-mpbar"></i></div></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 街 -->
+    <section id="view-town" class="stack"></section>
+
+    <!-- ダンジョン -->
+    <section id="view-dungeon" hidden>
+      <div id="dg-select" class="stack"><div id="dg-list" class="stack"></div></div>
+      <div id="dg-battle" hidden>
+        <div class="battle-head">
+          <div><div class="b-title" id="b-title"></div><div class="pips" id="b-pips"></div></div>
+          <div class="speed" role="group" aria-label="戦闘速度">
+            <button class="btn" data-act="speed" data-v="1">×1</button>
+            <button class="btn" data-act="speed" data-v="2">×2</button>
+            <button class="btn" data-act="speed" data-v="4">×4</button>
+          </div>
+        </div>
+        <div class="arena" id="arena">
+          <div class="arena-row">
+            <div class="fighter" id="f-player">
+              <div class="spr" id="spr-player"></div>
+              <div class="fname">勇者 Lv<span id="b-lv">1</span></div>
+              <div class="gauge hp" id="b-pg"><i id="b-php"></i></div>
+              <div class="fnum" id="b-phpn"></div>
+            </div>
+            <div class="fighter" id="f-enemy">
+              <div class="spr" id="spr-enemy"></div>
+              <div class="fname" id="b-ename">-</div>
+              <div class="gauge hp" id="b-eg"><i id="b-ehp"></i></div>
+              <div class="fnum" id="b-ehpn"></div>
+            </div>
+          </div>
+          <div class="b-status" id="b-status"></div>
+        </div>
+        <div class="controls">
+          <div class="skill-row" id="skill-row"></div>
+          <div class="row">
+            <button class="btn small" id="btn-autoskill" data-act="autoSkill">スキル自動</button>
+            <button class="btn small" id="btn-pot-hp" data-act="potion" data-k="hp">生命の薬</button>
+            <button class="btn small" id="btn-pot-mp" data-act="potion" data-k="mp">魔力の薬</button>
+            <button class="btn small danger" data-act="retreat">撤退</button>
+          </div>
+        </div>
+        <div class="log" id="log" role="log"></div>
+      </div>
+    </section>
+
+    <!-- ステータス -->
+    <section id="view-status" class="stack" hidden></section>
+    <section id="view-help" class="stack" hidden></section>
+  </main>
+
+  <nav class="nav" aria-label="メインメニュー"><div class="nav-in">
+    <button data-act="nav" data-v="town" id="nav-town"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>街</button>
+    <button data-act="nav" data-v="dungeon" id="nav-dungeon"><svg viewBox="0 0 24 24"><path d="M5 19L19 5"/><path d="M14 4h6v6"/><path d="M5 19l-2 2"/><path d="M8 16l-3-3"/></svg>ダンジョン</button>
+    <button data-act="nav" data-v="status" id="nav-status"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>ステータス</button>
+    <button data-act="nav" data-v="help" id="nav-help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 17v.5"/><path d="M12 13.5c0-2 3-2 3-4a3 3 0 1 0-6 0"/></svg>ヘルプ</button>
+  </div></nav>
+</div>
+
+<div id="modal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="m-title"><div class="sheet" id="m-sheet"></div></div>
+<div id="toast" class="toast" role="status" hidden></div>
+<div id="tut-overlay" aria-hidden="true">
+  <div class="tut-hole" id="tut-hole"></div>
+  <div class="tut-bubble" id="tut-bubble"></div>
+  <button class="tut-skip" id="tut-skip">スキップ</button>
+</div>
+
+<script>
+{{JS}}
+</script>
+
+<script>
+// PWA: オフライン対応（http/https のときだけ登録）
+if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) {
+  window.addEventListener('load', () => { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} });
+}
+</script>
+</body></html>

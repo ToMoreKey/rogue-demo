@@ -1,0 +1,34 @@
+
+const DIFFS = [
+  { id: 'novice', name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],           rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2 },
+  { id: 'mid',    name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]],  rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4 },
+  { id: 'high',   name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]],  rar: [40, 38, 17, 5],    clearGold: 1100, clearSp: 8 }
+];
+
+const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8 };
+const DUNGEONS = [
+  { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.5, 3.05], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18],
+    mobs: [
+      { id: 'a_slime',  name: 'モスライム',   shape: 'slime', hp: 22, atk: 7,  def: 1, exp: 6, gold: 5 },
+      { id: 'a_bat',    name: 'ホラーバット', shape: 'bat',   hp: 16, atk: 9,  def: 0, exp: 7, gold: 6 },
+      { id: 'a_skel',   name: 'スケルトン',   shape: 'skull', hp: 30, atk: 8,  def: 3, exp: 9, gold: 8 },
+      { id: 'a_zombie', name: '這い出る亡者', shape: 'skull', hp: 26, atk: 8,  def: 2, exp: 8, gold: 7 },
+      { id: 'a_ghost',  name: '迷える亡霊',   shape: 'bat',   hp: 18, atk: 10, def: 1, exp: 8, gold: 7 }],
+    boss: { id: 'a_boss', name: '墓守の王', shape: 'boss', hp: 90, atk: 11, def: 5, exp: 60, gold: 60 } },
+  { id: 'B', name: '灼熱の火山窟', blurb: '溶岩の熱が壁を赤く照らす坑道。', pow: [0.8, 1.7, 3.3], a1: '#2a1713', a2: '#190e0b', rec: [6, 14, 25],
+    mobs: [
+      { id: 'b_imp',     name: 'ファイアインプ',   shape: 'slime', hp: 26, atk: 8,  def: 2, exp: 7,  gold: 6 },
+      { id: 'b_sala',    name: 'サラマンダー',     shape: 'bat',   hp: 19, atk: 11, def: 1, exp: 8,  gold: 7 },
+      { id: 'b_warrior', name: '炎の戦士',         shape: 'skull', hp: 36, atk: 10, def: 4, exp: 10, gold: 9 },
+      { id: 'b_golem',   name: 'ラヴァゴーレム',   shape: 'skull', hp: 31, atk: 10, def: 3, exp: 9,  gold: 8 },
+      { id: 'b_spirit',  name: 'フレイムスピリット', shape: 'bat', hp: 22, atk: 12, def: 1, exp: 9,  gold: 8 }],
+    boss: { id: 'b_boss', name: '炎竜ヴォルカ', shape: 'boss', hp: 105, atk: 13, def: 6, exp: 70, gold: 70 } },
+  { id: 'C', name: '凍てつく氷晶窟', blurb: '音まで凍る、青白い結晶の回廊。', pow: [1.0, 2.1, 3.8], a1: '#14243a', a2: '#0c1624', rec: [10, 20, 33],
+    mobs: [
+      { id: 'c_snowman', name: 'ユキダルマ',       shape: 'slime', hp: 36, atk: 11, def: 3, exp: 10, gold: 9 },
+      { id: 'c_wolf',    name: 'フロストウルフ',   shape: 'bat',   hp: 26, atk: 16, def: 2, exp: 11, gold: 10 },
+      { id: 'c_knight',  name: '氷結騎士',         shape: 'skull', hp: 52, atk: 15, def: 7, exp: 14, gold: 13 },
+      { id: 'c_spider',  name: 'クリスタルスパイダー', shape: 'skull', hp: 44, atk: 14, def: 5, exp: 12, gold: 11 },
+      { id: 'c_witch',   name: '吹雪の魔女',       shape: 'bat',   hp: 30, atk: 17, def: 2, exp: 12, gold: 11 }],
+    boss: { id: 'c_boss', name: '氷帝グラシア', shape: 'boss', hp: 150, atk: 20, def: 10, exp: 105, gold: 105 } }
+];
