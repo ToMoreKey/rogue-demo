@@ -15,6 +15,7 @@
   - `assets/` … base64画像（敵・装備アイコン・キャラ）。中身は書き換えない
   - `js/` … ロジック（`30_save.js` がセーブとバージョン移行）
 - `tools/build.py` … `src/` から `index.html` を生成
+- `docs/gemini_prompt_P1.md` … P1（A〜C拡張）をGeminiに依頼するための指示書
 - `tools/bot.py` … 自動プレイBOT（回帰テスト）
 - `tools/test_save_migration.py` / `tools/fixtures/save_v1.json` … セーブ移行テストと、旧版で作った実セーブ
 - `manifest.json` / `sw.js` … PWA設定・オフライン対応
