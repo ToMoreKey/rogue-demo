@@ -1,0 +1,128 @@
+{
+ "v": 1,
+ "p": {
+  "lv": 6,
+  "exp": 75,
+  "hp": 132,
+  "mp": 40,
+  "sp": 19,
+  "gold": 2658,
+  "bank": 500,
+  "weapon": {
+   "id": 21,
+   "slot": "weapon",
+   "star": 1,
+   "rarity": 3,
+   "roll": 0.78,
+   "prop": null,
+   "locked": false
+  },
+  "armor": {
+   "id": 17,
+   "slot": "armor",
+   "star": 2,
+   "rarity": 2,
+   "roll": 0.97,
+   "prop": null,
+   "locked": false
+  },
+  "bag": [
+   {
+    "id": 2,
+    "slot": "armor",
+    "star": 1,
+    "rarity": 1,
+    "roll": 0.8,
+    "prop": null,
+    "locked": false
+   },
+   {
+    "id": 1,
+    "slot": "weapon",
+    "star": 1,
+    "rarity": 0,
+    "roll": 0.8,
+    "prop": null,
+    "locked": false
+   },
+   {
+    "id": 4,
+    "slot": "armor",
+    "star": 2,
+    "rarity": 1,
+    "roll": 0.69,
+    "prop": null,
+    "locked": false
+   },
+   {
+    "id": 7,
+    "slot": "weapon",
+    "star": 2,
+    "rarity": 0,
+    "roll": 0.68,
+    "prop": null,
+    "locked": false
+   },
+   {
+    "id": 18,
+    "slot": "weapon",
+    "star": 2,
+    "rarity": 1,
+    "roll": 0.88,
+    "prop": null,
+    "locked": false
+   }
+  ],
+  "skills": {
+   "strike": true
+  },
+  "skillPts": {
+   "sword": 5,
+   "magic": 0,
+   "life": 0,
+   "warrior": 0,
+   "mage": 0,
+   "cleric": 0,
+   "hero": 0
+  },
+  "passiveSkills": {},
+  "equippedSkills": [
+   null,
+   null,
+   null
+  ],
+  "potions": {
+   "hp": 5,
+   "mp": 3
+  },
+  "stones": {
+   "stone_nov": 3,
+   "stone_mid": 1,
+   "stone_hi": 0
+  },
+  "stats": {
+   "runs": 14,
+   "clears": 8,
+   "kills": 56
+  },
+  "nextId": 39,
+  "skin": "silia"
+ },
+ "opts": {
+  "speed": 4,
+  "autoSkill": true,
+  "autoEquip": true
+ },
+ "sel": {
+  "A": "novice",
+  "B": "mid",
+  "C": "novice"
+ },
+ "shopSel": [
+  true,
+  true,
+  true,
+  false
+ ],
+ "autoSellRarity": 1
+}

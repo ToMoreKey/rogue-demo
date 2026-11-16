@@ -42,7 +42,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  migrateSave, SAVE_VERSION, SAVE_KEY, migrations, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, G, ACTS, tick, startRun, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, passiveBonus, CHAR_SKINS,
   smithCost, smithUpgrade, STONES, STONE_REQ,

@@ -852,8 +852,28 @@ function newPlayer() {
 }
 
 /* ================= save / load ================= */
+// セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
+const SAVE_VERSION = 2;
+// migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {3: fn, ...} を足すだけで連鎖する。
+const migrations = {
+  // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
+  1: d => Object.assign({}, d, { v: 2 })
+};
+// 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
+function migrateSave(raw) {
+  if (!raw || typeof raw !== 'object' || !raw.p) return null;
+  let d = raw, v = Number(d.v) || 1;   // v が無いものは v1 扱い
+  while (v < SAVE_VERSION) {
+    const fn = migrations[v];
+    if (!fn) return null;
+    d = fn(d);
+    if (!d || Number(d.v) !== v + 1) return null;   // 変換関数が版を進めなかったら中断
+    v = d.v;
+  }
+  return d;   // v が最新、または未来の版ならそのまま（読み込み側の検証に任せる）
+}
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity })); } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity })); } catch (e) { /* storage unavailable */ }
 }
 function cleanItem(it) {
   if (!it || typeof it !== 'object') return null;
@@ -865,7 +885,10 @@ function cleanItem(it) {
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY); if (!raw) return false;
-    const d = JSON.parse(raw); if (!d || !d.p) return false;
+    const d0 = JSON.parse(raw), d = migrateSave(d0); if (!d || !d.p) return false;
+    const migrated = d !== d0;
+    // 旧セーブは消さない: 移行前の生データを一度だけ別キーへ退避する（例: rogue_test_save_v1_bak_v1）
+    if (migrated) { try { const bk = SAVE_KEY + '_bak_v' + (Number(d0.v) || 1); if (!localStorage.getItem(bk)) localStorage.setItem(bk, raw); } catch (e) { /* storage unavailable */ } }
     const base = newPlayer(), s = d.p;
     const num = (v, def, lo = 0, hi = 1e12) => { v = Number(v); return isFinite(v) ? clamp(Math.floor(v), lo, hi) : def; };
     const p = base;
@@ -903,6 +926,7 @@ function load() {
     if (d.sel) for (const { id: k } of DUNGEONS) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
     if (Array.isArray(d.shopSel) && d.shopSel.length === 4) G.shopSel = d.shopSel.map(Boolean);
     if (typeof d.autoSellRarity === 'number' && d.autoSellRarity >= -1 && d.autoSellRarity <= 3) G.autoSellRarity = d.autoSellRarity;
+    if (migrated) save();   // 移行できたらすぐ新しい形式で書き戻す
     return true;
   } catch (e) { return false; }
 }
@@ -2416,7 +2440,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  migrateSave, SAVE_VERSION, SAVE_KEY, migrations, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, G, ACTS, tick, startRun, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, passiveBonus, CHAR_SKINS,
   smithCost, smithUpgrade, STONES, STONE_REQ,
