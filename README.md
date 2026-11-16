@@ -17,7 +17,9 @@
 - `tools/build.py` … `src/` から `index.html` を生成
 - `docs/gemini_prompt_P1.md` … P1（A〜C拡張）をGeminiに依頼するための指示書
 - `tools/bot.py` … 自動プレイBOT（回帰テスト）
-- `tools/test_save_migration.py` / `tools/fixtures/save_v1.json` … セーブ移行テストと、旧版で作った実セーブ
+- `tools/test_save_migration.py` / `tools/fixtures/save_v1.json` / `save_v2.json` … セーブ移行テスト（v1/v2→v3）
+- `tools/test_p1.py` … P1機能テスト（ドロップ上限・難易度解放・戦力値・ビルド再現性）
+- `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `manifest.json` / `sw.js` … PWA設定・オフライン対応
 - `icon-*.png` ほか … アイコン
 
@@ -37,17 +39,21 @@ python3 tools/build.py      # src/ から index.html を生成
 
 ```
 python3 tools/build.py
-python3 tools/bot.py                    # 全ステージ制覇BOT（3シード）
-python3 tools/test_save_migration.py    # v1セーブ→v2移行
+python3 tools/bot.py                    # 全15セル制覇BOT・周回モード（3シード）
+python3 tools/bot.py --mode linear      # 線形モード（各セル1回ずつ、レベル差確認）
+python3 tools/test_save_migration.py    # v1/v2セーブ→v3移行
+python3 tools/test_p1.py                # ドロップ上限・解放ルール・戦力値・ビルド再現性
 ```
 
-- BOTの目安: 3回とも `done: true`、`runs` 91〜95、`lv` 31、`gold` 約14.4万〜14.8万G、ページエラー配列は空。乱数は固定なので、値を変えない作業では結果が**完全に同じ**になります（シード1〜3で 95/91/91戦、gold 147705/147543/143909）。
-- 移行テストは全項目 `PASS`、最後に `RESULT: OK` が出れば成功です。
+- BOTの目安（P1）:
+  - 線形モード: 15セルすべて踏破（`done: true`）、各セルのレベル差 `-3〜+2`、敗北5回以内。
+  - 周回モード: 3シードとも `done: true`、終了時 `lv` 58〜65前後、余りゴールド約3万G（7万G以下）、ページエラー配列は空。
+- 移行テスト・P1テストは全項目 `PASS`、最後に `RESULT: OK` が出れば成功です。
 
 ## セーブ形式
-- 保存先は `localStorage` の `rogue_test_save_v1`（キーは互換のため据え置き）。形式は `{ v: 2, p, opts, sel, shopSel, autoSellRarity }`。
-- 旧 `v: 1`（`v`なしも含む）は、読み込み時に自動で `v: 2` へ変換して書き戻します。変換前の生データは `rogue_test_save_v1_bak_v1` に1度だけ退避します。
-- 将来 `v: 3` 以降を足すときは、`src/js/30_save.js` の `migrations` に `{2: fn}` のように「vN→vN+1」の関数を足します（順に連鎖して適用されます）。
+- 保存先は `localStorage` の `rogue_test_save_v1`（キーは互換のため据え置き）。形式は `{ v: 3, p, opts, sel, shopSel, autoSellRarity }`（`p.cleared`, `p.bagCap` を保持）。
+- 旧 `v: 1` / `v: 2`（`v`なしも含む）は、読み込み時に自動で `v: 3` へ連鎖変換して書き戻します。変換前の生データは `rogue_test_save_v1_bak_v1` / `_bak_v2` に1度だけ退避します。
+- 将来 `v: 4` 以降を足すときは、`src/js/30_save.js` の `migrations` に `{3: fn}` のように「vN→vN+1」の関数を足します（順に連鎖して適用されます）。
 
 ## ドキュメント
 - `docs/spec_volume_expansion.md` … ボリューム拡張・エンドコンテンツ仕様書（開発の正本。他のAI・メンバーもこれを参照）
