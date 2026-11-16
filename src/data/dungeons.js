@@ -1,13 +1,15 @@
 
 const DIFFS = [
-  { id: 'novice', name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],           rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2 },
-  { id: 'mid',    name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]],  rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4 },
-  { id: 'high',   name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]],  rar: [40, 38, 17, 5],    clearGold: 1100, clearSp: 8 }
+  { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2,  reqDiff: null },
+  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4,  reqDiff: null },
+  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 1100, clearSp: 8,  reqDiff: null },
+  { id: 'super',   name: '超級', tag: '深層',   floors: 30, stars: [[4, 55], [5, 35], [6, 10]], rar: [28, 39, 23, 10],   clearGold: 3200, clearSp: 12, reqDiff: 'high',  bossPrefix: '古の',         bossFilter: 'hue-rotate(38deg) saturate(1.35) contrast(1.08)' },
+  { id: 'extreme', name: '極級', tag: '極致',   floors: 40, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 8000, clearSp: 16, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
 ];
 
 const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8 };
 const DUNGEONS = [
-  { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.5, 3.05], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18],
+  { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.5, 3.05, 5.8, 9.5], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18, 30, 42], maxStar: 4, unlock: null,
     mobs: [
       { id: 'a_slime',  name: 'モスライム',   shape: 'slime', hp: 22, atk: 7,  def: 1, exp: 6, gold: 5 },
       { id: 'a_bat',    name: 'ホラーバット', shape: 'bat',   hp: 16, atk: 9,  def: 0, exp: 7, gold: 6 },
@@ -15,7 +17,7 @@ const DUNGEONS = [
       { id: 'a_zombie', name: '這い出る亡者', shape: 'skull', hp: 26, atk: 8,  def: 2, exp: 8, gold: 7 },
       { id: 'a_ghost',  name: '迷える亡霊',   shape: 'bat',   hp: 18, atk: 10, def: 1, exp: 8, gold: 7 }],
     boss: { id: 'a_boss', name: '墓守の王', shape: 'boss', hp: 90, atk: 11, def: 5, exp: 60, gold: 60 } },
-  { id: 'B', name: '灼熱の火山窟', blurb: '溶岩の熱が壁を赤く照らす坑道。', pow: [0.8, 1.7, 3.3], a1: '#2a1713', a2: '#190e0b', rec: [6, 14, 25],
+  { id: 'B', name: '灼熱の火山窟', blurb: '溶岩の熱が壁を赤く照らす坑道。', pow: [0.8, 1.7, 3.3, 6.4, 10.5], a1: '#2a1713', a2: '#190e0b', rec: [6, 14, 25, 37, 48], maxStar: 4, unlock: null,
     mobs: [
       { id: 'b_imp',     name: 'ファイアインプ',   shape: 'slime', hp: 26, atk: 8,  def: 2, exp: 7,  gold: 6 },
       { id: 'b_sala',    name: 'サラマンダー',     shape: 'bat',   hp: 19, atk: 11, def: 1, exp: 8,  gold: 7 },
@@ -23,7 +25,7 @@ const DUNGEONS = [
       { id: 'b_golem',   name: 'ラヴァゴーレム',   shape: 'skull', hp: 31, atk: 10, def: 3, exp: 9,  gold: 8 },
       { id: 'b_spirit',  name: 'フレイムスピリット', shape: 'bat', hp: 22, atk: 12, def: 1, exp: 9,  gold: 8 }],
     boss: { id: 'b_boss', name: '炎竜ヴォルカ', shape: 'boss', hp: 105, atk: 13, def: 6, exp: 70, gold: 70 } },
-  { id: 'C', name: '凍てつく氷晶窟', blurb: '音まで凍る、青白い結晶の回廊。', pow: [1.0, 2.1, 3.8], a1: '#14243a', a2: '#0c1624', rec: [10, 20, 33],
+  { id: 'C', name: '凍てつく氷晶窟', blurb: '音まで凍る、青白い結晶の回廊。', pow: [1.0, 2.1, 3.8, 7.2, 12.0], a1: '#14243a', a2: '#0c1624', rec: [10, 20, 33, 45, 56], maxStar: 5, unlock: null,
     mobs: [
       { id: 'c_snowman', name: 'ユキダルマ',       shape: 'slime', hp: 36, atk: 11, def: 3, exp: 10, gold: 9 },
       { id: 'c_wolf',    name: 'フロストウルフ',   shape: 'bat',   hp: 26, atk: 16, def: 2, exp: 11, gold: 10 },

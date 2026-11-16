@@ -207,10 +207,11 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .skin-card{background:var(--ink);border:2px solid var(--line);border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;transition:border-color .15s;color:var(--fg)}
 .skin-card:hover{border-color:var(--accent)}
 .skin-card.selected{border-color:var(--accent);background:var(--accent)18}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
-.seg-b{background:var(--ink);border:1px solid var(--line);border-radius:4px;padding:7px 4px;cursor:pointer;display:grid;gap:1px;justify-items:center;font-family:var(--font-display);font-size:14px;color:var(--muted)}
-.seg-b small{font-size:11px;font-family:var(--font-body);color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px}
+.seg-b{background:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 2px;cursor:pointer;display:grid;gap:1px;justify-items:center;font-family:var(--font-display);font-size:12px;color:var(--muted)}
+.seg-b small{font-size:10px;font-family:var(--font-body);color:var(--muted)}
 .seg-b.on{border-color:var(--accent);color:var(--accent)}
+.seg-b:disabled{opacity:.42;cursor:not-allowed}
 .dc-info{font-size:13px;color:var(--muted);margin:0 0 10px}
 .dc-info b{color:var(--fg);font-weight:500}
 

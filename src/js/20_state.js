@@ -34,9 +34,19 @@ const playerDef = p => baseDef(p) + (p.armor ? itemPower(p.armor) : 0);
 function mkItem(p, o) {
   return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: o.prop || null, locked: false };
 }
+function isDungeonUnlocked(p, d) {
+  if (!d) return false;
+  if (!d.unlock) return true;
+  return !!(p && p.cleared && p.cleared[d.unlock.d] && p.cleared[d.unlock.d][d.unlock.df]);
+}
+function isDiffUnlocked(p, d, df) {
+  if (!d || !df || !isDungeonUnlocked(p, d)) return false;
+  if (!df.reqDiff) return true;
+  return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
+}
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);

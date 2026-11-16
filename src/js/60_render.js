@@ -138,14 +138,22 @@ function renderDungeonSelect() {
   const p0 = G.p;
   const learnable = SK_ORDER.filter(id => !p0.skills[id] && p0.sp >= SK[id].sp);
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
-  $('#dg-list').innerHTML = hint + DUNGEONS.map(d => {
-    const sel = diffOf(G.sel[d.id]);
-    const lo = sel.stars[0][0], hi = sel.stars[sel.stars.length - 1][0];
+  $('#dg-list').innerHTML = hint + DUNGEONS.filter(d => isDungeonUnlocked(p0, d)).map(d => {
+    let sel = diffOf(G.sel[d.id]) || DIFFS[0];
+    if (!isDiffUnlocked(p0, d, sel)) { sel = DIFFS[0]; G.sel[d.id] = sel.id; }
+    const stars = sel.stars.filter(([s]) => !d.maxStar || s <= d.maxStar);
+    const lo = stars.length ? stars[0][0] : (d.maxStar || 1);
+    const hi = stars.length ? stars[stars.length - 1][0] : (d.maxStar || 1);
     const rec = d.rec[DIFFS.indexOf(sel)];
+    const clearedMap = (p0.cleared && p0.cleared[d.id]) || {};
     return `<article class="panel dcard" style="--a1:${d.a1}">
       <div class="dc-top"><div class="dc-spr">${enemyArt(d.mobs[0], d.id)}</div>
         <div><h2>ダンジョン${d.id}　${esc(d.name)}</h2><p class="sub" style="margin:0">${esc(d.blurb)}</p></div></div>
-      <div class="seg" role="group" aria-label="難易度">${DIFFS.map(df => `<button class="seg-b ${df.id === sel.id ? 'on' : ''}" aria-pressed="${df.id === sel.id}" data-act="diff" data-d="${d.id}" data-df="${df.id}">${df.name}<small>${df.tag}・${df.floors}階</small></button>`).join('')}</div>
+      <div class="seg" role="group" aria-label="難易度">${DIFFS.map(df => {
+        const ok = isDiffUnlocked(p0, d, df);
+        const done = !!clearedMap[df.id];
+        return `<button class="seg-b ${df.id === sel.id ? 'on' : ''}" aria-pressed="${df.id === sel.id}" data-act="diff" data-d="${d.id}" data-df="${df.id}" ${ok ? '' : 'disabled'}>${ok ? (done ? '✓' : '') + df.name : '🔒' + df.name}<small>${ok ? `${df.floors}階` : '未解放'}</small></button>`;
+      }).join('')}</div>
       <p class="dc-info">全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b></p>
       <button class="btn primary wide" data-act="go" data-d="${d.id}">挑戦する</button></article>`;
   }).join('');
@@ -432,7 +440,7 @@ function renderStatus() {
         <button class="btn small" data-act="autoEquipNow">おまかせ装備</button>
         <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
       </div></div>
-    <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${BAG_CAP}</span></h2>
+    <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
       <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>
       ${bag.length ? `<div class="items">${bag.map(it => itemCard(it, { actions: true, compare: true })).join('')}</div>` : '<p class="empty">バッグは空です。ダンジョンで装備を入手しましょう。</p>'}</div>
     ${renderSkillSlots(p)}

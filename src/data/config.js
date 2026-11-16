@@ -1,6 +1,7 @@
 /* ================= data ================= */
 const SAVE_KEY = 'rogue_test_save_v1';
 const BAG_CAP = 60;
+const MAX_BAG_CAP = 120;
 const TICK_MS = 650;
 
 const LV_CAP = 99;

@@ -1,11 +1,30 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {3: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
-  1: d => Object.assign({}, d, { v: 2 })
+  1: d => Object.assign({}, d, { v: 2 }),
+  // v2 → v3: クリア記録 cleared（セルの rec 以下の Lv ならクリア済み扱い）と bagCap（既定60）を追加
+  2: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.cleared || typeof p.cleared !== 'object') {
+      const cleared = {};
+      const lv = Number(p.lv) || 1;
+      const hasClears = p.stats && Number(p.stats.clears) > 0;
+      for (const dg of DUNGEONS) {
+        cleared[dg.id] = {};
+        dg.rec.forEach((r, i) => {
+          const df = DIFFS[i];
+          if (df && lv >= r && (lv > 1 || hasClears)) cleared[dg.id][df.id] = true;
+        });
+      }
+      p.cleared = cleared;
+    }
+    if (!p.bagCap) p.bagCap = BAG_CAP;
+    return Object.assign({}, d, { v: 3, p });
+  }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
 function migrateSave(raw) {
@@ -41,8 +60,19 @@ function load() {
     const num = (v, def, lo = 0, hi = 1e12) => { v = Number(v); return isFinite(v) ? clamp(Math.floor(v), lo, hi) : def; };
     const p = base;
     p.lv = num(s.lv, 1, 1, LV_CAP); p.exp = num(s.exp, 0); p.sp = num(s.sp, 0); p.gold = num(s.gold, 50); p.bank = num(s.bank, 0);
+    p.bagCap = num(s.bagCap, BAG_CAP, BAG_CAP, MAX_BAG_CAP);
     p.weapon = cleanItem(s.weapon); p.armor = cleanItem(s.armor);
-    p.bag = Array.isArray(s.bag) ? s.bag.map(cleanItem).filter(Boolean).slice(0, BAG_CAP) : [];
+    p.bag = Array.isArray(s.bag) ? s.bag.map(cleanItem).filter(Boolean).slice(0, p.bagCap) : [];
+    p.cleared = {};
+    if (s.cleared && typeof s.cleared === 'object') {
+      for (const dg of DUNGEONS) {
+        const sc = s.cleared[dg.id];
+        if (sc && typeof sc === 'object') {
+          p.cleared[dg.id] = {};
+          for (const df of DIFFS) if (sc[df.id]) p.cleared[dg.id][df.id] = true;
+        }
+      }
+    }
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
@@ -71,7 +101,10 @@ function load() {
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
     if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; }
-    if (d.sel) for (const { id: k } of DUNGEONS) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
+    if (d.sel) for (const dg of DUNGEONS) {
+      const df = diffOf(d.sel[dg.id]);
+      if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;
+    }
     if (Array.isArray(d.shopSel) && d.shopSel.length === 4) G.shopSel = d.shopSel.map(Boolean);
     if (typeof d.autoSellRarity === 'number' && d.autoSellRarity >= -1 && d.autoSellRarity <= 3) G.autoSellRarity = d.autoSellRarity;
     if (migrated) save();   // 移行できたらすぐ新しい形式で書き戻す

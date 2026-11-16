@@ -26,7 +26,11 @@ const ACTS = {
   shopToggle(d) { const i = Number(d.i); G.shopSel[i] = !G.shopSel[i]; save(); renderTown(); },
   dep() { bankMove('dep', false); }, wd() { bankMove('wd', false); },
   depAll() { bankMove('dep', true); }, wdAll() { bankMove('wd', true); },
-  diff(d) { G.sel[d.d] = d.df; save(); renderDungeonSelect(); },
+  diff(d) {
+    const dg = dungeonOf(d.d), df = diffOf(d.df);
+    if (!dg || !df || !isDiffUnlocked(G.p, dg, df)) { toast('この難易度はまだ解放されていません'); return; }
+    G.sel[d.d] = d.df; save(); renderDungeonSelect();
+  },
   go(d) {
     // チュートリアル step 1: ダンジョンA novice を選んだら step 2 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 1) {
@@ -200,7 +204,7 @@ const ACTS = {
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
     for (const slot of ['weapon', 'armor']) for (let star = 1; star <= MAX_STAR; star++) for (let r = 0; r < 4; r++) {
-      if (p.bag.length >= BAG_CAP) break;
+      if (p.bag.length >= (p.bagCap || BAG_CAP)) break;
       p.bag.push(mkItem(p, { slot, star, rarity: r, roll: 1 })); n++;
     }
     save(); toast(`テスト用装備を${n}個追加しました`); renderAll();

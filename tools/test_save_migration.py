@@ -1,4 +1,4 @@
-﻿# セーブ移行テスト: v1 のセーブを注入して読み込み → v2 になり、内容が保たれることを確認する
+﻿# セーブ移行テスト: v1 / v2 のセーブを注入して読み込み → v3 になり、内容が保たれることを確認する
 # 使い方: python3 tools/test_save_migration.py [HTMLのパス(省略時はindex.html)]
 # 前提: pip install playwright && playwright install chromium
 from playwright.sync_api import sync_playwright
@@ -6,7 +6,8 @@ import json, os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HTML = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '..', 'index.html'))
-FIXTURE = os.path.join(HERE, 'fixtures', 'save_v1.json')   # 旧版(v1)を実際に遊んで作ったセーブ
+FIXTURE_V1 = os.path.join(HERE, 'fixtures', 'save_v1.json')   # 旧版(v1)を実際に遊んで作ったセーブ
+FIXTURE_V2 = os.path.join(HERE, 'fixtures', 'save_v2.json')   # v2 サンプル(Lv22)
 KEY = 'rogue_test_save_v1'
 fails = []
 
@@ -39,67 +40,86 @@ def fresh_page(b, raw=None):
     return ctx, pg, errs
 
 
-v1 = json.load(open(FIXTURE, encoding='utf-8'))
+v1 = json.load(open(FIXTURE_V1, encoding='utf-8'))
+v2 = json.load(open(FIXTURE_V2, encoding='utf-8'))
 raw_v1 = json.dumps(v1, ensure_ascii=False)
-assert v1['v'] == 1
+raw_v2 = json.dumps(v2, ensure_ascii=False)
+assert v1['v'] == 1 and v2['v'] == 2
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
 
-    # 1. v1 → v2 変換と内容の保持
+    # 1. v1 → v3 連鎖変換と内容の保持
     ctx, pg, errs = fresh_page(b, raw_v1)
     stored = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('v1 save is rewritten as v2', stored.get('v') == 2, stored.get('v'))
-    check('SAVE_VERSION is 2', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 2)
+    check('v1 save is rewritten as v3', stored.get('v') == 3, stored.get('v'))
+    check('SAVE_VERSION is 3', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 3)
     sp, op = stored['p'], v1['p']
     for k in ['lv', 'exp', 'sp', 'gold', 'bank', 'hp', 'mp', 'skills', 'skillPts', 'passiveSkills',
               'equippedSkills', 'potions', 'stats', 'stones', 'weapon', 'armor', 'bag']:
-        check('p.%s kept' % k, strip_ids(sp.get(k)) == strip_ids(op.get(k)), (sp.get(k), op.get(k)))
+        check('v1 p.%s kept' % k, strip_ids(sp.get(k)) == strip_ids(op.get(k)), (sp.get(k), op.get(k)))
     for k in ['opts', 'sel', 'shopSel', 'autoSellRarity']:
-        check('%s kept' % k, stored.get(k) == v1.get(k), (stored.get(k), v1.get(k)))
+        check('v1 %s kept' % k, stored.get(k) == v1.get(k), (stored.get(k), v1.get(k)))
+    check('v1->v3 bagCap is 60', sp.get('bagCap') == 60, sp.get('bagCap'))
+    # Lv6 なので A.novice(1), B.novice(6) がクリア済み、A.mid(9) は未クリア
+    check('v1->v3 cleared inferred from lv', sp.get('cleared', {}).get('A', {}).get('novice') is True
+          and sp.get('cleared', {}).get('B', {}).get('novice') is True
+          and not sp.get('cleared', {}).get('A', {}).get('mid'), sp.get('cleared'))
     live = pg.evaluate('()=>({lv:G.p.lv,gold:G.p.gold,bag:G.p.bag.length,speed:G.opts.speed})')
     check('in-game state matches v1', live == {'lv': op['lv'], 'gold': op['gold'], 'bag': len(op['bag']), 'speed': v1['opts']['speed']}, live)
     bak = pg.evaluate('k=>localStorage.getItem(k)', KEY + '_bak_v1')
     check('original v1 data is backed up untouched', bak is not None and json.loads(bak) == v1)
-    check('no page errors (migration)', errs == [], errs)
-    # 再読込しても v2 のまま・内容が変わらない（二重変換や損失がない）
+    check('no page errors (v1 migration)', errs == [], errs)
+    # 再読込しても v3 のまま安定
     before = pg.evaluate('k=>localStorage.getItem(k)', KEY)
     pg.reload(); pg.wait_for_timeout(300)
     after = pg.evaluate('k=>localStorage.getItem(k)', KEY)
-    check('v2 save is stable across reload', before == after)
-    # ゲーム内で進めて保存しても v2 のまま
+    check('v3 save is stable across reload', before == after)
     pg.evaluate('()=>{G.p.gold+=100; window.__rogue.save();}')
-    s2 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('later saves are v2', s2['v'] == 2 and s2['p']['gold'] == op['gold'] + 100)
+    s3 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
+    check('later saves are v3', s3['v'] == 3 and s3['p']['gold'] == op['gold'] + 100)
     ctx.close()
 
-    # 2. v が無いセーブは v1 扱い
+    # 2. v2 → v3 変換 (Lv22: A上級 rec18 がクリア済みとなり A超級が解放される)
+    ctx, pg, errs = fresh_page(b, raw_v2)
+    stored2 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
+    check('v2 save is rewritten as v3', stored2.get('v') == 3, stored2.get('v'))
+    check('v2->v3 A.high cleared & super unlocked',
+          pg.evaluate('()=>window.__rogue.isDiffUnlocked(G.p, window.__rogue.DUNGEONS[0], window.__rogue.DIFFS[3])') is True)
+    check('v2->v3 C.high (rec33) not cleared & C.super locked',
+          pg.evaluate('()=>window.__rogue.isDiffUnlocked(G.p, window.__rogue.DUNGEONS[2], window.__rogue.DIFFS[3])') is False)
+    bak2 = pg.evaluate('k=>localStorage.getItem(k)', KEY + '_bak_v2')
+    check('original v2 data is backed up untouched', bak2 is not None and json.loads(bak2) == v2)
+    check('no page errors (v2 migration)', errs == [], errs)
+    ctx.close()
+
+    # 3. v が無いセーブは v1 扱い → v3 になる
     nov = dict(v1); nov.pop('v')
     ctx, pg, errs = fresh_page(b, json.dumps(nov))
-    check('save without v is treated as v1', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 2)
+    check('save without v is treated as v1 -> v3', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 3)
     ctx.close()
 
-    # 3. migrateSave 単体
+    # 4. migrateSave 単体
     ctx, pg, errs = fresh_page(b)
     r = pg.evaluate('''(v1)=>{const m=window.__rogue.migrateSave;
       const a=m(JSON.parse(JSON.stringify(v1)));
       return {null1:m(null), noP:m({v:1}), v1v:a&&a.v, same:m(a)===a, future:m({v:99,p:{}}).v, str:m('x')};}''', v1)
     check('migrateSave(null/garbage) -> null', r['null1'] is None and r['noP'] is None and r['str'] is None, r)
-    check('migrateSave v1 -> v2, v2 unchanged', r['v1v'] == 2 and r['same'])
+    check('migrateSave v1 -> v3, v3 unchanged', r['v1v'] == 3 and r['same'])
     check('migrateSave leaves future versions alone', r['future'] == 99)
     ctx.close()
 
-    # 4. 壊れたセーブでも落ちず、新規開始になる
+    # 5. 壊れたセーブでも落ちず、新規開始になる
     for label, junk in [('broken json', '{oops'), ('no p', '{"v":1}')]:
         ctx, pg, errs = fresh_page(b, junk)
         ok = pg.evaluate('()=>G.p&&G.p.lv===1&&G.p.gold===50')
         check('%s -> new game, no crash' % label, ok and errs == [], errs)
         ctx.close()
 
-    # 5. セーブなしの新規 → 保存すると v2
+    # 6. セーブなしの新規 → 保存すると v3
     ctx, pg, errs = fresh_page(b)
     pg.evaluate('()=>window.__rogue.save()')
-    check('new game saves as v2', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 2)
+    check('new game saves as v3', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 3)
     ctx.close()
     b.close()
 

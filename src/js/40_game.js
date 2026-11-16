@@ -25,12 +25,12 @@ function genItem(diff, boost = false, slot = null) {
 }
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
-  const p = G.p, slot = it.slot;
+  const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
   if (G.opts.autoEquip && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
     if (old) {
-      if (p.bag.length < BAG_CAP) p.bag.push(old); else p.gold += sellValue(old);
+      if (p.bag.length < cap) p.bag.push(old); else p.gold += sellValue(old);
     }
     return 'equipped';
   }
@@ -38,7 +38,7 @@ function receiveItem(it) {
   if (G.autoSellRarity >= 0 && it.rarity <= G.autoSellRarity && !it.locked) {
     const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold';
   }
-  if (p.bag.length >= BAG_CAP) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold'; }
+  if (p.bag.length >= cap) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold'; }
   p.bag.push(it);
   return 'bag';
 }
@@ -64,6 +64,7 @@ function startRun(dId, dfId) {
   if (G.run) return;
   const d = dungeonOf(dId), df = diffOf(dfId);
   if (!d || !df) return;
+  if (!isDiffUnlocked(G.p, d, df)) { toast('この難易度はまだ解放されていません'); return; }
   G.run = {
     d, df, floors: df.floors, floor: 0, cleared: 0, phase: 'next', enemy: null, queued: null, guard: 0,
     gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: G.p.lv, skKey: '',
@@ -89,18 +90,20 @@ function scaleOf(run, floor) { return cellPow(run) * (1 + TUNE.floorSpan * (floo
 function spawnEnemy(boss) {
   const run = G.run, d = run.d;
   const base = boss ? d.boss : pick(d.mobs);
+  const name = (boss && run.df.bossPrefix ? run.df.bossPrefix : '') + base.name;
+  const bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : '';
   const S = scaleOf(run, run.floor);
   const Sa = Math.pow(S, TUNE.atkExp);
   const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : 1)));
   run.enemy = {
-    id: base.id, name: base.name, shape: base.shape, boss, hp, maxHp: hp,
+    id: base.id, name, shape: base.shape, boss, bossFilter, hp, maxHp: hp,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : 1))),
     def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : 1)),
     exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale)),
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4)))
   };
   run.phase = 'battle';
-  addLog(`【${run.floor}F】${boss ? 'ボス ' : ''}${base.name}が現れた！`, boss ? 'l-gold' : 'l-sys');
+  addLog(`【${run.floor}F】${boss ? 'ボス ' : ''}${name}が現れた！`, boss ? 'l-gold' : 'l-sys');
   renderEnemy(true);
 }
 
@@ -310,6 +313,9 @@ function finishRun(result) {
   if (result === 'clear') {
     clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]); clearSp = run.df.clearSp;
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
+    p.cleared = p.cleared || {};
+    p.cleared[run.d.id] = p.cleared[run.d.id] || {};
+    p.cleared[run.d.id][run.df.id] = true;
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {
     p.hp = maxHp(p);  // 街帰還: HP全回復

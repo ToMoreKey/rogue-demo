@@ -19,7 +19,8 @@ function passiveBonus(p) {
 }
 function enemyArt(en, dId) {
   const im = ENEMY_IMG[en.id];
-  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false">`;
+  const st = en.bossFilter ? ` style="filter:${en.bossFilter}"` : '';
+  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
   return spriteSVG(en.shape, PAL[dId][en.shape]);
 }
 

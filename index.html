@@ -221,10 +221,11 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .skin-card{background:var(--ink);border:2px solid var(--line);border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;transition:border-color .15s;color:var(--fg)}
 .skin-card:hover{border-color:var(--accent)}
 .skin-card.selected{border-color:var(--accent);background:var(--accent)18}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
-.seg-b{background:var(--ink);border:1px solid var(--line);border-radius:4px;padding:7px 4px;cursor:pointer;display:grid;gap:1px;justify-items:center;font-family:var(--font-display);font-size:14px;color:var(--muted)}
-.seg-b small{font-size:11px;font-family:var(--font-body);color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px}
+.seg-b{background:var(--ink);border:1px solid var(--line);border-radius:4px;padding:6px 2px;cursor:pointer;display:grid;gap:1px;justify-items:center;font-family:var(--font-display);font-size:12px;color:var(--muted)}
+.seg-b small{font-size:10px;font-family:var(--font-body);color:var(--muted)}
 .seg-b.on{border-color:var(--accent);color:var(--accent)}
+.seg-b:disabled{opacity:.42;cursor:not-allowed}
 .dc-info{font-size:13px;color:var(--muted);margin:0 0 10px}
 .dc-info b{color:var(--fg);font-weight:500}
 
@@ -404,6 +405,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 /* ================= data ================= */
 const SAVE_KEY = 'rogue_test_save_v1';
 const BAG_CAP = 60;
+const MAX_BAG_CAP = 120;
 const TICK_MS = 650;
 
 const LV_CAP = 99;
@@ -573,14 +575,16 @@ const SKILL_TREES = [
 
 
 const DIFFS = [
-  { id: 'novice', name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],           rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2 },
-  { id: 'mid',    name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]],  rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4 },
-  { id: 'high',   name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]],  rar: [40, 38, 17, 5],    clearGold: 1100, clearSp: 8 }
+  { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 2,  reqDiff: null },
+  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 4,  reqDiff: null },
+  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 1100, clearSp: 8,  reqDiff: null },
+  { id: 'super',   name: '超級', tag: '深層',   floors: 30, stars: [[4, 55], [5, 35], [6, 10]], rar: [28, 39, 23, 10],   clearGold: 3200, clearSp: 12, reqDiff: 'high',  bossPrefix: '古の',         bossFilter: 'hue-rotate(38deg) saturate(1.35) contrast(1.08)' },
+  { id: 'extreme', name: '極級', tag: '極致',   floors: 40, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 8000, clearSp: 16, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
 ];
 
 const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8 };
 const DUNGEONS = [
-  { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.5, 3.05], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18],
+  { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.5, 3.05, 5.8, 9.5], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18, 30, 42], maxStar: 4, unlock: null,
     mobs: [
       { id: 'a_slime',  name: 'モスライム',   shape: 'slime', hp: 22, atk: 7,  def: 1, exp: 6, gold: 5 },
       { id: 'a_bat',    name: 'ホラーバット', shape: 'bat',   hp: 16, atk: 9,  def: 0, exp: 7, gold: 6 },
@@ -588,7 +592,7 @@ const DUNGEONS = [
       { id: 'a_zombie', name: '這い出る亡者', shape: 'skull', hp: 26, atk: 8,  def: 2, exp: 8, gold: 7 },
       { id: 'a_ghost',  name: '迷える亡霊',   shape: 'bat',   hp: 18, atk: 10, def: 1, exp: 8, gold: 7 }],
     boss: { id: 'a_boss', name: '墓守の王', shape: 'boss', hp: 90, atk: 11, def: 5, exp: 60, gold: 60 } },
-  { id: 'B', name: '灼熱の火山窟', blurb: '溶岩の熱が壁を赤く照らす坑道。', pow: [0.8, 1.7, 3.3], a1: '#2a1713', a2: '#190e0b', rec: [6, 14, 25],
+  { id: 'B', name: '灼熱の火山窟', blurb: '溶岩の熱が壁を赤く照らす坑道。', pow: [0.8, 1.7, 3.3, 6.4, 10.5], a1: '#2a1713', a2: '#190e0b', rec: [6, 14, 25, 37, 48], maxStar: 4, unlock: null,
     mobs: [
       { id: 'b_imp',     name: 'ファイアインプ',   shape: 'slime', hp: 26, atk: 8,  def: 2, exp: 7,  gold: 6 },
       { id: 'b_sala',    name: 'サラマンダー',     shape: 'bat',   hp: 19, atk: 11, def: 1, exp: 8,  gold: 7 },
@@ -596,7 +600,7 @@ const DUNGEONS = [
       { id: 'b_golem',   name: 'ラヴァゴーレム',   shape: 'skull', hp: 31, atk: 10, def: 3, exp: 9,  gold: 8 },
       { id: 'b_spirit',  name: 'フレイムスピリット', shape: 'bat', hp: 22, atk: 12, def: 1, exp: 9,  gold: 8 }],
     boss: { id: 'b_boss', name: '炎竜ヴォルカ', shape: 'boss', hp: 105, atk: 13, def: 6, exp: 70, gold: 70 } },
-  { id: 'C', name: '凍てつく氷晶窟', blurb: '音まで凍る、青白い結晶の回廊。', pow: [1.0, 2.1, 3.8], a1: '#14243a', a2: '#0c1624', rec: [10, 20, 33],
+  { id: 'C', name: '凍てつく氷晶窟', blurb: '音まで凍る、青白い結晶の回廊。', pow: [1.0, 2.1, 3.8, 7.2, 12.0], a1: '#14243a', a2: '#0c1624', rec: [10, 20, 33, 45, 56], maxStar: 5, unlock: null,
     mobs: [
       { id: 'c_snowman', name: 'ユキダルマ',       shape: 'slime', hp: 36, atk: 11, def: 3, exp: 10, gold: 9 },
       { id: 'c_wolf',    name: 'フロストウルフ',   shape: 'bat',   hp: 26, atk: 16, def: 2, exp: 11, gold: 10 },
@@ -762,7 +766,8 @@ function passiveBonus(p) {
 }
 function enemyArt(en, dId) {
   const im = ENEMY_IMG[en.id];
-  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false">`;
+  const st = en.bossFilter ? ` style="filter:${en.bossFilter}"` : '';
+  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
   return spriteSVG(en.shape, PAL[dId][en.shape]);
 }
 
@@ -842,9 +847,19 @@ const playerDef = p => baseDef(p) + (p.armor ? itemPower(p.armor) : 0);
 function mkItem(p, o) {
   return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: o.prop || null, locked: false };
 }
+function isDungeonUnlocked(p, d) {
+  if (!d) return false;
+  if (!d.unlock) return true;
+  return !!(p && p.cleared && p.cleared[d.unlock.d] && p.cleared[d.unlock.d][d.unlock.df]);
+}
+function isDiffUnlocked(p, d, df) {
+  if (!d || !df || !isDungeonUnlocked(p, d)) return false;
+  if (!df.reqDiff) return true;
+  return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
+}
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
@@ -853,11 +868,30 @@ function newPlayer() {
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 2;
+const SAVE_VERSION = 3;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {3: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
-  1: d => Object.assign({}, d, { v: 2 })
+  1: d => Object.assign({}, d, { v: 2 }),
+  // v2 → v3: クリア記録 cleared（セルの rec 以下の Lv ならクリア済み扱い）と bagCap（既定60）を追加
+  2: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.cleared || typeof p.cleared !== 'object') {
+      const cleared = {};
+      const lv = Number(p.lv) || 1;
+      const hasClears = p.stats && Number(p.stats.clears) > 0;
+      for (const dg of DUNGEONS) {
+        cleared[dg.id] = {};
+        dg.rec.forEach((r, i) => {
+          const df = DIFFS[i];
+          if (df && lv >= r && (lv > 1 || hasClears)) cleared[dg.id][df.id] = true;
+        });
+      }
+      p.cleared = cleared;
+    }
+    if (!p.bagCap) p.bagCap = BAG_CAP;
+    return Object.assign({}, d, { v: 3, p });
+  }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
 function migrateSave(raw) {
@@ -893,8 +927,19 @@ function load() {
     const num = (v, def, lo = 0, hi = 1e12) => { v = Number(v); return isFinite(v) ? clamp(Math.floor(v), lo, hi) : def; };
     const p = base;
     p.lv = num(s.lv, 1, 1, LV_CAP); p.exp = num(s.exp, 0); p.sp = num(s.sp, 0); p.gold = num(s.gold, 50); p.bank = num(s.bank, 0);
+    p.bagCap = num(s.bagCap, BAG_CAP, BAG_CAP, MAX_BAG_CAP);
     p.weapon = cleanItem(s.weapon); p.armor = cleanItem(s.armor);
-    p.bag = Array.isArray(s.bag) ? s.bag.map(cleanItem).filter(Boolean).slice(0, BAG_CAP) : [];
+    p.bag = Array.isArray(s.bag) ? s.bag.map(cleanItem).filter(Boolean).slice(0, p.bagCap) : [];
+    p.cleared = {};
+    if (s.cleared && typeof s.cleared === 'object') {
+      for (const dg of DUNGEONS) {
+        const sc = s.cleared[dg.id];
+        if (sc && typeof sc === 'object') {
+          p.cleared[dg.id] = {};
+          for (const df of DIFFS) if (sc[df.id]) p.cleared[dg.id][df.id] = true;
+        }
+      }
+    }
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
@@ -923,7 +968,10 @@ function load() {
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
     if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; }
-    if (d.sel) for (const { id: k } of DUNGEONS) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
+    if (d.sel) for (const dg of DUNGEONS) {
+      const df = diffOf(d.sel[dg.id]);
+      if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;
+    }
     if (Array.isArray(d.shopSel) && d.shopSel.length === 4) G.shopSel = d.shopSel.map(Boolean);
     if (typeof d.autoSellRarity === 'number' && d.autoSellRarity >= -1 && d.autoSellRarity <= 3) G.autoSellRarity = d.autoSellRarity;
     if (migrated) save();   // 移行できたらすぐ新しい形式で書き戻す
@@ -957,12 +1005,12 @@ function genItem(diff, boost = false, slot = null) {
 }
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
-  const p = G.p, slot = it.slot;
+  const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
   if (G.opts.autoEquip && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
     if (old) {
-      if (p.bag.length < BAG_CAP) p.bag.push(old); else p.gold += sellValue(old);
+      if (p.bag.length < cap) p.bag.push(old); else p.gold += sellValue(old);
     }
     return 'equipped';
   }
@@ -970,7 +1018,7 @@ function receiveItem(it) {
   if (G.autoSellRarity >= 0 && it.rarity <= G.autoSellRarity && !it.locked) {
     const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold';
   }
-  if (p.bag.length >= BAG_CAP) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold'; }
+  if (p.bag.length >= cap) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold'; }
   p.bag.push(it);
   return 'bag';
 }
@@ -996,6 +1044,7 @@ function startRun(dId, dfId) {
   if (G.run) return;
   const d = dungeonOf(dId), df = diffOf(dfId);
   if (!d || !df) return;
+  if (!isDiffUnlocked(G.p, d, df)) { toast('この難易度はまだ解放されていません'); return; }
   G.run = {
     d, df, floors: df.floors, floor: 0, cleared: 0, phase: 'next', enemy: null, queued: null, guard: 0,
     gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: G.p.lv, skKey: '',
@@ -1021,18 +1070,20 @@ function scaleOf(run, floor) { return cellPow(run) * (1 + TUNE.floorSpan * (floo
 function spawnEnemy(boss) {
   const run = G.run, d = run.d;
   const base = boss ? d.boss : pick(d.mobs);
+  const name = (boss && run.df.bossPrefix ? run.df.bossPrefix : '') + base.name;
+  const bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : '';
   const S = scaleOf(run, run.floor);
   const Sa = Math.pow(S, TUNE.atkExp);
   const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : 1)));
   run.enemy = {
-    id: base.id, name: base.name, shape: base.shape, boss, hp, maxHp: hp,
+    id: base.id, name, shape: base.shape, boss, bossFilter, hp, maxHp: hp,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : 1))),
     def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : 1)),
     exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale)),
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4)))
   };
   run.phase = 'battle';
-  addLog(`【${run.floor}F】${boss ? 'ボス ' : ''}${base.name}が現れた！`, boss ? 'l-gold' : 'l-sys');
+  addLog(`【${run.floor}F】${boss ? 'ボス ' : ''}${name}が現れた！`, boss ? 'l-gold' : 'l-sys');
   renderEnemy(true);
 }
 
@@ -1242,6 +1293,9 @@ function finishRun(result) {
   if (result === 'clear') {
     clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]); clearSp = run.df.clearSp;
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
+    p.cleared = p.cleared || {};
+    p.cleared[run.d.id] = p.cleared[run.d.id] || {};
+    p.cleared[run.d.id][run.df.id] = true;
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {
     p.hp = maxHp(p);  // 街帰還: HP全回復
@@ -1382,7 +1436,11 @@ const ACTS = {
   shopToggle(d) { const i = Number(d.i); G.shopSel[i] = !G.shopSel[i]; save(); renderTown(); },
   dep() { bankMove('dep', false); }, wd() { bankMove('wd', false); },
   depAll() { bankMove('dep', true); }, wdAll() { bankMove('wd', true); },
-  diff(d) { G.sel[d.d] = d.df; save(); renderDungeonSelect(); },
+  diff(d) {
+    const dg = dungeonOf(d.d), df = diffOf(d.df);
+    if (!dg || !df || !isDiffUnlocked(G.p, dg, df)) { toast('この難易度はまだ解放されていません'); return; }
+    G.sel[d.d] = d.df; save(); renderDungeonSelect();
+  },
   go(d) {
     // チュートリアル step 1: ダンジョンA novice を選んだら step 2 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 1) {
@@ -1556,7 +1614,7 @@ const ACTS = {
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
     for (const slot of ['weapon', 'armor']) for (let star = 1; star <= MAX_STAR; star++) for (let r = 0; r < 4; r++) {
-      if (p.bag.length >= BAG_CAP) break;
+      if (p.bag.length >= (p.bagCap || BAG_CAP)) break;
       p.bag.push(mkItem(p, { slot, star, rarity: r, roll: 1 })); n++;
     }
     save(); toast(`テスト用装備を${n}個追加しました`); renderAll();
@@ -1713,14 +1771,22 @@ function renderDungeonSelect() {
   const p0 = G.p;
   const learnable = SK_ORDER.filter(id => !p0.skills[id] && p0.sp >= SK[id].sp);
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
-  $('#dg-list').innerHTML = hint + DUNGEONS.map(d => {
-    const sel = diffOf(G.sel[d.id]);
-    const lo = sel.stars[0][0], hi = sel.stars[sel.stars.length - 1][0];
+  $('#dg-list').innerHTML = hint + DUNGEONS.filter(d => isDungeonUnlocked(p0, d)).map(d => {
+    let sel = diffOf(G.sel[d.id]) || DIFFS[0];
+    if (!isDiffUnlocked(p0, d, sel)) { sel = DIFFS[0]; G.sel[d.id] = sel.id; }
+    const stars = sel.stars.filter(([s]) => !d.maxStar || s <= d.maxStar);
+    const lo = stars.length ? stars[0][0] : (d.maxStar || 1);
+    const hi = stars.length ? stars[stars.length - 1][0] : (d.maxStar || 1);
     const rec = d.rec[DIFFS.indexOf(sel)];
+    const clearedMap = (p0.cleared && p0.cleared[d.id]) || {};
     return `<article class="panel dcard" style="--a1:${d.a1}">
       <div class="dc-top"><div class="dc-spr">${enemyArt(d.mobs[0], d.id)}</div>
         <div><h2>ダンジョン${d.id}　${esc(d.name)}</h2><p class="sub" style="margin:0">${esc(d.blurb)}</p></div></div>
-      <div class="seg" role="group" aria-label="難易度">${DIFFS.map(df => `<button class="seg-b ${df.id === sel.id ? 'on' : ''}" aria-pressed="${df.id === sel.id}" data-act="diff" data-d="${d.id}" data-df="${df.id}">${df.name}<small>${df.tag}・${df.floors}階</small></button>`).join('')}</div>
+      <div class="seg" role="group" aria-label="難易度">${DIFFS.map(df => {
+        const ok = isDiffUnlocked(p0, d, df);
+        const done = !!clearedMap[df.id];
+        return `<button class="seg-b ${df.id === sel.id ? 'on' : ''}" aria-pressed="${df.id === sel.id}" data-act="diff" data-d="${d.id}" data-df="${df.id}" ${ok ? '' : 'disabled'}>${ok ? (done ? '✓' : '') + df.name : '🔒' + df.name}<small>${ok ? `${df.floors}階` : '未解放'}</small></button>`;
+      }).join('')}</div>
       <p class="dc-info">全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b></p>
       <button class="btn primary wide" data-act="go" data-d="${d.id}">挑戦する</button></article>`;
   }).join('');
@@ -2007,7 +2073,7 @@ function renderStatus() {
         <button class="btn small" data-act="autoEquipNow">おまかせ装備</button>
         <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
       </div></div>
-    <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${BAG_CAP}</span></h2>
+    <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
       <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>
       ${bag.length ? `<div class="items">${bag.map(it => itemCard(it, { actions: true, compare: true })).join('')}</div>` : '<p class="empty">バッグは空です。ダンジョンで装備を入手しましょう。</p>'}</div>
     ${renderSkillSlots(p)}
@@ -2444,7 +2510,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  migrateSave, SAVE_VERSION, SAVE_KEY, migrations, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, G, ACTS, tick, startRun, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, passiveBonus, CHAR_SKINS,
   smithCost, smithUpgrade, STONES, STONE_REQ,
