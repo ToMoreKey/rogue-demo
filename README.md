@@ -15,6 +15,8 @@
   - `assets/` … base64画像（敵・装備アイコン・キャラ）。中身は書き換えない
   - `js/` … ロジック（`30_save.js` がセーブとバージョン移行）
 - `tools/build.py` … `src/` から `index.html` を生成
+- `docs/gemini_prompt_P4.md` … P4（後編 J〜O・最終ボス・★9・神話レア）をGeminiに依頼するための指示書
+- `docs/image_prompts_enemies_JKLMNO.md` … 後編の敵画像（J〜O＋最終ボス怒り形態）の生成プロンプト
 - `docs/gemini_prompt_P3.md` … P3（前編の完成 G〜I）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P2.md` … P2（新ダンジョンD〜F）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P1c.md` … P1bの検証で見つかった修正（狂気武器の自動装備・金策の圧縮）をGeminiに依頼するための指示書
