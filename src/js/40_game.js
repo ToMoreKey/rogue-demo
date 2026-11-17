@@ -195,6 +195,8 @@ function useSkillEffect(id) {
     const h = Math.max(1, Math.round(maxHp(p) * s.pct)); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
+    if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
+    if (s.defTurns) { run.defBuff = s.defTurns; addLog(`${s.defTurns}ターン防御力1.5倍！`, 'l-good'); }
     if (s.regen) { run.regenTurns = s.regen; run.regenPct = s.pct; }
     return true;
   }
@@ -203,6 +205,8 @@ function useSkillEffect(id) {
     else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 魔法防御力が上がった。', 'l-good'); }
     else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
     else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
+    else if (s.shura) { run.shura = s.turns; addLog('修羅の構え！ 攻撃力が4倍になった！', 'l-good'); }
+    else if (s.awaken) { run.awaken = s.turns; addLog('英雄の覚醒！ 全ステータスが2.5倍になった！', 'l-good'); }
     else if (s.barrier) { run.barrier = s.barrier; addLog(`${s.name}！ ダメージを${s.barrier}回無効化する。`, 'l-good'); }
     else addLog(`${s.name}を発動した！`, 'l-good');
     return true;
@@ -229,8 +233,9 @@ function playerAct() {
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1);
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.awaken > 0 ? 2.5 : 1);
   if (run.warGod > 0) run.warGod--;
+  if (run.awaken > 0) run.awaken--;
   let dealt = 0, crits = 0, hits = 0;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
@@ -241,6 +246,7 @@ function playerAct() {
   }
   hitFlash('enemy'); playAttackMotion();
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
+  if (s.freeze && en.hp > 0) { run.frozen = 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
   if (p.weapon && p.weapon.prop === 'vamp' && dealt > 0) {
     const h = Math.max(1, Math.round(dealt * 0.1)), before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
@@ -250,14 +256,21 @@ function playerAct() {
 
 function enemyAct() {
   const p = G.p, run = G.run, en = run.enemy;
+  if (run.frozen > 0) {
+    run.frozen--;
+    addLog(`${en.name}は凍って動けない！`, 'l-good');
+    return;
+  }
   if (run.barrier > 0) {
     run.barrier--;
     addLog(`バリアが${en.name}の攻撃を防いだ！（残り${run.barrier}回）`, 'l-good');
     popDamage('player', 'BLOCK', 'heal');
     return;
   }
-  const def = playerDef(p) * (run.guard > 0 ? 2 : 1);
-  const dmg = calcDmg(en.atk, def);
+  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? 1.5 : 1) * (run.awaken > 0 ? 2.5 : 1);
+  const dmg = Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1));
+  if (run.shura > 0) run.shura--;
+  if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
   addLog(`${en.name}の攻撃！ ${dmg}ダメージを受けた。`, 'l-dmg');
   popDamage('player', String(dmg), 'bad'); hitFlash('player');

@@ -306,7 +306,8 @@ function renderSkillTrees(p) {
   const treeCard = (tree) => {
     const cur = pts[tree.id] || 0;
     const isUnlocked = tree.unlockWhen(p);
-    const isFull = cur >= tree.maxSp;
+    const cap = (tree.stage2When && !tree.stage2When(p)) ? 10 : tree.maxSp;
+    const isFull = cur >= cap;
     const resetKey = 'resetTree_' + tree.id;
     const resetArming = !!G[resetKey];
 
@@ -344,16 +345,16 @@ function renderSkillTrees(p) {
 
     // SP割り振りボタン
     const canAdd1 = !isFull && spLeft >= 1;
-    const canAdd5 = !isFull && spLeft >= 5 && cur + 5 <= tree.maxSp;
+    const canAdd5 = !isFull && spLeft >= 5 && cur + 5 <= cap;
     const canAddAll = !isFull && spLeft >= 1;
-    const remaining = Math.min(spLeft, tree.maxSp - cur);
+    const remaining = Math.min(spLeft, cap - cur);
 
     return `<div class="skill-tree" style="--tc:${tree.color}">
       <div class="st-header">
         <span class="st-icon">${tree.icon}</span>
         <div class="st-info">
           <span class="st-name">${tree.name}</span>
-          <span class="st-desc">${tree.desc}</span>
+          <span class="st-desc">${tree.desc}${tree.stage2When && !tree.stage2When(p) ? `<br><span class="sub">🔒 ${tree.stage2Desc}</span>` : ''}</span>
         </div>
         <div class="st-pts">${cur}<span>/${tree.maxSp}</span></div>
       </div>

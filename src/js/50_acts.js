@@ -84,8 +84,9 @@ const ACTS = {
     const amount = Number(d.amount) || 1;
     if (p.sp < amount) { toast('SPが足りません'); return; }
     const curPts = p.skillPts[d.tree] || 0;
-    if (curPts >= tree.maxSp) { toast('このスキル枠はすでに最大です'); return; }
-    if (curPts + amount > tree.maxSp) { toast(`最大${tree.maxSp}SPまでしか割り振れません`); return; }
+    const cap = (tree.stage2When && !tree.stage2When(p)) ? 10 : tree.maxSp;
+    if (curPts >= cap) { toast(cap < tree.maxSp ? (tree.stage2Desc || '第2段階が未解放です') : 'このスキル枠はすでに最大です'); return; }
+    if (curPts + amount > cap) { toast(`最大${cap}SPまでしか割り振れません`); return; }
     const prevPts = curPts;
     p.sp -= amount;
     p.skillPts[d.tree] = curPts + amount;
@@ -145,6 +146,15 @@ const ACTS = {
           if (ms.passive) delete p.passiveSkills[ms.passive];
         }
         toast(`「${evoTree.name}」の条件を満たさなくなりリセットされました`);
+      } else if (evoTree.stage2When && !evoTree.stage2When(p) && (p.skillPts[evoTree.id] || 0) > 10) {
+        const excess = p.skillPts[evoTree.id] - 10;
+        p.sp += excess;
+        p.skillPts[evoTree.id] = 10;
+        for (const ms of evoTree.milestones) if (ms.sp > 10) {
+          if (ms.id) delete p.skills[ms.id];
+          if (ms.passive) delete p.passiveSkills[ms.passive];
+        }
+        toast(`「${evoTree.name}」の第2段階が未解放となり10SPに戻りました`);
       }
     }
     save();
