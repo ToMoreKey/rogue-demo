@@ -54,11 +54,12 @@ BOT = r"""
    // 特性がない武器に再鍛造（余りゴールドが多ければ炎上・吸血を狙う）
    if(R.smithReforge && p.weapon){
      if(!p.weapon.prop && p.gold>=R.reforgeCost(p.weapon)*2) R.smithReforge(p.weapon.id);
-     else if(p.weapon.prop!=='flame' && p.gold>=80000) R.smithReforge(p.weapon.id);
+     else if(p.weapon.prop!=='flame' && p.gold>=60000) R.smithReforge(p.weapon.id);
    }
    if(R.buyShopItem){
-     while(p.potions.hp<8 && p.gold>=200) R.buyShopItem('hp');
-     while(p.potions.mp<8 && p.gold>=250) R.buyShopItem('mp');
+     const pCap = p.lv >= 90 ? 25 : 8;
+     while(p.potions.hp<pCap && p.gold>=200) R.buyShopItem('hp');
+     while(p.potions.mp<pCap && p.gold>=250) R.buyShopItem('mp');
    }
    if(R.expandBag){
      while((p.bagCap||60)<(R.MAX_BAG_CAP||60) && p.gold>=R.bagExpandCost(p.bagCap||60)) R.expandBag();
