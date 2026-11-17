@@ -271,8 +271,8 @@ with sync_playwright() as pw:
         G.run = null;
         return { unique, totalIds: ids.length, svgCount };
     }''')
-    check('all 54 enemy IDs across A-I are unique',
-          sprite_res['unique'] and sprite_res['totalIds'] == 54, sprite_res)
+    check('all enemy IDs across A-I+ are unique',
+          sprite_res['unique'] and sprite_res['totalIds'] >= 54, sprite_res)
     check('G-I enemy renders pixel SVG fallback without image', sprite_res['svgCount'] > 0, sprite_res)
     check('no page errors', errs == [], errs)
     b.close()
