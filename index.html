@@ -220,6 +220,9 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dc-spr{width:56px;flex:none}
 .sprite{display:block;width:100%;height:auto;image-rendering:pixelated}
 .sprite-img{image-rendering:auto;object-fit:contain}
+.aura-6{filter:drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px rgba(255,212,90,.55))}
+.aura-7{filter:drop-shadow(0 0 6px #6de7ff) drop-shadow(0 0 12px rgba(109,231,255,.6))}
+.aura-8{filter:drop-shadow(0 0 7px #c56bff) drop-shadow(0 0 14px rgba(197,107,255,.65))}
 .skin-card{background:var(--ink);border:2px solid var(--line);border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;transition:border-color .15s;color:var(--fg)}
 .skin-card:hover{border-color:var(--accent)}
 .skin-card.selected{border-color:var(--accent);background:var(--accent)18}
@@ -891,11 +894,15 @@ function skinFrames(sk) {
   if (sk.tiers) for (const k of [5, 4, 3]) if (st >= k && sk.tiers[k]) return sk.tiers[k];
   return { img: sk.img, atk: sk.atk };
 }
+function auraClass(p) {
+  const s = Math.max((p && p.weapon && p.weapon.star) || 0, (p && p.armor && p.armor.star) || 0);
+  return s >= 8 ? ' aura-8' : s === 7 ? ' aura-7' : s === 6 ? ' aura-6' : '';
+}
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う
-  const fr = skinFrames(sk);
-  if (fr.img) return `<img class="sprite sprite-img" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
-  return sk.svg.replace('<svg class="sprite"', `<svg class="sprite" style="width:100%;height:auto;${extraStyle || ''}"`);
+  const fr = skinFrames(sk), au = auraClass(G.p);
+  if (fr.img) return `<img class="sprite sprite-img${au}" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
+  return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
 // 防具の★に応じた「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
 function skinTier(sk) {

@@ -206,6 +206,9 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dc-spr{width:56px;flex:none}
 .sprite{display:block;width:100%;height:auto;image-rendering:pixelated}
 .sprite-img{image-rendering:auto;object-fit:contain}
+.aura-6{filter:drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px rgba(255,212,90,.55))}
+.aura-7{filter:drop-shadow(0 0 6px #6de7ff) drop-shadow(0 0 12px rgba(109,231,255,.6))}
+.aura-8{filter:drop-shadow(0 0 7px #c56bff) drop-shadow(0 0 14px rgba(197,107,255,.65))}
 .skin-card{background:var(--ink);border:2px solid var(--line);border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;transition:border-color .15s;color:var(--fg)}
 .skin-card:hover{border-color:var(--accent)}
 .skin-card.selected{border-color:var(--accent);background:var(--accent)18}

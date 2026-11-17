@@ -32,11 +32,15 @@ function skinFrames(sk) {
   if (sk.tiers) for (const k of [5, 4, 3]) if (st >= k && sk.tiers[k]) return sk.tiers[k];
   return { img: sk.img, atk: sk.atk };
 }
+function auraClass(p) {
+  const s = Math.max((p && p.weapon && p.weapon.star) || 0, (p && p.armor && p.armor.star) || 0);
+  return s >= 8 ? ' aura-8' : s === 7 ? ' aura-7' : s === 6 ? ' aura-6' : '';
+}
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う
-  const fr = skinFrames(sk);
-  if (fr.img) return `<img class="sprite sprite-img" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
-  return sk.svg.replace('<svg class="sprite"', `<svg class="sprite" style="width:100%;height:auto;${extraStyle || ''}"`);
+  const fr = skinFrames(sk), au = auraClass(G.p);
+  if (fr.img) return `<img class="sprite sprite-img${au}" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
+  return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
 // 防具の★に応じた「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
 function skinTier(sk) {
