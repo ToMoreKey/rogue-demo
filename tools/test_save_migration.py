@@ -56,10 +56,17 @@ with sync_playwright() as pw:
     check('SAVE_VERSION is 3', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 3)
     sp, op = stored['p'], v1['p']
     for k in ['lv', 'exp', 'sp', 'gold', 'bank', 'hp', 'mp', 'skills', 'skillPts', 'passiveSkills',
-              'equippedSkills', 'potions', 'stats', 'stones', 'weapon', 'armor', 'bag']:
+              'equippedSkills', 'potions', 'stats', 'weapon', 'armor', 'bag']:
         check('v1 p.%s kept' % k, strip_ids(sp.get(k)) == strip_ids(op.get(k)), (sp.get(k), op.get(k)))
-    for k in ['opts', 'sel', 'shopSel', 'autoSellRarity']:
+    check('v1 p.stones kept (+stone_time)',
+          sp.get('stones', {}).get('stone_time') == 0 and all(sp['stones'].get(sk) == v for sk, v in op['stones'].items()),
+          (sp.get('stones'), op.get('stones')))
+    for k in ['opts', 'shopSel', 'autoSellRarity']:
         check('v1 %s kept' % k, stored.get(k) == v1.get(k), (stored.get(k), v1.get(k)))
+    check('v1 sel kept (+D/E/F)',
+          all(stored['sel'].get(dk) == dv for dk, dv in v1['sel'].items())
+          and all(stored['sel'].get(dk) == 'novice' for dk in ['D', 'E', 'F']),
+          (stored.get('sel'), v1.get('sel')))
     check('v1->v3 bagCap is 60', sp.get('bagCap') == 60, sp.get('bagCap'))
     # Lv6 なので A.novice(1), B.novice(6) がクリア済み、A.mid(9) は未クリア
     check('v1->v3 cleared inferred from lv', sp.get('cleared', {}).get('A', {}).get('novice') is True

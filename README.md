@@ -22,7 +22,9 @@
 - `tools/bot.py` … 自動プレイBOT（回帰テスト）
 - `tools/test_save_migration.py` / `tools/fixtures/save_v1.json` / `save_v2.json` … セーブ移行テスト（v1/v2→v3）
 - `tools/test_p1.py` … P1機能テスト（ドロップ上限・難易度解放・戦力値・ビルド再現性）
+- `tools/test_p2.py` … P2機能テスト（D〜F解放・ドロップ上限・時の欠片/★7・30SPスキル・敵ID/ドット絵）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
+- `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
 - `manifest.json` / `sw.js` … PWA設定・オフライン対応
 - `icon-*.png` ほか … アイコン
 
@@ -42,16 +44,16 @@ python3 tools/build.py      # src/ から index.html を生成
 
 ```
 python3 tools/build.py
-python3 tools/bot.py                    # 全15セル制覇BOT・周回モード（3シード）
+python3 tools/bot.py                    # 全30セル制覇BOT・周回モード（3シード）
 python3 tools/bot.py --mode linear      # 線形モード（各セル1回ずつ、レベル差確認）
 python3 tools/test_save_migration.py    # v1/v2セーブ→v3移行
-python3 tools/test_p1.py                # ドロップ上限・解放ルール・戦力値・ビルド再現性
+python3 tools/test_p1.py                # P1機能テスト（A〜Cドロップ上限・解放ルール・戦力値・ビルド再現性）
+python3 tools/test_p2.py                # P2機能テスト（D〜F解放・ドロップ上限・時の欠片/★7・30SPスキル・ドット絵）
 ```
 
-- BOTの目安（P1）:
-  - 線形モード: 15セルすべて踏破（`done: true`）、各セルのレベル差 `-3〜+2`、敗北5回以内。
-  - 周回モード: 3シードとも `done: true`、終了時 `lv` 58〜65前後、余りゴールド約3万G（7万G以下）、ページエラー配列は空。
-- 移行テスト・P1テストは全項目 `PASS`、最後に `RESULT: OK` が出れば成功です。
+- BOTの目安（P2・全30セル）:
+  - 周回モード: 3シードとも `done: true`、`model_hours` 約6.5〜7.5時間（140〜180ラン）、終了時 `lv` 74〜78、余りゴールド 0.5万〜10万G、ページエラー配列は空。
+- 移行テスト・P1テスト・P2テストは全項目 `PASS`、最後に `RESULT: OK` が出れば成功です。
 
 ## セーブ形式
 - 保存先は `localStorage` の `rogue_test_save_v1`（キーは互換のため据え置き）。形式は `{ v: 3, p, opts, sel, shopSel, autoSellRarity }`（`p.cleared`, `p.bagCap` を保持）。
