@@ -1022,7 +1022,7 @@ function isDiffUnlocked(p, d, df) {
 }
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
@@ -1103,6 +1103,7 @@ function load() {
         }
       }
     }
+    p.part1Cleared = !!s.part1Cleared || !!(p.cleared && p.cleared.I && p.cleared.I.high);
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
@@ -1509,11 +1510,15 @@ function gainExp(n) {
 function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
-  let clearGold = 0, clearSp = 0, lost = 0;
+  let clearGold = 0, clearSp = 0, lost = 0, part1End = false;
   if (result === 'clear') {
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
     const firstClear = !p.cleared[run.d.id][run.df.id];
+    if (run.d.id === 'I' && run.df.id === 'high' && firstClear && !p.part1Cleared) {
+      p.part1Cleared = true;
+      part1End = true;
+    }
     clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]);
     clearSp = firstClear ? run.df.clearSp : 0;
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
@@ -1529,7 +1534,7 @@ function finishRun(result) {
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills
+    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End
   };
   G.run = null;
   G.townView = 'plaza';  // 街帰還時は広場に戻る
@@ -2414,10 +2419,25 @@ function renderStatus() {
 /* ================= render: modal ================= */
 function openModal() {
   const l = G.last; if (!l) return;
+  const p = G.p;
+  if (l.part1End) {
+    $('#m-sheet').innerHTML = `
+      <h2 class="win" id="m-title">前編 完</h2>
+      <p style="margin:8px 0;line-height:1.6">魔王ガルゼを倒した！<br>しかし真の黒幕との戦いはまだ続く——後編へ進む（後編は準備中）。</p>
+      <div class="res">
+        <div><small>総ラン数</small><b>${fmt(p.stats.runs)}回</b></div>
+        <div><small>総撃破数</small><b>${fmt(p.stats.kills)}体</b></div>
+        <div><small>到達レベル</small><b>Lv${p.lv}</b></div>
+        <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b></div>
+      </div>
+      <div class="act"><button class="btn primary" data-act="mTown" id="m-retry">続ける</button></div>`;
+    $('#modal').hidden = false; G.modalOpen = true;
+    setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
+    return;
+  }
   const title = l.result === 'clear' ? 'ダンジョン踏破！' : l.result === 'defeat' ? '力尽きた…' : '撤退した';
   const cls = l.result === 'clear' ? 'win' : l.result === 'defeat' ? 'lose' : '';
   const items = [...l.items].sort((a, b) => b.rarity - a.rarity || b.star - a.star);
-  const p = G.p;
   $('#m-sheet').innerHTML = `
     <h2 class="${cls}" id="m-title">${title}</h2>
     <p class="sub" style="margin:0">ダンジョン${l.d.id}「${esc(l.d.name)}」（${l.df.name}）　到達 ${l.floor} / ${l.floors}F　撃破 ${l.kills}体</p>

@@ -364,11 +364,15 @@ function gainExp(n) {
 function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
-  let clearGold = 0, clearSp = 0, lost = 0;
+  let clearGold = 0, clearSp = 0, lost = 0, part1End = false;
   if (result === 'clear') {
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
     const firstClear = !p.cleared[run.d.id][run.df.id];
+    if (run.d.id === 'I' && run.df.id === 'high' && firstClear && !p.part1Cleared) {
+      p.part1Cleared = true;
+      part1End = true;
+    }
     clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]);
     clearSp = firstClear ? run.df.clearSp : 0;
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
@@ -384,7 +388,7 @@ function finishRun(result) {
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills
+    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End
   };
   G.run = null;
   G.townView = 'plaza';  // 街帰還時は広場に戻る
