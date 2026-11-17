@@ -63,7 +63,7 @@ function renderFacility(fac) {
       <p class="sub">MPを無料で全回復します。</p>
       <button class="btn primary" id="btn-inn" data-act="inn" ${p.mp >= maxMp(p) ? 'disabled' : ''}>泊まる（無料）</button>`;
   } else if (fac === 'shop') {
-    const shopPills = RARITY.map((r, i) => {
+    const shopPills = RARITY.slice(0, 4).map((r, i) => {
       const n = p.bag.filter(it => it.rarity === i && !it.locked).length;
       return `<button class="pill r${i} ${G.shopSel[i] ? 'on' : ''}" aria-pressed="${G.shopSel[i]}" data-act="shopToggle" data-i="${i}">${r.name} ${n}個</button>`;
     }).join('');

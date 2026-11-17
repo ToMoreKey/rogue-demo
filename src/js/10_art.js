@@ -34,7 +34,7 @@ function skinFrames(sk) {
 }
 function auraClass(p) {
   const s = Math.max((p && p.weapon && p.weapon.star) || 0, (p && p.armor && p.armor.star) || 0);
-  return s >= 8 ? ' aura-8' : s === 7 ? ' aura-7' : s === 6 ? ' aura-6' : '';
+  return s >= 9 ? ' aura-9' : s === 8 ? ' aura-8' : s === 7 ? ' aura-7' : s === 6 ? ' aura-6' : '';
 }
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う

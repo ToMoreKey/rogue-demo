@@ -306,7 +306,7 @@ function onKill() {
       let fs = null;
       if (bStar && bStar > capStar) {
         for (let s = bStar; s > capStar; s--) {
-          const ch = s >= 8 ? 0.06 : 0.08;
+          const ch = s >= 9 ? (run.df.id === 'extreme' ? 0.06 : 0.04) : s === 8 ? 0.06 : 0.08;
           if (rnd() < ch) { fs = s; break; }
         }
       }
@@ -329,6 +329,11 @@ function onKill() {
       if (rnd() < (en.boss ? 0.8 : 0.4)) {
         p.stones.stone_core = Math.min(999, (p.stones.stone_core || 0) + 1);
         addLog('機神の核を手に入れた！', 'l-good');
+      }
+    } else if ((en.boss || en.miniboss) && run.d.id === 'O') {
+      if (rnd() < (en.boss ? 0.8 : 0.4)) {
+        p.stones.stone_genesis = Math.min(999, (p.stones.stone_genesis || 0) + 1);
+        addLog('創世の欠片を手に入れた！', 'l-good');
       }
     } else if (rnd() < 0.08) {
       const st = STONES.find(s => s.dId === run.d.id);
