@@ -16,18 +16,20 @@ BOT = r"""
  let ticks=0,runs=0,defeats=0,retreats=0,floorsTraversed=0; const log=[]; const steps=[];
  const maxSmith=R.SMITH_MAX_STAR||5;
  const spPlan=()=>{const p=G.p;
-   const cap={sword:30,magic:30,life:30,warrior:10,mage:10,cleric:10,hero:10};
+   const cap={sword:30,magic:30,life:30,warrior:20,mage:20,cleric:20,hero:20};
    const A=(t,n)=>{
      const tree=R.SKILL_TREES&&R.SKILL_TREES.find(x=>x.id===t);
      if(tree&&tree.unlockWhen&&!tree.unlockWhen(p)) return;
-     n=Math.min(n,p.sp,cap[t]-(p.skillPts[t]||0));
+     const mx=(tree&&tree.stage2When&&!tree.stage2When(p))?10:cap[t];
+     n=Math.min(n,p.sp,mx-(p.skillPts[t]||0));
      if(n>0) R.ACTS.spAlloc({tree:t,amount:n});
    };
    A('life',3); A('sword',20); A('life',20); A('magic',20);
    A('hero',10); A('warrior',10); A('cleric',10); A('mage',10);
    A('sword',10); A('life',10); A('magic',10);
-   const order=['skySlash','ultima','heroic','lightningStorm','flameSlash','ult','multi','strike','meteor','blaze','thunder','fireball','berserk','blizzard'];
-   const heal=['saintPrayer','fullheal','heal']; const slots=[null,null,null];
+   A('hero',10); A('warrior',10); A('cleric',10); A('mage',10);
+   const order=['hagun','starSword','cosmicNova','skySlash','ultima','heroic','iceAge','lightningStorm','flameSlash','ult','multi','strike','meteor','blaze','thunder','fireball','berserk','blizzard'];
+   const heal=['requiem','holyLight','saintPrayer','fullheal','heal']; const slots=[null,null,null];
    const h=heal.find(x=>p.skills[x]); if(h) slots[0]=h;
    const atk=order.filter(x=>p.skills[x]).slice(0,2); atk.forEach((x,i)=>slots[i+1]=x);
    p.equippedSkills=slots;
@@ -52,7 +54,7 @@ BOT = r"""
    // 特性がない武器に再鍛造（余りゴールドが多ければ炎上・吸血を狙う）
    if(R.smithReforge && p.weapon){
      if(!p.weapon.prop && p.gold>=R.reforgeCost(p.weapon)*2) R.smithReforge(p.weapon.id);
-     else if(p.weapon.prop!=='flame' && p.gold>=45000) R.smithReforge(p.weapon.id);
+     else if(p.weapon.prop!=='flame' && p.gold>=80000) R.smithReforge(p.weapon.id);
    }
    if(R.buyShopItem){
      while(p.potions.hp<8 && p.gold>=200) R.buyShopItem('hp');
