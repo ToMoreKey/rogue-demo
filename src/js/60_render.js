@@ -501,10 +501,25 @@ function renderStatus() {
 function openModal() {
   const l = G.last; if (!l) return;
   const p = G.p;
+  if (l.ending) {
+    $('#m-sheet').innerHTML = `
+      <h2 class="win" id="m-title">ゲームクリア！</h2>
+      <p style="margin:8px 0;line-height:1.6">終焉神ニヒルを倒した！ 世界は救われた！<br>しかし旅はまだ続く——エンドコンテンツは準備中。</p>
+      <div class="res">
+        <div><small>総ラン数</small><b>${fmt(p.stats.runs)}回</b></div>
+        <div><small>総撃破数</small><b>${fmt(p.stats.kills)}体</b></div>
+        <div><small>到達レベル</small><b>Lv${p.lv}</b></div>
+        <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b></div>
+      </div>
+      <div class="act"><button class="btn primary" data-act="mTown" id="m-retry">続ける</button></div>`;
+    $('#modal').hidden = false; G.modalOpen = true;
+    setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
+    return;
+  }
   if (l.part1End) {
     $('#m-sheet').innerHTML = `
       <h2 class="win" id="m-title">前編 完</h2>
-      <p style="margin:8px 0;line-height:1.6">魔王ガルゼを倒した！<br>しかし真の黒幕との戦いはまだ続く——後編へ進む（後編は準備中）。</p>
+      <p style="margin:8px 0;line-height:1.6">魔王ガルゼを倒した！<br>しかし真の黒幕との戦いはまだ続く——後編へ進む！</p>
       <div class="res">
         <div><small>総ラン数</small><b>${fmt(p.stats.runs)}回</b></div>
         <div><small>総撃破数</small><b>${fmt(p.stats.kills)}体</b></div>

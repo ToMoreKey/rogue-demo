@@ -20,7 +20,7 @@ function passiveBonus(p) {
   return { atkMult, hpMult, mpMult, mpCostMult, healMult };
 }
 function enemyArt(en, dId) {
-  const im = ENEMY_IMG[en.id];
+  const im = ENEMY_IMG[en.id] || (en.fallbackId && ENEMY_IMG[en.fallbackId]);
   const st = en.bossFilter ? ` style="filter:${en.bossFilter}"` : '';
   if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
   return spriteSVG(en.shape, PAL[dId][en.shape]);

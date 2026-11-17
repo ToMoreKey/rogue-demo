@@ -272,7 +272,7 @@ function enemyAct() {
   if (run.shura > 0) run.shura--;
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
-  addLog(`${en.name}の攻撃！ ${dmg}ダメージを受けた。`, 'l-dmg');
+  addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
   popDamage('player', String(dmg), 'bad'); hitFlash('player');
   if (run.guard > 0) { run.guard--; if (run.guard === 0) addLog('鉄壁の効果が切れた。', 'l-sys'); }
 }
@@ -281,6 +281,15 @@ function battleRound() {
   const p = G.p, run = G.run, en = run.enemy;
   playerAct();
   if (en.hp <= 0) { onKill(); return; }
+  if (en.id === 'o_boss' && run.df.id === 'extreme' && !en.raged && en.hp <= en.maxHp * 0.5) {
+    en.raged = true;
+    en.fallbackId = en.id;
+    en.id = (run.d.boss && run.d.boss.rageId) || 'o_boss_rage';
+    en.name = (run.d.boss && run.d.boss.rageName) || '終焉神ニヒル・真';
+    en.atk = Math.round(en.atk * 1.35);
+    addLog('ニヒルの仮面が砕け散った！ 終焉神ニヒル・真へと姿を変え、攻撃力が激増した！', 'l-dmg');
+    renderEnemy(true);
+  }
   enemyAct();
   if (p.hp <= 0) { finishRun('defeat'); return; }
   if (run.regenTurns > 0) {
@@ -369,7 +378,7 @@ function gainExp(n) {
 function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
-  let clearGold = 0, clearSp = 0, lost = 0, part1End = false;
+  let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false;
   if (result === 'clear') {
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
@@ -377,6 +386,10 @@ function finishRun(result) {
     if (run.d.id === 'I' && run.df.id === 'high' && firstClear && !p.part1Cleared) {
       p.part1Cleared = true;
       part1End = true;
+    }
+    if (run.d.id === 'O' && run.df.id === 'extreme' && firstClear && !p.ending) {
+      p.ending = true;
+      ending = true;
     }
     clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]);
     clearSp = firstClear ? run.df.clearSp : 0;
@@ -393,7 +406,7 @@ function finishRun(result) {
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End
+    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending
   };
   G.run = null;
   G.townView = 'plaza';  // 街帰還時は広場に戻る
