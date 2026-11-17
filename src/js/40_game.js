@@ -290,7 +290,13 @@ function onKill() {
     const capStar = run.d.maxStar || MAX_STAR;
     const bStar = run.d.bossMaxStar;
     const rollBossItem = () => {
-      const fs = (bStar && bStar > capStar && rnd() < 0.08) ? bStar : null;
+      let fs = null;
+      if (bStar && bStar > capStar) {
+        for (let s = bStar; s > capStar; s--) {
+          const ch = s >= 8 ? 0.06 : 0.08;
+          if (rnd() < ch) { fs = s; break; }
+        }
+      }
       return genItem(run.df, true, null, capStar, fs);
     };
     if (en.boss) { drops.push(rollBossItem()); drops.push(rollBossItem()); }
@@ -300,11 +306,16 @@ function onKill() {
     const r = rnd();
     if (r < 0.05) { p.potions.hp = Math.min(99, p.potions.hp + 1); run.potions.hp++; addLog('生命の薬を手に入れた！', 'l-good'); }
     else if (r < 0.10) { p.potions.mp = Math.min(99, p.potions.mp + 1); run.potions.mp++; addLog('魔力の薬を手に入れた！', 'l-good'); }
-    // 強化石ドロップ（ダンジョンA→初級、B→中級、C→上級 8% ／ D〜Fボス80%・強敵40%→時の欠片）
+    // 強化石ドロップ（ダンジョンA→初級、B→中級、C→上級 8% ／ D〜Fボス80%・強敵40%→時の欠片 ／ H〜Iボス80%・強敵40%→機神の核）
     if ((en.boss || en.miniboss) && ['D', 'E', 'F'].includes(run.d.id)) {
       if (rnd() < (en.boss ? 0.8 : 0.4)) {
         p.stones.stone_time = Math.min(999, (p.stones.stone_time || 0) + 1);
         addLog('時の欠片を手に入れた！', 'l-good');
+      }
+    } else if ((en.boss || en.miniboss) && ['H', 'I'].includes(run.d.id)) {
+      if (rnd() < (en.boss ? 0.8 : 0.4)) {
+        p.stones.stone_core = Math.min(999, (p.stones.stone_core || 0) + 1);
+        addLog('機神の核を手に入れた！', 'l-good');
       }
     } else if (rnd() < 0.08) {
       const st = STONES.find(s => s.dId === run.d.id);
