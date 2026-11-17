@@ -58,8 +58,8 @@ with sync_playwright() as pw:
     for k in ['lv', 'exp', 'sp', 'gold', 'bank', 'hp', 'mp', 'skills', 'skillPts', 'passiveSkills',
               'equippedSkills', 'potions', 'stats', 'weapon', 'armor', 'bag']:
         check('v1 p.%s kept' % k, strip_ids(sp.get(k)) == strip_ids(op.get(k)), (sp.get(k), op.get(k)))
-    check('v1 p.stones kept (+stone_time)',
-          sp.get('stones', {}).get('stone_time') == 0 and all(sp['stones'].get(sk) == v for sk, v in op['stones'].items()),
+    check('v1 p.stones kept (+stone_time,+stone_core)',
+          sp.get('stones', {}).get('stone_time') == 0 and sp.get('stones', {}).get('stone_core') == 0 and all(sp['stones'].get(sk) == v for sk, v in op['stones'].items()),
           (sp.get('stones'), op.get('stones')))
     for k in ['opts', 'shopSel', 'autoSellRarity']:
         check('v1 %s kept' % k, stored.get(k) == v1.get(k), (stored.get(k), v1.get(k)))
