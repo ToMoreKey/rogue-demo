@@ -7,7 +7,7 @@ const DIFFS = [
   { id: 'extreme', name: '極級', tag: '極致',   floors: 80, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 1800, clearSp: 3, expMult: 1.25, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
 ];
 
-const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8, D: 0.45, E: 0.45, F: 0.45, G: 0.25, H: 0.25, I: 0.25 };
+const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8, D: 0.45, E: 0.45, F: 0.45, G: 0.25, H: 0.25, I: 0.25, J: 0.2, K: 0.2, L: 0.2, M: 0.2, N: 0.2, O: 0.2 };
 const DUNGEONS = [
   { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.35, 2.9, 5.2, 8.8], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18, 30, 42], maxStar: 4, unlock: null,
     mobs: [
@@ -80,5 +80,53 @@ const DUNGEONS = [
       { id: 'i_knight',   name: '暗黒騎士',   shape: 'skull', hp: 136, atk: 40, def: 20, exp: 33, gold: 4 },
       { id: 'i_demon',    name: '下級悪魔',   shape: 'skull', hp: 124, atk: 41, def: 18, exp: 31, gold: 4 },
       { id: 'i_witch',    name: '魔女',       shape: 'bat',   hp: 88,  atk: 45, def: 11, exp: 32, gold: 4 }],
-    boss: { id: 'i_boss', name: '魔王ガルゼ', shape: 'boss', hp: 440, atk: 56, def: 28, exp: 280, gold: 35 } }
+    boss: { id: 'i_boss', name: '魔王ガルゼ', shape: 'boss', hp: 440, atk: 56, def: 28, exp: 280, gold: 35 } },
+  { id: 'J', name: '幻霧の大湿原', blurb: '濃い霧と鬼火が彷徨い、底なしの沼が旅人を誘う湿原。', pow: [2.05, 3.1, 4.3, 5.6, 7.0], a1: '#1c2a22', a2: '#101a15', rec: [60, 69, 78, 87, 96], maxStar: 5, bossMaxStar: 8, unlock: { d: 'I', df: 'high' },
+    mobs: [
+      { id: 'j_bog',     name: '泥人形ボグ',     shape: 'slime', hp: 112, atk: 35, def: 14, exp: 32, gold: 3 },
+      { id: 'j_wisp',    name: '彷徨う鬼火',     shape: 'bat',   hp: 90,  atk: 46, def: 11, exp: 33, gold: 3 },
+      { id: 'j_hag',     name: '沼の魔婆',       shape: 'skull', hp: 154, atk: 44, def: 22, exp: 38, gold: 4 },
+      { id: 'j_lizard',  name: '沼鰐の戦士',     shape: 'skull', hp: 142, atk: 45, def: 20, exp: 36, gold: 4 },
+      { id: 'j_banshee', name: '霧のバンシー',   shape: 'bat',   hp: 100, atk: 50, def: 13, exp: 37, gold: 4 }],
+    boss: { id: 'j_boss', name: '沼の主ヒュドラ', shape: 'boss', hp: 510, atk: 62, def: 31, exp: 330, gold: 40 } },
+  { id: 'K', name: '水晶の大鉱脈', blurb: '青白い結晶が輝き、狂える鉱夫とゴーレムが守る大鉱脈。', pow: [2.25, 3.35, 4.6, 6.0, 7.5], a1: '#18283a', a2: '#0e1826', rec: [66, 75, 84, 93, 102], maxStar: 5, bossMaxStar: 8, unlock: { d: 'J', df: 'high' },
+    mobs: [
+      { id: 'k_geode', name: 'ジオードもどき',   shape: 'slime', hp: 128, atk: 39, def: 16, exp: 37, gold: 3 },
+      { id: 'k_bat',   name: '水晶コウモリ',     shape: 'bat',   hp: 102, atk: 52, def: 12, exp: 38, gold: 3 },
+      { id: 'k_dwarf', name: '狂える鉱夫',       shape: 'skull', hp: 174, atk: 50, def: 25, exp: 44, gold: 4 },
+      { id: 'k_golem', name: '結晶ゴーレム',     shape: 'skull', hp: 162, atk: 51, def: 24, exp: 42, gold: 4 },
+      { id: 'k_fairy', name: '輝石の妖精',       shape: 'bat',   hp: 114, atk: 56, def: 14, exp: 43, gold: 4 }],
+    boss: { id: 'k_boss', name: '鉱脈の巨獣クリスタルベヒモス', shape: 'boss', hp: 590, atk: 69, def: 35, exp: 390, gold: 45 } },
+  { id: 'L', name: '亡者の大聖堂', blurb: '堕天の祈りが響き、亡者たちが永遠に彷徨う古びた大聖堂。', pow: [2.45, 3.65, 4.95, 6.4, 8.0], a1: '#26242e', a2: '#16141c', rec: [72, 81, 90, 99, 108], maxStar: 5, bossMaxStar: 8, unlock: { d: 'K', df: 'high' },
+    mobs: [
+      { id: 'l_wax',     name: '蝋人形の亡者',   shape: 'slime', hp: 146, atk: 44, def: 18, exp: 43, gold: 4 },
+      { id: 'l_choir',   name: '呪いの聖歌隊',   shape: 'bat',   hp: 116, atk: 58, def: 14, exp: 44, gold: 4 },
+      { id: 'l_monk',    name: '亡者の修道士',   shape: 'skull', hp: 196, atk: 56, def: 28, exp: 50, gold: 5 },
+      { id: 'l_templar', name: '堕天の聖騎士',   shape: 'skull', hp: 184, atk: 57, def: 27, exp: 48, gold: 5 },
+      { id: 'l_saint',   name: '嘆きの聖女',     shape: 'bat',   hp: 130, atk: 62, def: 16, exp: 49, gold: 5 }],
+    boss: { id: 'l_boss', name: '堕天使長ルシェル', shape: 'boss', hp: 680, atk: 76, def: 39, exp: 460, gold: 50 } },
+  { id: 'M', name: '星降る天文台', blurb: '夜空と星環が交わり、月の番人が時を刻む天空の天文台。', pow: [2.65, 3.95, 5.3, 6.8, 8.5], a1: '#121634', a2: '#0a0c22', rec: [78, 87, 96, 105, 114], maxStar: 5, bossMaxStar: 8, unlock: { d: 'L', df: 'high' },
+    mobs: [
+      { id: 'm_star',   name: '星くずスライム', shape: 'slime', hp: 166, atk: 50, def: 20, exp: 50, gold: 4 },
+      { id: 'm_comet',  name: '流星鳥',         shape: 'bat',   hp: 132, atk: 65, def: 16, exp: 51, gold: 4 },
+      { id: 'm_astro',  name: '天文官の亡霊',   shape: 'skull', hp: 220, atk: 62, def: 32, exp: 58, gold: 5 },
+      { id: 'm_moon',   name: '月の番人',       shape: 'skull', hp: 208, atk: 64, def: 30, exp: 55, gold: 5 },
+      { id: 'm_zodiac', name: '星座の精',       shape: 'bat',   hp: 148, atk: 70, def: 18, exp: 56, gold: 5 }],
+    boss: { id: 'm_boss', name: '星環の巨竜ミルキア', shape: 'boss', hp: 780, atk: 84, def: 44, exp: 540, gold: 56 } },
+  { id: 'N', name: '竜骨の渓谷', blurb: '太古の竜の骨が連なり、熾火と飛竜が舞う灼熱の渓谷。', pow: [2.9, 4.25, 5.7, 7.25, 9.0], a1: '#3a2418', a2: '#24150d', rec: [84, 93, 102, 111, 120], maxStar: 5, bossMaxStar: 8, unlock: { d: 'M', df: 'high' },
+    mobs: [
+      { id: 'n_egg',    name: '竜卵の魔物',     shape: 'slime', hp: 188, atk: 56, def: 23, exp: 58, gold: 5 },
+      { id: 'n_wyvern', name: '飛竜',           shape: 'bat',   hp: 150, atk: 72, def: 18, exp: 59, gold: 5 },
+      { id: 'n_bone',   name: '竜骨兵',         shape: 'skull', hp: 248, atk: 70, def: 36, exp: 66, gold: 6 },
+      { id: 'n_slayer', name: '竜狩りの亡霊',   shape: 'skull', hp: 234, atk: 72, def: 34, exp: 63, gold: 6 },
+      { id: 'n_shaman', name: '竜巫女',         shape: 'bat',   hp: 168, atk: 78, def: 20, exp: 64, gold: 6 }],
+    boss: { id: 'n_boss', name: '骸竜王ドラグニル', shape: 'boss', hp: 890, atk: 93, def: 49, exp: 630, gold: 64 } },
+  { id: 'O', name: '虚空の神殿', blurb: '次元の裂け目の果て、終焉神が待つ世界の最深部。', pow: [3.15, 4.6, 6.1, 7.75, 9.5], a1: '#0e0e1a', a2: '#06060e', rec: [90, 99, 108, 117, 126], maxStar: 5, bossMaxStar: 9, unlock: { d: 'N', df: 'high' },
+    mobs: [
+      { id: 'o_void',   name: '虚無のスライム', shape: 'slime', hp: 212, atk: 62, def: 26, exp: 67, gold: 5 },
+      { id: 'o_eye',    name: '浮遊する眼',     shape: 'bat',   hp: 170, atk: 80, def: 21, exp: 68, gold: 5 },
+      { id: 'o_guard',  name: '虚空の神兵',     shape: 'skull', hp: 280, atk: 78, def: 40, exp: 76, gold: 6 },
+      { id: 'o_knight', name: '次元の騎士',     shape: 'skull', hp: 264, atk: 80, def: 38, exp: 73, gold: 6 },
+      { id: 'o_oracle', name: '堕ちた神託の巫女', shape: 'bat', hp: 190, atk: 86, def: 23, exp: 74, gold: 6 }],
+    boss: { id: 'o_boss', name: '終焉神ニヒル', shape: 'boss', hp: 1020, atk: 104, def: 55, exp: 740, gold: 75, rageId: 'o_boss_rage', rageName: '終焉神ニヒル・真' } }
 ];
