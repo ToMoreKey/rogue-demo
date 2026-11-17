@@ -15,6 +15,7 @@
   - `assets/` … base64画像（敵・装備アイコン・キャラ）。中身は書き換えない
   - `js/` … ロジック（`30_save.js` がセーブとバージョン移行）
 - `tools/build.py` … `src/` から `index.html` を生成
+- `docs/gemini_prompt_P3.md` … P3（前編の完成 G〜I）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P2.md` … P2（新ダンジョンD〜F）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P1c.md` … P1bの検証で見つかった修正（狂気武器の自動装備・金策の圧縮）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P1b.md` … P1のペース再調整（時間の見積もりモデルに合わせる）をGeminiに依頼するための指示書
