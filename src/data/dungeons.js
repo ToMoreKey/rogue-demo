@@ -7,7 +7,7 @@ const DIFFS = [
   { id: 'extreme', name: '極級', tag: '極致',   floors: 80, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 1800, clearSp: 3, expMult: 1.25, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
 ];
 
-const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8, D: 0.45, E: 0.45, F: 0.45 };
+const DUNGEON_REWARD = { A: 1, B: 1.35, C: 1.8, D: 0.45, E: 0.45, F: 0.45, G: 0.45, H: 0.45, I: 0.45 };
 const DUNGEONS = [
   { id: 'A', name: '苔むす地下墓地', blurb: '湿った石室に、眠れぬ者たちが巣くう。', pow: [0.54, 1.35, 2.9, 5.2, 8.8], a1: '#17261f', a2: '#0f1815', rec: [1, 9, 18, 30, 42], maxStar: 4, unlock: null,
     mobs: [
@@ -56,5 +56,29 @@ const DUNGEONS = [
       { id: 'f_priest',  name: '溺れた神官',       shape: 'skull', hp: 88, atk: 26, def: 13, exp: 25, gold: 2 },
       { id: 'f_crab',    name: '珊瑚蟹の戦士',     shape: 'skull', hp: 78, atk: 25, def: 12, exp: 23, gold: 2 },
       { id: 'f_siren',   name: 'セイレーン',       shape: 'bat',   hp: 54, atk: 30, def: 6,  exp: 23, gold: 2 }],
-    boss: { id: 'f_boss', name: '深海王クラーケン', shape: 'boss', hp: 260, atk: 36, def: 18, exp: 200, gold: 20 } }
+    boss: { id: 'f_boss', name: '深海王クラーケン', shape: 'boss', hp: 260, atk: 36, def: 18, exp: 200, gold: 20 } },
+  { id: 'G', name: '雷鳴の空中庭園', blurb: '雲海の上に浮かび、雷光と守護像が番をする天空の庭園。', pow: [2.1, 3.45, 5.1, 7.2, 9.4], a1: '#1c1a3a', a2: '#12102a', rec: [42, 51, 61, 71, 80], maxStar: 5, bossMaxStar: 7, unlock: { d: 'F', df: 'high' },
+    mobs: [
+      { id: 'g_sprite',   name: '雷雲のスプライト', shape: 'slime', hp: 72,  atk: 23, def: 8,  exp: 24, gold: 2 },
+      { id: 'g_hawk',     name: '雷鷹',             shape: 'bat',   hp: 58,  atk: 32, def: 6,  exp: 25, gold: 2 },
+      { id: 'g_gargoyle', name: 'ガーゴイル',       shape: 'skull', hp: 102, atk: 30, def: 15, exp: 29, gold: 3 },
+      { id: 'g_sentinel', name: '庭園の守護像',     shape: 'skull', hp: 92,  atk: 29, def: 14, exp: 27, gold: 2 },
+      { id: 'g_valkyrie', name: '雷の乙女',         shape: 'bat',   hp: 64,  atk: 34, def: 8,  exp: 28, gold: 3 }],
+    boss: { id: 'g_boss', name: '雷竜ボルテクス', shape: 'boss', hp: 310, atk: 42, def: 21, exp: 250, gold: 24 } },
+  { id: 'H', name: '機巧の地下都市', blurb: '歯車と毒霧が渦巻き、古代の自動機械が徘徊する地下都市。', pow: [2.4, 3.9, 5.6, 7.9, 10.2], a1: '#22282c', a2: '#161a1e', rec: [48, 57, 66, 75, 84], maxStar: 5, bossMaxStar: 7, unlock: { d: 'G', df: 'high' },
+    mobs: [
+      { id: 'h_sludge',  name: '毒液スライム',       shape: 'slime', hp: 84,  atk: 27, def: 10, exp: 29, gold: 2 },
+      { id: 'h_drone',   name: '偵察ドローン',       shape: 'bat',   hp: 68,  atk: 36, def: 8,  exp: 30, gold: 2 },
+      { id: 'h_gear',    name: '歯車兵',             shape: 'skull', hp: 118, atk: 34, def: 17, exp: 34, gold: 3 },
+      { id: 'h_turret',  name: '自走砲台',           shape: 'skull', hp: 108, atk: 35, def: 16, exp: 33, gold: 3 },
+      { id: 'h_android', name: '魔導アンドロイド',   shape: 'bat',   hp: 76,  atk: 39, def: 10, exp: 34, gold: 3 }],
+    boss: { id: 'h_boss', name: '機神ゼクス', shape: 'boss', hp: 370, atk: 48, def: 24, exp: 310, gold: 28 } },
+  { id: 'I', name: '魔王城', blurb: '紅き月を背に聳え立つ、悪魔と暗黒騎士が守る魔王の居城。', pow: [2.75, 4.4, 6.2, 8.7, 11.2], a1: '#2a1018', a2: '#1a0a10', rec: [54, 63, 72, 81, 90], maxStar: 5, bossMaxStar: 8, unlock: { d: 'H', df: 'high' },
+    mobs: [
+      { id: 'i_familiar', name: '闇の使い魔', shape: 'slime', hp: 98,  atk: 31, def: 12, exp: 34, gold: 3 },
+      { id: 'i_raven',    name: '闇鴉',       shape: 'bat',   hp: 78,  atk: 42, def: 9,  exp: 35, gold: 3 },
+      { id: 'i_knight',   name: '暗黒騎士',   shape: 'skull', hp: 136, atk: 40, def: 20, exp: 40, gold: 4 },
+      { id: 'i_demon',    name: '下級悪魔',   shape: 'skull', hp: 124, atk: 41, def: 18, exp: 38, gold: 4 },
+      { id: 'i_witch',    name: '魔女',       shape: 'bat',   hp: 88,  atk: 45, def: 11, exp: 39, gold: 4 }],
+    boss: { id: 'i_boss', name: '魔王ガルゼ', shape: 'boss', hp: 440, atk: 56, def: 28, exp: 380, gold: 35 } }
 ];
