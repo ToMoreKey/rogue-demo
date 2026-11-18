@@ -21,6 +21,7 @@ JS_ORDER = [
     'assets/item_icons.js',
     'data/skills.js',
     'data/dungeons.js',
+    'data/tower.js',
     'assets/enemy_images.js',
     'assets/char_skins.js',
     'data/skins.js',

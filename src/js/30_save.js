@@ -1,8 +1,8 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 3;
-// migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {3: fn, ...} を足すだけで連鎖する。
+const SAVE_VERSION = 4;
+// migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
   1: d => Object.assign({}, d, { v: 2 }),
@@ -24,6 +24,14 @@ const migrations = {
     }
     if (!p.bagCap) p.bagCap = BAG_CAP;
     return Object.assign({}, d, { v: 3, p });
+  },
+  // v3 → v4: 無限回廊「天蓋の塔」用の記録 p.tower を追加
+  3: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.tower || typeof p.tower !== 'object') {
+      p.tower = { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    }
+    return Object.assign({}, d, { v: 4, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -75,6 +83,17 @@ function load() {
     }
     p.part1Cleared = !!s.part1Cleared || !!(p.cleared && p.cleared.I && p.cleared.I.high);
     p.ending = !!s.ending || !!(p.cleared && p.cleared.O && p.cleared.O.extreme);
+    if (s.tower && typeof s.tower === 'object') {
+      const validTitle = id => TOWER_TITLES.some(t => t.id === id);
+      const ts = Array.isArray(s.tower.titles) ? [...new Set(s.tower.titles.filter(validTitle))] : [];
+      p.tower = {
+        best: num(s.tower.best, 0),
+        coins: num(s.tower.coins, 0),
+        totalCoins: num(s.tower.totalCoins, 0),
+        title: s.tower.title && ts.includes(s.tower.title) ? s.tower.title : null,
+        titles: ts
+      };
+    }
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
