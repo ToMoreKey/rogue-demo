@@ -1,7 +1,7 @@
 const itemIcon = it => {
   const arr = ITEM_ICON[it.slot] || [];
   const src = arr[it.star] || arr[Math.min(it.star, 5)];
-  const badge = it.star >= 6 ? `<i class="it-sb">★${it.star}</i>` : '';
+  const badge = it.star >= 6 && !arr[it.star] ? `<i class="it-sb">★${it.star}</i>` : '';
   return src ? `<span class="it-ico"><img src="${src}" alt="" draggable="false">${badge}</span>` : '';
 };
 
