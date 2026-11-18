@@ -21,6 +21,12 @@ const PROPS = {
   flame:   { name: '炎上', desc: '武器攻撃力が1.2倍', atkMult: 1.2 },
   vamp:    { name: '吸血', desc: '与えたダメージの10%分HPを回復', atkMult: 1 }
 };
+const ARMOR_PROPS = {
+  aegis:  { name: '聖域',   desc: '防具防御力が1.15倍', defMult: 1.15 },
+  ward:   { name: '守護',   desc: '受けるダメージが10%減少', defMult: 1 },
+  thorns: { name: '棘の鎧', desc: '受けたダメージの15%を敵に反射', defMult: 1 },
+  regen:  { name: '再生',   desc: '毎ターン最大HPの3%回復', defMult: 1 }
+};
 const WEAPON_BASE = [0, 6, 12, 20, 32, 50, 80, 125, 190, 280];
 const ARMOR_BASE  = [0, 3, 6, 10, 16, 25, 40, 62, 95, 140];
 const WEAPON_NAMES = ['', '見習いの剣', '鉄の剣', '鋼の長剣', '魔銀の大剣', '星砕きの聖剣', '竜殺しの大剣', '時渡りの剣', '魔王殺しの神剣', '創世の剣'];

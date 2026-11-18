@@ -60,8 +60,12 @@ const baseAtk = p => 8 + p.lv * 2;
 const baseDef = p => 2 + p.lv;
 const expNeed = lv => Math.round(17.5 * Math.pow(lv, 1.55) * (lv >= 30 ? 1 + (lv - 29) * 0.015 : 1) * (lv >= 56 ? 1 + (lv - 55) * 0.022 : 1));
 
+const itemProps = it => !it ? [] : (Array.isArray(it.props) && it.props.length ? it.props : (it.prop ? [it.prop] : []));
+const hasProp = (it, k) => itemProps(it).includes(k);
+const propMeta = (slot, k) => (slot === 'armor' ? ARMOR_PROPS[k] : PROPS[k]);
 const itemPower = it => Math.max(1, Math.round((it.slot === 'weapon' ? WEAPON_BASE : ARMOR_BASE)[it.star] * RARITY[it.rarity].mult * it.roll));
-const weaponAtk = it => it ? Math.round(itemPower(it) * ((it.prop && PROPS[it.prop].atkMult) || 1)) : 0;
+const weaponAtk = it => it ? Math.round(itemPower(it) * itemProps(it).reduce((m, k) => m * ((PROPS[k] && PROPS[k].atkMult) || 1), 1)) : 0;
+const armorDef = it => it ? Math.round(itemPower(it) * itemProps(it).reduce((m, k) => m * ((ARMOR_PROPS[k] && ARMOR_PROPS[k].defMult) || 1), 1)) : 0;
 const itemName = (it, skinId) => {
   const sk = skinId || (G.p && G.p.skin) || 'ruby';
   const base = it.slot === 'weapon'
@@ -71,27 +75,28 @@ const itemName = (it, skinId) => {
 };
 const sellValue = it => Math.max(1, Math.round(RARITY[it.rarity].sell * 0.65 * (1 + (it.star - 1) * 0.5) * (0.6 + 0.4 * it.roll)));
 // 戦力値（表示用）: 武器は実効攻撃力、防具は実効防御力
-const gearPower = it => !it ? 0 : (it.slot === 'weapon' ? weaponAtk(it) : itemPower(it));
+const gearPower = it => !it ? 0 : (it.slot === 'weapon' ? weaponAtk(it) : armorDef(it));
 // 自動装備・おすすめ判定用スコア（P1前と同等: 狂気はHP消費リスクのため攻撃2倍を評価せず倍率1.0）
 const gearScore = it => {
   if (!it) return 0;
-  const pw = itemPower(it);
-  if (it.slot === 'armor') return pw;
-  return pw * (it.prop === 'flame' ? 1.2 : it.prop === 'vamp' ? 1.05 : 1);
+  const pw = itemPower(it), ps = itemProps(it);
+  if (it.slot === 'armor') return Math.round(armorDef(it) * (1 + ps.filter(k => k !== 'aegis').length * 0.08));
+  return pw * ps.reduce((m, k) => m * (k === 'flame' ? 1.2 : k === 'vamp' ? 1.05 : 1), 1);
 };
 const bestGearItem = (p, slot) => {
   if (!p) return null;
-  let best = p[slot] && p[slot].slot === slot && p[slot].prop !== 'madness' ? p[slot] : null;
+  let best = p[slot] && p[slot].slot === slot && !hasProp(p[slot], 'madness') ? p[slot] : null;
   for (const it of (p.bag || [])) {
-    if (it && it.slot === slot && it.prop !== 'madness' && gearScore(it) > gearScore(best)) best = it;
+    if (it && it.slot === slot && !hasProp(it, 'madness') && gearScore(it) > gearScore(best)) best = it;
   }
   return best;
 };
 const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.mastery ? passiveBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
-const playerDef = p => Math.round((baseDef(p) + (p.armor ? itemPower(p.armor) : 0)) * (p.mastery ? passiveBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
+const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? passiveBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 
 function mkItem(p, o) {
-  return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: o.prop || null, locked: false };
+  const ps = Array.isArray(o.props) ? [...new Set(o.props)] : (o.prop ? [o.prop] : []);
+  return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: ps[0] || null, props: ps, locked: false };
 }
 function isDungeonUnlocked(p, d) {
   if (!d) return false;

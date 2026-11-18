@@ -70,7 +70,10 @@ function cleanItem(it) {
   const slot = it.slot === 'weapon' || it.slot === 'armor' ? it.slot : null;
   const star = Math.round(Number(it.star)), rarity = Math.round(Number(it.rarity)), roll = Number(it.roll);
   if (!slot || !(star >= 1 && star <= MAX_STAR) || !(rarity >= 0 && rarity <= MAX_RARITY) || !isFinite(roll)) return null;
-  return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: slot === 'weapon' && PROPS[it.prop] ? it.prop : null, locked: !!it.locked };
+  const dict = slot === 'armor' ? ARMOR_PROPS : PROPS;
+  const rawPs = Array.isArray(it.props) && it.props.length ? it.props : (it.prop ? [it.prop] : []);
+  const props = [...new Set(rawPs.filter(k => dict[k]))];
+  return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: props[0] || null, props, locked: !!it.locked };
 }
 function load() {
   try {

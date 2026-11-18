@@ -22,13 +22,27 @@ function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR, forceStar
     roll: Math.round((0.5 + rnd() * 0.5) * 100) / 100,
     prop: null
   });
-  if (it.slot === 'weapon' && rnd() < 0.3) it.prop = pick(Object.keys(PROPS));
+  if (it.slot === 'weapon' && rnd() < 0.3) { const pk = pick(Object.keys(PROPS)); it.prop = pk; it.props = [pk]; }
   return it;
+}
+function rollUniqueProps(slot, count) {
+  const pool = Object.keys(slot === 'armor' ? ARMOR_PROPS : PROPS);
+  const out = [];
+  while (out.length < count && pool.length) out.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+  return out;
+}
+function genMythic9(slot) {
+  const s = slot || (rnd() < 0.5 ? 'weapon' : 'armor');
+  const cnt = s === 'weapon'
+    ? weighted([[0, 15], [1, 40], [2, 30], [3, 15]])
+    : weighted([[0, 30], [1, 45], [2, 25]]);
+  const ps = rollUniqueProps(s, cnt);
+  return mkItem(G.p, { slot: s, star: 9, rarity: 4, roll: Math.round((0.75 + rnd() * 0.25) * 100) / 100, props: ps });
 }
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
-  if (G.opts.autoEquip && it.prop !== 'madness' && gearScore(it) > gearScore(p[slot])) {
+  if (G.opts.autoEquip && !hasProp(it, 'madness') && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
     if (old) {
@@ -48,8 +62,8 @@ function equipBest() {
   const p = G.p; let n = 0;
   for (const slot of ['weapon', 'armor']) {
     const cur = p[slot];
-    let best = cur && cur.prop !== 'madness' ? cur : null;
-    for (const it of p.bag) if (it.slot === slot && it.prop !== 'madness' && gearScore(it) > gearScore(best)) best = it;
+    let best = cur && !hasProp(cur, 'madness') ? cur : null;
+    for (const it of p.bag) if (it.slot === slot && !hasProp(it, 'madness') && gearScore(it) > gearScore(best)) best = it;
     if (best && best !== cur) {
       p.bag = p.bag.filter(x => x !== best);
       if (cur) p.bag.push(cur);
@@ -206,8 +220,9 @@ function runEvent() {
 
 function logDrop(it, out) {
   const tail = out === 'equipped' ? '（装備した）' : out === 'sold' ? '（バッグがいっぱいで売却）' : '';
-  const stat = it.slot === 'weapon' ? `攻${itemPower(it)}` : `防${itemPower(it)}`;
-  addLog(`入手：${itemName(it)} ★${it.star}${it.prop ? ' ［' + PROPS[it.prop].name + '］' : ''} ${stat}${tail}`, 'l-r' + it.rarity);
+  const stat = it.slot === 'weapon' ? `攻${gearPower(it)}` : `防${gearPower(it)}`;
+  const ps = itemProps(it).map(k => propMeta(it.slot, k)?.name).filter(Boolean);
+  addLog(`入手：${itemName(it)} ★${it.star}${ps.length ? ' ［' + ps.join('・') + '］' : ''} ${stat}${tail}`, 'l-r' + it.rarity);
 }
 
 /* ---- battle ---- */
@@ -298,7 +313,7 @@ function playerAct() {
     p.mp -= s.mp;
     if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   }
-  if (p.weapon && p.weapon.prop === 'madness') {
+  if (hasProp(p.weapon, 'madness')) {
     const loss = Math.ceil(maxHp(p) * 0.1), before = p.hp;
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
@@ -321,7 +336,7 @@ function playerAct() {
   hitFlash('enemy'); playAttackMotion();
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
   if (s.freeze && en.hp > 0) { run.frozen = typeof s.freeze === 'number' ? s.freeze : 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
-  const stealPct = (p.weapon && p.weapon.prop === 'vamp' ? 0.1 : 0) + te.lifeSteal;
+  const stealPct = (hasProp(p.weapon, 'vamp') ? 0.1 : 0) + te.lifeSteal;
   if (stealPct > 0 && dealt > 0) {
     const h = Math.max(1, Math.round(dealt * stealPct)), before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
@@ -344,7 +359,7 @@ function enemyAct() {
   }
   const pb = passiveBonus(p);
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
-  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * te.takenMult * pb.takenMult));
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult));
   if (run.shura > 0) run.shura--;
   if (run.kishin > 0) run.kishin--;
   if (run.defBuff > 0) run.defBuff--;
@@ -352,6 +367,11 @@ function enemyAct() {
   addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
   popDamage('player', String(dmg), 'bad'); hitFlash('player');
   if (run.guard > 0) { run.guard--; if (run.guard === 0) addLog('鉄壁の効果が切れた。', 'l-sys'); }
+  if (hasProp(p.armor, 'thorns') && en.hp > 0 && p.hp > 0) {
+    const ar = Math.max(1, Math.round(dmg * 0.15));
+    en.hp = Math.max(0, en.hp - ar);
+    addLog(`棘の鎧！ ${en.name}に${ar}ダメージ反射！`, 'l-hit');
+  }
   if (te.thorns > 0 && en.hp > 0 && p.hp > 0) {
     const refl = Math.max(1, Math.round(playerDef(p) * te.thorns));
     en.hp = Math.max(0, en.hp - refl);
@@ -380,6 +400,11 @@ function battleRound() {
     addLog('不死鳥の羽が輝き、HP50%で蘇った！', 'l-good');
   }
   if (p.hp <= 0) { finishRun('defeat'); return; }
+  if (hasProp(p.armor, 'regen') && p.hp > 0 && p.hp < maxHp(p)) {
+    const h = Math.max(1, Math.round(maxHp(p) * 0.03)), b = p.hp;
+    p.hp = Math.min(maxHp(p), p.hp + h);
+    if (p.hp > b) addLog(`防具の再生でHPが${p.hp - b}回復した。`, 'l-good');
+  }
   if (run.regenTurns > 0) {
     run.regenTurns--;
     const h = Math.max(1, Math.round(maxHp(p) * (run.regenPct || 0.15))), b = p.hp;
@@ -645,13 +670,25 @@ function smithReforge(id) {
   const p = G.p;
   const it = [p.weapon, p.armor, ...p.bag].find(x => x && x.id === Number(id));
   if (!it) { toast('アイテムが見つかりません'); return; }
-  if (it.slot !== 'weapon') { toast('特性の付与は武器のみ行えます'); return; }
+  const isMythic9 = it.rarity === 4 && it.star === 9;
+  if (it.slot !== 'weapon' && !isMythic9) { toast('特性の付与は武器のみ行えます'); return; }
   const cost = reforgeCost(it);
   if (p.gold < cost) { toast(`所持金が足りません（${fmt(cost)}G必要）`); return; }
   p.gold -= cost;
-  it.prop = rnd() < 0.72 ? pick(Object.keys(PROPS)) : null;
+  if (isMythic9) {
+    const cnt = it.slot === 'weapon'
+      ? weighted([[0, 15], [1, 40], [2, 30], [3, 15]])
+      : weighted([[0, 30], [1, 45], [2, 25]]);
+    it.props = rollUniqueProps(it.slot, cnt);
+    it.prop = it.props[0] || null;
+    const names = it.props.map(k => propMeta(it.slot, k)?.name).filter(Boolean);
+    toast(names.length ? `再鍛造で［${names.join('・')}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
+  } else {
+    it.prop = rnd() < 0.72 ? pick(Object.keys(PROPS)) : null;
+    it.props = it.prop ? [it.prop] : [];
+    toast(it.prop ? `再鍛造で［${PROPS[it.prop].name}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
+  }
   save();
-  toast(it.prop ? `再鍛造で［${PROPS[it.prop].name}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
   renderAll();
 }
 function buyShopItem(id) {

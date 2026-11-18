@@ -440,6 +440,12 @@ const PROPS = {
   flame:   { name: '炎上', desc: '武器攻撃力が1.2倍', atkMult: 1.2 },
   vamp:    { name: '吸血', desc: '与えたダメージの10%分HPを回復', atkMult: 1 }
 };
+const ARMOR_PROPS = {
+  aegis:  { name: '聖域',   desc: '防具防御力が1.15倍', defMult: 1.15 },
+  ward:   { name: '守護',   desc: '受けるダメージが10%減少', defMult: 1 },
+  thorns: { name: '棘の鎧', desc: '受けたダメージの15%を敵に反射', defMult: 1 },
+  regen:  { name: '再生',   desc: '毎ターン最大HPの3%回復', defMult: 1 }
+};
 const WEAPON_BASE = [0, 6, 12, 20, 32, 50, 80, 125, 190, 280];
 const ARMOR_BASE  = [0, 3, 6, 10, 16, 25, 40, 62, 95, 140];
 const WEAPON_NAMES = ['', '見習いの剣', '鉄の剣', '鋼の長剣', '魔銀の大剣', '星砕きの聖剣', '竜殺しの大剣', '時渡りの剣', '魔王殺しの神剣', '創世の剣'];
@@ -1277,8 +1283,12 @@ const baseAtk = p => 8 + p.lv * 2;
 const baseDef = p => 2 + p.lv;
 const expNeed = lv => Math.round(17.5 * Math.pow(lv, 1.55) * (lv >= 30 ? 1 + (lv - 29) * 0.015 : 1) * (lv >= 56 ? 1 + (lv - 55) * 0.022 : 1));
 
+const itemProps = it => !it ? [] : (Array.isArray(it.props) && it.props.length ? it.props : (it.prop ? [it.prop] : []));
+const hasProp = (it, k) => itemProps(it).includes(k);
+const propMeta = (slot, k) => (slot === 'armor' ? ARMOR_PROPS[k] : PROPS[k]);
 const itemPower = it => Math.max(1, Math.round((it.slot === 'weapon' ? WEAPON_BASE : ARMOR_BASE)[it.star] * RARITY[it.rarity].mult * it.roll));
-const weaponAtk = it => it ? Math.round(itemPower(it) * ((it.prop && PROPS[it.prop].atkMult) || 1)) : 0;
+const weaponAtk = it => it ? Math.round(itemPower(it) * itemProps(it).reduce((m, k) => m * ((PROPS[k] && PROPS[k].atkMult) || 1), 1)) : 0;
+const armorDef = it => it ? Math.round(itemPower(it) * itemProps(it).reduce((m, k) => m * ((ARMOR_PROPS[k] && ARMOR_PROPS[k].defMult) || 1), 1)) : 0;
 const itemName = (it, skinId) => {
   const sk = skinId || (G.p && G.p.skin) || 'ruby';
   const base = it.slot === 'weapon'
@@ -1288,27 +1298,28 @@ const itemName = (it, skinId) => {
 };
 const sellValue = it => Math.max(1, Math.round(RARITY[it.rarity].sell * 0.65 * (1 + (it.star - 1) * 0.5) * (0.6 + 0.4 * it.roll)));
 // 戦力値（表示用）: 武器は実効攻撃力、防具は実効防御力
-const gearPower = it => !it ? 0 : (it.slot === 'weapon' ? weaponAtk(it) : itemPower(it));
+const gearPower = it => !it ? 0 : (it.slot === 'weapon' ? weaponAtk(it) : armorDef(it));
 // 自動装備・おすすめ判定用スコア（P1前と同等: 狂気はHP消費リスクのため攻撃2倍を評価せず倍率1.0）
 const gearScore = it => {
   if (!it) return 0;
-  const pw = itemPower(it);
-  if (it.slot === 'armor') return pw;
-  return pw * (it.prop === 'flame' ? 1.2 : it.prop === 'vamp' ? 1.05 : 1);
+  const pw = itemPower(it), ps = itemProps(it);
+  if (it.slot === 'armor') return Math.round(armorDef(it) * (1 + ps.filter(k => k !== 'aegis').length * 0.08));
+  return pw * ps.reduce((m, k) => m * (k === 'flame' ? 1.2 : k === 'vamp' ? 1.05 : 1), 1);
 };
 const bestGearItem = (p, slot) => {
   if (!p) return null;
-  let best = p[slot] && p[slot].slot === slot && p[slot].prop !== 'madness' ? p[slot] : null;
+  let best = p[slot] && p[slot].slot === slot && !hasProp(p[slot], 'madness') ? p[slot] : null;
   for (const it of (p.bag || [])) {
-    if (it && it.slot === slot && it.prop !== 'madness' && gearScore(it) > gearScore(best)) best = it;
+    if (it && it.slot === slot && !hasProp(it, 'madness') && gearScore(it) > gearScore(best)) best = it;
   }
   return best;
 };
 const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.mastery ? passiveBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
-const playerDef = p => Math.round((baseDef(p) + (p.armor ? itemPower(p.armor) : 0)) * (p.mastery ? passiveBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
+const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? passiveBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 
 function mkItem(p, o) {
-  return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: o.prop || null, locked: false };
+  const ps = Array.isArray(o.props) ? [...new Set(o.props)] : (o.prop ? [o.prop] : []);
+  return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: ps[0] || null, props: ps, locked: false };
 }
 function isDungeonUnlocked(p, d) {
   if (!d) return false;
@@ -1400,7 +1411,10 @@ function cleanItem(it) {
   const slot = it.slot === 'weapon' || it.slot === 'armor' ? it.slot : null;
   const star = Math.round(Number(it.star)), rarity = Math.round(Number(it.rarity)), roll = Number(it.roll);
   if (!slot || !(star >= 1 && star <= MAX_STAR) || !(rarity >= 0 && rarity <= MAX_RARITY) || !isFinite(roll)) return null;
-  return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: slot === 'weapon' && PROPS[it.prop] ? it.prop : null, locked: !!it.locked };
+  const dict = slot === 'armor' ? ARMOR_PROPS : PROPS;
+  const rawPs = Array.isArray(it.props) && it.props.length ? it.props : (it.prop ? [it.prop] : []);
+  const props = [...new Set(rawPs.filter(k => dict[k]))];
+  return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: props[0] || null, props, locked: !!it.locked };
 }
 function load() {
   try {
@@ -1514,13 +1528,27 @@ function genItem(diff, boost = false, slot = null, maxStar = MAX_STAR, forceStar
     roll: Math.round((0.5 + rnd() * 0.5) * 100) / 100,
     prop: null
   });
-  if (it.slot === 'weapon' && rnd() < 0.3) it.prop = pick(Object.keys(PROPS));
+  if (it.slot === 'weapon' && rnd() < 0.3) { const pk = pick(Object.keys(PROPS)); it.prop = pk; it.props = [pk]; }
   return it;
+}
+function rollUniqueProps(slot, count) {
+  const pool = Object.keys(slot === 'armor' ? ARMOR_PROPS : PROPS);
+  const out = [];
+  while (out.length < count && pool.length) out.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+  return out;
+}
+function genMythic9(slot) {
+  const s = slot || (rnd() < 0.5 ? 'weapon' : 'armor');
+  const cnt = s === 'weapon'
+    ? weighted([[0, 15], [1, 40], [2, 30], [3, 15]])
+    : weighted([[0, 30], [1, 45], [2, 25]]);
+  const ps = rollUniqueProps(s, cnt);
+  return mkItem(G.p, { slot: s, star: 9, rarity: 4, roll: Math.round((0.75 + rnd() * 0.25) * 100) / 100, props: ps });
 }
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
-  if (G.opts.autoEquip && it.prop !== 'madness' && gearScore(it) > gearScore(p[slot])) {
+  if (G.opts.autoEquip && !hasProp(it, 'madness') && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
     if (old) {
@@ -1540,8 +1568,8 @@ function equipBest() {
   const p = G.p; let n = 0;
   for (const slot of ['weapon', 'armor']) {
     const cur = p[slot];
-    let best = cur && cur.prop !== 'madness' ? cur : null;
-    for (const it of p.bag) if (it.slot === slot && it.prop !== 'madness' && gearScore(it) > gearScore(best)) best = it;
+    let best = cur && !hasProp(cur, 'madness') ? cur : null;
+    for (const it of p.bag) if (it.slot === slot && !hasProp(it, 'madness') && gearScore(it) > gearScore(best)) best = it;
     if (best && best !== cur) {
       p.bag = p.bag.filter(x => x !== best);
       if (cur) p.bag.push(cur);
@@ -1698,8 +1726,9 @@ function runEvent() {
 
 function logDrop(it, out) {
   const tail = out === 'equipped' ? '（装備した）' : out === 'sold' ? '（バッグがいっぱいで売却）' : '';
-  const stat = it.slot === 'weapon' ? `攻${itemPower(it)}` : `防${itemPower(it)}`;
-  addLog(`入手：${itemName(it)} ★${it.star}${it.prop ? ' ［' + PROPS[it.prop].name + '］' : ''} ${stat}${tail}`, 'l-r' + it.rarity);
+  const stat = it.slot === 'weapon' ? `攻${gearPower(it)}` : `防${gearPower(it)}`;
+  const ps = itemProps(it).map(k => propMeta(it.slot, k)?.name).filter(Boolean);
+  addLog(`入手：${itemName(it)} ★${it.star}${ps.length ? ' ［' + ps.join('・') + '］' : ''} ${stat}${tail}`, 'l-r' + it.rarity);
 }
 
 /* ---- battle ---- */
@@ -1790,7 +1819,7 @@ function playerAct() {
     p.mp -= s.mp;
     if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   }
-  if (p.weapon && p.weapon.prop === 'madness') {
+  if (hasProp(p.weapon, 'madness')) {
     const loss = Math.ceil(maxHp(p) * 0.1), before = p.hp;
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
@@ -1813,7 +1842,7 @@ function playerAct() {
   hitFlash('enemy'); playAttackMotion();
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
   if (s.freeze && en.hp > 0) { run.frozen = typeof s.freeze === 'number' ? s.freeze : 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
-  const stealPct = (p.weapon && p.weapon.prop === 'vamp' ? 0.1 : 0) + te.lifeSteal;
+  const stealPct = (hasProp(p.weapon, 'vamp') ? 0.1 : 0) + te.lifeSteal;
   if (stealPct > 0 && dealt > 0) {
     const h = Math.max(1, Math.round(dealt * stealPct)), before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
@@ -1836,7 +1865,7 @@ function enemyAct() {
   }
   const pb = passiveBonus(p);
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
-  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * te.takenMult * pb.takenMult));
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult));
   if (run.shura > 0) run.shura--;
   if (run.kishin > 0) run.kishin--;
   if (run.defBuff > 0) run.defBuff--;
@@ -1844,6 +1873,11 @@ function enemyAct() {
   addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
   popDamage('player', String(dmg), 'bad'); hitFlash('player');
   if (run.guard > 0) { run.guard--; if (run.guard === 0) addLog('鉄壁の効果が切れた。', 'l-sys'); }
+  if (hasProp(p.armor, 'thorns') && en.hp > 0 && p.hp > 0) {
+    const ar = Math.max(1, Math.round(dmg * 0.15));
+    en.hp = Math.max(0, en.hp - ar);
+    addLog(`棘の鎧！ ${en.name}に${ar}ダメージ反射！`, 'l-hit');
+  }
   if (te.thorns > 0 && en.hp > 0 && p.hp > 0) {
     const refl = Math.max(1, Math.round(playerDef(p) * te.thorns));
     en.hp = Math.max(0, en.hp - refl);
@@ -1872,6 +1906,11 @@ function battleRound() {
     addLog('不死鳥の羽が輝き、HP50%で蘇った！', 'l-good');
   }
   if (p.hp <= 0) { finishRun('defeat'); return; }
+  if (hasProp(p.armor, 'regen') && p.hp > 0 && p.hp < maxHp(p)) {
+    const h = Math.max(1, Math.round(maxHp(p) * 0.03)), b = p.hp;
+    p.hp = Math.min(maxHp(p), p.hp + h);
+    if (p.hp > b) addLog(`防具の再生でHPが${p.hp - b}回復した。`, 'l-good');
+  }
   if (run.regenTurns > 0) {
     run.regenTurns--;
     const h = Math.max(1, Math.round(maxHp(p) * (run.regenPct || 0.15))), b = p.hp;
@@ -2137,13 +2176,25 @@ function smithReforge(id) {
   const p = G.p;
   const it = [p.weapon, p.armor, ...p.bag].find(x => x && x.id === Number(id));
   if (!it) { toast('アイテムが見つかりません'); return; }
-  if (it.slot !== 'weapon') { toast('特性の付与は武器のみ行えます'); return; }
+  const isMythic9 = it.rarity === 4 && it.star === 9;
+  if (it.slot !== 'weapon' && !isMythic9) { toast('特性の付与は武器のみ行えます'); return; }
   const cost = reforgeCost(it);
   if (p.gold < cost) { toast(`所持金が足りません（${fmt(cost)}G必要）`); return; }
   p.gold -= cost;
-  it.prop = rnd() < 0.72 ? pick(Object.keys(PROPS)) : null;
+  if (isMythic9) {
+    const cnt = it.slot === 'weapon'
+      ? weighted([[0, 15], [1, 40], [2, 30], [3, 15]])
+      : weighted([[0, 30], [1, 45], [2, 25]]);
+    it.props = rollUniqueProps(it.slot, cnt);
+    it.prop = it.props[0] || null;
+    const names = it.props.map(k => propMeta(it.slot, k)?.name).filter(Boolean);
+    toast(names.length ? `再鍛造で［${names.join('・')}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
+  } else {
+    it.prop = rnd() < 0.72 ? pick(Object.keys(PROPS)) : null;
+    it.props = it.prop ? [it.prop] : [];
+    toast(it.prop ? `再鍛造で［${PROPS[it.prop].name}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
+  }
   save();
-  toast(it.prop ? `再鍛造で［${PROPS[it.prop].name}］が付与された！` : '再鍛造の結果、特性は付かなかった…');
   renderAll();
 }
 function buyShopItem(id) {
@@ -2619,7 +2670,7 @@ function renderFacility(fac) {
       const loc = it === p.weapon ? '【装備中・武器】' : it === p.armor ? '【装備中・防具】' : '【バッグ】';
       return `<div class="smith-item">
         <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}${maxed ? '' : '☆'.repeat(SMITH_MAX_STAR - it.star)}</span><span class="sub" style="margin-left:4px">${loc}</span></div>
-        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>戦力 <b>${fmt(gearPower(it))}</b></span>${it.prop ? `<span class="badge ${it.prop}">${PROPS[it.prop].name}</span>` : ''}<span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
+        <div class="it-meta"><span class="rc r${it.rarity}">${RARITY[it.rarity].name}</span><span>戦力 <b>${fmt(gearPower(it))}</b></span>${itemProps(it).map(k => `<span class="badge ${k}">${propMeta(it.slot, k)?.name || k}</span>`).join('')}<span>${maxed ? '<b>MAX強化済み</b>' : `強化費用 <b>${fmt(cost)}G</b>${stReq ? ` ＋ <span style="color:${stReq.color}">${stReq.name} ×1</span>（所持:${p.stones[stReq.id] || 0}）` : ''}`}</span></div>
         <div class="row">${maxed ? '' : `<button class="btn small${canUpgrade ? ' primary' : ''}" data-act="smithUpgrade" data-id="${it.id}" ${canUpgrade ? '' : 'disabled'}>★${it.star + 1}に強化</button>`}${it.slot === 'weapon' ? `<button class="btn small" data-act="smithReforge" data-id="${it.id}" ${canReforge ? '' : 'disabled'}>再鍛造 (${fmt(rfCost)}G)</button>` : ''}</div>
       </div>`;
     }).join('') : '<p class="empty">強化できる装備がありません。</p>';
@@ -2819,11 +2870,12 @@ function itemCard(it, o = {}) {
   const gp = gearPower(it);
   const better = o.compare && gp > gearPower(G.p[it.slot]);
   const isRec = o.showRec !== false && bestGearItem(G.p, it.slot) === it;
+  const ps = itemProps(it);
   return `<div class="item r${it.rarity}">
     <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}</span></div>
-    <div class="it-stat">${isW ? '攻撃力' : '防御力'} +${pw}${it.prop && PROPS[it.prop].atkMult !== 1 ? `<span class="it-desc">（実効 +${gp}）</span>` : ''}　<span class="it-desc">戦力 ${fmt(gp)}</span></div>
+    <div class="it-stat">${isW ? '攻撃力' : '防御力'} +${pw}${gp !== pw ? `<span class="it-desc">（実効 +${gp}）</span>` : ''}　<span class="it-desc">戦力 ${fmt(gp)}</span></div>
     <div class="it-meta"><span class="rc">${RARITY[it.rarity].name}</span><span>品質 ${Math.round(it.roll * 100)}%</span>${o.sell === false ? '' : `<span>売値 ${fmt(sellValue(it))}G</span>`}${isRec ? '<span class="badge rec">おすすめ</span>' : ''}${better ? '<span class="badge up">今の装備より強い</span>' : ''}</div>
-    ${it.prop ? `<div><span class="badge ${it.prop}">${PROPS[it.prop].name}</span> <span class="it-desc">${PROPS[it.prop].desc}</span>${it.prop === 'madness' ? '<div class="it-desc">※自動装備の対象外（手動で装備）</div>' : ''}</div>` : ''}
+    ${ps.length ? `<div>${ps.map(k => { const pm = propMeta(it.slot, k); return pm ? `<div><span class="badge ${k}">${pm.name}</span> <span class="it-desc">${pm.desc}</span></div>` : ''; }).join('')}${ps.includes('madness') ? '<div class="it-desc">※自動装備の対象外（手動で装備）</div>' : ''}</div>` : ''}
     ${o.actions ? `<div class="it-act"><button class="btn small" data-act="equip" data-id="${it.id}">装備する</button><button class="btn small ${it.locked ? 'on' : ''}" data-act="lock" data-id="${it.id}" aria-pressed="${it.locked}">${it.locked ? 'ロック中' : 'ロック'}</button></div>` : ''}
   </div>`;
 }
@@ -3556,7 +3608,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, G, ACTS, tick, startRun, startTowerRun, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
