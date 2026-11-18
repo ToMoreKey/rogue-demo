@@ -80,10 +80,10 @@ function startRun(dId, dfId) {
 }
 
 const towerBand = floor => TOWER_CFG.bands.find(b => floor <= b.maxFloor) || TOWER_CFG.bands[TOWER_CFG.bands.length - 1];
-function rollTowerBlessings(owned) {
+function rollTowerBlessings(owned, count = 3) {
   const pool = TOWER_BLESSINGS.filter(b => !owned.includes(b.id));
   const out = [];
-  while (out.length < 3 && pool.length > 0) {
+  while (out.length < count && pool.length > 0) {
     const idx = Math.floor(rnd() * pool.length);
     out.push(pool.splice(idx, 1)[0]);
   }
@@ -126,9 +126,10 @@ function nextFloor() {
   run.floor++;
   if (run.tower) {
     const boss = run.floor % 10 === 0;
+    const mini5 = !boss && run.floor % 10 === 5;
     const evCh = 0.16 + towerEff(run).eventBoost;
-    if (!boss && run.floor >= 2 && rnd() < evCh) { runEvent(); run.phase = 'pause'; run.cleared++; }
-    else spawnEnemy(boss, false);
+    if (!boss && !mini5 && run.floor >= 2 && rnd() < evCh) { runEvent(); run.phase = 'pause'; run.cleared++; }
+    else spawnEnemy(boss, mini5);
     return;
   }
   if (run.floor > run.floors) { finishRun('clear'); return; }
@@ -159,12 +160,15 @@ function spawnEnemy(boss, miniboss = false) {
   }
   const S = scaleOf(run, run.floor);
   const Shp = run.tower ? Math.pow(S, 0.45) : S;
-  const Sa = run.tower ? Math.pow(S, 1.02) : Math.pow(S, TUNE.atkExp);
-  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
+  const Sa = run.tower ? Math.pow(S, 0.98) : Math.pow(S, TUNE.atkExp);
+  const hpMult = run.tower ? (boss ? 1.85 : miniboss ? 1.3 : 1) : (boss ? TUNE.bossHp : miniboss ? 1.55 : 1);
+  const atkMult = run.tower ? (boss ? 0.90 : miniboss ? 1.02 : 1) : (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1);
+  const defMult = run.tower ? (boss ? 1.0 : 1) : (boss ? TUNE.bossDef : miniboss ? 1.1 : 1);
+  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * hpMult));
   run.enemy = {
     id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
-    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1))),
-    def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : miniboss ? 1.1 : 1)),
+    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * atkMult)),
+    def: Math.round(base.def * Sa * TUNE.defScale * defMult),
     exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (miniboss ? 1.5 : 1))),
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
@@ -365,8 +369,8 @@ function battleRound() {
   if (en.hp <= 0) { onKill(); return; }
   if (p.hp <= 0 && run.tower && towerEff(run).reviveOnce && !run.tower.reviveUsed) {
     run.tower.reviveUsed = true;
-    p.hp = Math.max(1, Math.round(maxHp(p) * 0.3));
-    addLog('不死鳥の羽が輝き、HP30%で蘇った！', 'l-good');
+    p.hp = Math.max(1, Math.round(maxHp(p) * 0.5));
+    addLog('不死鳥の羽が輝き、HP50%で蘇った！', 'l-good');
   }
   if (p.hp <= 0) { finishRun('defeat'); return; }
   if (run.regenTurns > 0) {
@@ -447,8 +451,8 @@ function onKill() {
     p.hp = Math.min(maxHp(p), p.hp + h);
     if (p.hp > b) addLog(`小休止でHPが${p.hp - b}回復した。`, 'l-sys');
   }
-  if (run.tower && en.boss) {
-    const choices = rollTowerBlessings(run.tower.blessings);
+  if (run.tower && (en.boss || (run.floor % 10 === 5))) {
+    const choices = rollTowerBlessings(run.tower.blessings, en.boss ? 3 : 2);
     if (choices.length) {
       run.tower.pendingChoice = choices;
       run.phase = 'bless';
