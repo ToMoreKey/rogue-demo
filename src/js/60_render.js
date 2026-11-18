@@ -176,7 +176,20 @@ function renderDungeonSelect() {
         ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>`
         : `解放条件：ダンジョン${d.unlock.d}（${unlockReqDf}）をクリア`}</p>
       <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></article>`;
-  }).join('');
+  }).join('') + (() => {
+    const twUnlocked = !!(p0 && p0.ending);
+    const tw = (p0 && p0.tower) || { best: 0, coins: 0 };
+    return `<article class="dcard${twUnlocked ? '' : ' locked'}" style="--a1:#1a1433;--a2:#0c091a">
+      <div class="dc-head"><span class="dc-id">塔</span><h3>${twUnlocked ? '' : '🔒 '}天蓋の塔</h3></div>
+      <p class="dc-blurb">階層は無限。10階ごとのボスを倒して祝福を選び、限界に挑むエンドレス回廊。</p>
+      <p class="dc-info">${twUnlocked
+        ? `最高到達階 <b>${tw.best || 0}F</b>　所持コイン <b>🪙 ${fmt(tw.coins || 0)}枚</b>`
+        : '解放条件：魔王城以降の最終ボス（虚空の神殿・極級）をクリア'}</p>
+      <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
+        ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
+      </div></article>`;
+  })();
 }
 
 /* ================= render: battle ================= */
@@ -195,17 +208,29 @@ function renderBattle() {
   const run = G.run, p = G.p;
   if (!run) return;
   $('#arena').style.setProperty('--a1', run.d.a1); $('#arena').style.setProperty('--a2', run.d.a2);
-  $('#b-title').textContent = `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
-  let pips = '';
-  const pipCount = Math.min(run.floors, 20);
-  for (let k = 1; k <= pipCount; k++) {
-    const fEnd = Math.round(k * run.floors / pipCount);
-    const fStart = Math.round((k - 1) * run.floors / pipCount) + 1;
-    const isDone = run.cleared >= fEnd;
-    const isCur = !isDone && run.floor >= fStart && run.floor <= fEnd;
-    pips += `<i class="pip ${isDone ? 'done' : isCur ? 'cur' : ''} ${k === pipCount ? 'boss' : ''}"></i>`;
+  if (run.tower) {
+    $('#b-title').textContent = `天蓋の塔　${Math.max(run.floor, 1)}F`;
+    let pips = '';
+    const f10 = ((Math.max(run.floor, 1) - 1) % 10) + 1;
+    for (let k = 1; k <= 10; k++) {
+      const isDone = k < f10 || (k === f10 && run.phase !== 'battle');
+      const isCur = !isDone && k === f10;
+      pips += `<i class="pip ${isDone ? 'done' : isCur ? 'cur' : ''} ${k === 10 ? 'boss' : ''}"></i>`;
+    }
+    $('#b-pips').innerHTML = pips;
+  } else {
+    $('#b-title').textContent = `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
+    let pips = '';
+    const pipCount = Math.min(run.floors, 20);
+    for (let k = 1; k <= pipCount; k++) {
+      const fEnd = Math.round(k * run.floors / pipCount);
+      const fStart = Math.round((k - 1) * run.floors / pipCount) + 1;
+      const isDone = run.cleared >= fEnd;
+      const isCur = !isDone && run.floor >= fStart && run.floor <= fEnd;
+      pips += `<i class="pip ${isDone ? 'done' : isCur ? 'cur' : ''} ${k === pipCount ? 'boss' : ''}"></i>`;
+    }
+    $('#b-pips').innerHTML = pips;
   }
-  $('#b-pips').innerHTML = pips;
   $('#b-lv').textContent = p.lv;
   $('#b-php').style.width = clamp(p.hp / maxHp(p) * 100, 0, 100) + '%';
   $('#b-pg').classList.toggle('low', p.hp / maxHp(p) < 0.3);
@@ -222,7 +247,10 @@ function renderBattle() {
   }
   { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1);
     if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG(); box.dataset.k = k; } }
-  $('#b-status').textContent = run.guard > 0 ? `鉄壁 あと${run.guard}回` : (run.queued ? `予約：${SK[run.queued].name}` : '');
+  const stTxt = run.guard > 0 ? `鉄壁 あと${run.guard}回` : (run.queued ? `予約：${SK[run.queued].name}` : '');
+  $('#b-status').innerHTML = run.tower
+    ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
+    : stTxt;
   document.querySelectorAll('.speed .btn').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === G.opts.speed));
   const as = $('#btn-autoskill'); as.textContent = `スキル自動：${G.opts.autoSkill ? 'ON' : 'OFF'}`; as.classList.toggle('on', G.opts.autoSkill);
   const bh = $('#btn-pot-hp'), bm = $('#btn-pot-mp');
@@ -446,7 +474,7 @@ function renderStatus() {
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
         <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
         <div class="pt-info">
-          <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span></div>
+          <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span>${(() => { const tid = p.tower && p.tower.title; const tt = tid && TOWER_TITLES.find(x => x.id === tid); return tt ? ` <span class="badge">${esc(tt.name)}</span>` : ''; })()}</div>
           <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(tierName(pSkin, pTier))}</div>
           <div class="pt-hint">${pTier ? '防具の見た目が反映されています' : '防具★3以上で見た目が変わります'}</div>
           ${tierChanged ? '<div class="pt-new">見た目が変わった！</div>' : ''}
@@ -498,9 +526,85 @@ function renderStatus() {
 }
 
 /* ================= render: modal ================= */
+function openBlessModal() {
+  const run = G.run;
+  if (!run || !run.tower || !run.tower.pendingChoice) return;
+  const list = run.tower.pendingChoice;
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">✨ 祝福を1つ選ぼう</h2>
+    <p class="sub" style="margin:0 0 10px">第${run.floor}層のボスを撃破！（ラン中のみ有効）</p>
+    <div style="display:grid;gap:8px">${list.map(b => `
+      <button class="btn" style="text-align:left;padding:10px 12px;display:grid;gap:3px" data-act="pickBless" data-id="${b.id}">
+        <div><span class="badge">${esc(b.cat)}</span> <b>${esc(b.name)}</b></div>
+        <div class="sub">${esc(b.desc)}</div>
+      </button>`).join('')}</div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function openBlessListModal() {
+  const run = G.run;
+  if (!run || !run.tower) return;
+  const bs = run.tower.blessings.map(id => TOWER_BLESSINGS.find(x => x.id === id)).filter(Boolean);
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">✨ 取得済みの祝福（${bs.length}個）</h2>
+    ${bs.length
+      ? `<div style="display:grid;gap:6px;max-height:55vh;overflow:auto">${bs.map(b => `<div class="item"><div><span class="badge">${esc(b.cat)}</span> <b>${esc(b.name)}</b></div><div class="sub">${esc(b.desc)}</div></div>`).join('')}</div>`
+      : '<p class="empty">まだ祝福を持っていません（10階ごとに獲得）。</p>'}
+    <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function openTowerShopModal() {
+  const p = G.p, tw = p.tower || { best: 0, coins: 0, titles: [], title: null };
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">🪙 回廊コイン交換所</h2>
+    <p class="sub" style="margin:0 0 10px">所持コイン：<b>🪙 ${fmt(tw.coins || 0)}枚</b>　／　最高到達階：<b>${tw.best || 0}F</b></p>
+    <p class="slot-t">★8 神話装備（倍率 6.0）</p>
+    <div style="display:grid;gap:8px;margin-bottom:12px">${TOWER_SHOP.map(it => `
+      <div class="item r4" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div><div><b class="rc">${esc(it.name)}</b></div><div class="sub">${esc(it.desc)}</div></div>
+        <button class="btn primary small" data-act="buyTowerShop" data-id="${it.id}" ${(tw.coins || 0) >= it.price ? '' : 'disabled'}>🪙 ${it.price}</button>
+      </div>`).join('')}</div>
+    <p class="slot-t">称号（ステータス画面に表示）</p>
+    <div style="display:grid;gap:6px;max-height:36vh;overflow:auto;margin-bottom:10px">${TOWER_TITLES.map(t => {
+      const owned = (tw.titles || []).includes(t.id);
+      const eq = tw.title === t.id;
+      return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div><div><b>${esc(t.name)}</b>${eq ? ' <span class="badge rec">装備中</span>' : ''}</div><div class="sub">${esc(t.desc)}</div></div>
+        ${owned
+          ? `<button class="btn small ${eq ? 'primary' : ''}" data-act="equipTowerTitle" data-id="${t.id}">${eq ? '外す' : '装備'}</button>`
+          : (t.price
+            ? `<button class="btn small" data-act="buyTowerTitle" data-id="${t.id}" ${(tw.coins || 0) >= t.price ? '' : 'disabled'}>🪙 ${t.price}</button>`
+            : `<span class="sub">🔒 ${t.floor}F</span>`)}
+      </div>`;
+    }).join('')}</div>
+    <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+
 function openModal() {
   const l = G.last; if (!l) return;
   const p = G.p;
+  if (l.tower) {
+    const tw = l.tower;
+    const bs = tw.blessings.map(id => TOWER_BLESSINGS.find(x => x.id === id)).filter(Boolean);
+    const items = [...l.items].sort((a, b) => b.rarity - a.rarity || b.star - a.star);
+    $('#m-sheet').innerHTML = `
+      <h2 class="${l.result === 'defeat' ? 'lose' : 'win'}" id="m-title">天蓋の塔 探索終了</h2>
+      <p class="sub" style="margin:0">到達階：<b>${tw.reached}F</b>${tw.isNewBest ? ' <span class="badge rec">自己ベスト更新！</span>' : ''}　撃破 ${l.kills}体</p>
+      <div class="res">
+        <div><small>獲得コイン</small><b>🪙 +${fmt(tw.coins)}枚</b></div>
+        <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b>${l.lost ? `<span class="neg">敗北半減（−${fmt(l.lost)}G）</span>` : ''}</div>
+        <div><small>レベル</small><b>${l.lvTo > l.lvFrom ? `Lv${l.lvFrom} → Lv${l.lvTo}` : `Lv${l.lvTo}`}</b></div>
+        <div><small>取得した祝福</small><b>${bs.length}個</b></div>
+      </div>
+      ${tw.newTitles.length ? `<p class="l-good" style="margin:6px 0">称号獲得：${tw.newTitles.map(esc).join(' / ')}</p>` : ''}
+      ${bs.length ? `<div style="margin:6px 0"><p class="slot-t">取得した祝福</p><div style="display:flex;flex-wrap:wrap;gap:4px">${bs.map(b => `<span class="badge">${esc(b.name)}</span>`).join('')}</div></div>` : ''}
+      <div><p class="slot-t">獲得した装備（${items.length}個）</p>
+        ${items.length ? `<div class="drops">${items.map(it => itemCard(it, { sell: true })).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>'}</div>
+      <div class="act"><button class="btn primary" data-act="mRetry" id="m-retry">再挑戦</button><button class="btn" data-act="mTown">街へ戻る</button></div>`;
+    $('#modal').hidden = false; G.modalOpen = true;
+    setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
+    return;
+  }
   if (l.ending) {
     $('#m-sheet').innerHTML = `
       <h2 class="win" id="m-title">ゲームクリア！</h2>

@@ -232,7 +232,48 @@ const ACTS = {
   },
   mRetry() {
     const l = G.last; closeModal();
-    if (l) startRun(l.d.id, l.df.id);
+    if (l && l.tower) startTowerRun();
+    else if (l) startRun(l.d.id, l.df.id);
+  },
+  goTower() { startTowerRun(); },
+  pickBless(d) { pickBlessing(d.id); },
+  towerBlessList() { openBlessListModal(); },
+  closeTowerModal() { closeModal(); },
+  towerShop() { openTowerShopModal(); },
+  buyTowerShop(d) {
+    const p = G.p, item = TOWER_SHOP.find(x => x.id === d.id);
+    if (!item || !p.ending) return;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (p.tower.coins < item.price) { toast('回廊コインが足りません'); return; }
+    if (p.bag.length >= (p.bagCap || BAG_CAP)) { toast('バッグがいっぱいです'); return; }
+    p.tower.coins -= item.price;
+    const it = mkItem(p, { slot: item.slot, star: item.star, rarity: 4, roll: 1.0 });
+    const out = receiveItem(it);
+    save();
+    toast(`${itemName(it)}を手に入れた！${out === 'equipped' ? '（装備）' : ''}`);
+    openTowerShopModal(); renderTown();
+  },
+  buyTowerTitle(d) {
+    const p = G.p, t = TOWER_TITLES.find(x => x.id === d.id && x.price);
+    if (!t || !p.ending) return;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (p.tower.titles.includes(t.id)) return;
+    if (p.tower.coins < t.price) { toast('回廊コインが足りません'); return; }
+    p.tower.coins -= t.price;
+    p.tower.titles.push(t.id);
+    p.tower.title = t.id;
+    save();
+    toast(`称号「${t.name}」を獲得した！`);
+    openTowerShopModal();
+  },
+  equipTowerTitle(d) {
+    const p = G.p;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (!p.tower.titles.includes(d.id)) return;
+    p.tower.title = (p.tower.title === d.id) ? null : d.id;
+    save();
+    openTowerShopModal();
+    if (G.view === 'status') renderStatus();
   },
   mTown() { closeModal(); G.view = 'town'; renderAll(); ensureLoop(); }
 };

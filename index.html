@@ -1486,9 +1486,58 @@ function startRun(dId, dfId) {
   renderAll(); ensureLoop();
 }
 
+const towerBand = floor => TOWER_CFG.bands.find(b => floor <= b.maxFloor) || TOWER_CFG.bands[TOWER_CFG.bands.length - 1];
+function rollTowerBlessings(owned) {
+  const pool = TOWER_BLESSINGS.filter(b => !owned.includes(b.id));
+  const out = [];
+  while (out.length < 3 && pool.length > 0) {
+    const idx = Math.floor(rnd() * pool.length);
+    out.push(pool.splice(idx, 1)[0]);
+  }
+  return out;
+}
+function pickBlessing(id) {
+  const run = G.run;
+  if (!run || !run.tower || !run.tower.pendingChoice) return false;
+  const b = run.tower.pendingChoice.find(x => x.id === id);
+  if (!b) return false;
+  run.tower.blessings.push(b.id);
+  run.tower.pendingChoice = null;
+  run.phase = 'next';
+  const p = G.p;
+  p.hp = Math.min(maxHp(p), p.hp);
+  p.mp = Math.min(maxMp(p), p.mp);
+  addLog(`祝福「${b.name}」を獲得！（${b.desc}）`, 'l-gold');
+  if (!G.headless) { closeModal(); renderAll(); }
+  ensureLoop();
+  return true;
+}
+function startTowerRun() {
+  if (G.run) return;
+  if (!G.p || !G.p.ending) { toast('最終ボスを倒すと解放されます'); return; }
+  G.run = {
+    d: { id: 'T', name: '天蓋の塔', a1: '#1a1433', a2: '#0c091a', maxStar: 5 },
+    df: DIFFS[4], floors: 0, floor: 0, cleared: 0, phase: 'next', enemy: null, queued: null, guard: 0,
+    gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: G.p.lv, skKey: '',
+    skillCt: {},
+    tower: { blessings: [], reviveUsed: false, pendingChoice: null }
+  };
+  G.view = 'dungeon';
+  $('#log').innerHTML = '';
+  addLog('無限回廊「天蓋の塔」に突入した！', 'l-sys');
+  renderAll(); ensureLoop();
+}
+
 function nextFloor() {
   const run = G.run;
   run.floor++;
+  if (run.tower) {
+    const boss = run.floor % 10 === 0;
+    const evCh = 0.16 + towerEff(run).eventBoost;
+    if (!boss && run.floor >= 2 && rnd() < evCh) { runEvent(); run.phase = 'pause'; run.cleared++; }
+    else spawnEnemy(boss, false);
+    return;
+  }
   if (run.floor > run.floors) { finishRun('clear'); return; }
   const boss = run.floor === run.floors;
   const miniboss = !boss && run.floor >= 10 && run.floor % 10 === 0;
@@ -1497,17 +1546,29 @@ function nextFloor() {
 }
 
 const cellPow = run => run.d.pow[DIFFS.indexOf(run.df)];
-function scaleOf(run, floor) { return cellPow(run) * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1)); }
+function scaleOf(run, floor) {
+  if (run.tower) return TOWER_CFG.basePow * Math.pow(TOWER_CFG.growth, Math.max(0, floor - 1));
+  return cellPow(run) * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1));
+}
 function spawnEnemy(boss, miniboss = false) {
   const run = G.run, d = run.d;
-  const base = boss ? d.boss : (miniboss ? d.mobs.reduce((a, b) => b.hp > a.hp ? b : a) : pick(d.mobs));
-  const name = (boss && run.df.bossPrefix ? run.df.bossPrefix : miniboss ? '強敵 ' : '') + base.name;
-  const bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
+  let base, name, bossFilter;
+  if (run.tower) {
+    const band = towerBand(run.floor);
+    const dSrc = (boss && run.floor % 50 === 0) ? dungeonOf('O') : dungeonOf(pick(band.dIds));
+    base = boss ? dSrc.boss : pick(dSrc.mobs);
+    name = (boss ? `第${run.floor}層の` : '') + base.name;
+    bossFilter = boss && run.floor % 50 === 0 ? 'hue-rotate(-45deg) saturate(1.7) contrast(1.15)' : (boss ? 'hue-rotate(38deg) saturate(1.35)' : '');
+  } else {
+    base = boss ? d.boss : (miniboss ? d.mobs.reduce((a, b) => b.hp > a.hp ? b : a) : pick(d.mobs));
+    name = (boss && run.df.bossPrefix ? run.df.bossPrefix : miniboss ? '強敵 ' : '') + base.name;
+    bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
+  }
   const S = scaleOf(run, run.floor);
   const Sa = Math.pow(S, TUNE.atkExp);
   const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
   run.enemy = {
-    id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp,
+    id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1))),
     def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : miniboss ? 1.1 : 1)),
     exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (miniboss ? 1.5 : 1))),
@@ -1594,12 +1655,12 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id];
+  const s = SK[id], te = towerEff(run);
   p.mp -= s.mp;
   // CTをセット
-  if (s.ct) run.skillCt[id] = s.ct;
+  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   if (s.type === 'heal') {
-    const h = Math.max(1, Math.round(maxHp(p) * s.pct)); const before = p.hp;
+    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult)); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
     if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
@@ -1631,9 +1692,10 @@ function playerAct() {
   }
   // attack / atk系スキル
   const s = id === 'attack' ? { name: '攻撃', hits: 1, mult: 1 } : SK[id];
+  const te = towerEff(run);
   if (id !== 'attack') {
     p.mp -= s.mp;
-    if (s.ct) run.skillCt[id] = s.ct;
+    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   }
   if (p.weapon && p.weapon.prop === 'madness') {
     const loss = Math.ceil(maxHp(p) * 0.1), before = p.hp;
@@ -1644,25 +1706,28 @@ function playerAct() {
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
   let dealt = 0, crits = 0, hits = 0;
+  const bossMult = en.boss ? (1 + te.bossDmg) : 1;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
-    const crit = rnd() < 0.1;
-    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1), en.def);
+    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < 0.1);
+    en.firstHit = false;
+    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * bossMult, en.def);
     en.hp = Math.max(0, en.hp - dmg); dealt += dmg; hits++; if (crit) crits++;
     popDamage('enemy', String(dmg), crit ? 'crit' : 'dmg');
   }
   hitFlash('enemy'); playAttackMotion();
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
   if (s.freeze && en.hp > 0) { run.frozen = 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
-  if (p.weapon && p.weapon.prop === 'vamp' && dealt > 0) {
-    const h = Math.max(1, Math.round(dealt * 0.1)), before = p.hp;
+  const stealPct = (p.weapon && p.weapon.prop === 'vamp' ? 0.1 : 0) + te.lifeSteal;
+  if (stealPct > 0 && dealt > 0) {
+    const h = Math.max(1, Math.round(dealt * stealPct)), before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
-    if (p.hp > before) { addLog(`吸血でHPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal'); }
+    if (p.hp > before) { addLog(`吸収でHPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal'); }
   }
 }
 
 function enemyAct() {
-  const p = G.p, run = G.run, en = run.enemy;
+  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run);
   if (run.frozen > 0) {
     run.frozen--;
     addLog(`${en.name}は凍って動けない！`, 'l-good');
@@ -1675,13 +1740,18 @@ function enemyAct() {
     return;
   }
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? 1.5 : 1) * (run.awaken > 0 ? 2.5 : 1);
-  const dmg = Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1));
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * te.takenMult));
   if (run.shura > 0) run.shura--;
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
   addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
   popDamage('player', String(dmg), 'bad'); hitFlash('player');
   if (run.guard > 0) { run.guard--; if (run.guard === 0) addLog('鉄壁の効果が切れた。', 'l-sys'); }
+  if (te.thorns > 0 && en.hp > 0 && p.hp > 0) {
+    const refl = Math.max(1, Math.round(playerDef(p) * te.thorns));
+    en.hp = Math.max(0, en.hp - refl);
+    addLog(`反撃の鎧！ ${en.name}に${refl}ダメージ！`, 'l-hit');
+  }
 }
 
 function battleRound() {
@@ -1698,6 +1768,12 @@ function battleRound() {
     renderEnemy(true);
   }
   enemyAct();
+  if (en.hp <= 0) { onKill(); return; }
+  if (p.hp <= 0 && run.tower && towerEff(run).reviveOnce && !run.tower.reviveUsed) {
+    run.tower.reviveUsed = true;
+    p.hp = Math.max(1, Math.round(maxHp(p) * 0.3));
+    addLog('不死鳥の羽が輝き、HP30%で蘇った！', 'l-good');
+  }
   if (p.hp <= 0) { finishRun('defeat'); return; }
   if (run.regenTurns > 0) {
     run.regenTurns--;
@@ -1708,21 +1784,36 @@ function battleRound() {
 }
 
 function onKill() {
-  const p = G.p, run = G.run, en = run.enemy;
+  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run);
   run.kills++; p.stats.kills++; run.cleared++;
-  addLog(`${en.name}を倒した！ EXP+${en.exp}　${en.gold}G`, 'l-gold');
-  p.gold += en.gold; run.gold += en.gold;
-  gainExp(en.exp);
+  const expGain = Math.round(en.exp * te.expMult);
+  const goldGain = Math.round(en.gold * te.goldMult);
+  addLog(`${en.name}を倒した！ EXP+${expGain}　${goldGain}G`, 'l-gold');
+  p.gold += goldGain; run.gold += goldGain;
+  gainExp(expGain);
+  if (run.tower) {
+    if (te.killHeal > 0) {
+      const h = Math.max(1, Math.round(maxHp(p) * te.killHeal)), b = p.hp;
+      p.hp = Math.min(maxHp(p), p.hp + h);
+      if (p.hp > b) addLog(`魂の吸収でHP+${p.hp - b}`, 'l-good');
+    }
+    if (te.killMp > 0) {
+      const m = Math.max(1, Math.round(maxMp(p) * te.killMp)), b = p.mp;
+      p.mp = Math.min(maxMp(p), p.mp + m);
+      if (p.mp > b) addLog(`魔力回収でMP+${p.mp - b}`, 'l-good');
+    }
+  }
   // drops (チュートリアル中はドロップなし)
   const drops = [];
   if (!G.tutorial || G.tutorial.done) {
-    const capStar = run.d.maxStar || MAX_STAR;
-    const bStar = run.d.bossMaxStar;
+    const tBand = run.tower ? towerBand(run.floor) : null;
+    const capStar = tBand ? tBand.maxDropStar : (run.d.maxStar || MAX_STAR);
+    const bStar = tBand ? tBand.bossCapStar : run.d.bossMaxStar;
     const rollBossItem = () => {
       let fs = null;
       if (bStar && bStar > capStar) {
         for (let s = bStar; s > capStar; s--) {
-          const ch = s >= 9 ? (run.df.id === 'extreme' ? 0.06 : 0.04) : s === 8 ? 0.06 : 0.08;
+          const ch = s >= 9 ? (run.tower ? 0.04 : (run.df.id === 'extreme' ? 0.06 : 0.04)) : s === 8 ? 0.06 : 0.08;
           if (rnd() < ch) { fs = s; break; }
         }
       }
@@ -1762,6 +1853,17 @@ function onKill() {
     p.hp = Math.min(maxHp(p), p.hp + h);
     if (p.hp > b) addLog(`小休止でHPが${p.hp - b}回復した。`, 'l-sys');
   }
+  if (run.tower && en.boss) {
+    const choices = rollTowerBlessings(run.tower.blessings);
+    if (choices.length) {
+      run.tower.pendingChoice = choices;
+      run.phase = 'bless';
+      renderEnemy(false);
+      if (!G.headless) openBlessModal();
+      ensureLoop();
+      return;
+    }
+  }
   run.phase = 'pause';
   renderEnemy(false);
 }
@@ -1785,8 +1887,30 @@ function gainExp(n) {
 function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
-  let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false;
-  if (result === 'clear') {
+  let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false, towerRes = null;
+  if (run.tower) {
+    const reached = Math.max(0, result === 'defeat' ? run.floor - 1 : run.floor);
+    const coins = Math.round(TOWER_CFG.coinsForFloor(reached) * towerEff(run).coinMult);
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    const isNewBest = reached > (p.tower.best || 0);
+    if (isNewBest) p.tower.best = reached;
+    p.tower.coins += coins;
+    p.tower.totalCoins += coins;
+    const newTitles = [];
+    for (const t of TOWER_TITLES) {
+      if (t.floor && p.tower.best >= t.floor && !p.tower.titles.includes(t.id)) {
+        p.tower.titles.push(t.id);
+        newTitles.push(t.name);
+      }
+    }
+    if (result === 'defeat') {
+      const before = p.gold; p.gold = Math.floor(p.gold / 2); lost = before - p.gold;
+      p.hp = Math.max(1, Math.round(maxHp(p) * 0.25));
+    } else {
+      p.hp = maxHp(p);
+    }
+    towerRes = { reached, coins, isNewBest, blessings: [...run.tower.blessings], newTitles };
+  } else if (result === 'clear') {
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
     const firstClear = !p.cleared[run.d.id][run.df.id];
@@ -1811,9 +1935,9 @@ function finishRun(result) {
   }
   p.stats.runs++;
   G.last = {
-    result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors), cleared: run.cleared,
+    result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending
+    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending, tower: towerRes
   };
   G.run = null;
   G.townView = 'plaza';  // 街帰還時は広場に戻る
@@ -1845,7 +1969,7 @@ function tick() {
 function ensureLoop() {
   clearTimeout(loopTimer); loopTimer = null;
   if (G.noTimer) return;
-  if (G.run && G.view === 'dungeon' && !G.modalOpen) {
+  if (G.run && G.view === 'dungeon' && !G.modalOpen && G.run.phase !== 'bless') {
     loopTimer = setTimeout(() => { loopTimer = null; tick(); ensureLoop(); }, Math.round(TICK_MS / G.opts.speed));
   }
 }
@@ -2191,7 +2315,48 @@ const ACTS = {
   },
   mRetry() {
     const l = G.last; closeModal();
-    if (l) startRun(l.d.id, l.df.id);
+    if (l && l.tower) startTowerRun();
+    else if (l) startRun(l.d.id, l.df.id);
+  },
+  goTower() { startTowerRun(); },
+  pickBless(d) { pickBlessing(d.id); },
+  towerBlessList() { openBlessListModal(); },
+  closeTowerModal() { closeModal(); },
+  towerShop() { openTowerShopModal(); },
+  buyTowerShop(d) {
+    const p = G.p, item = TOWER_SHOP.find(x => x.id === d.id);
+    if (!item || !p.ending) return;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (p.tower.coins < item.price) { toast('回廊コインが足りません'); return; }
+    if (p.bag.length >= (p.bagCap || BAG_CAP)) { toast('バッグがいっぱいです'); return; }
+    p.tower.coins -= item.price;
+    const it = mkItem(p, { slot: item.slot, star: item.star, rarity: 4, roll: 1.0 });
+    const out = receiveItem(it);
+    save();
+    toast(`${itemName(it)}を手に入れた！${out === 'equipped' ? '（装備）' : ''}`);
+    openTowerShopModal(); renderTown();
+  },
+  buyTowerTitle(d) {
+    const p = G.p, t = TOWER_TITLES.find(x => x.id === d.id && x.price);
+    if (!t || !p.ending) return;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (p.tower.titles.includes(t.id)) return;
+    if (p.tower.coins < t.price) { toast('回廊コインが足りません'); return; }
+    p.tower.coins -= t.price;
+    p.tower.titles.push(t.id);
+    p.tower.title = t.id;
+    save();
+    toast(`称号「${t.name}」を獲得した！`);
+    openTowerShopModal();
+  },
+  equipTowerTitle(d) {
+    const p = G.p;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (!p.tower.titles.includes(d.id)) return;
+    p.tower.title = (p.tower.title === d.id) ? null : d.id;
+    save();
+    openTowerShopModal();
+    if (G.view === 'status') renderStatus();
   },
   mTown() { closeModal(); G.view = 'town'; renderAll(); ensureLoop(); }
 };
@@ -2374,7 +2539,20 @@ function renderDungeonSelect() {
         ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>`
         : `解放条件：ダンジョン${d.unlock.d}（${unlockReqDf}）をクリア`}</p>
       <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></article>`;
-  }).join('');
+  }).join('') + (() => {
+    const twUnlocked = !!(p0 && p0.ending);
+    const tw = (p0 && p0.tower) || { best: 0, coins: 0 };
+    return `<article class="dcard${twUnlocked ? '' : ' locked'}" style="--a1:#1a1433;--a2:#0c091a">
+      <div class="dc-head"><span class="dc-id">塔</span><h3>${twUnlocked ? '' : '🔒 '}天蓋の塔</h3></div>
+      <p class="dc-blurb">階層は無限。10階ごとのボスを倒して祝福を選び、限界に挑むエンドレス回廊。</p>
+      <p class="dc-info">${twUnlocked
+        ? `最高到達階 <b>${tw.best || 0}F</b>　所持コイン <b>🪙 ${fmt(tw.coins || 0)}枚</b>`
+        : '解放条件：魔王城以降の最終ボス（虚空の神殿・極級）をクリア'}</p>
+      <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
+        ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
+      </div></article>`;
+  })();
 }
 
 /* ================= render: battle ================= */
@@ -2393,17 +2571,29 @@ function renderBattle() {
   const run = G.run, p = G.p;
   if (!run) return;
   $('#arena').style.setProperty('--a1', run.d.a1); $('#arena').style.setProperty('--a2', run.d.a2);
-  $('#b-title').textContent = `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
-  let pips = '';
-  const pipCount = Math.min(run.floors, 20);
-  for (let k = 1; k <= pipCount; k++) {
-    const fEnd = Math.round(k * run.floors / pipCount);
-    const fStart = Math.round((k - 1) * run.floors / pipCount) + 1;
-    const isDone = run.cleared >= fEnd;
-    const isCur = !isDone && run.floor >= fStart && run.floor <= fEnd;
-    pips += `<i class="pip ${isDone ? 'done' : isCur ? 'cur' : ''} ${k === pipCount ? 'boss' : ''}"></i>`;
+  if (run.tower) {
+    $('#b-title').textContent = `天蓋の塔　${Math.max(run.floor, 1)}F`;
+    let pips = '';
+    const f10 = ((Math.max(run.floor, 1) - 1) % 10) + 1;
+    for (let k = 1; k <= 10; k++) {
+      const isDone = k < f10 || (k === f10 && run.phase !== 'battle');
+      const isCur = !isDone && k === f10;
+      pips += `<i class="pip ${isDone ? 'done' : isCur ? 'cur' : ''} ${k === 10 ? 'boss' : ''}"></i>`;
+    }
+    $('#b-pips').innerHTML = pips;
+  } else {
+    $('#b-title').textContent = `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
+    let pips = '';
+    const pipCount = Math.min(run.floors, 20);
+    for (let k = 1; k <= pipCount; k++) {
+      const fEnd = Math.round(k * run.floors / pipCount);
+      const fStart = Math.round((k - 1) * run.floors / pipCount) + 1;
+      const isDone = run.cleared >= fEnd;
+      const isCur = !isDone && run.floor >= fStart && run.floor <= fEnd;
+      pips += `<i class="pip ${isDone ? 'done' : isCur ? 'cur' : ''} ${k === pipCount ? 'boss' : ''}"></i>`;
+    }
+    $('#b-pips').innerHTML = pips;
   }
-  $('#b-pips').innerHTML = pips;
   $('#b-lv').textContent = p.lv;
   $('#b-php').style.width = clamp(p.hp / maxHp(p) * 100, 0, 100) + '%';
   $('#b-pg').classList.toggle('low', p.hp / maxHp(p) < 0.3);
@@ -2420,7 +2610,10 @@ function renderBattle() {
   }
   { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1);
     if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG(); box.dataset.k = k; } }
-  $('#b-status').textContent = run.guard > 0 ? `鉄壁 あと${run.guard}回` : (run.queued ? `予約：${SK[run.queued].name}` : '');
+  const stTxt = run.guard > 0 ? `鉄壁 あと${run.guard}回` : (run.queued ? `予約：${SK[run.queued].name}` : '');
+  $('#b-status').innerHTML = run.tower
+    ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
+    : stTxt;
   document.querySelectorAll('.speed .btn').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === G.opts.speed));
   const as = $('#btn-autoskill'); as.textContent = `スキル自動：${G.opts.autoSkill ? 'ON' : 'OFF'}`; as.classList.toggle('on', G.opts.autoSkill);
   const bh = $('#btn-pot-hp'), bm = $('#btn-pot-mp');
@@ -2644,7 +2837,7 @@ function renderStatus() {
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
         <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
         <div class="pt-info">
-          <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span></div>
+          <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span>${(() => { const tid = p.tower && p.tower.title; const tt = tid && TOWER_TITLES.find(x => x.id === tid); return tt ? ` <span class="badge">${esc(tt.name)}</span>` : ''; })()}</div>
           <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(tierName(pSkin, pTier))}</div>
           <div class="pt-hint">${pTier ? '防具の見た目が反映されています' : '防具★3以上で見た目が変わります'}</div>
           ${tierChanged ? '<div class="pt-new">見た目が変わった！</div>' : ''}
@@ -2696,9 +2889,85 @@ function renderStatus() {
 }
 
 /* ================= render: modal ================= */
+function openBlessModal() {
+  const run = G.run;
+  if (!run || !run.tower || !run.tower.pendingChoice) return;
+  const list = run.tower.pendingChoice;
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">✨ 祝福を1つ選ぼう</h2>
+    <p class="sub" style="margin:0 0 10px">第${run.floor}層のボスを撃破！（ラン中のみ有効）</p>
+    <div style="display:grid;gap:8px">${list.map(b => `
+      <button class="btn" style="text-align:left;padding:10px 12px;display:grid;gap:3px" data-act="pickBless" data-id="${b.id}">
+        <div><span class="badge">${esc(b.cat)}</span> <b>${esc(b.name)}</b></div>
+        <div class="sub">${esc(b.desc)}</div>
+      </button>`).join('')}</div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function openBlessListModal() {
+  const run = G.run;
+  if (!run || !run.tower) return;
+  const bs = run.tower.blessings.map(id => TOWER_BLESSINGS.find(x => x.id === id)).filter(Boolean);
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">✨ 取得済みの祝福（${bs.length}個）</h2>
+    ${bs.length
+      ? `<div style="display:grid;gap:6px;max-height:55vh;overflow:auto">${bs.map(b => `<div class="item"><div><span class="badge">${esc(b.cat)}</span> <b>${esc(b.name)}</b></div><div class="sub">${esc(b.desc)}</div></div>`).join('')}</div>`
+      : '<p class="empty">まだ祝福を持っていません（10階ごとに獲得）。</p>'}
+    <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function openTowerShopModal() {
+  const p = G.p, tw = p.tower || { best: 0, coins: 0, titles: [], title: null };
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">🪙 回廊コイン交換所</h2>
+    <p class="sub" style="margin:0 0 10px">所持コイン：<b>🪙 ${fmt(tw.coins || 0)}枚</b>　／　最高到達階：<b>${tw.best || 0}F</b></p>
+    <p class="slot-t">★8 神話装備（倍率 6.0）</p>
+    <div style="display:grid;gap:8px;margin-bottom:12px">${TOWER_SHOP.map(it => `
+      <div class="item r4" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div><div><b class="rc">${esc(it.name)}</b></div><div class="sub">${esc(it.desc)}</div></div>
+        <button class="btn primary small" data-act="buyTowerShop" data-id="${it.id}" ${(tw.coins || 0) >= it.price ? '' : 'disabled'}>🪙 ${it.price}</button>
+      </div>`).join('')}</div>
+    <p class="slot-t">称号（ステータス画面に表示）</p>
+    <div style="display:grid;gap:6px;max-height:36vh;overflow:auto;margin-bottom:10px">${TOWER_TITLES.map(t => {
+      const owned = (tw.titles || []).includes(t.id);
+      const eq = tw.title === t.id;
+      return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div><div><b>${esc(t.name)}</b>${eq ? ' <span class="badge rec">装備中</span>' : ''}</div><div class="sub">${esc(t.desc)}</div></div>
+        ${owned
+          ? `<button class="btn small ${eq ? 'primary' : ''}" data-act="equipTowerTitle" data-id="${t.id}">${eq ? '外す' : '装備'}</button>`
+          : (t.price
+            ? `<button class="btn small" data-act="buyTowerTitle" data-id="${t.id}" ${(tw.coins || 0) >= t.price ? '' : 'disabled'}>🪙 ${t.price}</button>`
+            : `<span class="sub">🔒 ${t.floor}F</span>`)}
+      </div>`;
+    }).join('')}</div>
+    <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+
 function openModal() {
   const l = G.last; if (!l) return;
   const p = G.p;
+  if (l.tower) {
+    const tw = l.tower;
+    const bs = tw.blessings.map(id => TOWER_BLESSINGS.find(x => x.id === id)).filter(Boolean);
+    const items = [...l.items].sort((a, b) => b.rarity - a.rarity || b.star - a.star);
+    $('#m-sheet').innerHTML = `
+      <h2 class="${l.result === 'defeat' ? 'lose' : 'win'}" id="m-title">天蓋の塔 探索終了</h2>
+      <p class="sub" style="margin:0">到達階：<b>${tw.reached}F</b>${tw.isNewBest ? ' <span class="badge rec">自己ベスト更新！</span>' : ''}　撃破 ${l.kills}体</p>
+      <div class="res">
+        <div><small>獲得コイン</small><b>🪙 +${fmt(tw.coins)}枚</b></div>
+        <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b>${l.lost ? `<span class="neg">敗北半減（−${fmt(l.lost)}G）</span>` : ''}</div>
+        <div><small>レベル</small><b>${l.lvTo > l.lvFrom ? `Lv${l.lvFrom} → Lv${l.lvTo}` : `Lv${l.lvTo}`}</b></div>
+        <div><small>取得した祝福</small><b>${bs.length}個</b></div>
+      </div>
+      ${tw.newTitles.length ? `<p class="l-good" style="margin:6px 0">称号獲得：${tw.newTitles.map(esc).join(' / ')}</p>` : ''}
+      ${bs.length ? `<div style="margin:6px 0"><p class="slot-t">取得した祝福</p><div style="display:flex;flex-wrap:wrap;gap:4px">${bs.map(b => `<span class="badge">${esc(b.name)}</span>`).join('')}</div></div>` : ''}
+      <div><p class="slot-t">獲得した装備（${items.length}個）</p>
+        ${items.length ? `<div class="drops">${items.map(it => itemCard(it, { sell: true })).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>'}</div>
+      <div class="act"><button class="btn primary" data-act="mRetry" id="m-retry">再挑戦</button><button class="btn" data-act="mTown">街へ戻る</button></div>`;
+    $('#modal').hidden = false; G.modalOpen = true;
+    setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
+    return;
+  }
   if (l.ending) {
     $('#m-sheet').innerHTML = `
       <h2 class="win" id="m-title">ゲームクリア！</h2>
@@ -3136,7 +3405,7 @@ function boot() {
 window.G = G;
 window.__rogue = {
   migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
-  TUNE, G, ACTS, tick, startRun, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
+  TUNE, G, ACTS, tick, startRun, startTowerRun, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, passiveBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,

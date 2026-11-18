@@ -79,9 +79,58 @@ function startRun(dId, dfId) {
   renderAll(); ensureLoop();
 }
 
+const towerBand = floor => TOWER_CFG.bands.find(b => floor <= b.maxFloor) || TOWER_CFG.bands[TOWER_CFG.bands.length - 1];
+function rollTowerBlessings(owned) {
+  const pool = TOWER_BLESSINGS.filter(b => !owned.includes(b.id));
+  const out = [];
+  while (out.length < 3 && pool.length > 0) {
+    const idx = Math.floor(rnd() * pool.length);
+    out.push(pool.splice(idx, 1)[0]);
+  }
+  return out;
+}
+function pickBlessing(id) {
+  const run = G.run;
+  if (!run || !run.tower || !run.tower.pendingChoice) return false;
+  const b = run.tower.pendingChoice.find(x => x.id === id);
+  if (!b) return false;
+  run.tower.blessings.push(b.id);
+  run.tower.pendingChoice = null;
+  run.phase = 'next';
+  const p = G.p;
+  p.hp = Math.min(maxHp(p), p.hp);
+  p.mp = Math.min(maxMp(p), p.mp);
+  addLog(`祝福「${b.name}」を獲得！（${b.desc}）`, 'l-gold');
+  if (!G.headless) { closeModal(); renderAll(); }
+  ensureLoop();
+  return true;
+}
+function startTowerRun() {
+  if (G.run) return;
+  if (!G.p || !G.p.ending) { toast('最終ボスを倒すと解放されます'); return; }
+  G.run = {
+    d: { id: 'T', name: '天蓋の塔', a1: '#1a1433', a2: '#0c091a', maxStar: 5 },
+    df: DIFFS[4], floors: 0, floor: 0, cleared: 0, phase: 'next', enemy: null, queued: null, guard: 0,
+    gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: G.p.lv, skKey: '',
+    skillCt: {},
+    tower: { blessings: [], reviveUsed: false, pendingChoice: null }
+  };
+  G.view = 'dungeon';
+  $('#log').innerHTML = '';
+  addLog('無限回廊「天蓋の塔」に突入した！', 'l-sys');
+  renderAll(); ensureLoop();
+}
+
 function nextFloor() {
   const run = G.run;
   run.floor++;
+  if (run.tower) {
+    const boss = run.floor % 10 === 0;
+    const evCh = 0.16 + towerEff(run).eventBoost;
+    if (!boss && run.floor >= 2 && rnd() < evCh) { runEvent(); run.phase = 'pause'; run.cleared++; }
+    else spawnEnemy(boss, false);
+    return;
+  }
   if (run.floor > run.floors) { finishRun('clear'); return; }
   const boss = run.floor === run.floors;
   const miniboss = !boss && run.floor >= 10 && run.floor % 10 === 0;
@@ -90,17 +139,29 @@ function nextFloor() {
 }
 
 const cellPow = run => run.d.pow[DIFFS.indexOf(run.df)];
-function scaleOf(run, floor) { return cellPow(run) * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1)); }
+function scaleOf(run, floor) {
+  if (run.tower) return TOWER_CFG.basePow * Math.pow(TOWER_CFG.growth, Math.max(0, floor - 1));
+  return cellPow(run) * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1));
+}
 function spawnEnemy(boss, miniboss = false) {
   const run = G.run, d = run.d;
-  const base = boss ? d.boss : (miniboss ? d.mobs.reduce((a, b) => b.hp > a.hp ? b : a) : pick(d.mobs));
-  const name = (boss && run.df.bossPrefix ? run.df.bossPrefix : miniboss ? '強敵 ' : '') + base.name;
-  const bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
+  let base, name, bossFilter;
+  if (run.tower) {
+    const band = towerBand(run.floor);
+    const dSrc = (boss && run.floor % 50 === 0) ? dungeonOf('O') : dungeonOf(pick(band.dIds));
+    base = boss ? dSrc.boss : pick(dSrc.mobs);
+    name = (boss ? `第${run.floor}層の` : '') + base.name;
+    bossFilter = boss && run.floor % 50 === 0 ? 'hue-rotate(-45deg) saturate(1.7) contrast(1.15)' : (boss ? 'hue-rotate(38deg) saturate(1.35)' : '');
+  } else {
+    base = boss ? d.boss : (miniboss ? d.mobs.reduce((a, b) => b.hp > a.hp ? b : a) : pick(d.mobs));
+    name = (boss && run.df.bossPrefix ? run.df.bossPrefix : miniboss ? '強敵 ' : '') + base.name;
+    bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
+  }
   const S = scaleOf(run, run.floor);
   const Sa = Math.pow(S, TUNE.atkExp);
   const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
   run.enemy = {
-    id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp,
+    id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1))),
     def: Math.round(base.def * Sa * TUNE.defScale * (boss ? TUNE.bossDef : miniboss ? 1.1 : 1)),
     exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (miniboss ? 1.5 : 1))),
@@ -187,12 +248,12 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id];
+  const s = SK[id], te = towerEff(run);
   p.mp -= s.mp;
   // CTをセット
-  if (s.ct) run.skillCt[id] = s.ct;
+  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   if (s.type === 'heal') {
-    const h = Math.max(1, Math.round(maxHp(p) * s.pct)); const before = p.hp;
+    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult)); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
     if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
@@ -224,9 +285,10 @@ function playerAct() {
   }
   // attack / atk系スキル
   const s = id === 'attack' ? { name: '攻撃', hits: 1, mult: 1 } : SK[id];
+  const te = towerEff(run);
   if (id !== 'attack') {
     p.mp -= s.mp;
-    if (s.ct) run.skillCt[id] = s.ct;
+    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   }
   if (p.weapon && p.weapon.prop === 'madness') {
     const loss = Math.ceil(maxHp(p) * 0.1), before = p.hp;
@@ -237,25 +299,28 @@ function playerAct() {
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
   let dealt = 0, crits = 0, hits = 0;
+  const bossMult = en.boss ? (1 + te.bossDmg) : 1;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
-    const crit = rnd() < 0.1;
-    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1), en.def);
+    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < 0.1);
+    en.firstHit = false;
+    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * bossMult, en.def);
     en.hp = Math.max(0, en.hp - dmg); dealt += dmg; hits++; if (crit) crits++;
     popDamage('enemy', String(dmg), crit ? 'crit' : 'dmg');
   }
   hitFlash('enemy'); playAttackMotion();
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
   if (s.freeze && en.hp > 0) { run.frozen = 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
-  if (p.weapon && p.weapon.prop === 'vamp' && dealt > 0) {
-    const h = Math.max(1, Math.round(dealt * 0.1)), before = p.hp;
+  const stealPct = (p.weapon && p.weapon.prop === 'vamp' ? 0.1 : 0) + te.lifeSteal;
+  if (stealPct > 0 && dealt > 0) {
+    const h = Math.max(1, Math.round(dealt * stealPct)), before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
-    if (p.hp > before) { addLog(`吸血でHPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal'); }
+    if (p.hp > before) { addLog(`吸収でHPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal'); }
   }
 }
 
 function enemyAct() {
-  const p = G.p, run = G.run, en = run.enemy;
+  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run);
   if (run.frozen > 0) {
     run.frozen--;
     addLog(`${en.name}は凍って動けない！`, 'l-good');
@@ -268,13 +333,18 @@ function enemyAct() {
     return;
   }
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? 1.5 : 1) * (run.awaken > 0 ? 2.5 : 1);
-  const dmg = Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1));
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * te.takenMult));
   if (run.shura > 0) run.shura--;
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
   addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
   popDamage('player', String(dmg), 'bad'); hitFlash('player');
   if (run.guard > 0) { run.guard--; if (run.guard === 0) addLog('鉄壁の効果が切れた。', 'l-sys'); }
+  if (te.thorns > 0 && en.hp > 0 && p.hp > 0) {
+    const refl = Math.max(1, Math.round(playerDef(p) * te.thorns));
+    en.hp = Math.max(0, en.hp - refl);
+    addLog(`反撃の鎧！ ${en.name}に${refl}ダメージ！`, 'l-hit');
+  }
 }
 
 function battleRound() {
@@ -291,6 +361,12 @@ function battleRound() {
     renderEnemy(true);
   }
   enemyAct();
+  if (en.hp <= 0) { onKill(); return; }
+  if (p.hp <= 0 && run.tower && towerEff(run).reviveOnce && !run.tower.reviveUsed) {
+    run.tower.reviveUsed = true;
+    p.hp = Math.max(1, Math.round(maxHp(p) * 0.3));
+    addLog('不死鳥の羽が輝き、HP30%で蘇った！', 'l-good');
+  }
   if (p.hp <= 0) { finishRun('defeat'); return; }
   if (run.regenTurns > 0) {
     run.regenTurns--;
@@ -301,21 +377,36 @@ function battleRound() {
 }
 
 function onKill() {
-  const p = G.p, run = G.run, en = run.enemy;
+  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run);
   run.kills++; p.stats.kills++; run.cleared++;
-  addLog(`${en.name}を倒した！ EXP+${en.exp}　${en.gold}G`, 'l-gold');
-  p.gold += en.gold; run.gold += en.gold;
-  gainExp(en.exp);
+  const expGain = Math.round(en.exp * te.expMult);
+  const goldGain = Math.round(en.gold * te.goldMult);
+  addLog(`${en.name}を倒した！ EXP+${expGain}　${goldGain}G`, 'l-gold');
+  p.gold += goldGain; run.gold += goldGain;
+  gainExp(expGain);
+  if (run.tower) {
+    if (te.killHeal > 0) {
+      const h = Math.max(1, Math.round(maxHp(p) * te.killHeal)), b = p.hp;
+      p.hp = Math.min(maxHp(p), p.hp + h);
+      if (p.hp > b) addLog(`魂の吸収でHP+${p.hp - b}`, 'l-good');
+    }
+    if (te.killMp > 0) {
+      const m = Math.max(1, Math.round(maxMp(p) * te.killMp)), b = p.mp;
+      p.mp = Math.min(maxMp(p), p.mp + m);
+      if (p.mp > b) addLog(`魔力回収でMP+${p.mp - b}`, 'l-good');
+    }
+  }
   // drops (チュートリアル中はドロップなし)
   const drops = [];
   if (!G.tutorial || G.tutorial.done) {
-    const capStar = run.d.maxStar || MAX_STAR;
-    const bStar = run.d.bossMaxStar;
+    const tBand = run.tower ? towerBand(run.floor) : null;
+    const capStar = tBand ? tBand.maxDropStar : (run.d.maxStar || MAX_STAR);
+    const bStar = tBand ? tBand.bossCapStar : run.d.bossMaxStar;
     const rollBossItem = () => {
       let fs = null;
       if (bStar && bStar > capStar) {
         for (let s = bStar; s > capStar; s--) {
-          const ch = s >= 9 ? (run.df.id === 'extreme' ? 0.06 : 0.04) : s === 8 ? 0.06 : 0.08;
+          const ch = s >= 9 ? (run.tower ? 0.04 : (run.df.id === 'extreme' ? 0.06 : 0.04)) : s === 8 ? 0.06 : 0.08;
           if (rnd() < ch) { fs = s; break; }
         }
       }
@@ -355,6 +446,17 @@ function onKill() {
     p.hp = Math.min(maxHp(p), p.hp + h);
     if (p.hp > b) addLog(`小休止でHPが${p.hp - b}回復した。`, 'l-sys');
   }
+  if (run.tower && en.boss) {
+    const choices = rollTowerBlessings(run.tower.blessings);
+    if (choices.length) {
+      run.tower.pendingChoice = choices;
+      run.phase = 'bless';
+      renderEnemy(false);
+      if (!G.headless) openBlessModal();
+      ensureLoop();
+      return;
+    }
+  }
   run.phase = 'pause';
   renderEnemy(false);
 }
@@ -378,8 +480,30 @@ function gainExp(n) {
 function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
-  let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false;
-  if (result === 'clear') {
+  let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false, towerRes = null;
+  if (run.tower) {
+    const reached = Math.max(0, result === 'defeat' ? run.floor - 1 : run.floor);
+    const coins = Math.round(TOWER_CFG.coinsForFloor(reached) * towerEff(run).coinMult);
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    const isNewBest = reached > (p.tower.best || 0);
+    if (isNewBest) p.tower.best = reached;
+    p.tower.coins += coins;
+    p.tower.totalCoins += coins;
+    const newTitles = [];
+    for (const t of TOWER_TITLES) {
+      if (t.floor && p.tower.best >= t.floor && !p.tower.titles.includes(t.id)) {
+        p.tower.titles.push(t.id);
+        newTitles.push(t.name);
+      }
+    }
+    if (result === 'defeat') {
+      const before = p.gold; p.gold = Math.floor(p.gold / 2); lost = before - p.gold;
+      p.hp = Math.max(1, Math.round(maxHp(p) * 0.25));
+    } else {
+      p.hp = maxHp(p);
+    }
+    towerRes = { reached, coins, isNewBest, blessings: [...run.tower.blessings], newTitles };
+  } else if (result === 'clear') {
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
     const firstClear = !p.cleared[run.d.id][run.df.id];
@@ -404,9 +528,9 @@ function finishRun(result) {
   }
   p.stats.runs++;
   G.last = {
-    result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors), cleared: run.cleared,
+    result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending
+    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending, tower: towerRes
   };
   G.run = null;
   G.townView = 'plaza';  // 街帰還時は広場に戻る
@@ -438,7 +562,7 @@ function tick() {
 function ensureLoop() {
   clearTimeout(loopTimer); loopTimer = null;
   if (G.noTimer) return;
-  if (G.run && G.view === 'dungeon' && !G.modalOpen) {
+  if (G.run && G.view === 'dungeon' && !G.modalOpen && G.run.phase !== 'bless') {
     loopTimer = setTimeout(() => { loopTimer = null; tick(); ensureLoop(); }, Math.round(TICK_MS / G.opts.speed));
   }
 }
