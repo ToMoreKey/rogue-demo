@@ -74,6 +74,14 @@ with sync_playwright() as pw:
         G.p = R.newPlayer(); G.p.ending = true; G.p.lv = 126;
         R.startTowerRun();
         const atk0 = R.playerAtk(G.p);
+        // 5F撃破で2択出現
+        G.run.floor = 5;
+        R.spawnEnemy(false, true);
+        G.run.enemy.hp = 0;
+        R.onKill();
+        const ch5 = G.run.tower.pendingChoice || [];
+        const has2At5 = ch5.length === 2 && G.run.phase === 'bless';
+        if (ch5.length) R.pickBlessing(ch5[0].id);
         // 10Fボス撃破で3択出現
         G.run.floor = 10;
         R.spawnEnemy(true, false);
@@ -83,7 +91,7 @@ with sync_playwright() as pw:
         const has3 = choices.length === 3 && G.run.phase === 'bless';
         // 攻撃力+系を含む全30種を順に適用してもエラーが出ないこと
         if (choices.length) R.pickBlessing(choices[0].id);
-        const picked1 = G.run.tower.blessings.length === 1;
+        const picked1 = G.run.tower.blessings.length === 2;
         // 既に選んだ祝福は次回候補に出ない
         let dupFound = false;
         for (let k = 0; k < 28; k++) {
@@ -104,10 +112,10 @@ with sync_playwright() as pw:
         R.startTowerRun();
         const freshCount = G.run.tower.blessings.length;
         G.run = null;
-        return { totalBlessings: R.TOWER_BLESSINGS.length, has3, picked1, dupFound, allCount, atk0, atkAfterAll, teOk: te.atkMult > 0, goneAfterEnd, freshCount };
+        return { totalBlessings: R.TOWER_BLESSINGS.length, has2At5, has3, picked1, dupFound, allCount, atk0, atkAfterAll, teOk: te.atkMult > 0, goneAfterEnd, freshCount };
     }''')
-    check('about 30 blessings defined and 3-choice modal triggered after boss kill',
-          bless_res['totalBlessings'] >= 28 and bless_res['has3'] and bless_res['picked1'], bless_res)
+    check('about 30 blessings defined and 5F 2-choice / 10F 3-choice triggered',
+          bless_res['totalBlessings'] >= 28 and bless_res['has2At5'] and bless_res['has3'] and bless_res['picked1'], bless_res)
     check('blessings do not duplicate, apply cleanly, and reset on new run',
           not bless_res['dupFound'] and bless_res['allCount'] >= 28 and bless_res['teOk']
           and bless_res['goneAfterEnd'] and bless_res['freshCount'] == 0, bless_res)
@@ -142,12 +150,12 @@ with sync_playwright() as pw:
         R.setHeadless(true); R.noTimer(true);
         G.p = R.newPlayer(); G.p.ending = true; G.p.lv = 126;
         const noStar9Mythic = !R.TOWER_SHOP.some(x => x.star >= 9);
-        // コイン不足で買えない
-        G.p.tower.coins = 100;
+        // コイン不足で買えない (300 < 600)
+        G.p.tower.coins = 300;
         R.ACTS.buyTowerShop({ id: 'mythic_w8' });
-        const blockedPoor = G.p.weapon.rarity !== 4 && G.p.tower.coins === 100;
-        // 300コインで購入・装備
-        G.p.tower.coins = 500;
+        const blockedPoor = G.p.weapon.rarity !== 4 && G.p.tower.coins === 300;
+        // 600コインで購入・装備
+        G.p.tower.coins = 800;
         R.ACTS.buyTowerShop({ id: 'mythic_w8' });
         const boughtW = G.p.weapon && G.p.weapon.rarity === 4 && G.p.weapon.star === 8;
         const pw = R.gearPower(G.p.weapon);
@@ -157,7 +165,7 @@ with sync_playwright() as pw:
         G.run.floor = 30;
         R.finishRun('retreat');
         const autoTitles = ['t_f10', 't_f20', 't_f30'].every(id => G.p.tower.titles.includes(id));
-        G.p.tower.coins = 100;
+        G.p.tower.coins = 200;
         R.ACTS.buyTowerTitle({ id: 't_c1' });
         const boughtTitle = G.p.tower.titles.includes('t_c1') && G.p.tower.title === 't_c1';
         return { noStar9Mythic, blockedPoor, boughtW, pw, coinsLeft, autoTitles, boughtTitle };
