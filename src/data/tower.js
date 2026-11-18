@@ -9,8 +9,8 @@ const TOWER_CFG = {
     { maxFloor: 999999, dIds: ['M', 'N', 'O'], maxDropStar: 5, bossCapStar: 9 }
   ],
   // 基礎倍率と指数成長率（1階ごとに growth 倍）
-  basePow: 4.5,
-  growth: 1.038,
+  basePow: 2.2,
+  growth: 1.062,
   // 獲得コイン計算: 到達階 + 10階ごとのボーナス（50階以降は2倍）
   coinsForFloor(floor) {
     if (floor <= 0) return 0;

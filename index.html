@@ -788,8 +788,8 @@ const TOWER_CFG = {
     { maxFloor: 999999, dIds: ['M', 'N', 'O'], maxDropStar: 5, bossCapStar: 9 }
   ],
   // 基礎倍率と指数成長率（1階ごとに growth 倍）
-  basePow: 4.5,
-  growth: 1.038,
+  basePow: 2.2,
+  growth: 1.062,
   // 獲得コイン計算: 到達階 + 10階ごとのボーナス（50階以降は2倍）
   coinsForFloor(floor) {
     if (floor <= 0) return 0;
@@ -1565,8 +1565,9 @@ function spawnEnemy(boss, miniboss = false) {
     bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
   }
   const S = scaleOf(run, run.floor);
-  const Sa = Math.pow(S, TUNE.atkExp);
-  const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
+  const Shp = run.tower ? Math.pow(S, 0.45) : S;
+  const Sa = run.tower ? Math.pow(S, 1.02) : Math.pow(S, TUNE.atkExp);
+  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
   run.enemy = {
     id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1))),

@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright
 import argparse, json, os
 
 BOT = r"""
-({seed, mode})=>{
+({seed, mode, blessMode})=>{
  const R=window.__rogue; let s=seed; R.setRng(()=>{s=(s*1664525+1013904223)%4294967296;return s/4294967296});
  R.setHeadless(true); R.noTimer(true);
  const G=window.G; G.tutorial=null; G.p=R.newPlayer();
@@ -95,6 +95,51 @@ BOT = r"""
    };
  };
 
+ if(mode==='tower'){
+   const p=G.p;
+   p.lv=126; p.sp=200; p.ending=true; p.gold=100000;
+   p.potions={hp:25,mp:25};
+   p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=3; p.weapon.roll=0.9; p.weapon.prop='flame';
+   p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=3; p.armor.roll=0.9;
+   spPlan(); p.hp=R.maxHp(p); p.mp=R.maxMp(p);
+   const scoreBless=(b)=>{
+     const e=b.eff||{}; let sc=0;
+     if(e.atkPct) sc+=e.atkPct*100;
+     if(e.dmgPct) sc+=e.dmgPct*110;
+     if(e.defPct) sc+=e.defPct*70;
+     if(e.hpPct) sc+=e.hpPct*80;
+     if(e.takenPct) sc+=(-e.takenPct)*120;
+     if(e.floorAtk10) sc+=60;
+     if(e.floorDef10) sc+=55;
+     if(e.floorDmg10) sc+=65;
+     if(e.floorHp10) sc+=50;
+     if(e.reviveOnce) sc+=85;
+     if(e.lifeSteal) sc+=75;
+     if(e.bossDmg) sc+=50;
+     if(e.ctRed) sc+=60;
+     if(e.firstCrit) sc+=40;
+     if(e.killHeal) sc+=45;
+     return sc;
+   };
+   R.startTowerRun();
+   while(G.run && ticks<200000){
+     if(G.run.phase==='bless' && G.run.tower && G.run.tower.pendingChoice){
+       const ch=G.run.tower.pendingChoice;
+       let pick=ch[0];
+       if(blessMode==='opt') pick=[...ch].sort((a,b)=>scoreBless(b)-scoreBless(a))[0];
+       else pick=ch[Math.floor((s=(s*1664525+1013904223)%4294967296)/4294967296*ch.length)];
+       R.pickBlessing(pick.id);
+       continue;
+     }
+     const hpR=G.p.hp/R.maxHp(G.p);
+     if(hpR<0.35&&G.p.potions.hp>0) R.usePotion('hp');
+     else if(G.p.mp<30&&G.p.potions.mp>0) R.usePotion('mp');
+     R.tick(); ticks++;
+   }
+   const tw=G.last && G.last.tower;
+   return {mode:'tower', blessMode:blessMode||'opt', seed, reached:tw?tw.reached:0, coins:tw?tw.coins:0, ticks, ticksPerFloor:Math.round(ticks/Math.max(1,(tw?tw.reached:1))*100)/100, blessings:tw?tw.blessings.length:0};
+ }
+
  if(mode==='linear'){
    for(const target of cells){
      town();
@@ -137,7 +182,8 @@ BOT = r"""
 """
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--mode', choices=['loop', 'linear'], default='loop')
+ap.add_argument('--mode', choices=['loop', 'linear', 'tower'], default='loop')
+ap.add_argument('--bless', choices=['opt', 'rand'], default='opt')
 ap.add_argument('html', nargs='?', default=os.path.join(os.path.dirname(__file__), '..', 'index.html'))
 args = ap.parse_args()
 HTML = os.path.abspath(args.html)
@@ -148,7 +194,7 @@ with sync_playwright() as p:
     pg.goto('file://' + HTML); pg.wait_for_timeout(400)
     seeds = (1,) if args.mode == 'linear' else (1, 2, 3)
     for seed in seeds:
-        r = pg.evaluate(BOT, {'seed': seed, 'mode': args.mode})
+        r = pg.evaluate(BOT, {'seed': seed, 'mode': args.mode, 'blessMode': args.bless})
         print(json.dumps(r, ensure_ascii=False))
     print(errs)
     b.close()

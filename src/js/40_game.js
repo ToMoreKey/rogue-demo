@@ -158,8 +158,9 @@ function spawnEnemy(boss, miniboss = false) {
     bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
   }
   const S = scaleOf(run, run.floor);
-  const Sa = Math.pow(S, TUNE.atkExp);
-  const hp = Math.max(1, Math.round(base.hp * S * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
+  const Shp = run.tower ? Math.pow(S, 0.45) : S;
+  const Sa = run.tower ? Math.pow(S, 1.02) : Math.pow(S, TUNE.atkExp);
+  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * (boss ? TUNE.bossHp : miniboss ? 1.55 : 1)));
   run.enemy = {
     id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1))),
