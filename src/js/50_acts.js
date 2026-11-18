@@ -84,8 +84,13 @@ const ACTS = {
     const amount = Number(d.amount) || 1;
     if (p.sp < amount) { toast('SPが足りません'); return; }
     const curPts = p.skillPts[d.tree] || 0;
-    const cap = (tree.stage2When && !tree.stage2When(p)) ? 10 : tree.maxSp;
-    if (curPts >= cap) { toast(cap < tree.maxSp ? (tree.stage2Desc || '第2段階が未解放です') : 'このスキル枠はすでに最大です'); return; }
+    let cap = tree.maxSp;
+    if (tree.stage2When && !tree.stage2When(p)) cap = Math.min(cap, 10);
+    else if (tree.stage3When && !tree.stage3When(p)) cap = Math.min(cap, 20);
+    if (curPts >= cap) {
+      const msg = (cap === 10 && tree.stage2Desc) || (cap === 20 && tree.stage3Desc) || 'このスキル枠はすでに最大です';
+      toast(msg); return;
+    }
     if (curPts + amount > cap) { toast(`最大${cap}SPまでしか割り振れません`); return; }
     const prevPts = curPts;
     p.sp -= amount;
@@ -265,6 +270,41 @@ const ACTS = {
     save();
     toast(`称号「${t.name}」を獲得した！`);
     openTowerShopModal();
+  },
+  masteryUp(d) {
+    const p = G.p, item = MASTERY_LIST.find(x => x.id === d.id);
+    if (!item) return;
+    if (!p.ending) { toast('本編クリア（虚空の神殿・極級）で解放されます'); return; }
+    p.mastery = p.mastery || {};
+    const cur = p.mastery[item.id] || 0;
+    if (cur >= MASTERY_MAX) { toast('最大ランクです'); return; }
+    const cost = masteryCost(cur + 1);
+    if (p.sp < cost) { toast(`SPが足りません（必要: ${cost}SP）`); return; }
+    p.sp -= cost;
+    p.mastery[item.id] = cur + 1;
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
+    save(); renderHUD(); renderStatus();
+  },
+  masteryReset() {
+    const p = G.p;
+    if (!p.ending) return;
+    const m = p.mastery || {};
+    let refund = 0;
+    for (const item of MASTERY_LIST) {
+      const r = m[item.id] || 0;
+      for (let k = 1; k <= r; k++) refund += masteryCost(k);
+    }
+    if (refund <= 0) { toast('リセットする極意がありません'); return; }
+    const cost = skillResetCost(p);
+    if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
+    p.gold -= cost;
+    p.sp += refund;
+    p.mastery = {};
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
+    save(); toast(`極意をリセットし、${refund}SPが戻りました`);
+    renderHUD(); renderStatus();
   },
   equipTowerTitle(d) {
     const p = G.p;

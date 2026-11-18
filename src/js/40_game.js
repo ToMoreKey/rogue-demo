@@ -253,17 +253,18 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id], te = towerEff(run);
+  const s = SK[id], te = towerEff(run), pb = passiveBonus(p);
   p.mp -= s.mp;
   // CTをセット
   if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   if (s.type === 'heal') {
-    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult)); const before = p.hp;
+    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * pb.healMult)); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
     if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
-    if (s.defTurns) { run.defBuff = s.defTurns; addLog(`${s.defTurns}ターン防御力1.5倍！`, 'l-good'); }
-    if (s.regen) { run.regenTurns = s.regen; run.regenPct = s.pct; }
+    if (s.defTurns) { run.defBuff = s.defTurns; run.defBuffMult = s.defMult || 1.5; addLog(`${s.defTurns}ターン防御力${run.defBuffMult}倍！`, 'l-good'); }
+    if (s.regen) { run.regenTurns = s.regen; run.regenPct = s.regenPct || s.pct; }
+    if (s.barrier) { run.barrier = (run.barrier || 0) + s.barrier; addLog(`バリアを${s.barrier}回張った！`, 'l-good'); }
     return true;
   }
   if (s.type === 'buff') {
@@ -272,7 +273,9 @@ function useSkillEffect(id) {
     else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
     else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
     else if (s.shura) { run.shura = s.turns; addLog('修羅の構え！ 攻撃力が4倍になった！', 'l-good'); }
+    else if (s.kishin) { run.kishin = s.turns; addLog('鬼神降臨！ 攻撃力が5倍になった！', 'l-good'); }
     else if (s.awaken) { run.awaken = s.turns; addLog('英雄の覚醒！ 全ステータスが2.5倍になった！', 'l-good'); }
+    else if (s.advent) { run.advent = s.turns; addLog('勇者の光臨！ 全ステータスが3.5倍になった！', 'l-good'); }
     else if (s.barrier) { run.barrier = s.barrier; addLog(`${s.name}！ ダメージを${s.barrier}回無効化する。`, 'l-good'); }
     else addLog(`${s.name}を発動した！`, 'l-good');
     return true;
@@ -300,22 +303,24 @@ function playerAct() {
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.awaken > 0 ? 2.5 : 1);
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
+  const pb = passiveBonus(p);
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
+  if (run.advent > 0) run.advent--;
   let dealt = 0, crits = 0, hits = 0;
   const bossMult = en.boss ? (1 + te.bossDmg) : 1;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
-    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < 0.1);
+    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < (0.1 + pb.critAdd));
     en.firstHit = false;
-    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * bossMult, en.def);
+    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * pb.dmgMult * bossMult, en.def);
     en.hp = Math.max(0, en.hp - dmg); dealt += dmg; hits++; if (crit) crits++;
     popDamage('enemy', String(dmg), crit ? 'crit' : 'dmg');
   }
   hitFlash('enemy'); playAttackMotion();
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
-  if (s.freeze && en.hp > 0) { run.frozen = 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
+  if (s.freeze && en.hp > 0) { run.frozen = typeof s.freeze === 'number' ? s.freeze : 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
   const stealPct = (p.weapon && p.weapon.prop === 'vamp' ? 0.1 : 0) + te.lifeSteal;
   if (stealPct > 0 && dealt > 0) {
     const h = Math.max(1, Math.round(dealt * stealPct)), before = p.hp;
@@ -337,9 +342,11 @@ function enemyAct() {
     popDamage('player', 'BLOCK', 'heal');
     return;
   }
-  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? 1.5 : 1) * (run.awaken > 0 ? 2.5 : 1);
-  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * te.takenMult));
+  const pb = passiveBonus(p);
+  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * te.takenMult * pb.takenMult));
   if (run.shura > 0) run.shura--;
+  if (run.kishin > 0) run.kishin--;
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
   addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
@@ -382,10 +389,10 @@ function battleRound() {
 }
 
 function onKill() {
-  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run);
+  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = passiveBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
-  const expGain = Math.round(en.exp * te.expMult);
-  const goldGain = Math.round(en.gold * te.goldMult);
+  const expGain = Math.round(en.exp * te.expMult * pb.expMult);
+  const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
   addLog(`${en.name}を倒した！ EXP+${expGain}　${goldGain}G`, 'l-gold');
   p.gold += goldGain; run.gold += goldGain;
   gainExp(expGain);

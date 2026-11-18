@@ -7,9 +7,10 @@ const itemIcon = it => {
 
 // パッシブボーナス計算
 function passiveBonus(p) {
-  const pts = p.skillPts || {};
-  const passives = p.passiveSkills || {};
-  let atkMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1;
+  const passives = (p && p.passiveSkills) || {};
+  const m = (p && p.mastery) || {};
+  let atkMult = 1, defMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1;
+  let critAdd = 0, dmgMult = 1, takenMult = 1, expMult = 1, goldMult = 1;
   if (passives.sword15) atkMult *= 1.15;
   if (passives.warrior10) atkMult *= 1.30;
   if (passives.magic15) mpMult *= 1.20;
@@ -17,7 +18,22 @@ function passiveBonus(p) {
   if (passives.life15) hpMult *= 1.20;
   if (passives.cleric10) healMult *= 1.50;
   if (passives.hero10) { atkMult *= 1.25; hpMult *= 1.25; mpMult *= 1.25; }
-  return { atkMult, hpMult, mpMult, mpCostMult, healMult };
+  for (const item of MASTERY_LIST) {
+    const r = Number(m[item.id]) || 0;
+    if (!r) continue;
+    const v = item.per * r;
+    if (item.key === 'atkPct') atkMult *= (1 + v);
+    else if (item.key === 'defPct') defMult *= (1 + v);
+    else if (item.key === 'hpPct') hpMult *= (1 + v);
+    else if (item.key === 'mpPct') mpMult *= (1 + v);
+    else if (item.key === 'critAdd') critAdd += v;
+    else if (item.key === 'dmgPct') dmgMult *= (1 + v);
+    else if (item.key === 'takenPct') takenMult *= Math.max(0.2, 1 + v);
+    else if (item.key === 'healPct') healMult *= (1 + v);
+    else if (item.key === 'expPct') expMult *= (1 + v);
+    else if (item.key === 'goldPct') goldMult *= (1 + v);
+  }
+  return { atkMult, defMult, hpMult, mpMult, mpCostMult, healMult, critAdd, dmgMult, takenMult, expMult, goldMult };
 }
 function enemyArt(en, dId) {
   const im = ENEMY_IMG[en.id] || (en.fallbackId && ENEMY_IMG[en.fallbackId]);

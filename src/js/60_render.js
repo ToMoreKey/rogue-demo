@@ -334,7 +334,9 @@ function renderSkillTrees(p) {
   const treeCard = (tree) => {
     const cur = pts[tree.id] || 0;
     const isUnlocked = tree.unlockWhen(p);
-    const cap = (tree.stage2When && !tree.stage2When(p)) ? 10 : tree.maxSp;
+    let cap = tree.maxSp;
+    if (tree.stage2When && !tree.stage2When(p)) cap = Math.min(cap, 10);
+    else if (tree.stage3When && !tree.stage3When(p)) cap = Math.min(cap, 20);
     const isFull = cur >= cap;
     const resetKey = 'resetTree_' + tree.id;
     const resetArming = !!G[resetKey];
@@ -382,7 +384,7 @@ function renderSkillTrees(p) {
         <span class="st-icon">${tree.icon}</span>
         <div class="st-info">
           <span class="st-name">${tree.name}</span>
-          <span class="st-desc">${tree.desc}${tree.stage2When && !tree.stage2When(p) ? `<br><span class="sub">🔒 ${tree.stage2Desc}</span>` : ''}</span>
+          <span class="st-desc">${tree.desc}${tree.stage2When && !tree.stage2When(p) ? `<br><span class="sub">🔒 ${tree.stage2Desc}</span>` : (tree.stage3When && !tree.stage3When(p) ? `<br><span class="sub">🔒 ${tree.stage3Desc}</span>` : '')}</span>
         </div>
         <div class="st-pts">${cur}<span>/${tree.maxSp}</span></div>
       </div>
@@ -488,6 +490,19 @@ function renderStatus() {
         <dt>スキルポイント</dt><dd>${p.sp}</dd>
         <dt>探索 / 踏破 / 撃破</dt><dd>${p.stats.runs} / ${p.stats.clears} / ${p.stats.kills}</dd>
       </dl></div>
+    <div class="panel"><h2>極意（共通パッシブ）${p.ending ? ` <span class="sub">残りSP: ${p.sp}</span>` : ''}</h2>
+      ${!p.ending
+        ? '<p class="empty">🔒 本編クリア（虚空の神殿・極級）で解放されます。</p>'
+        : `<div style="display:grid;gap:6px">${MASTERY_LIST.map(it => {
+            const r = (p.mastery && p.mastery[it.id]) || 0;
+            const cost = r < MASTERY_MAX ? masteryCost(r + 1) : 0;
+            return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <div><div><b>${esc(it.name)}</b> <span class="sub">Lv ${r} / ${MASTERY_MAX}</span></div><div class="sub">${esc(it.desc)}</div></div>
+              <button class="btn small primary" data-act="masteryUp" data-id="${it.id}" ${r < MASTERY_MAX && p.sp >= cost ? '' : 'disabled'}>${r >= MASTERY_MAX ? 'MAX' : `+1 (${cost}SP)`}</button>
+            </div>`;
+          }).join('')}</div>
+          <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
+    </div>
     <div class="panel"><h2>装備</h2>
       <div class="items">
         <div><p class="slot-t">手（武器）</p>${p.weapon ? itemCard(p.weapon) : '<p class="empty">装備なし</p>'}</div>

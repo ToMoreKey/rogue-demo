@@ -1,7 +1,7 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -32,6 +32,21 @@ const migrations = {
       p.tower = { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
     }
     return Object.assign({}, d, { v: 4, p });
+  },
+  // v4 → v5: 深淵(abyss)・極意(mastery)・複数特性(props)を追加
+  4: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.abyss || typeof p.abyss !== 'object') p.abyss = { best: 0, cleared: {} };
+    if (!p.mastery || typeof p.mastery !== 'object') p.mastery = {};
+    const fixProps = it => {
+      if (!it || typeof it !== 'object') return it;
+      if (!Array.isArray(it.props)) it.props = it.prop ? [it.prop] : [];
+      return it;
+    };
+    p.weapon = fixProps(p.weapon);
+    p.armor = fixProps(p.armor);
+    if (Array.isArray(p.bag)) p.bag = p.bag.map(fixProps);
+    return Object.assign({}, d, { v: 5, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -93,6 +108,17 @@ function load() {
         title: s.tower.title && ts.includes(s.tower.title) ? s.tower.title : null,
         titles: ts
       };
+    }
+    p.mastery = {};
+    if (s.mastery && typeof s.mastery === 'object') {
+      for (const m of MASTERY_LIST) p.mastery[m.id] = num(s.mastery[m.id], 0, 0, MASTERY_MAX);
+    }
+    p.abyss = { best: 0, cleared: {} };
+    if (s.abyss && typeof s.abyss === 'object') {
+      p.abyss.best = num(s.abyss.best, 0, 0, 10);
+      if (s.abyss.cleared && typeof s.abyss.cleared === 'object') {
+        for (let lv = 1; lv <= 10; lv++) if (s.abyss.cleared[lv]) p.abyss.cleared[lv] = true;
+      }
     }
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };

@@ -87,8 +87,8 @@ const bestGearItem = (p, slot) => {
   }
   return best;
 };
-const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
-const playerDef = p => Math.round((baseDef(p) + (p.armor ? itemPower(p.armor) : 0)) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
+const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.mastery ? passiveBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
+const playerDef = p => Math.round((baseDef(p) + (p.armor ? itemPower(p.armor) : 0)) * (p.mastery ? passiveBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 
 function mkItem(p, o) {
   return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: o.prop || null, locked: false };
@@ -105,7 +105,7 @@ function isDiffUnlocked(p, d, df) {
 }
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }, abyss: { best: 0, cleared: {} }, mastery: {}, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);

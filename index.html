@@ -511,9 +511,19 @@ const SK = {
   ultima:         { id: 'ultima',         name: 'アルテマ',             mp: 55, ct: 8, type: 'atk',  hits: 1, mult: 9.0, desc: '9倍の究極魔法攻撃' },
   highRegen:      { id: 'highRegen',      name: 'ハイリジェネ',         mp: 14, ct: 4, type: 'heal', pct: 0.25,           desc: '毎ターン最大HPの25%回復（3ターン）', regen: 3 },
   holyBarrier:    { id: 'holyBarrier',    name: 'ホーリーバリア',       mp: 18, ct: 6, type: 'buff', turns: 5,            desc: 'ダメージを5回無効化するバリアを張る', barrier: 5 },
-  saintPrayer:    { id: 'saintPrayer',    name: '聖女の祈り',           mp: 45, ct: 8, type: 'heal', pct: 1.0,            desc: '最大HPを全回復する' }
+  saintPrayer:    { id: 'saintPrayer',    name: '聖女の祈り',           mp: 45, ct: 8, type: 'heal', pct: 1.0,            desc: '最大HPを全回復する' },
+  // 進化枠 第3段階（本編クリア後解放）
+  tenma:          { id: 'tenma',          name: '天魔滅殺斬',           mp: 80, ct: 8, type: 'atk',  hits: 1, mult: 18.0, desc: '18倍の極限の一撃' },
+  kishin:         { id: 'kishin',         name: '鬼神降臨',             mp: 65, ct: 8, type: 'buff', turns: 5, kishin: true, desc: '5ターン攻撃力5倍・被ダメ1.1倍' },
+  zeroAbs:        { id: 'zeroAbs',        name: '絶対零度',             mp: 70, ct: 7, type: 'atk',  hits: 1, mult: 9.0, freeze: 2, desc: '9倍の氷結魔法で敵を2ターン凍らせる' },
+  meteorNova:     { id: 'meteorNova',     name: 'メテオノヴァ',         mp: 90, ct: 9, type: 'atk',  hits: 1, mult: 22.0, desc: '22倍の究極星辰魔法' },
+  goddess:        { id: 'goddess',        name: '女神の奇跡',           mp: 65, ct: 7, type: 'heal', pct: 1.0, mpFull: true, defTurns: 4, defMult: 2.0, desc: 'HP・MP全回復＋4ターン防御2倍' },
+  eternal:        { id: 'eternal',        name: '永劫の祈り',           mp: 75, ct: 9, type: 'heal', pct: 1.0, regen: 5, regenPct: 0.35, barrier: 3, desc: 'HP全回復＋5ターン35%再生＋3回バリア' },
+  heroAdvent:     { id: 'heroAdvent',     name: '勇者の光臨',           mp: 70, ct: 8, type: 'buff', turns: 6, advent: true, desc: '6ターン全ステータス3.5倍' },
+  skyStar:        { id: 'skyStar',        name: '蒼穹星剣',             mp: 85, ct: 8, type: 'atk',  hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）' },
+  genesisRay:     { id: 'genesisRay',     name: '創世の光',             mp: 95, ct: 9, type: 'atk',  hits: 1, mult: 24.0, desc: '24倍の創世の一閃' }
 };
-const SK_ORDER = ['strike', 'heal', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'blizzard', 'iceAge', 'cosmicNova', 'resurrection', 'holyLight', 'requiem', 'heroic', 'heroAwaken', 'starSword'];
+const SK_ORDER = ['strike', 'heal', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'tenma', 'kishin', 'blizzard', 'iceAge', 'cosmicNova', 'zeroAbs', 'meteorNova', 'resurrection', 'holyLight', 'requiem', 'goddess', 'eternal', 'heroic', 'heroAwaken', 'starSword', 'heroAdvent', 'skyStar', 'genesisRay'];
 
 // ============ DQ8スタイル スキルツリー定義 ============
 const SKILL_TREES = [
@@ -579,70 +589,103 @@ const SKILL_TREES = [
     id: 'warrior',
     name: '戦士枠',
     icon: '🗡️',
-    maxSp: 20,
+    maxSp: 30,
     color: '#e85a5a',
     desc: '剣枠10以上で解放。超攻撃特化の戦士スキル。',
     unlockWhen: (p) => (p.skillPts && p.skillPts.sword >= 10),
     stage2When: (p) => (p.skillPts && p.skillPts.sword >= 30),
     stage2Desc: '剣枠30で第2段階（SP11〜20）解放',
+    stage3When: (p) => !!(p && p.ending),
+    stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'berserk', name: 'バーサーク', desc: '4ターン攻撃力3倍・防御力半減' },
       { sp: 10, id: null,      name: '攻撃力+30%', desc: 'パッシブ：攻撃力がさらに30%上昇', passive: 'warrior10' },
       { sp: 15, id: 'shura',   name: '修羅の構え', desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
-      { sp: 20, id: 'hagun',   name: '破軍の剣',   desc: '12倍の渾身の一撃' }
+      { sp: 20, id: 'hagun',   name: '破軍の剣',   desc: '12倍の渾身の一撃' },
+      { sp: 25, id: 'tenma',   name: '天魔滅殺斬', desc: '18倍の極限の一撃' },
+      { sp: 30, id: 'kishin',  name: '鬼神降臨',   desc: '5ターン攻撃力5倍・被ダメ1.1倍' }
     ]
   },
   {
     id: 'mage',
     name: '魔術師枠',
     icon: '🔮',
-    maxSp: 20,
+    maxSp: 30,
     color: '#a07af5',
     desc: '魔法枠10以上で解放。超強力な魔術師スキル。',
     unlockWhen: (p) => (p.skillPts && p.skillPts.magic >= 10),
     stage2When: (p) => (p.skillPts && p.skillPts.magic >= 30),
     stage2Desc: '魔法枠30で第2段階（SP11〜20）解放',
+    stage3When: (p) => !!(p && p.ending),
+    stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'blizzard',   name: 'ブリザード',       desc: '4.5倍の氷結魔法で敵を凍らせる' },
       { sp: 10, id: null,         name: 'MP消費-20%',       desc: 'パッシブ：全スキルのMP消費が20%減少', passive: 'mage10' },
       { sp: 15, id: 'iceAge',     name: 'アイスエイジ',     desc: '6倍の氷結魔法で敵を凍らせる' },
-      { sp: 20, id: 'cosmicNova', name: 'コズミックノヴァ', desc: '14倍の星辰爆発魔法' }
+      { sp: 20, id: 'cosmicNova', name: 'コズミックノヴァ', desc: '14倍の星辰爆発魔法' },
+      { sp: 25, id: 'zeroAbs',    name: '絶対零度',         desc: '9倍の氷結魔法で敵を2ターン凍らせる' },
+      { sp: 30, id: 'meteorNova', name: 'メテオノヴァ',     desc: '22倍の究極星辰魔法' }
     ]
   },
   {
     id: 'cleric',
     name: '詠唱枠',
     icon: '🌿',
-    maxSp: 20,
+    maxSp: 30,
     color: '#5ac9a0',
     desc: '生命枠10以上で解放。究極の回復術士スキル。',
     unlockWhen: (p) => (p.skillPts && p.skillPts.life >= 10),
     stage2When: (p) => (p.skillPts && p.skillPts.life >= 30),
     stage2Desc: '生命枠30で第2段階（SP11〜20）解放',
+    stage3When: (p) => !!(p && p.ending),
+    stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'resurrection', name: 'リザレクション', desc: '全回復＋次の致死ダメージを1で耐える' },
       { sp: 10, id: null,           name: 'HP/MP回復+50%', desc: 'パッシブ：全回復系の効果が50%上昇', passive: 'cleric10' },
       { sp: 15, id: 'holyLight',    name: 'ホーリーライト', desc: '最大HP全回復＋3ターン防御1.5倍' },
-      { sp: 20, id: 'requiem',      name: 'レクイエム',     desc: 'HP・MPを全回復する' }
+      { sp: 20, id: 'requiem',      name: 'レクイエム',     desc: 'HP・MPを全回復する' },
+      { sp: 25, id: 'goddess',      name: '女神の奇跡',     desc: 'HP・MP全回復＋4ターン防御2倍' },
+      { sp: 30, id: 'eternal',      name: '永劫の祈り',     desc: 'HP全回復＋5ターン35%再生＋3回バリア' }
     ]
   },
   {
     id: 'hero',
     name: '英雄枠',
     icon: '👑',
-    maxSp: 20,
+    maxSp: 30,
     color: '#e8dc9b',
     desc: '剣・魔法・生命すべて20以上で解放。唯一無二の英雄スキル。',
     unlockWhen: (p) => (p.skillPts && p.skillPts.sword >= 20 && p.skillPts.magic >= 20 && p.skillPts.life >= 20),
     stage2When: (p) => (p.skillPts && p.skillPts.sword >= 30 && p.skillPts.magic >= 30 && p.skillPts.life >= 30),
     stage2Desc: '剣・魔法・生命すべて30で第2段階（SP11〜20）解放',
+    stage3When: (p) => !!(p && p.ending),
+    stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
       { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：全ステータスが25%上昇', passive: 'hero10' },
       { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
-      { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' }
+      { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },
+      { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
+      { sp: 26, id: 'skyStar',    name: '蒼穹星剣',   desc: '6回攻撃（各4倍）' },
+      { sp: 30, id: 'genesisRay', name: '創世の光',   desc: '24倍の創世の一閃' }
     ]
   }
+];
+
+// 全キャラ共通パッシブ「極意」（本編クリア後解放・各最大ランク10）
+const MASTERY_MAX = 10;
+const masteryCost = rank => (rank >= 10 ? 2 : 1); // ランク1〜9=1SP、10=2SP（計11SP/項目 × 10項目 = 110SP）
+const MASTERY_LIST = [
+  { id: 'm_atk',   name: '攻撃の極意', desc: '攻撃力 +1.5% / ランク',     key: 'atkPct',   per: 0.015 },
+  { id: 'm_def',   name: '防御の極意', desc: '防御力 +1.5% / ランク',     key: 'defPct',   per: 0.015 },
+  { id: 'm_hp',    name: '生命の極意', desc: '最大HP +2.0% / ランク',     key: 'hpPct',    per: 0.020 },
+  { id: 'm_mp',    name: '魔力の極意', desc: '最大MP +2.0% / ランク',     key: 'mpPct',    per: 0.020 },
+  { id: 'm_crit',  name: '会心の極意', desc: '会心率 +0.8% / ランク',     key: 'critAdd',  per: 0.008 },
+  { id: 'm_dmg',   name: '破壊の極意', desc: '与ダメージ +1.5% / ランク', key: 'dmgPct',   per: 0.015 },
+  { id: 'm_taken', name: '守護の極意', desc: '被ダメージ -1.0% / ランク', key: 'takenPct', per: -0.010 },
+  { id: 'm_heal',  name: '慈愛の極意', desc: '回復効果 +2.0% / ランク',   key: 'healPct',  per: 0.020 },
+  { id: 'm_exp',   name: '叡智の極意', desc: '獲得EXP +2.0% / ランク',    key: 'expPct',   per: 0.020 },
+  { id: 'm_gold',  name: '黄金の極意', desc: '獲得Gold +2.0% / ランク',   key: 'goldPct',  per: 0.020 }
 ];
 
 
@@ -1093,9 +1136,10 @@ const itemIcon = it => {
 
 // パッシブボーナス計算
 function passiveBonus(p) {
-  const pts = p.skillPts || {};
-  const passives = p.passiveSkills || {};
-  let atkMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1;
+  const passives = (p && p.passiveSkills) || {};
+  const m = (p && p.mastery) || {};
+  let atkMult = 1, defMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1;
+  let critAdd = 0, dmgMult = 1, takenMult = 1, expMult = 1, goldMult = 1;
   if (passives.sword15) atkMult *= 1.15;
   if (passives.warrior10) atkMult *= 1.30;
   if (passives.magic15) mpMult *= 1.20;
@@ -1103,7 +1147,22 @@ function passiveBonus(p) {
   if (passives.life15) hpMult *= 1.20;
   if (passives.cleric10) healMult *= 1.50;
   if (passives.hero10) { atkMult *= 1.25; hpMult *= 1.25; mpMult *= 1.25; }
-  return { atkMult, hpMult, mpMult, mpCostMult, healMult };
+  for (const item of MASTERY_LIST) {
+    const r = Number(m[item.id]) || 0;
+    if (!r) continue;
+    const v = item.per * r;
+    if (item.key === 'atkPct') atkMult *= (1 + v);
+    else if (item.key === 'defPct') defMult *= (1 + v);
+    else if (item.key === 'hpPct') hpMult *= (1 + v);
+    else if (item.key === 'mpPct') mpMult *= (1 + v);
+    else if (item.key === 'critAdd') critAdd += v;
+    else if (item.key === 'dmgPct') dmgMult *= (1 + v);
+    else if (item.key === 'takenPct') takenMult *= Math.max(0.2, 1 + v);
+    else if (item.key === 'healPct') healMult *= (1 + v);
+    else if (item.key === 'expPct') expMult *= (1 + v);
+    else if (item.key === 'goldPct') goldMult *= (1 + v);
+  }
+  return { atkMult, defMult, hpMult, mpMult, mpCostMult, healMult, critAdd, dmgMult, takenMult, expMult, goldMult };
 }
 function enemyArt(en, dId) {
   const im = ENEMY_IMG[en.id] || (en.fallbackId && ENEMY_IMG[en.fallbackId]);
@@ -1245,8 +1304,8 @@ const bestGearItem = (p, slot) => {
   }
   return best;
 };
-const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
-const playerDef = p => Math.round((baseDef(p) + (p.armor ? itemPower(p.armor) : 0)) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
+const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.mastery ? passiveBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
+const playerDef = p => Math.round((baseDef(p) + (p.armor ? itemPower(p.armor) : 0)) * (p.mastery ? passiveBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 
 function mkItem(p, o) {
   return { id: p.nextId++, slot: o.slot, star: o.star, rarity: o.rarity, roll: o.roll, prop: o.prop || null, locked: false };
@@ -1263,7 +1322,7 @@ function isDiffUnlocked(p, d, df) {
 }
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }, abyss: { best: 0, cleared: {} }, mastery: {}, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
@@ -1272,7 +1331,7 @@ function newPlayer() {
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -1303,6 +1362,21 @@ const migrations = {
       p.tower = { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
     }
     return Object.assign({}, d, { v: 4, p });
+  },
+  // v4 → v5: 深淵(abyss)・極意(mastery)・複数特性(props)を追加
+  4: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.abyss || typeof p.abyss !== 'object') p.abyss = { best: 0, cleared: {} };
+    if (!p.mastery || typeof p.mastery !== 'object') p.mastery = {};
+    const fixProps = it => {
+      if (!it || typeof it !== 'object') return it;
+      if (!Array.isArray(it.props)) it.props = it.prop ? [it.prop] : [];
+      return it;
+    };
+    p.weapon = fixProps(p.weapon);
+    p.armor = fixProps(p.armor);
+    if (Array.isArray(p.bag)) p.bag = p.bag.map(fixProps);
+    return Object.assign({}, d, { v: 5, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -1364,6 +1438,17 @@ function load() {
         title: s.tower.title && ts.includes(s.tower.title) ? s.tower.title : null,
         titles: ts
       };
+    }
+    p.mastery = {};
+    if (s.mastery && typeof s.mastery === 'object') {
+      for (const m of MASTERY_LIST) p.mastery[m.id] = num(s.mastery[m.id], 0, 0, MASTERY_MAX);
+    }
+    p.abyss = { best: 0, cleared: {} };
+    if (s.abyss && typeof s.abyss === 'object') {
+      p.abyss.best = num(s.abyss.best, 0, 0, 10);
+      if (s.abyss.cleared && typeof s.abyss.cleared === 'object') {
+        for (let lv = 1; lv <= 10; lv++) if (s.abyss.cleared[lv]) p.abyss.cleared[lv] = true;
+      }
     }
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
@@ -1660,17 +1745,18 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id], te = towerEff(run);
+  const s = SK[id], te = towerEff(run), pb = passiveBonus(p);
   p.mp -= s.mp;
   // CTをセット
   if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
   if (s.type === 'heal') {
-    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult)); const before = p.hp;
+    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * pb.healMult)); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
     if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
-    if (s.defTurns) { run.defBuff = s.defTurns; addLog(`${s.defTurns}ターン防御力1.5倍！`, 'l-good'); }
-    if (s.regen) { run.regenTurns = s.regen; run.regenPct = s.pct; }
+    if (s.defTurns) { run.defBuff = s.defTurns; run.defBuffMult = s.defMult || 1.5; addLog(`${s.defTurns}ターン防御力${run.defBuffMult}倍！`, 'l-good'); }
+    if (s.regen) { run.regenTurns = s.regen; run.regenPct = s.regenPct || s.pct; }
+    if (s.barrier) { run.barrier = (run.barrier || 0) + s.barrier; addLog(`バリアを${s.barrier}回張った！`, 'l-good'); }
     return true;
   }
   if (s.type === 'buff') {
@@ -1679,7 +1765,9 @@ function useSkillEffect(id) {
     else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
     else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
     else if (s.shura) { run.shura = s.turns; addLog('修羅の構え！ 攻撃力が4倍になった！', 'l-good'); }
+    else if (s.kishin) { run.kishin = s.turns; addLog('鬼神降臨！ 攻撃力が5倍になった！', 'l-good'); }
     else if (s.awaken) { run.awaken = s.turns; addLog('英雄の覚醒！ 全ステータスが2.5倍になった！', 'l-good'); }
+    else if (s.advent) { run.advent = s.turns; addLog('勇者の光臨！ 全ステータスが3.5倍になった！', 'l-good'); }
     else if (s.barrier) { run.barrier = s.barrier; addLog(`${s.name}！ ダメージを${s.barrier}回無効化する。`, 'l-good'); }
     else addLog(`${s.name}を発動した！`, 'l-good');
     return true;
@@ -1707,22 +1795,24 @@ function playerAct() {
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.awaken > 0 ? 2.5 : 1);
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
+  const pb = passiveBonus(p);
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
+  if (run.advent > 0) run.advent--;
   let dealt = 0, crits = 0, hits = 0;
   const bossMult = en.boss ? (1 + te.bossDmg) : 1;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
-    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < 0.1);
+    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < (0.1 + pb.critAdd));
     en.firstHit = false;
-    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * bossMult, en.def);
+    const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * pb.dmgMult * bossMult, en.def);
     en.hp = Math.max(0, en.hp - dmg); dealt += dmg; hits++; if (crit) crits++;
     popDamage('enemy', String(dmg), crit ? 'crit' : 'dmg');
   }
   hitFlash('enemy'); playAttackMotion();
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
-  if (s.freeze && en.hp > 0) { run.frozen = 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
+  if (s.freeze && en.hp > 0) { run.frozen = typeof s.freeze === 'number' ? s.freeze : 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
   const stealPct = (p.weapon && p.weapon.prop === 'vamp' ? 0.1 : 0) + te.lifeSteal;
   if (stealPct > 0 && dealt > 0) {
     const h = Math.max(1, Math.round(dealt * stealPct)), before = p.hp;
@@ -1744,9 +1834,11 @@ function enemyAct() {
     popDamage('player', 'BLOCK', 'heal');
     return;
   }
-  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? 1.5 : 1) * (run.awaken > 0 ? 2.5 : 1);
-  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * te.takenMult));
+  const pb = passiveBonus(p);
+  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * te.takenMult * pb.takenMult));
   if (run.shura > 0) run.shura--;
+  if (run.kishin > 0) run.kishin--;
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
   addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
@@ -1789,10 +1881,10 @@ function battleRound() {
 }
 
 function onKill() {
-  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run);
+  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = passiveBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
-  const expGain = Math.round(en.exp * te.expMult);
-  const goldGain = Math.round(en.gold * te.goldMult);
+  const expGain = Math.round(en.exp * te.expMult * pb.expMult);
+  const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
   addLog(`${en.name}を倒した！ EXP+${expGain}　${goldGain}G`, 'l-gold');
   p.gold += goldGain; run.gold += goldGain;
   gainExp(expGain);
@@ -2172,8 +2264,13 @@ const ACTS = {
     const amount = Number(d.amount) || 1;
     if (p.sp < amount) { toast('SPが足りません'); return; }
     const curPts = p.skillPts[d.tree] || 0;
-    const cap = (tree.stage2When && !tree.stage2When(p)) ? 10 : tree.maxSp;
-    if (curPts >= cap) { toast(cap < tree.maxSp ? (tree.stage2Desc || '第2段階が未解放です') : 'このスキル枠はすでに最大です'); return; }
+    let cap = tree.maxSp;
+    if (tree.stage2When && !tree.stage2When(p)) cap = Math.min(cap, 10);
+    else if (tree.stage3When && !tree.stage3When(p)) cap = Math.min(cap, 20);
+    if (curPts >= cap) {
+      const msg = (cap === 10 && tree.stage2Desc) || (cap === 20 && tree.stage3Desc) || 'このスキル枠はすでに最大です';
+      toast(msg); return;
+    }
     if (curPts + amount > cap) { toast(`最大${cap}SPまでしか割り振れません`); return; }
     const prevPts = curPts;
     p.sp -= amount;
@@ -2353,6 +2450,41 @@ const ACTS = {
     save();
     toast(`称号「${t.name}」を獲得した！`);
     openTowerShopModal();
+  },
+  masteryUp(d) {
+    const p = G.p, item = MASTERY_LIST.find(x => x.id === d.id);
+    if (!item) return;
+    if (!p.ending) { toast('本編クリア（虚空の神殿・極級）で解放されます'); return; }
+    p.mastery = p.mastery || {};
+    const cur = p.mastery[item.id] || 0;
+    if (cur >= MASTERY_MAX) { toast('最大ランクです'); return; }
+    const cost = masteryCost(cur + 1);
+    if (p.sp < cost) { toast(`SPが足りません（必要: ${cost}SP）`); return; }
+    p.sp -= cost;
+    p.mastery[item.id] = cur + 1;
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
+    save(); renderHUD(); renderStatus();
+  },
+  masteryReset() {
+    const p = G.p;
+    if (!p.ending) return;
+    const m = p.mastery || {};
+    let refund = 0;
+    for (const item of MASTERY_LIST) {
+      const r = m[item.id] || 0;
+      for (let k = 1; k <= r; k++) refund += masteryCost(k);
+    }
+    if (refund <= 0) { toast('リセットする極意がありません'); return; }
+    const cost = skillResetCost(p);
+    if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
+    p.gold -= cost;
+    p.sp += refund;
+    p.mastery = {};
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
+    save(); toast(`極意をリセットし、${refund}SPが戻りました`);
+    renderHUD(); renderStatus();
   },
   equipTowerTitle(d) {
     const p = G.p;
@@ -2702,7 +2834,9 @@ function renderSkillTrees(p) {
   const treeCard = (tree) => {
     const cur = pts[tree.id] || 0;
     const isUnlocked = tree.unlockWhen(p);
-    const cap = (tree.stage2When && !tree.stage2When(p)) ? 10 : tree.maxSp;
+    let cap = tree.maxSp;
+    if (tree.stage2When && !tree.stage2When(p)) cap = Math.min(cap, 10);
+    else if (tree.stage3When && !tree.stage3When(p)) cap = Math.min(cap, 20);
     const isFull = cur >= cap;
     const resetKey = 'resetTree_' + tree.id;
     const resetArming = !!G[resetKey];
@@ -2750,7 +2884,7 @@ function renderSkillTrees(p) {
         <span class="st-icon">${tree.icon}</span>
         <div class="st-info">
           <span class="st-name">${tree.name}</span>
-          <span class="st-desc">${tree.desc}${tree.stage2When && !tree.stage2When(p) ? `<br><span class="sub">🔒 ${tree.stage2Desc}</span>` : ''}</span>
+          <span class="st-desc">${tree.desc}${tree.stage2When && !tree.stage2When(p) ? `<br><span class="sub">🔒 ${tree.stage2Desc}</span>` : (tree.stage3When && !tree.stage3When(p) ? `<br><span class="sub">🔒 ${tree.stage3Desc}</span>` : '')}</span>
         </div>
         <div class="st-pts">${cur}<span>/${tree.maxSp}</span></div>
       </div>
@@ -2856,6 +2990,19 @@ function renderStatus() {
         <dt>スキルポイント</dt><dd>${p.sp}</dd>
         <dt>探索 / 踏破 / 撃破</dt><dd>${p.stats.runs} / ${p.stats.clears} / ${p.stats.kills}</dd>
       </dl></div>
+    <div class="panel"><h2>極意（共通パッシブ）${p.ending ? ` <span class="sub">残りSP: ${p.sp}</span>` : ''}</h2>
+      ${!p.ending
+        ? '<p class="empty">🔒 本編クリア（虚空の神殿・極級）で解放されます。</p>'
+        : `<div style="display:grid;gap:6px">${MASTERY_LIST.map(it => {
+            const r = (p.mastery && p.mastery[it.id]) || 0;
+            const cost = r < MASTERY_MAX ? masteryCost(r + 1) : 0;
+            return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <div><div><b>${esc(it.name)}</b> <span class="sub">Lv ${r} / ${MASTERY_MAX}</span></div><div class="sub">${esc(it.desc)}</div></div>
+              <button class="btn small primary" data-act="masteryUp" data-id="${it.id}" ${r < MASTERY_MAX && p.sp >= cost ? '' : 'disabled'}>${r >= MASTERY_MAX ? 'MAX' : `+1 (${cost}SP)`}</button>
+            </div>`;
+          }).join('')}</div>
+          <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
+    </div>
     <div class="panel"><h2>装備</h2>
       <div class="items">
         <div><p class="slot-t">手（武器）</p>${p.weapon ? itemCard(p.weapon) : '<p class="empty">装備なし</p>'}</div>
@@ -3411,7 +3558,7 @@ window.G = G;
 window.__rogue = {
   migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, G, ACTS, tick, startRun, startTowerRun, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
-  SKILL_TREES, passiveBonus, CHAR_SKINS,
+  SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
   setHeadless(v) { G.headless = !!v; },
