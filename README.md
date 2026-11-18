@@ -15,6 +15,7 @@
   - `assets/` … base64画像（敵・装備アイコン・キャラ）。中身は書き換えない
   - `js/` … ロジック（`30_save.js` がセーブとバージョン移行）
 - `tools/build.py` … `src/` から `index.html` を生成
+- `docs/gemini_prompt_P5b1.md` … P5b-1（深淵ダンジョン・進化第3段階・極意・★9神話ドロップ）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P5a_fix.md` … P5aの修正（回廊の壁・祝福の効き・神話装備の価格）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P5a.md` … P5a（無限回廊「天蓋の塔」・回廊コイン・神話装備の交換）をGeminiに依頼するための指示書
 - `docs/image_prompts_P5.md` … P5用の画像（装備アイコン★6〜9・深淵の主3体）の生成プロンプト
