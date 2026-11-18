@@ -532,7 +532,7 @@ function openBlessModal() {
   const list = run.tower.pendingChoice;
   $('#m-sheet').innerHTML = `
     <h2 class="win" id="m-title">✨ 祝福を1つ選ぼう</h2>
-    <p class="sub" style="margin:0 0 10px">第${run.floor}層のボスを撃破！（ラン中のみ有効）</p>
+    <p class="sub" style="margin:0 0 10px">第${run.floor}層の${run.floor % 10 === 0 ? 'ボス' : '節目の強敵'}を撃破！（ラン中のみ有効）</p>
     <div style="display:grid;gap:8px">${list.map(b => `
       <button class="btn" style="text-align:left;padding:10px 12px;display:grid;gap:3px" data-act="pickBless" data-id="${b.id}">
         <div><span class="badge">${esc(b.cat)}</span> <b>${esc(b.name)}</b></div>
