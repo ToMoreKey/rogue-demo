@@ -22,6 +22,7 @@ JS_ORDER = [
     'data/skills.js',
     'data/dungeons.js',
     'data/tower.js',
+    'data/abyss.js',
     'assets/enemy_images.js',
     'assets/char_skins.js',
     'data/skins.js',

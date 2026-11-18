@@ -54,8 +54,36 @@ function towerEff(run) {
   return r;
 }
 
+const isAbyssUnlocked = p => {
+  if (!p || !p.cleared) return { ok: false, remaining: DUNGEONS.length };
+  let rem = 0;
+  for (const d of DUNGEONS) if (!(p.cleared[d.id] && p.cleared[d.id].extreme)) rem++;
+  return { ok: rem === 0, remaining: rem };
+};
+const isAbyssDiffUnlocked = (p, lv) => {
+  if (!isAbyssUnlocked(p).ok) return false;
+  if (lv <= 1) return true;
+  return !!(p.abyss && p.abyss.cleared && p.abyss.cleared[lv - 1]);
+};
+function abyssEff(run) {
+  const lv = (run && run.abyss && run.abyss.lv) || 0;
+  return {
+    lv,
+    healMult: lv >= 1 ? 0.5 : 1,
+    ctAdd: lv >= 2 ? 1 : 0,
+    enAtkMult: lv >= 3 ? 1.15 : 1,
+    enHpMult: lv >= 4 ? 1.25 : 1,
+    mpMult: lv >= 5 ? 0.75 : 1,
+    noRest: lv >= 6,
+    takenMult: lv >= 7 ? 1.2 : 1,
+    preempt: lv >= 8 ? 0.3 : 0,
+    dropMult: lv >= 9 ? 0.5 : 1,
+    bossAtkMult: lv >= 10 ? 1.2 : 1
+  };
+}
+
 const maxHp = p => Math.round((60 + p.lv * 12) * (p.passiveSkills ? passiveBonus(p).hpMult : 1) * (G.run && G.run.tower ? towerEff(G.run).hpMult : 1));
-const maxMp = p => Math.round((16 + p.lv * 4) * (p.passiveSkills ? passiveBonus(p).mpMult : 1) * (G.run && G.run.tower ? towerEff(G.run).mpMult : 1));
+const maxMp = p => Math.round((16 + p.lv * 4) * (p.passiveSkills ? passiveBonus(p).mpMult : 1) * (G.run && G.run.tower ? towerEff(G.run).mpMult : 1) * (G.run && G.run.abyss ? abyssEff(G.run).mpMult : 1));
 const baseAtk = p => 8 + p.lv * 2;
 const baseDef = p => 2 + p.lv;
 const expNeed = lv => Math.round(17.5 * Math.pow(lv, 1.55) * (lv >= 30 ? 1 + (lv - 29) * 0.015 : 1) * (lv >= 56 ? 1 + (lv - 55) * 0.022 : 1));

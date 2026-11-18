@@ -188,7 +188,26 @@ function renderDungeonSelect() {
       <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
         ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
-      </div></article>`;
+      </div></article>` + (() => {
+    const abSt = isAbyssUnlocked(p0);
+    const abLv = clamp(G.abyssLv || 1, 1, 10);
+    const abDiff = ABYSS_CFG.diffs[abLv];
+    const abOk = isAbyssDiffUnlocked(p0, abLv);
+    const best = (p0 && p0.abyss && p0.abyss.best) || 0;
+    const pills = Array.from({ length: 10 }, (_, i) => i + 1).map(lv => {
+      const ok = isAbyssDiffUnlocked(p0, lv);
+      const cl = p0 && p0.abyss && p0.abyss.cleared && p0.abyss.cleared[lv];
+      return `<button class="pill ${abLv === lv ? 'on' : ''}${cl ? ' clr' : ''}" data-act="abyssSel" data-lv="${lv}" ${ok ? '' : 'disabled'}>${ok ? lv : '🔒' + lv}</button>`;
+    }).join('');
+    const curses = ABYSS_CURSES.slice(0, abLv).map(c => `<span class="badge">${esc(c.name)}</span>`).join(' ');
+    return `<article class="dcard${abSt.ok ? '' : ' locked'}" style="--a1:#15081e;--a2:#07020c">
+      <div class="dc-head"><span class="dc-id">深</span><h3>${abSt.ok ? '' : '🔒 '}深淵ダンジョン</h3></div>
+      <p class="dc-blurb">全50階固定。難度ごとに呪いが累積し、最奥の深淵の主から★9神話装備が狙えるエンドダンジョン。</p>
+      ${abSt.ok ? `<div class="diffs">${pills}</div>
+        <p class="dc-info">難度 <b>${abLv}</b>（最高クリア: <b>${best || 'なし'}</b>）　報酬: <b>${fmt(abDiff.clearGold)}G ＋ 🪙${abDiff.coins}枚</b><br>有効な呪い（${abLv}個）: ${curses}</p>
+        <button class="btn primary wide" data-act="goAbyss" ${abOk ? '' : 'disabled'}>${abOk ? `難度${abLv}に挑戦` : '🔒 未解放'}</button>`
+        : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
+    </article>`;
   })();
 }
 
@@ -656,7 +675,9 @@ function openModal() {
   const items = [...l.items].sort((a, b) => b.rarity - a.rarity || b.star - a.star);
   $('#m-sheet').innerHTML = `
     <h2 class="${cls}" id="m-title">${title}</h2>
-    <p class="sub" style="margin:0">ダンジョン${l.d.id}「${esc(l.d.name)}」（${l.df.name}）　到達 ${l.floor} / ${l.floors}F　撃破 ${l.kills}体</p>
+    <p class="sub" style="margin:0">${l.abyss ? `深淵（難度${l.abyss.lv}）` : `ダンジョン${l.d.id}「${esc(l.d.name)}」（${l.df.name}）`}　到達 ${l.floor} / ${l.floors}F　撃破 ${l.kills}体</p>
+    ${l.abyss && l.abyss.mythicDrops && l.abyss.mythicDrops.length ? `<p class="l-r4" style="margin:6px 0;font-weight:700">★ 深淵の主から神話レア装備を獲得！（${l.abyss.mythicDrops.map(it => esc(itemName(it))).join(', ')}）</p>` : ''}
+    ${l.abyss && l.abyss.coins ? `<p class="l-good" style="margin:4px 0">回廊コイン 🪙 +${l.abyss.coins}枚 獲得！</p>` : ''}
     <div class="res">
       <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b>${l.lost ? `<span class="neg">敗北で所持金が半減（−${fmt(l.lost)}G）</span>` : ''}${l.clearGold ? `<small>うち踏破ボーナス ${fmt(l.clearGold)}G</small>` : ''}</div>
       <div><small>獲得SP</small><b>+${l.sp}</b></div>

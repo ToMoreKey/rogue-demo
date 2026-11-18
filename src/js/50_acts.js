@@ -238,8 +238,11 @@ const ACTS = {
   mRetry() {
     const l = G.last; closeModal();
     if (l && l.tower) startTowerRun();
+    else if (l && l.abyss) startAbyssRun(l.abyss.lv);
     else if (l) startRun(l.d.id, l.df.id);
   },
+  abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
+  goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
   pickBless(d) { pickBlessing(d.id); },
   towerBlessList() { openBlessListModal(); },

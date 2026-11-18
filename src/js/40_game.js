@@ -135,6 +135,25 @@ function startTowerRun() {
   renderAll(); ensureLoop();
 }
 
+function startAbyssRun(lv) {
+  if (G.run) return;
+  const n = Number(lv) || 1;
+  const dfA = ABYSS_CFG.diffs[n];
+  if (!dfA) return;
+  if (!isAbyssDiffUnlocked(G.p, n)) { toast('この深淵難度はまだ解放されていません'); return; }
+  G.run = {
+    d: { id: 'Z', name: `深淵（難度${n}）`, a1: '#15081e', a2: '#07020c', maxStar: 5 },
+    df: DIFFS[4], floors: ABYSS_CFG.floors, floor: 0, cleared: 0, phase: 'next', enemy: null, queued: null, guard: 0,
+    gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: G.p.lv, skKey: '',
+    skillCt: {},
+    abyss: { lv: n, dfA, mythicDrops: [] }
+  };
+  G.view = 'dungeon';
+  $('#log').innerHTML = '';
+  addLog(`深淵（難度${n}・全${ABYSS_CFG.floors}階層）に突入した！（有効な呪い: ${n}個）`, 'l-sys');
+  renderAll(); ensureLoop();
+}
+
 function nextFloor() {
   const run = G.run;
   run.floor++;
@@ -156,6 +175,7 @@ function nextFloor() {
 const cellPow = run => run.d.pow[DIFFS.indexOf(run.df)];
 function scaleOf(run, floor) {
   if (run.tower) return TOWER_CFG.basePow * Math.pow(TOWER_CFG.growth, Math.max(0, floor - 1));
+  if (run.abyss) return run.abyss.dfA.pow * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1));
   return cellPow(run) * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1));
 }
 function spawnEnemy(boss, miniboss = false) {
@@ -167,21 +187,36 @@ function spawnEnemy(boss, miniboss = false) {
     base = boss ? dSrc.boss : pick(dSrc.mobs);
     name = (boss ? `第${run.floor}層の` : '') + base.name;
     bossFilter = boss && run.floor % 50 === 0 ? 'hue-rotate(-45deg) saturate(1.7) contrast(1.15)' : (boss ? 'hue-rotate(38deg) saturate(1.35)' : '');
+  } else if (run.abyss) {
+    const ab = run.abyss.dfA;
+    if (boss) {
+      const b0 = ABYSS_BOSSES[ab.bossKey];
+      base = b0;
+      name = b0.name + (ab.bossSuffix || '');
+      bossFilter = ab.bossSuffix ? 'hue-rotate(-35deg) saturate(1.5) contrast(1.12)' : '';
+    } else {
+      const band = ABYSS_CFG.bands.find(b => run.floor <= b.maxFloor) || ABYSS_CFG.bands[ABYSS_CFG.bands.length - 1];
+      const dSrc = dungeonOf(pick(band.dIds));
+      base = miniboss ? dSrc.mobs.reduce((a, b) => b.hp > a.hp ? b : a) : pick(dSrc.mobs);
+      name = (miniboss ? '強敵 ' : '') + base.name;
+      bossFilter = miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '';
+    }
   } else {
     base = boss ? d.boss : (miniboss ? d.mobs.reduce((a, b) => b.hp > a.hp ? b : a) : pick(d.mobs));
     name = (boss && run.df.bossPrefix ? run.df.bossPrefix : miniboss ? '強敵 ' : '') + base.name;
     bossFilter = boss && run.df.bossFilter ? run.df.bossFilter : (miniboss ? 'hue-rotate(155deg) saturate(1.45) contrast(1.12)' : '');
   }
   const S = scaleOf(run, run.floor);
+  const ae = run.abyss ? abyssEff(run) : null;
   const Shp = run.tower ? Math.pow(S, 0.45) : S;
   const Sa = run.tower ? Math.pow(S, 0.98) : Math.pow(S, TUNE.atkExp);
-  const hpMult = run.tower ? (boss ? 1.85 : miniboss ? 1.3 : 1) : (boss ? TUNE.bossHp : miniboss ? 1.55 : 1);
-  const atkMult = run.tower ? (boss ? 0.90 : miniboss ? 1.02 : 1) : (boss ? TUNE.bossAtk : miniboss ? 1.15 : 1);
+  const hpMult = run.tower ? (boss ? 1.85 : miniboss ? 1.3 : 1) : (boss ? (run.abyss ? run.abyss.dfA.bossMult * TUNE.bossHp : TUNE.bossHp) : miniboss ? 1.55 : 1);
+  const atkMult = run.tower ? (boss ? 0.90 : miniboss ? 1.02 : 1) : (boss ? (run.abyss ? run.abyss.dfA.bossMult * TUNE.bossAtk * ae.bossAtkMult : TUNE.bossAtk) : miniboss ? 1.15 : 1);
   const defMult = run.tower ? (boss ? 1.0 : 1) : (boss ? TUNE.bossDef : miniboss ? 1.1 : 1);
-  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * hpMult));
+  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * hpMult * (ae ? ae.enHpMult : 1)));
   run.enemy = {
     id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
-    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * atkMult)),
+    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * atkMult * (ae ? ae.enAtkMult : 1))),
     def: Math.round(base.def * Sa * TUNE.defScale * defMult),
     exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (miniboss ? 1.5 : 1))),
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
@@ -189,6 +224,11 @@ function spawnEnemy(boss, miniboss = false) {
   run.phase = 'battle';
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
   renderEnemy(true);
+  if (ae && ae.preempt > 0 && rnd() < ae.preempt) {
+    addLog(`奇襲の霧！ ${name}の先制攻撃！`, 'l-dmg');
+    enemyAct();
+    if (G.p.hp <= 0) { finishRun('defeat'); return; }
+  }
 }
 
 function runEvent() {
@@ -200,8 +240,15 @@ function runEvent() {
     addLog(`【${run.floor}F】宝箱を見つけた！`, 'l-good');
     logDrop(it, out);
   } else if (type === 'spring') {
-    p.hp = maxHp(p); p.mp = maxMp(p);
-    addLog(`【${run.floor}F】回復の泉だ。HPとMPが全回復した！`, 'l-good');
+    const ae = run.abyss ? abyssEff(run) : null;
+    if (ae && ae.healMult < 1) {
+      const h = Math.round(maxHp(p) * 0.5), m = Math.round(maxMp(p) * 0.5);
+      p.hp = Math.min(maxHp(p), p.hp + h); p.mp = Math.min(maxMp(p), p.mp + m);
+      addLog(`【${run.floor}F】回復の泉だ。（呪いで回復半減：HP+${h} MP+${m}）`, 'l-good');
+    } else {
+      p.hp = maxHp(p); p.mp = maxMp(p);
+      addLog(`【${run.floor}F】回復の泉だ。HPとMPが全回復した！`, 'l-good');
+    }
   } else {
     const pool = [p.weapon, p.armor, ...p.bag].filter(Boolean);
     addLog(`【${run.floor}F】鍛冶屋の祝福を受けた。`, 'l-good');
@@ -268,12 +315,12 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id], te = towerEff(run), pb = passiveBonus(p);
+  const s = SK[id], te = towerEff(run), pb = passiveBonus(p), ae = run.abyss ? abyssEff(run) : null;
   p.mp -= s.mp;
   // CTをセット
-  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
+  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
   if (s.type === 'heal') {
-    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * pb.healMult)); const before = p.hp;
+    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * pb.healMult * (ae ? ae.healMult : 1))); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
     if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
@@ -308,10 +355,10 @@ function playerAct() {
   }
   // attack / atk系スキル
   const s = id === 'attack' ? { name: '攻撃', hits: 1, mult: 1 } : SK[id];
-  const te = towerEff(run);
+  const te = towerEff(run), ae = run.abyss ? abyssEff(run) : null;
   if (id !== 'attack') {
     p.mp -= s.mp;
-    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed);
+    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
   }
   if (hasProp(p.weapon, 'madness')) {
     const loss = Math.ceil(maxHp(p) * 0.1), before = p.hp;
@@ -357,9 +404,9 @@ function enemyAct() {
     popDamage('player', 'BLOCK', 'heal');
     return;
   }
-  const pb = passiveBonus(p);
+  const pb = passiveBonus(p), ae = run.abyss ? abyssEff(run) : null;
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
-  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult));
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
   if (run.shura > 0) run.shura--;
   if (run.kishin > 0) run.kishin--;
   if (run.defBuff > 0) run.defBuff--;
@@ -437,8 +484,9 @@ function onKill() {
   const drops = [];
   if (!G.tutorial || G.tutorial.done) {
     const tBand = run.tower ? towerBand(run.floor) : null;
-    const capStar = tBand ? tBand.maxDropStar : (run.d.maxStar || MAX_STAR);
-    const bStar = tBand ? tBand.bossCapStar : run.d.bossMaxStar;
+    const capStar = tBand ? tBand.maxDropStar : (run.abyss ? 5 : (run.d.maxStar || MAX_STAR));
+    const bStar = tBand ? tBand.bossCapStar : (run.abyss ? 8 : run.d.bossMaxStar);
+    const ae = run.abyss ? abyssEff(run) : null;
     const rollBossItem = () => {
       let fs = null;
       if (bStar && bStar > capStar) {
@@ -449,9 +497,18 @@ function onKill() {
       }
       return genItem(run.df, true, null, capStar, fs);
     };
-    if (en.boss) { drops.push(rollBossItem()); drops.push(rollBossItem()); }
-    else if (en.miniboss) drops.push(rollBossItem());
-    else if (rnd() < 0.3) drops.push(genItem(run.df, false, null, capStar));
+    if (en.boss) {
+      drops.push(rollBossItem()); drops.push(rollBossItem());
+      if (run.abyss && rnd() < run.abyss.dfA.mythicRate) {
+        const m9 = genMythic9();
+        const out = receiveItem(m9);
+        run.items.push(m9);
+        run.abyss.mythicDrops.push(m9);
+        addLog(`★ 深淵の主から ${itemName(m9)} が落ちた！！`, 'l-r4');
+        logDrop(m9, out);
+      }
+    } else if (en.miniboss) drops.push(rollBossItem());
+    else if (rnd() < 0.3 * (ae ? ae.dropMult : 1)) drops.push(genItem(run.df, false, null, capStar));
     for (const it of drops) { const out = receiveItem(it); run.items.push(it); logDrop(it, out); }
     const r = rnd();
     if (r < 0.05) { p.potions.hp = Math.min(99, p.potions.hp + 1); run.potions.hp++; addLog('生命の薬を手に入れた！', 'l-good'); }
@@ -478,7 +535,7 @@ function onKill() {
     }
   }
   run.guard = 0;
-  if (TUNE.floorRegen > 0 && !en.boss) {
+  if (!(run.abyss && abyssEff(run).noRest) && TUNE.floorRegen > 0 && !en.boss) {
     const h = Math.round(maxHp(p) * TUNE.floorRegen), b = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     if (p.hp > b) addLog(`小休止でHPが${p.hp - b}回復した。`, 'l-sys');
@@ -540,6 +597,19 @@ function finishRun(result) {
       p.hp = maxHp(p);
     }
     towerRes = { reached, coins, isNewBest, blessings: [...run.tower.blessings], newTitles };
+  } else if (run.abyss && result === 'clear') {
+    const lv = run.abyss.lv, dfA = run.abyss.dfA;
+    p.abyss = p.abyss || { best: 0, cleared: {} };
+    p.abyss.cleared = p.abyss.cleared || {};
+    p.abyss.cleared[lv] = true;
+    p.abyss.best = Math.max(p.abyss.best || 0, lv);
+    clearGold = dfA.clearGold;
+    p.gold += clearGold;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    p.tower.coins += dfA.coins;
+    p.tower.totalCoins += dfA.coins;
+    p.stats.clears++;
+    p.hp = maxHp(p);
   } else if (result === 'clear') {
     p.cleared = p.cleared || {};
     p.cleared[run.d.id] = p.cleared[run.d.id] || {};
@@ -567,7 +637,8 @@ function finishRun(result) {
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending, tower: towerRes
+    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending, tower: towerRes,
+    abyss: run.abyss ? { lv: run.abyss.lv, coins: result === 'clear' ? run.abyss.dfA.coins : 0, mythicDrops: run.abyss.mythicDrops } : null
   };
   G.run = null;
   G.townView = 'plaza';  // 街帰還時は広場に戻る
@@ -610,7 +681,8 @@ function usePotion(k) {
   if (p.potions[k] <= 0) { toast('薬がありません'); return; }
   if (k === 'hp') {
     if (p.hp >= maxHp(p)) { toast('HPはすでに満タンです'); return; }
-    const b = p.hp; p.hp = Math.min(maxHp(p), p.hp + Math.round(maxHp(p) * 0.3)); p.potions.hp--;
+    const ae = G.run && G.run.abyss ? abyssEff(G.run) : null;
+    const b = p.hp; p.hp = Math.min(maxHp(p), p.hp + Math.round(maxHp(p) * 0.3 * (ae ? ae.healMult : 1))); p.potions.hp--;
     if (G.run) { addLog(`生命の薬を使った。HP+${p.hp - b}`, 'l-good'); popDamage('player', `+${p.hp - b}`, 'heal'); } else toast(`HPが${p.hp - b}回復しました`);
   } else {
     if (p.mp >= maxMp(p)) { toast('MPはすでに満タンです'); return; }
