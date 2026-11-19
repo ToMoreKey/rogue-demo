@@ -109,7 +109,10 @@ function load() {
         coins: num(s.tower.coins, 0),
         totalCoins: num(s.tower.totalCoins, 0),
         title: s.tower.title && ts.includes(s.tower.title) ? s.tower.title : null,
-        titles: ts
+        titles: ts,
+        nick: typeof s.tower.nick === 'string' ? s.tower.nick.slice(0, RANKING_CFG.nameMax) : '',
+        rankOptIn: !!s.tower.rankOptIn,
+        sentBest: num(s.tower.sentBest, 0)
       };
     }
     p.mastery = {};
