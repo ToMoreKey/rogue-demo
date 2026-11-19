@@ -30,15 +30,15 @@ const ABYSS_CFG = {
   // 難度1〜10の定義（powはBOTで調整）
   diffs: [
     null,
-    { lv: 1,  pow: 5.0,  bossKey: 'gula',   bossSuffix: '',    bossMult: 1.0,  coins: 10,  clearGold: 200,  mythicRate: 0.005 },
-    { lv: 2,  pow: 6.5,  bossKey: 'gula',   bossSuffix: '',    bossMult: 1.0,  coins: 20,  clearGold: 400,  mythicRate: 0.005 },
-    { lv: 3,  pow: 8.0,  bossKey: 'gula',   bossSuffix: '・極', bossMult: 1.15, coins: 30,  clearGold: 600,  mythicRate: 0.005 },
-    { lv: 4,  pow: 12.3, bossKey: 'mirror', bossSuffix: '',    bossMult: 1.0,  coins: 40,  clearGold: 800,  mythicRate: 0.008 },
-    { lv: 5,  pow: 12.5, bossKey: 'mirror', bossSuffix: '',    bossMult: 1.0,  coins: 50,  clearGold: 1000, mythicRate: 0.008 },
-    { lv: 6,  pow: 16.0, bossKey: 'mirror', bossSuffix: '・極', bossMult: 1.15, coins: 60,  clearGold: 1200, mythicRate: 0.010 },
-    { lv: 7,  pow: 26.0, bossKey: 'mirror', bossSuffix: '',    bossMult: 1.0,  coins: 70,  clearGold: 1400, mythicRate: 0.015 },
-    { lv: 8,  pow: 58.0, bossKey: 'deep',   bossSuffix: '',    bossMult: 1.0,  coins: 80,  clearGold: 1600, mythicRate: 0.015 },
-    { lv: 9,  pow: 70.0, bossKey: 'deep',   bossSuffix: '',    bossMult: 1.0,  coins: 90,  clearGold: 1800, mythicRate: 0.015 },
-    { lv: 10, pow: 80.0, bossKey: 'deep',   bossSuffix: '・極', bossMult: 1.20, coins: 100, clearGold: 2000, mythicRate: 0.020 }
+    { lv: 1,  pow: 4.5,  hpMult: 1.0,  atkMult: 1.0,  bossKey: 'gula',   bossSuffix: '',    bossMult: 1.0,  coins: 10,  clearGold: 200,  mythicRate: 0.005 },
+    { lv: 2,  pow: 5.5,  hpMult: 1.0,  atkMult: 1.0,  bossKey: 'gula',   bossSuffix: '',    bossMult: 1.0,  coins: 20,  clearGold: 400,  mythicRate: 0.005 },
+    { lv: 3,  pow: 6.5,  hpMult: 1.0,  atkMult: 1.0,  bossKey: 'gula',   bossSuffix: '・極', bossMult: 1.15, coins: 30,  clearGold: 600,  mythicRate: 0.005 },
+    { lv: 4,  pow: 9.78, hpMult: 1.0,  atkMult: 1.04, bossKey: 'mirror', bossSuffix: '',    bossMult: 1.0,  coins: 40,  clearGold: 800,  mythicRate: 0.008 },
+    { lv: 5,  pow: 10.08, hpMult: 1.0, atkMult: 1.0,  bossKey: 'mirror', bossSuffix: '',    bossMult: 1.0,  coins: 50,  clearGold: 1000, mythicRate: 0.008 },
+    { lv: 6,  pow: 14.5, hpMult: 0.90, atkMult: 5.80, bossKey: 'mirror', bossSuffix: '・極', bossMult: 1.15, coins: 60,  clearGold: 1200, mythicRate: 0.010 },
+    { lv: 7,  pow: 16.0, hpMult: 0.85, atkMult: 5.22, bossKey: 'mirror', bossSuffix: '',    bossMult: 1.0,  coins: 70,  clearGold: 1400, mythicRate: 0.015 },
+    { lv: 8,  pow: 17.5, hpMult: 0.78, atkMult: 4.24, bossKey: 'deep',   bossSuffix: '',    bossMult: 1.0,  coins: 80,  clearGold: 1600, mythicRate: 0.015 },
+    { lv: 9,  pow: 18.5, hpMult: 0.70, atkMult: 4.12, bossKey: 'deep',   bossSuffix: '',    bossMult: 1.0,  coins: 90,  clearGold: 1800, mythicRate: 0.015 },
+    { lv: 10, pow: 19.2, hpMult: 0.65, atkMult: 3.15, bossKey: 'deep',   bossSuffix: '・極', bossMult: 1.09, coins: 100, clearGold: 2000, mythicRate: 0.020 }
   ]
 };
