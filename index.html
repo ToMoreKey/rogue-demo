@@ -3819,7 +3819,7 @@ function renderStatus() {
       <dl class="kv">
         <dt>レベル</dt><dd>${p.lv}</dd>
         <dt>攻撃力</dt><dd>${playerAtk(p)}（基本 ${baseAtk(p)} ＋ 武器 ${weaponAtk(p.weapon)}）</dd>
-        <dt>防御力</dt><dd>${playerDef(p)}（基本 ${baseDef(p)} ＋ 防具 ${p.armor ? itemPower(p.armor) : 0}）</dd>
+        <dt>防御力</dt><dd>${playerDef(p)}（基本 ${baseDef(p)} ＋ 防具 ${armorDef(p.armor)}）</dd>
         <dt>最大HP / MP</dt><dd>${maxHp(p)} / ${maxMp(p)}</dd>
         <dt>スキルポイント</dt><dd>${p.sp}</dd>
         <dt>探索 / 踏破 / 撃破</dt><dd>${p.stats.runs} / ${p.stats.clears} / ${p.stats.kills}</dd>
@@ -4708,7 +4708,7 @@ window.__rogue = {
   TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
-  maxHp, maxMp, playerAtk, playerDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
+  maxHp, maxMp, playerAtk, playerDef, armorDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
   noTimer(v) { G.noTimer = !!v; ensureLoop(); },

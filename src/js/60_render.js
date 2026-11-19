@@ -507,7 +507,7 @@ function renderStatus() {
       <dl class="kv">
         <dt>レベル</dt><dd>${p.lv}</dd>
         <dt>攻撃力</dt><dd>${playerAtk(p)}（基本 ${baseAtk(p)} ＋ 武器 ${weaponAtk(p.weapon)}）</dd>
-        <dt>防御力</dt><dd>${playerDef(p)}（基本 ${baseDef(p)} ＋ 防具 ${p.armor ? itemPower(p.armor) : 0}）</dd>
+        <dt>防御力</dt><dd>${playerDef(p)}（基本 ${baseDef(p)} ＋ 防具 ${armorDef(p.armor)}）</dd>
         <dt>最大HP / MP</dt><dd>${maxHp(p)} / ${maxMp(p)}</dd>
         <dt>スキルポイント</dt><dd>${p.sp}</dd>
         <dt>探索 / 踏破 / 撃破</dt><dd>${p.stats.runs} / ${p.stats.clears} / ${p.stats.kills}</dd>
