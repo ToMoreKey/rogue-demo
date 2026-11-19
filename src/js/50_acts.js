@@ -244,7 +244,36 @@ const ACTS = {
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
-  towerRanking() { openRankingModal(); },
+  towerRanking() { G.rankMsg = ''; openRankingModal(); },
+  saveRankOptIn() {
+    if (!isRankingSubmitConfigured()) { toast('ランキング送信は準備中です'); return; }
+    const p = G.p; p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 };
+    const inEl = $('#rk-nick'), chkEl = $('#rk-agree'), msgEl = $('#rk-form-msg');
+    const nc = cleanRankNick(inEl ? inEl.value : '');
+    if (!nc.ok) { if (msgEl) msgEl.textContent = nc.error; toast(nc.error); return; }
+    if (!chkEl || !chkEl.checked) {
+      const m = '同意のチェックを入れてください';
+      if (msgEl) msgEl.textContent = m; toast(m); return;
+    }
+    p.tower.nick = nc.name;
+    p.tower.rankOptIn = true;
+    save();
+    G.rankMsg = '送信設定を保存しました';
+    toast(G.rankMsg);
+    openRankingModal();
+  },
+  clearRankOptIn() {
+    const p = G.p;
+    if (p.tower) { p.tower.rankOptIn = false; save(); }
+    G.rankMsg = 'ランキング送信を解除しました';
+    toast(G.rankMsg);
+    openRankingModal();
+  },
+  async manualRankSubmit() {
+    const p = G.p;
+    await submitTowerRank(p && p.tower ? p.tower.best : 0, { manual: true });
+    if (G.modalOpen && $('#rk-submit-box')) openRankingModal();
+  },
   pickBless(d) { pickBlessing(d.id); },
   towerBlessList() { openBlessListModal(); },
   closeTowerModal() { closeModal(); },

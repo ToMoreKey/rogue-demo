@@ -651,11 +651,55 @@ function renderRankingModal(res) {
   const box = document.createElement('div');
   box.className = 'rk-box';
   box.id = 'rk-submit-box';
+  const tw = (p && p.tower) || {};
+  const st = document.createElement('p');
+  st.className = 'sub'; st.style.margin = '0';
+  st.textContent = `設定: ${tw.rankOptIn ? '送信する' : '送信しない'} / 名前: ${tw.nick || '未設定'} / 送信済最高: ${tw.sentBest ? tw.sentBest + 'F' : 'なし'}`;
+  box.appendChild(st);
   if (!isRankingSubmitConfigured()) {
     const msg = document.createElement('p');
     msg.className = 'sub'; msg.style.margin = '0';
     msg.textContent = 'ランキング送信は準備中です';
     box.appendChild(msg);
+  } else {
+    const row1 = document.createElement('div');
+    row1.className = 'rk-row';
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.id = 'rk-nick'; inp.className = 'rk-in';
+    inp.maxLength = 20; inp.placeholder = 'ニックネーム（1〜12文字）';
+    inp.value = tw.nick || '';
+    const btnSave = document.createElement('button');
+    btnSave.className = 'btn primary small'; btnSave.dataset.act = 'saveRankOptIn';
+    btnSave.textContent = '保存して有効にする';
+    row1.append(inp, btnSave);
+    box.appendChild(row1);
+
+    const lbl = document.createElement('label');
+    lbl.className = 'rk-chk';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.id = 'rk-agree'; chk.checked = !!tw.rankOptIn;
+    const span = document.createElement('span');
+    span.textContent = 'ニックネームと最高到達階が、ランキング用に送信されます（個人情報は送信しません）。送信した内容は運営者の確認後にランキングへ掲載されます。';
+    lbl.append(chk, span);
+    box.appendChild(lbl);
+
+    const row2 = document.createElement('div');
+    row2.className = 'rk-row';
+    const canManual = !!(tw.rankOptIn && tw.nick && (tw.best || 0) >= 1 && (tw.best || 0) > (tw.sentBest || 0));
+    const btnSend = document.createElement('button');
+    btnSend.className = 'btn small'; btnSend.dataset.act = 'manualRankSubmit';
+    btnSend.textContent = '今の最高記録を送信';
+    if (!canManual) btnSend.disabled = true;
+    const btnClear = document.createElement('button');
+    btnClear.className = 'btn small'; btnClear.dataset.act = 'clearRankOptIn';
+    btnClear.textContent = '設定を解除';
+    row2.append(btnSend, btnClear);
+    box.appendChild(row2);
+
+    const fmsg = document.createElement('p');
+    fmsg.id = 'rk-form-msg'; fmsg.className = 'sub'; fmsg.style.margin = '0';
+    fmsg.textContent = G.rankMsg || '';
+    box.appendChild(fmsg);
   }
   sheet.appendChild(box);
 
@@ -765,11 +809,55 @@ function renderRankingModal(res) {
   const box = document.createElement('div');
   box.className = 'rk-box';
   box.id = 'rk-submit-box';
+  const tw = (p && p.tower) || {};
+  const st = document.createElement('p');
+  st.className = 'sub'; st.style.margin = '0';
+  st.textContent = `設定: ${tw.rankOptIn ? '送信する' : '送信しない'} / 名前: ${tw.nick || '未設定'} / 送信済最高: ${tw.sentBest ? tw.sentBest + 'F' : 'なし'}`;
+  box.appendChild(st);
   if (!isRankingSubmitConfigured()) {
     const msg = document.createElement('p');
     msg.className = 'sub'; msg.style.margin = '0';
     msg.textContent = 'ランキング送信は準備中です';
     box.appendChild(msg);
+  } else {
+    const row1 = document.createElement('div');
+    row1.className = 'rk-row';
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.id = 'rk-nick'; inp.className = 'rk-in';
+    inp.maxLength = 20; inp.placeholder = 'ニックネーム（1〜12文字）';
+    inp.value = tw.nick || '';
+    const btnSave = document.createElement('button');
+    btnSave.className = 'btn primary small'; btnSave.dataset.act = 'saveRankOptIn';
+    btnSave.textContent = '保存して有効にする';
+    row1.append(inp, btnSave);
+    box.appendChild(row1);
+
+    const lbl = document.createElement('label');
+    lbl.className = 'rk-chk';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.id = 'rk-agree'; chk.checked = !!tw.rankOptIn;
+    const span = document.createElement('span');
+    span.textContent = 'ニックネームと最高到達階が、ランキング用に送信されます（個人情報は送信しません）。送信した内容は運営者の確認後にランキングへ掲載されます。';
+    lbl.append(chk, span);
+    box.appendChild(lbl);
+
+    const row2 = document.createElement('div');
+    row2.className = 'rk-row';
+    const canManual = !!(tw.rankOptIn && tw.nick && (tw.best || 0) >= 1 && (tw.best || 0) > (tw.sentBest || 0));
+    const btnSend = document.createElement('button');
+    btnSend.className = 'btn small'; btnSend.dataset.act = 'manualRankSubmit';
+    btnSend.textContent = '今の最高記録を送信';
+    if (!canManual) btnSend.disabled = true;
+    const btnClear = document.createElement('button');
+    btnClear.className = 'btn small'; btnClear.dataset.act = 'clearRankOptIn';
+    btnClear.textContent = '設定を解除';
+    row2.append(btnSend, btnClear);
+    box.appendChild(row2);
+
+    const fmsg = document.createElement('p');
+    fmsg.id = 'rk-form-msg'; fmsg.className = 'sub'; fmsg.style.margin = '0';
+    fmsg.textContent = G.rankMsg || '';
+    box.appendChild(fmsg);
   }
   sheet.appendChild(box);
 
@@ -801,6 +889,7 @@ function openModal() {
     $('#m-sheet').innerHTML = `
       <h2 class="${l.result === 'defeat' ? 'lose' : 'win'}" id="m-title">天蓋の塔 探索終了</h2>
       <p class="sub" style="margin:0">到達階：<b>${tw.reached}F</b>${tw.isNewBest ? ' <span class="badge rec">自己ベスト更新！</span>' : ''}　撃破 ${l.kills}体</p>
+      <p class="sub" id="rk-res-status" style="margin:0"></p>
       <div class="res">
         <div><small>獲得コイン</small><b>🪙 +${fmt(tw.coins)}枚</b></div>
         <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b>${l.lost ? `<span class="neg">敗北半減（−${fmt(l.lost)}G）</span>` : ''}</div>

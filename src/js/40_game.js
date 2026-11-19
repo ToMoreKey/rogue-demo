@@ -645,6 +645,9 @@ function finishRun(result) {
   save();
   renderAll();
   openModal();
+  if (towerRes && towerRes.isNewBest && p.tower.rankOptIn && p.tower.best > (p.tower.sentBest || 0) && isRankingSubmitConfigured()) {
+    submitTowerRank(p.tower.best);
+  }
   ensureLoop();
 }
 
@@ -848,6 +851,58 @@ async function fetchRanking() {
     const cached = loadRankingCache();
     if (cached) return { ok: true, offline: true, data: cached };
     return { ok: false, offline: true, data: null };
+  }
+}
+
+function cleanRankNick(s) {
+  const nm = String(s || '').replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060\ufeff]/g, '').trim();
+  if (!nm) return { ok: false, error: 'ニックネームを入力してください（1〜12文字）' };
+  if (nm.length > RANKING_CFG.nameMax) return { ok: false, error: `ニックネームは${RANKING_CFG.nameMax}文字以内で入力してください` };
+  if (/https?:|www\.|@/i.test(nm)) return { ok: false, error: 'URLや@を含むニックネームは使用できません' };
+  return { ok: true, name: nm };
+}
+
+let rankSending = false;
+async function submitTowerRank(best, opts = {}) {
+  const p = G.p, tw = p && p.tower;
+  if (!isRankingSubmitConfigured()) {
+    if (opts.manual) toast('ランキング送信は準備中です');
+    return { ok: false, reason: 'unconfigured' };
+  }
+  if (!tw || !tw.rankOptIn) return { ok: false, reason: 'optout' };
+  const nc = cleanRankNick(tw.nick);
+  if (!nc.ok) {
+    if (opts.manual) toast(nc.error);
+    return { ok: false, reason: 'invalid_nick', error: nc.error };
+  }
+  const fl = Math.floor(Number(best) || 0);
+  if (!Number.isInteger(fl) || fl < 1 || fl > RANKING_CFG.maxFloor) return { ok: false, reason: 'invalid_floor' };
+  if (fl <= (tw.sentBest || 0)) return { ok: false, reason: 'already_sent' };
+  if (rankSending) return { ok: false, reason: 'busy' };
+  rankSending = true;
+  try {
+    const body = new URLSearchParams({ [RANKING_CFG.entryName]: nc.name, [RANKING_CFG.entryFloor]: String(fl) });
+    await fetch(RANKING_CFG.formUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+    tw.sentBest = fl;
+    save();
+    G.rankMsg = '記録を送信しました（ランキングへの反映には時間がかかります）';
+    const el = $('#rk-res-status') || $('#rk-form-msg');
+    if (el) el.textContent = G.rankMsg;
+    if (opts.manual) toast(G.rankMsg);
+    return { ok: true, floor: fl };
+  } catch {
+    G.rankMsg = '送信できませんでした';
+    const el = $('#rk-res-status') || $('#rk-form-msg');
+    if (el) el.textContent = G.rankMsg;
+    if (opts.manual) toast(G.rankMsg);
+    return { ok: false, reason: 'network' };
+  } finally {
+    rankSending = false;
   }
 }
 

@@ -2250,6 +2250,9 @@ function finishRun(result) {
   save();
   renderAll();
   openModal();
+  if (towerRes && towerRes.isNewBest && p.tower.rankOptIn && p.tower.best > (p.tower.sentBest || 0) && isRankingSubmitConfigured()) {
+    submitTowerRank(p.tower.best);
+  }
   ensureLoop();
 }
 
@@ -2453,6 +2456,58 @@ async function fetchRanking() {
     const cached = loadRankingCache();
     if (cached) return { ok: true, offline: true, data: cached };
     return { ok: false, offline: true, data: null };
+  }
+}
+
+function cleanRankNick(s) {
+  const nm = String(s || '').replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060\ufeff]/g, '').trim();
+  if (!nm) return { ok: false, error: 'ニックネームを入力してください（1〜12文字）' };
+  if (nm.length > RANKING_CFG.nameMax) return { ok: false, error: `ニックネームは${RANKING_CFG.nameMax}文字以内で入力してください` };
+  if (/https?:|www\.|@/i.test(nm)) return { ok: false, error: 'URLや@を含むニックネームは使用できません' };
+  return { ok: true, name: nm };
+}
+
+let rankSending = false;
+async function submitTowerRank(best, opts = {}) {
+  const p = G.p, tw = p && p.tower;
+  if (!isRankingSubmitConfigured()) {
+    if (opts.manual) toast('ランキング送信は準備中です');
+    return { ok: false, reason: 'unconfigured' };
+  }
+  if (!tw || !tw.rankOptIn) return { ok: false, reason: 'optout' };
+  const nc = cleanRankNick(tw.nick);
+  if (!nc.ok) {
+    if (opts.manual) toast(nc.error);
+    return { ok: false, reason: 'invalid_nick', error: nc.error };
+  }
+  const fl = Math.floor(Number(best) || 0);
+  if (!Number.isInteger(fl) || fl < 1 || fl > RANKING_CFG.maxFloor) return { ok: false, reason: 'invalid_floor' };
+  if (fl <= (tw.sentBest || 0)) return { ok: false, reason: 'already_sent' };
+  if (rankSending) return { ok: false, reason: 'busy' };
+  rankSending = true;
+  try {
+    const body = new URLSearchParams({ [RANKING_CFG.entryName]: nc.name, [RANKING_CFG.entryFloor]: String(fl) });
+    await fetch(RANKING_CFG.formUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+    tw.sentBest = fl;
+    save();
+    G.rankMsg = '記録を送信しました（ランキングへの反映には時間がかかります）';
+    const el = $('#rk-res-status') || $('#rk-form-msg');
+    if (el) el.textContent = G.rankMsg;
+    if (opts.manual) toast(G.rankMsg);
+    return { ok: true, floor: fl };
+  } catch {
+    G.rankMsg = '送信できませんでした';
+    const el = $('#rk-res-status') || $('#rk-form-msg');
+    if (el) el.textContent = G.rankMsg;
+    if (opts.manual) toast(G.rankMsg);
+    return { ok: false, reason: 'network' };
+  } finally {
+    rankSending = false;
   }
 }
 
@@ -2702,7 +2757,36 @@ const ACTS = {
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
-  towerRanking() { openRankingModal(); },
+  towerRanking() { G.rankMsg = ''; openRankingModal(); },
+  saveRankOptIn() {
+    if (!isRankingSubmitConfigured()) { toast('ランキング送信は準備中です'); return; }
+    const p = G.p; p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 };
+    const inEl = $('#rk-nick'), chkEl = $('#rk-agree'), msgEl = $('#rk-form-msg');
+    const nc = cleanRankNick(inEl ? inEl.value : '');
+    if (!nc.ok) { if (msgEl) msgEl.textContent = nc.error; toast(nc.error); return; }
+    if (!chkEl || !chkEl.checked) {
+      const m = '同意のチェックを入れてください';
+      if (msgEl) msgEl.textContent = m; toast(m); return;
+    }
+    p.tower.nick = nc.name;
+    p.tower.rankOptIn = true;
+    save();
+    G.rankMsg = '送信設定を保存しました';
+    toast(G.rankMsg);
+    openRankingModal();
+  },
+  clearRankOptIn() {
+    const p = G.p;
+    if (p.tower) { p.tower.rankOptIn = false; save(); }
+    G.rankMsg = 'ランキング送信を解除しました';
+    toast(G.rankMsg);
+    openRankingModal();
+  },
+  async manualRankSubmit() {
+    const p = G.p;
+    await submitTowerRank(p && p.tower ? p.tower.best : 0, { manual: true });
+    if (G.modalOpen && $('#rk-submit-box')) openRankingModal();
+  },
   pickBless(d) { pickBlessing(d.id); },
   towerBlessList() { openBlessListModal(); },
   closeTowerModal() { closeModal(); },
@@ -3433,11 +3517,55 @@ function renderRankingModal(res) {
   const box = document.createElement('div');
   box.className = 'rk-box';
   box.id = 'rk-submit-box';
+  const tw = (p && p.tower) || {};
+  const st = document.createElement('p');
+  st.className = 'sub'; st.style.margin = '0';
+  st.textContent = `設定: ${tw.rankOptIn ? '送信する' : '送信しない'} / 名前: ${tw.nick || '未設定'} / 送信済最高: ${tw.sentBest ? tw.sentBest + 'F' : 'なし'}`;
+  box.appendChild(st);
   if (!isRankingSubmitConfigured()) {
     const msg = document.createElement('p');
     msg.className = 'sub'; msg.style.margin = '0';
     msg.textContent = 'ランキング送信は準備中です';
     box.appendChild(msg);
+  } else {
+    const row1 = document.createElement('div');
+    row1.className = 'rk-row';
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.id = 'rk-nick'; inp.className = 'rk-in';
+    inp.maxLength = 20; inp.placeholder = 'ニックネーム（1〜12文字）';
+    inp.value = tw.nick || '';
+    const btnSave = document.createElement('button');
+    btnSave.className = 'btn primary small'; btnSave.dataset.act = 'saveRankOptIn';
+    btnSave.textContent = '保存して有効にする';
+    row1.append(inp, btnSave);
+    box.appendChild(row1);
+
+    const lbl = document.createElement('label');
+    lbl.className = 'rk-chk';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.id = 'rk-agree'; chk.checked = !!tw.rankOptIn;
+    const span = document.createElement('span');
+    span.textContent = 'ニックネームと最高到達階が、ランキング用に送信されます（個人情報は送信しません）。送信した内容は運営者の確認後にランキングへ掲載されます。';
+    lbl.append(chk, span);
+    box.appendChild(lbl);
+
+    const row2 = document.createElement('div');
+    row2.className = 'rk-row';
+    const canManual = !!(tw.rankOptIn && tw.nick && (tw.best || 0) >= 1 && (tw.best || 0) > (tw.sentBest || 0));
+    const btnSend = document.createElement('button');
+    btnSend.className = 'btn small'; btnSend.dataset.act = 'manualRankSubmit';
+    btnSend.textContent = '今の最高記録を送信';
+    if (!canManual) btnSend.disabled = true;
+    const btnClear = document.createElement('button');
+    btnClear.className = 'btn small'; btnClear.dataset.act = 'clearRankOptIn';
+    btnClear.textContent = '設定を解除';
+    row2.append(btnSend, btnClear);
+    box.appendChild(row2);
+
+    const fmsg = document.createElement('p');
+    fmsg.id = 'rk-form-msg'; fmsg.className = 'sub'; fmsg.style.margin = '0';
+    fmsg.textContent = G.rankMsg || '';
+    box.appendChild(fmsg);
   }
   sheet.appendChild(box);
 
@@ -3547,11 +3675,55 @@ function renderRankingModal(res) {
   const box = document.createElement('div');
   box.className = 'rk-box';
   box.id = 'rk-submit-box';
+  const tw = (p && p.tower) || {};
+  const st = document.createElement('p');
+  st.className = 'sub'; st.style.margin = '0';
+  st.textContent = `設定: ${tw.rankOptIn ? '送信する' : '送信しない'} / 名前: ${tw.nick || '未設定'} / 送信済最高: ${tw.sentBest ? tw.sentBest + 'F' : 'なし'}`;
+  box.appendChild(st);
   if (!isRankingSubmitConfigured()) {
     const msg = document.createElement('p');
     msg.className = 'sub'; msg.style.margin = '0';
     msg.textContent = 'ランキング送信は準備中です';
     box.appendChild(msg);
+  } else {
+    const row1 = document.createElement('div');
+    row1.className = 'rk-row';
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.id = 'rk-nick'; inp.className = 'rk-in';
+    inp.maxLength = 20; inp.placeholder = 'ニックネーム（1〜12文字）';
+    inp.value = tw.nick || '';
+    const btnSave = document.createElement('button');
+    btnSave.className = 'btn primary small'; btnSave.dataset.act = 'saveRankOptIn';
+    btnSave.textContent = '保存して有効にする';
+    row1.append(inp, btnSave);
+    box.appendChild(row1);
+
+    const lbl = document.createElement('label');
+    lbl.className = 'rk-chk';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox'; chk.id = 'rk-agree'; chk.checked = !!tw.rankOptIn;
+    const span = document.createElement('span');
+    span.textContent = 'ニックネームと最高到達階が、ランキング用に送信されます（個人情報は送信しません）。送信した内容は運営者の確認後にランキングへ掲載されます。';
+    lbl.append(chk, span);
+    box.appendChild(lbl);
+
+    const row2 = document.createElement('div');
+    row2.className = 'rk-row';
+    const canManual = !!(tw.rankOptIn && tw.nick && (tw.best || 0) >= 1 && (tw.best || 0) > (tw.sentBest || 0));
+    const btnSend = document.createElement('button');
+    btnSend.className = 'btn small'; btnSend.dataset.act = 'manualRankSubmit';
+    btnSend.textContent = '今の最高記録を送信';
+    if (!canManual) btnSend.disabled = true;
+    const btnClear = document.createElement('button');
+    btnClear.className = 'btn small'; btnClear.dataset.act = 'clearRankOptIn';
+    btnClear.textContent = '設定を解除';
+    row2.append(btnSend, btnClear);
+    box.appendChild(row2);
+
+    const fmsg = document.createElement('p');
+    fmsg.id = 'rk-form-msg'; fmsg.className = 'sub'; fmsg.style.margin = '0';
+    fmsg.textContent = G.rankMsg || '';
+    box.appendChild(fmsg);
   }
   sheet.appendChild(box);
 
@@ -3583,6 +3755,7 @@ function openModal() {
     $('#m-sheet').innerHTML = `
       <h2 class="${l.result === 'defeat' ? 'lose' : 'win'}" id="m-title">天蓋の塔 探索終了</h2>
       <p class="sub" style="margin:0">到達階：<b>${tw.reached}F</b>${tw.isNewBest ? ' <span class="badge rec">自己ベスト更新！</span>' : ''}　撃破 ${l.kills}体</p>
+      <p class="sub" id="rk-res-status" style="margin:0"></p>
       <div class="res">
         <div><small>獲得コイン</small><b>🪙 +${fmt(tw.coins)}枚</b></div>
         <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b>${l.lost ? `<span class="neg">敗北半減（−${fmt(l.lost)}G）</span>` : ''}</div>
@@ -4037,7 +4210,7 @@ function boot() {
 window.G = G;
 window.__rogue = {
   migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
-  TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, isRankingSubmitConfigured, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
+  TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
