@@ -1001,7 +1001,7 @@ function renderHelp() {
       <div class="help-row"><span class="help-facility">道具屋</span><span>HP・MPポーションを購入</span></div>
       <div class="help-row"><span class="help-facility">武器屋/防具屋</span><span>武器・防具を購入</span></div>
       <div class="help-row"><span class="help-facility">売却所</span><span>不要な装備をゴールドに換金。自動売却フィルターも設定可</span></div>
-      <div class="help-row"><span class="help-facility">鍛冶屋</span><span>ゴールドと強化石を使って装備を★強化（最大★5）</span></div>
+      <div class="help-row"><span class="help-facility">鍛冶屋</span><span>ゴールドと強化石を使って装備を★強化（最大★9。★6以上は上位の強化素材が必要）</span></div>
       <div class="help-row"><span class="help-facility">銀行</span><span>ゴールドを預けて敗北時のロストを防ぐ</span></div>
     </div>
   </div>
@@ -1009,8 +1009,8 @@ function renderHelp() {
   <div class="panel">
     <h2>⚔️ ダンジョンタブでできること</h2>
     <div class="help-table">
-      <div class="help-row"><span class="help-facility">ダンジョン選択</span><span>A（初級向け）→ B → C（上級向け）の3種</span></div>
-      <div class="help-row"><span class="help-facility">難易度</span><span>各ダンジョンにノービス・中級・上級の3段階</span></div>
+      <div class="help-row"><span class="help-facility">ダンジョン選択</span><span>A〜O の15種（前編A〜I、後編J〜O）。前のダンジョンをクリアすると次が開く</span></div>
+      <div class="help-row"><span class="help-facility">難易度</span><span>初級・中級・上級・超級・極級の5段階（上の難易度は下をクリアすると開く）</span></div>
       <div class="help-row"><span class="help-facility">戦闘</span><span>自動進行。スキルを選んで戦略的に戦おう</span></div>
       <div class="help-row"><span class="help-facility help-retreat-cell">撤退ボタン</span><span>いつでも押せる。街に帰還してHP<b>全回復</b></span></div>
       <div class="help-row"><span class="help-facility">敗北</span><span>ゴールドが半分失われ、HP25%で帰還</span></div>
@@ -1056,7 +1056,7 @@ function renderHelp() {
       <span style="font-size:16px">✨</span>
       <div>
         <b>進化スキル枠について</b><br>
-        <span class="sub">剣枠・魔法枠・生命枠の3つの基本スキル枠をすべて上限（各20SP）まで振り切ると、より強力な「進化スキル枠」が解放されます。戦士・魔法使い・僧侶・英雄の4種があり、それぞれ専用の強力スキルを習得できます。</span>
+        <span class="sub">剣枠・魔法枠・生命枠の基本スキル枠にSPを振ると、より強力な「進化スキル枠」（戦士・魔法使い・僧侶・英雄の4種）が解放されます。戦士・魔法使い・僧侶は対応する基本枠10SP、英雄は3つの基本枠すべて20SPで解放され、それぞれ専用の強力スキルを習得できます。</span>
       </div>
     </div>
 
@@ -1082,7 +1082,7 @@ function renderHelp() {
     <h2>💡 その他のヒント</h2>
     <ul class="help-tips">
       <li><b>自動売却フィルター</b>：売却所でレア度を設定しておくと、ダンジョンで拾った不要装備を自動で売却できる</li>
-      <li><b>強化石はダンジョンでドロップ</b>：各ダンジョンで対応した強化石が8%の確率で入手できる</li>
+      <li><b>強化石はダンジョンでドロップ</b>：ダンジョンA〜Cで対応した強化石が8%の確率で入手できる（上位素材は特定ダンジョンのボス等がドロップ）</li>
       <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
     </ul>
