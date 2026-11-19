@@ -1,5 +1,5 @@
 // Service Worker: オフライン対応。更新したら CACHE のバージョンを上げる。
-const CACHE = 'rogue-v18';
+const CACHE = 'rogue-v19';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png'];
 
 self.addEventListener('install', e => {
@@ -27,6 +27,16 @@ self.addEventListener('fetch', e => {
       fetch(req).then(res => {
         const copy = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', copy)); return res;
       }).catch(() => caches.match('./index.html').then(r => r || caches.match('./')))
+    );
+    return;
+  }
+  if (url.pathname.endsWith('data/ranking.json')) {
+    // ランキング: ネットワーク優先、失敗時のみキャッシュ
+    e.respondWith(
+      fetch(req).then(res => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+        return res;
+      }).catch(() => caches.match(req))
     );
     return;
   }

@@ -300,6 +300,17 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .drops .item{padding:6px 9px;gap:2px}
 .sheet .act{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:60;background:#0a1016;border:1px solid var(--accent);color:var(--fg);padding:8px 14px;border-radius:4px;font-size:13px;max-width:calc(100vw - 32px);text-align:center}
+.rk-wrap{overflow-x:auto;max-height:260px;border:1px solid var(--line);border-radius:4px;background:var(--ink)}
+.rk-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.rk-table th,.rk-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.06);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-table th{color:var(--muted);font-weight:400;font-size:12px;background:rgba(255,255,255,.03)}
+.rk-table td.rk-pos{width:54px;text-align:center;font-weight:700}
+.rk-table td.rk-fl{width:76px;text-align:right;font-variant-numeric:tabular-nums;color:var(--accent)}
+.rk-1 td.rk-pos{color:#ffd86b} .rk-2 td.rk-pos{color:#d8e2ef} .rk-3 td.rk-pos{color:#e09a6c}
+.rk-box{background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:10px;display:grid;gap:8px;font-size:13px}
+.rk-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rk-in{flex:1;min-width:140px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px}
+.rk-chk{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--muted);line-height:1.45;cursor:pointer}
 
 @media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
@@ -952,6 +963,17 @@ const ABYSS_CFG = {
     { lv: 9,  pow: 18.5, hpMult: 0.70, atkMult: 4.12, bossKey: 'deep',   bossSuffix: '',    bossMult: 1.0,  coins: 90,  clearGold: 1800, mythicRate: 0.015 },
     { lv: 10, pow: 19.2, hpMult: 0.65, atkMult: 3.15, bossKey: 'deep',   bossSuffix: '・極', bossMult: 1.09, coins: 100, clearGold: 2000, mythicRate: 0.020 }
   ]
+};
+// ランキング設定（フォームの送信先・質問IDは運営者が設定後に別途記入。未設定時は送信のみ無効）
+const RANKING_CFG = {
+  formUrl: '',
+  entryName: '',
+  entryFloor: '',
+  rankingUrl: 'data/ranking.json',
+  top: 20,
+  nameMax: 12,
+  maxFloor: 500,
+  cacheKey: 'rogue_ranking_cache_v1'
 };
 /* 敵の画像（高品質PNG）。id をキーに data URI を登録。無い敵は従来のドット絵(shape)で表示 */
 const ENEMY_IMG = {
@@ -2378,6 +2400,62 @@ function bankMove(dir, all) {
   save(); renderAll();
 }
 
+/* ================= ranking ================= */
+const isRankingSubmitConfigured = () => !!(RANKING_CFG.formUrl && RANKING_CFG.entryName && RANKING_CFG.entryFloor);
+
+function validateRankingData(raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.entries)) return null;
+  const entries = [];
+  for (const e of raw.entries) {
+    if (!e || typeof e !== 'object' || typeof e.name !== 'string') continue;
+    const nm = e.name.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+    if (!nm || nm.length > RANKING_CFG.nameMax) continue;
+    const fl = e.floor;
+    if (typeof fl !== 'number' || !Number.isInteger(fl) || fl < 1 || fl > RANKING_CFG.maxFloor) continue;
+    entries.push({ name: nm, floor: fl, date: typeof e.date === 'string' ? e.date : '' });
+  }
+  entries.sort((a, b) => b.floor - a.floor);
+  return {
+    updated: typeof raw.updated === 'string' ? raw.updated : '',
+    entries: entries.slice(0, RANKING_CFG.top)
+  };
+}
+
+function calcRankPosition(best, entries) {
+  const b = Math.floor(Number(best) || 0);
+  if (b < 1 || !Array.isArray(entries) || !entries.length) return { rank: null, text: '圏外' };
+  const higher = entries.filter(e => e.floor > b).length;
+  const rank = higher + 1;
+  return rank <= RANKING_CFG.top ? { rank, text: `${rank}位相当` } : { rank: null, text: '圏外' };
+}
+
+function loadRankingCache() {
+  try {
+    const s = localStorage.getItem(RANKING_CFG.cacheKey);
+    return s ? validateRankingData(JSON.parse(s)) : null;
+  } catch { return null; }
+}
+
+function saveRankingCache(data) {
+  try { localStorage.setItem(RANKING_CFG.cacheKey, JSON.stringify(data)); } catch {}
+}
+
+async function fetchRanking() {
+  try {
+    const res = await fetch(RANKING_CFG.rankingUrl, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const raw = await res.json();
+    const data = validateRankingData(raw);
+    if (!data) throw new Error('invalid ranking');
+    saveRankingCache(data);
+    return { ok: true, offline: false, data };
+  } catch {
+    const cached = loadRankingCache();
+    if (cached) return { ok: true, offline: true, data: cached };
+    return { ok: false, offline: true, data: null };
+  }
+}
+
 const ACTS = {
   nav(d) {
     const v = d.v;
@@ -2624,6 +2702,7 @@ const ACTS = {
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
+  towerRanking() { openRankingModal(); },
   pickBless(d) { pickBlessing(d.id); },
   towerBlessList() { openBlessListModal(); },
   closeTowerModal() { closeModal(); },
@@ -2891,6 +2970,7 @@ function renderDungeonSelect() {
       <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
         ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
+        <button class="btn" data-act="towerRanking">🏆 ランキング</button>
       </div></article>`;
   })() + (() => {
     const abSt = isAbyssUnlocked(p0);
@@ -3291,6 +3371,93 @@ function openBlessListModal() {
     <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
 }
+
+function renderRankingModal(res) {
+  const p = G.p, best = (p && p.tower && p.tower.best) || 0;
+  const upd = res && res.data && res.data.updated ? res.data.updated : '準備中';
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '';
+  const h2 = document.createElement('h2');
+  h2.className = 'win'; h2.id = 'm-title';
+  h2.textContent = `天蓋の塔 ランキング（更新: ${upd}）`;
+  sheet.appendChild(h2);
+
+  if (res && res.offline) {
+    const note = document.createElement('p');
+    note.className = 'sub'; note.style.margin = '0';
+    note.textContent = res.ok ? 'オフライン（前回取得分を表示）' : 'ランキングを取得できません';
+    sheet.appendChild(note);
+  }
+
+  const entries = (res && res.data && res.data.entries) || [];
+  const pos = calcRankPosition(best, entries);
+  const myP = document.createElement('p');
+  myP.className = 'sub'; myP.style.margin = '0';
+  myP.textContent = `あなたの最高到達階: ${best}階（ランキング換算: ${pos.text}）`;
+  sheet.appendChild(myP);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'rk-wrap';
+  if (!entries.length) {
+    const emp = document.createElement('p');
+    emp.className = 'empty'; emp.style.margin = '12px';
+    emp.textContent = res && !res.ok ? 'ランキングを取得できません。' : '掲載されている記録はまだありません。';
+    wrap.appendChild(emp);
+  } else {
+    const tbl = document.createElement('table');
+    tbl.className = 'rk-table';
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th style="width:54px;text-align:center">順位</th><th>ニックネーム</th><th style="width:76px;text-align:right">到達階</th></tr>';
+    tbl.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    entries.forEach((e, idx) => {
+      const rank = idx + 1;
+      const tr = document.createElement('tr');
+      if (rank <= 3) tr.className = `rk-${rank}`;
+      const tdPos = document.createElement('td');
+      tdPos.className = 'rk-pos';
+      tdPos.textContent = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : String(rank);
+      const tdName = document.createElement('td');
+      tdName.textContent = e.name;
+      const tdFl = document.createElement('td');
+      tdFl.className = 'rk-fl';
+      tdFl.textContent = `${e.floor}F`;
+      tr.append(tdPos, tdName, tdFl);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+  }
+  sheet.appendChild(wrap);
+
+  const box = document.createElement('div');
+  box.className = 'rk-box';
+  box.id = 'rk-submit-box';
+  if (!isRankingSubmitConfigured()) {
+    const msg = document.createElement('p');
+    msg.className = 'sub'; msg.style.margin = '0';
+    msg.textContent = 'ランキング送信は準備中です';
+    box.appendChild(msg);
+  }
+  sheet.appendChild(box);
+
+  const act = document.createElement('div');
+  act.className = 'act';
+  act.style.gridTemplateColumns = '1fr';
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn primary';
+  btnClose.dataset.act = 'closeTowerModal';
+  btnClose.textContent = '閉じる';
+  act.appendChild(btnClose);
+  sheet.appendChild(act);
+}
+
+function openRankingModal() {
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '<h2 class="win" id="m-title">天蓋の塔 ランキング</h2><p class="sub" style="margin:0">読み込み中…</p><div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>';
+  $('#modal').hidden = false; G.modalOpen = true;
+  fetchRanking().then(res => { if (G.modalOpen) renderRankingModal(res); });
+}
 function openTowerShopModal() {
   const p = G.p, tw = p.tower || { best: 0, coins: 0, titles: [], title: null };
   $('#m-sheet').innerHTML = `
@@ -3317,6 +3484,93 @@ function openTowerShopModal() {
     }).join('')}</div>
     <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+}
+
+function renderRankingModal(res) {
+  const p = G.p, best = (p && p.tower && p.tower.best) || 0;
+  const upd = res && res.data && res.data.updated ? res.data.updated : '準備中';
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '';
+  const h2 = document.createElement('h2');
+  h2.className = 'win'; h2.id = 'm-title';
+  h2.textContent = `天蓋の塔 ランキング（更新: ${upd}）`;
+  sheet.appendChild(h2);
+
+  if (res && res.offline) {
+    const note = document.createElement('p');
+    note.className = 'sub'; note.style.margin = '0';
+    note.textContent = res.ok ? 'オフライン（前回取得分を表示）' : 'ランキングを取得できません';
+    sheet.appendChild(note);
+  }
+
+  const entries = (res && res.data && res.data.entries) || [];
+  const pos = calcRankPosition(best, entries);
+  const myP = document.createElement('p');
+  myP.className = 'sub'; myP.style.margin = '0';
+  myP.textContent = `あなたの最高到達階: ${best}階（ランキング換算: ${pos.text}）`;
+  sheet.appendChild(myP);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'rk-wrap';
+  if (!entries.length) {
+    const emp = document.createElement('p');
+    emp.className = 'empty'; emp.style.margin = '12px';
+    emp.textContent = res && !res.ok ? 'ランキングを取得できません。' : '掲載されている記録はまだありません。';
+    wrap.appendChild(emp);
+  } else {
+    const tbl = document.createElement('table');
+    tbl.className = 'rk-table';
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th style="width:54px;text-align:center">順位</th><th>ニックネーム</th><th style="width:76px;text-align:right">到達階</th></tr>';
+    tbl.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    entries.forEach((e, idx) => {
+      const rank = idx + 1;
+      const tr = document.createElement('tr');
+      if (rank <= 3) tr.className = `rk-${rank}`;
+      const tdPos = document.createElement('td');
+      tdPos.className = 'rk-pos';
+      tdPos.textContent = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : String(rank);
+      const tdName = document.createElement('td');
+      tdName.textContent = e.name;
+      const tdFl = document.createElement('td');
+      tdFl.className = 'rk-fl';
+      tdFl.textContent = `${e.floor}F`;
+      tr.append(tdPos, tdName, tdFl);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+  }
+  sheet.appendChild(wrap);
+
+  const box = document.createElement('div');
+  box.className = 'rk-box';
+  box.id = 'rk-submit-box';
+  if (!isRankingSubmitConfigured()) {
+    const msg = document.createElement('p');
+    msg.className = 'sub'; msg.style.margin = '0';
+    msg.textContent = 'ランキング送信は準備中です';
+    box.appendChild(msg);
+  }
+  sheet.appendChild(box);
+
+  const act = document.createElement('div');
+  act.className = 'act';
+  act.style.gridTemplateColumns = '1fr';
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn primary';
+  btnClose.dataset.act = 'closeTowerModal';
+  btnClose.textContent = '閉じる';
+  act.appendChild(btnClose);
+  sheet.appendChild(act);
+}
+
+function openRankingModal() {
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '<h2 class="win" id="m-title">天蓋の塔 ランキング</h2><p class="sub" style="margin:0">読み込み中…</p><div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>';
+  $('#modal').hidden = false; G.modalOpen = true;
+  fetchRanking().then(res => { if (G.modalOpen) renderRankingModal(res); });
 }
 
 function openModal() {
@@ -3783,7 +4037,7 @@ function boot() {
 window.G = G;
 window.__rogue = {
   migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
-  TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
+  TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, isRankingSubmitConfigured, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,

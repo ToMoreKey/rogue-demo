@@ -188,6 +188,7 @@ function renderDungeonSelect() {
       <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
         ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
+        <button class="btn" data-act="towerRanking">🏆 ランキング</button>
       </div></article>`;
   })() + (() => {
     const abSt = isAbyssUnlocked(p0);
@@ -588,6 +589,93 @@ function openBlessListModal() {
     <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
 }
+
+function renderRankingModal(res) {
+  const p = G.p, best = (p && p.tower && p.tower.best) || 0;
+  const upd = res && res.data && res.data.updated ? res.data.updated : '準備中';
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '';
+  const h2 = document.createElement('h2');
+  h2.className = 'win'; h2.id = 'm-title';
+  h2.textContent = `天蓋の塔 ランキング（更新: ${upd}）`;
+  sheet.appendChild(h2);
+
+  if (res && res.offline) {
+    const note = document.createElement('p');
+    note.className = 'sub'; note.style.margin = '0';
+    note.textContent = res.ok ? 'オフライン（前回取得分を表示）' : 'ランキングを取得できません';
+    sheet.appendChild(note);
+  }
+
+  const entries = (res && res.data && res.data.entries) || [];
+  const pos = calcRankPosition(best, entries);
+  const myP = document.createElement('p');
+  myP.className = 'sub'; myP.style.margin = '0';
+  myP.textContent = `あなたの最高到達階: ${best}階（ランキング換算: ${pos.text}）`;
+  sheet.appendChild(myP);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'rk-wrap';
+  if (!entries.length) {
+    const emp = document.createElement('p');
+    emp.className = 'empty'; emp.style.margin = '12px';
+    emp.textContent = res && !res.ok ? 'ランキングを取得できません。' : '掲載されている記録はまだありません。';
+    wrap.appendChild(emp);
+  } else {
+    const tbl = document.createElement('table');
+    tbl.className = 'rk-table';
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th style="width:54px;text-align:center">順位</th><th>ニックネーム</th><th style="width:76px;text-align:right">到達階</th></tr>';
+    tbl.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    entries.forEach((e, idx) => {
+      const rank = idx + 1;
+      const tr = document.createElement('tr');
+      if (rank <= 3) tr.className = `rk-${rank}`;
+      const tdPos = document.createElement('td');
+      tdPos.className = 'rk-pos';
+      tdPos.textContent = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : String(rank);
+      const tdName = document.createElement('td');
+      tdName.textContent = e.name;
+      const tdFl = document.createElement('td');
+      tdFl.className = 'rk-fl';
+      tdFl.textContent = `${e.floor}F`;
+      tr.append(tdPos, tdName, tdFl);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+  }
+  sheet.appendChild(wrap);
+
+  const box = document.createElement('div');
+  box.className = 'rk-box';
+  box.id = 'rk-submit-box';
+  if (!isRankingSubmitConfigured()) {
+    const msg = document.createElement('p');
+    msg.className = 'sub'; msg.style.margin = '0';
+    msg.textContent = 'ランキング送信は準備中です';
+    box.appendChild(msg);
+  }
+  sheet.appendChild(box);
+
+  const act = document.createElement('div');
+  act.className = 'act';
+  act.style.gridTemplateColumns = '1fr';
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn primary';
+  btnClose.dataset.act = 'closeTowerModal';
+  btnClose.textContent = '閉じる';
+  act.appendChild(btnClose);
+  sheet.appendChild(act);
+}
+
+function openRankingModal() {
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '<h2 class="win" id="m-title">天蓋の塔 ランキング</h2><p class="sub" style="margin:0">読み込み中…</p><div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>';
+  $('#modal').hidden = false; G.modalOpen = true;
+  fetchRanking().then(res => { if (G.modalOpen) renderRankingModal(res); });
+}
 function openTowerShopModal() {
   const p = G.p, tw = p.tower || { best: 0, coins: 0, titles: [], title: null };
   $('#m-sheet').innerHTML = `
@@ -614,6 +702,93 @@ function openTowerShopModal() {
     }).join('')}</div>
     <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+}
+
+function renderRankingModal(res) {
+  const p = G.p, best = (p && p.tower && p.tower.best) || 0;
+  const upd = res && res.data && res.data.updated ? res.data.updated : '準備中';
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '';
+  const h2 = document.createElement('h2');
+  h2.className = 'win'; h2.id = 'm-title';
+  h2.textContent = `天蓋の塔 ランキング（更新: ${upd}）`;
+  sheet.appendChild(h2);
+
+  if (res && res.offline) {
+    const note = document.createElement('p');
+    note.className = 'sub'; note.style.margin = '0';
+    note.textContent = res.ok ? 'オフライン（前回取得分を表示）' : 'ランキングを取得できません';
+    sheet.appendChild(note);
+  }
+
+  const entries = (res && res.data && res.data.entries) || [];
+  const pos = calcRankPosition(best, entries);
+  const myP = document.createElement('p');
+  myP.className = 'sub'; myP.style.margin = '0';
+  myP.textContent = `あなたの最高到達階: ${best}階（ランキング換算: ${pos.text}）`;
+  sheet.appendChild(myP);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'rk-wrap';
+  if (!entries.length) {
+    const emp = document.createElement('p');
+    emp.className = 'empty'; emp.style.margin = '12px';
+    emp.textContent = res && !res.ok ? 'ランキングを取得できません。' : '掲載されている記録はまだありません。';
+    wrap.appendChild(emp);
+  } else {
+    const tbl = document.createElement('table');
+    tbl.className = 'rk-table';
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th style="width:54px;text-align:center">順位</th><th>ニックネーム</th><th style="width:76px;text-align:right">到達階</th></tr>';
+    tbl.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    entries.forEach((e, idx) => {
+      const rank = idx + 1;
+      const tr = document.createElement('tr');
+      if (rank <= 3) tr.className = `rk-${rank}`;
+      const tdPos = document.createElement('td');
+      tdPos.className = 'rk-pos';
+      tdPos.textContent = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : String(rank);
+      const tdName = document.createElement('td');
+      tdName.textContent = e.name;
+      const tdFl = document.createElement('td');
+      tdFl.className = 'rk-fl';
+      tdFl.textContent = `${e.floor}F`;
+      tr.append(tdPos, tdName, tdFl);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);
+    wrap.appendChild(tbl);
+  }
+  sheet.appendChild(wrap);
+
+  const box = document.createElement('div');
+  box.className = 'rk-box';
+  box.id = 'rk-submit-box';
+  if (!isRankingSubmitConfigured()) {
+    const msg = document.createElement('p');
+    msg.className = 'sub'; msg.style.margin = '0';
+    msg.textContent = 'ランキング送信は準備中です';
+    box.appendChild(msg);
+  }
+  sheet.appendChild(box);
+
+  const act = document.createElement('div');
+  act.className = 'act';
+  act.style.gridTemplateColumns = '1fr';
+  const btnClose = document.createElement('button');
+  btnClose.className = 'btn primary';
+  btnClose.dataset.act = 'closeTowerModal';
+  btnClose.textContent = '閉じる';
+  act.appendChild(btnClose);
+  sheet.appendChild(act);
+}
+
+function openRankingModal() {
+  const sheet = $('#m-sheet');
+  sheet.innerHTML = '<h2 class="win" id="m-title">天蓋の塔 ランキング</h2><p class="sub" style="margin:0">読み込み中…</p><div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>';
+  $('#modal').hidden = false; G.modalOpen = true;
+  fetchRanking().then(res => { if (G.modalOpen) renderRankingModal(res); });
 }
 
 function openModal() {

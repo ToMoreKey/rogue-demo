@@ -244,6 +244,7 @@ const ACTS = {
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
+  towerRanking() { openRankingModal(); },
   pickBless(d) { pickBlessing(d.id); },
   towerBlessList() { openBlessListModal(); },
   closeTowerModal() { closeModal(); },

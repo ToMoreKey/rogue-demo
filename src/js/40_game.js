@@ -795,3 +795,59 @@ function bankMove(dir, all) {
   save(); renderAll();
 }
 
+/* ================= ranking ================= */
+const isRankingSubmitConfigured = () => !!(RANKING_CFG.formUrl && RANKING_CFG.entryName && RANKING_CFG.entryFloor);
+
+function validateRankingData(raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.entries)) return null;
+  const entries = [];
+  for (const e of raw.entries) {
+    if (!e || typeof e !== 'object' || typeof e.name !== 'string') continue;
+    const nm = e.name.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+    if (!nm || nm.length > RANKING_CFG.nameMax) continue;
+    const fl = e.floor;
+    if (typeof fl !== 'number' || !Number.isInteger(fl) || fl < 1 || fl > RANKING_CFG.maxFloor) continue;
+    entries.push({ name: nm, floor: fl, date: typeof e.date === 'string' ? e.date : '' });
+  }
+  entries.sort((a, b) => b.floor - a.floor);
+  return {
+    updated: typeof raw.updated === 'string' ? raw.updated : '',
+    entries: entries.slice(0, RANKING_CFG.top)
+  };
+}
+
+function calcRankPosition(best, entries) {
+  const b = Math.floor(Number(best) || 0);
+  if (b < 1 || !Array.isArray(entries) || !entries.length) return { rank: null, text: '圏外' };
+  const higher = entries.filter(e => e.floor > b).length;
+  const rank = higher + 1;
+  return rank <= RANKING_CFG.top ? { rank, text: `${rank}位相当` } : { rank: null, text: '圏外' };
+}
+
+function loadRankingCache() {
+  try {
+    const s = localStorage.getItem(RANKING_CFG.cacheKey);
+    return s ? validateRankingData(JSON.parse(s)) : null;
+  } catch { return null; }
+}
+
+function saveRankingCache(data) {
+  try { localStorage.setItem(RANKING_CFG.cacheKey, JSON.stringify(data)); } catch {}
+}
+
+async function fetchRanking() {
+  try {
+    const res = await fetch(RANKING_CFG.rankingUrl, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const raw = await res.json();
+    const data = validateRankingData(raw);
+    if (!data) throw new Error('invalid ranking');
+    saveRankingCache(data);
+    return { ok: true, offline: false, data };
+  } catch {
+    const cached = loadRankingCache();
+    if (cached) return { ok: true, offline: true, data: cached };
+    return { ok: false, offline: true, data: null };
+  }
+}
+
