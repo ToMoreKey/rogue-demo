@@ -15,6 +15,9 @@
   - `assets/` … base64画像（敵・装備アイコン・キャラ）。中身は書き換えない
   - `js/` … ロジック（`30_save.js` がセーブとバージョン移行）
 - `tools/build.py` … `src/` から `index.html` を生成
+- `docs/gemini_prompt_P5b2.md` … P5b-2（ランキングの送信・表示）をGeminiに依頼するための指示書
+- `docs/ranking_setup.md` … ランキング（Googleフォーム＋手動反映）の準備と更新の手順
+- `tools/make_ranking.py` … フォーム回答のCSVから `data/ranking.json` を作る
 - `docs/gemini_prompt_P5b1_fix.md` … P5b-1の修正（本編バランス変化の原因調査・深淵の難度8〜10）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P5b1.md` … P5b-1（深淵ダンジョン・進化第3段階・極意・★9神話ドロップ）をGeminiに依頼するための指示書
 - `docs/gemini_prompt_P5a_fix.md` … P5aの修正（回廊の壁・祝福の効き・神話装備の価格）をGeminiに依頼するための指示書
