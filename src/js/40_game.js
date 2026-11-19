@@ -315,7 +315,7 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id], te = towerEff(run), pb = passiveBonus(p), ae = run.abyss ? abyssEff(run) : null;
+  const s = SK[id], te = towerEff(run), pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
   p.mp -= s.mp;
   // CTをセット
   if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
@@ -366,7 +366,7 @@ function playerAct() {
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
   const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
-  const pb = passiveBonus(p);
+  const pb = masteryBonus(p);
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
   if (run.advent > 0) run.advent--;
@@ -404,7 +404,7 @@ function enemyAct() {
     popDamage('player', 'BLOCK', 'heal');
     return;
   }
-  const pb = passiveBonus(p), ae = run.abyss ? abyssEff(run) : null;
+  const pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
   const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
   const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
   if (run.shura > 0) run.shura--;
@@ -461,7 +461,7 @@ function battleRound() {
 }
 
 function onKill() {
-  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = passiveBonus(p);
+  const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);

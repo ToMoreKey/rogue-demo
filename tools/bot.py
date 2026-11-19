@@ -144,7 +144,7 @@ BOT = r"""
    const p=G.p;
    p.lv=126; p.sp=200; p.ending=true; p.gold=100000;
    p.potions={hp:25,mp:25};
-   p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=3; p.weapon.roll=0.9; p.weapon.prop='flame';
+   p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=3; p.weapon.roll=0.9; p.weapon.prop='flame'; p.weapon.props=['flame'];
    p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=3; p.armor.roll=0.9;
    spPlan(); p.hp=R.maxHp(p); p.mp=R.maxMp(p);
    const scoreBless=(b)=>{

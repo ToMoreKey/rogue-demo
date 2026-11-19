@@ -82,8 +82,8 @@ function abyssEff(run) {
   };
 }
 
-const maxHp = p => Math.round((60 + p.lv * 12) * (p.passiveSkills ? passiveBonus(p).hpMult : 1) * (G.run && G.run.tower ? towerEff(G.run).hpMult : 1));
-const maxMp = p => Math.round((16 + p.lv * 4) * (p.passiveSkills ? passiveBonus(p).mpMult : 1) * (G.run && G.run.tower ? towerEff(G.run).mpMult : 1) * (G.run && G.run.abyss ? abyssEff(G.run).mpMult : 1));
+const maxHp = p => Math.round((60 + p.lv * 12) * (p.passiveSkills ? passiveBonus(p).hpMult : 1) * (p.mastery ? masteryBonus(p).hpMult : 1) * (G.run && G.run.tower ? towerEff(G.run).hpMult : 1));
+const maxMp = p => Math.round((16 + p.lv * 4) * (p.passiveSkills ? passiveBonus(p).mpMult : 1) * (p.mastery ? masteryBonus(p).mpMult : 1) * (G.run && G.run.tower ? towerEff(G.run).mpMult : 1) * (G.run && G.run.abyss ? abyssEff(G.run).mpMult : 1));
 const baseAtk = p => 8 + p.lv * 2;
 const baseDef = p => 2 + p.lv;
 const expNeed = lv => Math.round(17.5 * Math.pow(lv, 1.55) * (lv >= 30 ? 1 + (lv - 29) * 0.015 : 1) * (lv >= 56 ? 1 + (lv - 55) * 0.022 : 1));
@@ -119,8 +119,8 @@ const bestGearItem = (p, slot) => {
   }
   return best;
 };
-const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.mastery ? passiveBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
-const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? passiveBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
+const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.mastery ? masteryBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
+const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? masteryBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 
 function mkItem(p, o) {
   const ps = Array.isArray(o.props) ? [...new Set(o.props)] : (o.prop ? [o.prop] : []);
