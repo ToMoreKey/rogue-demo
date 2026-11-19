@@ -512,7 +512,20 @@ function renderStatus() {
         <dt>スキルポイント</dt><dd>${p.sp}</dd>
         <dt>探索 / 踏破 / 撃破</dt><dd>${p.stats.runs} / ${p.stats.clears} / ${p.stats.kills}</dd>
       </dl>
-      <div style="margin-top:8px"><button class="btn primary" data-act="openDex">📖 図鑑</button></div></div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" data-act="openDex">📖 図鑑</button>
+        <button class="btn" data-act="openAch">🏆 実績</button>
+      </div></div>
+    <div class="panel"><h2>称号（獲得済: ${(p.tower && p.tower.titles ? p.tower.titles.length : 0)} / ${TOWER_TITLES.length}）</h2>
+      ${!(p.tower && p.tower.titles && p.tower.titles.length)
+        ? '<p class="empty">まだ称号を獲得していません（回廊・図鑑・実績で獲得できます）。</p>'
+        : `<div style="display:flex;flex-wrap:wrap;gap:6px">${p.tower.titles.map(tid => {
+            const tt = TOWER_TITLES.find(x => x.id === tid);
+            if (!tt) return '';
+            const eq = p.tower.title === tid;
+            return `<button class="pill ${eq ? 'on' : ''}" data-act="equipStatusTitle" data-id="${tid}" title="${esc(tt.desc)}">${eq ? '✓ ' : ''}${esc(tt.name)}</button>`;
+          }).join('')}</div>`}
+    </div>
     <div class="panel"><h2>極意（共通パッシブ）${p.ending ? ` <span class="sub">残りSP: ${p.sp}</span>` : ''}</h2>
       ${!p.ending
         ? '<p class="empty">🔒 本編クリア（虚空の神殿・極級）で解放されます。</p>'
@@ -750,12 +763,13 @@ function openRankingModal() {
 }
 
 function openDexModal(tab = 'enemies') {
-  G.dexTab = tab === 'items' ? 'items' : 'enemies';
+  G.dexTab = tab === 'items' ? 'items' : tab === 'ach' ? 'ach' : 'enemies';
   const p = G.p, dex = (p && p.dex) || { enemies: {}, items: {}, rewards: {} };
-  const enMap = dex.enemies || {}, itMap = dex.items || {};
+  const enMap = dex.enemies || {}, itMap = dex.items || {}, achMap = (p && p.ach) || {};
   const groups = dexEnemyGroups();
   const allEnemies = groups.flatMap(g => g.list);
   const seenTotal = allEnemies.filter(e => enMap[e.id] && enMap[e.id].seen).length;
+  const achTotal = ACHIEVEMENTS.filter(a => achMap[a.id]).length;
   const itemKeys = [];
   for (const sl of ['weapon', 'armor']) {
     for (const st of DEX_STARS) itemKeys.push({ key: `${sl}_${st}`, slot: sl, star: st, mythic: false, hkey: String(st) });
@@ -791,6 +805,28 @@ function openDexModal(tab = 'enemies') {
           }).join('')}</div>
         </div>`;
       }).join('')}</div>`;
+  } else if (G.dexTab === 'ach') {
+    const pend = (!p.ending && p.pendingAchCoins > 0) ? ` <span class="sub">（保留コイン: 🪙${fmt(p.pendingAchCoins)}枚 / クリア後付与）</span>` : '';
+    body = `<div class="dex-gh"><span class="sub">達成 <b>${achTotal} / ${ACHIEVEMENTS.length}</b>${pend}</span></div>
+      <div class="dex-scroll">${ACH_CATS.map(cat => {
+        const list = ACHIEVEMENTS.filter(a => a.cat === cat);
+        const done = list.filter(a => achMap[a.id]).length;
+        return `<div class="dex-grp">
+          <div class="dex-gh"><b>${esc(cat)}</b><span class="sub">${done}/${list.length}</span></div>
+          <div style="display:grid;gap:5px">${list.map(a => {
+            const dt = achMap[a.id];
+            const hid = !dt && a.hidden;
+            const tObj = a.titleId && TOWER_TITLES.find(t => t.id === a.titleId);
+            const rewTxt = `🪙${a.coins}${tObj ? ` ＋ 称号「${tObj.name}」` : ''}`;
+            const pgTxt = !dt && !hid && a.prog ? ` <span class="sub">(${esc(a.prog(p))})</span>` : '';
+            return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <div style="min-width:0"><div><b>${dt ? '🏆 ' : '🔒 '}${hid ? '？？？' : esc(a.name)}</b>${pgTxt}</div>
+                <div class="sub">${hid ? '隠し実績' : esc(a.desc)}</div></div>
+              <div style="text-align:right;white-space:nowrap;font-size:11px">${dt ? `<div class="l-good">${esc(dt)}</div>` : ''}<div class="sub">${hid ? '？？？' : esc(rewTxt)}</div></div>
+            </div>`;
+          }).join('')}</div>
+        </div>`;
+      }).join('')}</div>`;
   } else {
     const renderSlotGrid = (sl, label, mythic) => {
       const stars = mythic ? DEX_MYTHICS : DEX_STARS;
@@ -820,10 +856,11 @@ function openDexModal(tab = 'enemies') {
   }
 
   $('#m-sheet').innerHTML = `
-    <h2 class="win" id="m-title">📖 図鑑</h2>
+    <h2 class="win" id="m-title">📖 図鑑・実績</h2>
     <div class="dex-tabs">
       <button class="btn small ${G.dexTab === 'enemies' ? 'primary' : ''}" data-act="dexTab" data-tab="enemies">敵図鑑（${seenTotal}/${allEnemies.length}）</button>
       <button class="btn small ${G.dexTab === 'items' ? 'primary' : ''}" data-act="dexTab" data-tab="items">装備図鑑（${gotTotal}/${itemKeys.length}）</button>
+      <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）</button>
     </div>
     ${body}
     <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;

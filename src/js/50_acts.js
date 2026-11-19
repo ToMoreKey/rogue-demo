@@ -245,7 +245,15 @@ const ACTS = {
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
   openDex() { openDexModal(G.dexTab || 'enemies'); },
+  openAch() { openDexModal('ach'); },
   dexTab(d) { openDexModal(d.tab || 'enemies'); },
+  equipStatusTitle(d) {
+    const p = G.p;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (!(p.tower.titles || []).includes(d.id)) return;
+    p.tower.title = p.tower.title === d.id ? null : d.id;
+    save(); renderStatus();
+  },
   dexHint(d) {
     const el = $('#dex-hint-box');
     if (!el) return;
