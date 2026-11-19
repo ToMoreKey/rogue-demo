@@ -61,7 +61,7 @@ with sync_playwright() as pw:
         G.run = null;
 
         // 装備記録: ★5ドロップ + ★6強化 + ★8交換神話 + ★9ドロップ神話
-        G.p.stones.stone_high = 5;
+        G.p.stones.stone_hi = 5;
         const w5 = R.genItem(R.DIFFS[2], false, 'weapon', 5, 5);
         R.receiveItem(w5);
         R.smithUpgrade(w5.id);
@@ -111,6 +111,7 @@ with sync_playwright() as pw:
     pg.evaluate('''() => {
         const R = window.__rogue;
         R.setHeadless(false); R.noTimer(true);
+        document.querySelector('#modal').hidden = true; G.modalOpen = false;
         G.p = R.newPlayer(); G.p.lv = 30; G.p.ending = false;
         G.tutorial = { done: true };
         // Aの敵6体をすべて発見済みにする（本編クリア前なので報酬受け取り不可）
@@ -118,7 +119,7 @@ with sync_playwright() as pw:
         for (const e of aGrp.list) R.recordDexEnemy(G.p, e.id, true);
         R.renderAll();
     }''')
-    pg.click('[data-tab="status"]')
+    pg.click('#nav-status')
     pg.click('[data-act="openDex"]')
     pg.wait_for_selector('.dex-grid')
     ui_en = pg.evaluate('''() => {
