@@ -1,0 +1,110 @@
+// 実績データ（36種・8カテゴリ・称号18種）
+const ACH_CATS = ['進行', '装備', '回廊', '深淵', '成長', '累計', '図鑑', 'やり込み'];
+
+const ACHIEVEMENTS = [
+  // 進行 (5)
+  { id: 'prog_part1', cat: '進行', name: '魔王殺し', desc: '前編（魔王城・上級）をクリア', coins: 10, titleId: 'a_part1', ev: 'run',
+    cond: p => !!p.part1Cleared },
+  { id: 'prog_ending', cat: '進行', name: '世界の救済者', desc: '本編（虚空の神殿・極級）をクリア', coins: 30, titleId: 'a_ending', ev: 'run',
+    cond: p => !!p.ending },
+  { id: 'prog_novice', cat: '進行', name: '初級総なめ', desc: '全15ダンジョンの初級をクリア', coins: 15, ev: 'run',
+    cond: p => DUNGEONS.every(d => p.cleared && p.cleared[d.id] && p.cleared[d.id].novice),
+    prog: p => `${DUNGEONS.filter(d => p.cleared && p.cleared[d.id] && p.cleared[d.id].novice).length} / ${DUNGEONS.length}` },
+  { id: 'prog_high', cat: '進行', name: '熟練の踏破者', desc: '全15ダンジョンの上級をクリア', coins: 25, titleId: 'a_high', ev: 'run',
+    cond: p => DUNGEONS.every(d => p.cleared && p.cleared[d.id] && p.cleared[d.id].high),
+    prog: p => `${DUNGEONS.filter(d => p.cleared && p.cleared[d.id] && p.cleared[d.id].high).length} / ${DUNGEONS.length}` },
+  { id: 'prog_extreme', cat: '進行', name: '極級完全制覇', desc: '全15ダンジョンの極級をクリア', coins: 50, titleId: 'a_extreme', ev: 'run',
+    cond: p => DUNGEONS.every(d => p.cleared && p.cleared[d.id] && p.cleared[d.id].extreme),
+    prog: p => `${DUNGEONS.filter(d => p.cleared && p.cleared[d.id] && p.cleared[d.id].extreme).length} / ${DUNGEONS.length}` },
+
+  // 装備 (6)
+  { id: 'eq_s5', cat: '装備', name: '星砕きの輝き', desc: '★5装備を初めて入手', coins: 5, ev: 'item',
+    cond: p => !!(p.dex && p.dex.items && (p.dex.items.weapon_5 || p.dex.items.armor_5)) },
+  { id: 'eq_s7', cat: '装備', name: '時を駆ける武具', desc: '★7装備を初めて入手', coins: 15, ev: 'item',
+    cond: p => !!(p.dex && p.dex.items && (p.dex.items.weapon_7 || p.dex.items.armor_7)) },
+  { id: 'eq_s8', cat: '装備', name: '機神の遺産', desc: '★8装備を初めて入手', coins: 20, ev: 'item',
+    cond: p => !!(p.dex && p.dex.items && (p.dex.items.weapon_8 || p.dex.items.armor_8)) },
+  { id: 'eq_s9', cat: '装備', name: '創世の継承者', desc: '★9装備を初めて入手', coins: 30, titleId: 'a_s9', ev: 'item',
+    cond: p => !!(p.dex && p.dex.items && (p.dex.items.weapon_9 || p.dex.items.armor_9)) },
+  { id: 'eq_mythic', cat: '装備', name: '神話の目覚め', desc: '神話レア装備を初めて入手', coins: 30, titleId: 'a_mythic', ev: 'item',
+    cond: p => !!(p.dex && p.dex.items && (p.dex.items.weapon_m8 || p.dex.items.armor_m8 || p.dex.items.weapon_m9 || p.dex.items.armor_m9)) },
+  { id: 'eq_m9', cat: '装備', name: '深淵の神話', desc: '★9神話レア装備を入手', coins: 80, titleId: 'a_m9', hidden: true, ev: 'item',
+    cond: p => !!(p.dex && p.dex.items && (p.dex.items.weapon_m9 || p.dex.items.armor_m9)) },
+
+  // 回廊 (7)
+  { id: 'tw_10', cat: '回廊', name: '塔の入門', desc: '天蓋の塔 10階に到達', coins: 5, ev: 'run',
+    cond: p => !!(p.tower && p.tower.best >= 10),
+    prog: p => `最高 ${(p.tower && p.tower.best) || 0} / 10階` },
+  { id: 'tw_30', cat: '回廊', name: '雲海を越えて', desc: '天蓋の塔 30階に到達', coins: 15, ev: 'run',
+    cond: p => !!(p.tower && p.tower.best >= 30),
+    prog: p => `最高 ${(p.tower && p.tower.best) || 0} / 30階` },
+  { id: 'tw_50', cat: '回廊', name: '雲上の挑戦者', desc: '天蓋の塔 50階に到達', coins: 30, titleId: 'a_tw50', ev: 'run',
+    cond: p => !!(p.tower && p.tower.best >= 50),
+    prog: p => `最高 ${(p.tower && p.tower.best) || 0} / 50階` },
+  { id: 'tw_70', cat: '回廊', name: '星辰の旅人', desc: '天蓋の塔 70階に到達', coins: 50, titleId: 'a_tw70', ev: 'run',
+    cond: p => !!(p.tower && p.tower.best >= 70),
+    prog: p => `最高 ${(p.tower && p.tower.best) || 0} / 70階` },
+  { id: 'tw_100', cat: '回廊', name: '天蓋の頂', desc: '天蓋の塔 100階に到達', coins: 100, titleId: 'a_tw100', ev: 'run',
+    cond: p => !!(p.tower && p.tower.best >= 100),
+    prog: p => `最高 ${(p.tower && p.tower.best) || 0} / 100階` },
+  { id: 'tw_bless50', cat: '回廊', name: '祝福されし者', desc: '天蓋の塔で祝福を累計50個取得', coins: 25, titleId: 'a_bless', ev: 'bless',
+    cond: p => !!(p.stats && (p.stats.blessings || 0) >= 50),
+    prog: p => `${(p.stats && p.stats.blessings) || 0} / 50個` },
+  { id: 'tw_coin1k', cat: '回廊', name: '回廊の富豪', desc: '回廊コインを累計1,000枚獲得', coins: 30, ev: 'run',
+    cond: p => !!(p.tower && (p.tower.totalCoins || 0) >= 1000),
+    prog: p => `${fmt((p.tower && p.tower.totalCoins) || 0)} / 1,000枚` },
+
+  // 深淵 (5)
+  { id: 'ab_1', cat: '深淵', name: '深淵の入り口', desc: '深淵ダンジョン 難度1をクリア', coins: 15, ev: 'run',
+    cond: p => !!(p.abyss && p.abyss.cleared && p.abyss.cleared[1]) },
+  { id: 'ab_5', cat: '深淵', name: '深淵の歩み手', desc: '深淵ダンジョン 難度5をクリア', coins: 40, titleId: 'a_ab5', ev: 'run',
+    cond: p => !!(p.abyss && p.abyss.cleared && p.abyss.cleared[5]) },
+  { id: 'ab_7', cat: '深淵', name: '虚ろの果てへ', desc: '深淵ダンジョン 難度7をクリア', coins: 60, ev: 'run',
+    cond: p => !!(p.abyss && p.abyss.cleared && p.abyss.cleared[7]) },
+  { id: 'ab_10', cat: '深淵', name: '深淵の覇者', desc: '深淵ダンジョン 難度10をクリア', coins: 150, titleId: 'a_ab10', ev: 'run',
+    cond: p => !!(p.abyss && p.abyss.cleared && p.abyss.cleared[10]) },
+  { id: 'ab_3boss', cat: '深淵', name: '主を屠る者', desc: '深淵の主3体をすべて撃破', coins: 50, titleId: 'a_ab3', ev: 'kill',
+    cond: p => !!(p.dex && p.dex.enemies && ['abyss_gula', 'abyss_mirror', 'abyss_deep'].every(id => p.dex.enemies[id] && p.dex.enemies[id].kills >= 1)),
+    prog: p => `${['abyss_gula', 'abyss_mirror', 'abyss_deep'].filter(id => p.dex && p.dex.enemies && p.dex.enemies[id] && p.dex.enemies[id].kills >= 1).length} / 3体` },
+
+  // 成長 (6)
+  { id: 'gr_lv50', cat: '成長', name: '成長の軌跡', desc: 'レベル50に到達', coins: 5, ev: 'lv',
+    cond: p => p.lv >= 50,
+    prog: p => `Lv${p.lv} / 50` },
+  { id: 'gr_lv100', cat: '成長', name: '百戦錬磨', desc: 'レベル100に到達', coins: 20, titleId: 'a_lv100', ev: 'lv',
+    cond: p => p.lv >= 100,
+    prog: p => `Lv${p.lv} / 100` },
+  { id: 'gr_lv140', cat: '成長', name: '限界突破', desc: '最大レベル140に到達', coins: 60, titleId: 'a_lv140', ev: 'lv',
+    cond: p => p.lv >= 140,
+    prog: p => `Lv${p.lv} / 140` },
+  { id: 'gr_sp0', cat: '成長', name: '迷いなき鍛錬', desc: 'Lv50以上で残りSPを0にする', coins: 10, ev: 'sp',
+    cond: p => p.lv >= 50 && p.sp === 0 },
+  { id: 'gr_evo3', cat: '成長', name: '第三の覚醒', desc: '進化枠第3段階のスキルを習得', coins: 25, ev: 'sp',
+    cond: p => !!(p.skills && ['tenma', 'kishin', 'zeroAbs', 'meteorNova', 'goddess', 'eternal', 'heroAdvent', 'skyStar', 'genesisRay'].some(id => p.skills[id])) },
+  { id: 'gr_mast1', cat: '成長', name: '一芸の極み', desc: '極意のいずれか1項目を最大ランク10にする', coins: 30, titleId: 'a_mast1', ev: 'sp',
+    cond: p => !!(p.mastery && MASTERY_LIST.some(m => (p.mastery[m.id] || 0) >= MASTERY_MAX)) },
+
+  // 累計 (4)
+  { id: 'st_kill1k', cat: '累計', name: '千人斬り', desc: '累計撃破数 1,000体', coins: 10, ev: 'kill',
+    cond: p => (p.stats && p.stats.kills || 0) >= 1000,
+    prog: p => `${fmt((p.stats && p.stats.kills) || 0)} / 1,000体` },
+  { id: 'st_kill10k', cat: '累計', name: '万夫不当', desc: '累計撃破数 10,000体', coins: 30, titleId: 'a_kill10k', ev: 'kill',
+    cond: p => (p.stats && p.stats.kills || 0) >= 10000,
+    prog: p => `${fmt((p.stats && p.stats.kills) || 0)} / 10,000体` },
+  { id: 'st_run100', cat: '累計', name: '百戦の勇者', desc: '累計探索回数 100回', coins: 10, ev: 'run',
+    cond: p => (p.stats && p.stats.runs || 0) >= 100,
+    prog: p => `${fmt((p.stats && p.stats.runs) || 0)} / 100回` },
+  { id: 'st_gold1m', cat: '累計', name: '黄金王', desc: '累計獲得ゴールド 1,000,000G', coins: 30, titleId: 'a_gold1m', ev: 'gold',
+    cond: p => (p.stats && p.stats.totalGold || 0) >= 1000000,
+    prog: p => `${fmt((p.stats && p.stats.totalGold) || 0)} / 1,000,000G` },
+
+  // 図鑑 (2)
+  { id: 'dx_en', cat: '図鑑', name: '完全なる魔物録', desc: '敵図鑑（全94種）をコンプリート', coins: 50, ev: 'dex',
+    cond: p => !!(p.dex && p.dex.enemies && dexEnemyGroups().every(g => g.list.every(e => p.dex.enemies[e.id] && p.dex.enemies[e.id].seen))) },
+  { id: 'dx_it', cat: '図鑑', name: '完全なる武具録', desc: '装備図鑑（全22種）をコンプリート', coins: 50, ev: 'item',
+    cond: p => !!(p.dex && p.dex.items && ['weapon', 'armor'].every(sl => DEX_STARS.every(st => p.dex.items[`${sl}_${st}`]) && DEX_MYTHICS.every(st => p.dex.items[`${sl}_m${st}`]))) },
+
+  // やり込み (1, hidden)
+  { id: 'sp_nodmg_boss', cat: 'やり込み', name: '完全なる勝利', desc: 'ボス戦でノーダメージ勝利', coins: 30, titleId: 'a_nodmg', hidden: true, ev: 'kill',
+    cond: p => !!(p.stats && p.stats.noDmgBoss) }
+];
