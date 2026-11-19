@@ -312,6 +312,9 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dex-icard{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;min-width:0;display:grid;gap:2px;justify-items:center;cursor:pointer}
 .dex-icard.r4{border-color:var(--r4)}
 .dex-hint{background:var(--ink);border:1px solid var(--accent);border-radius:4px;padding:6px 8px;font-size:12px;color:var(--fg)}
+.help-det{background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:8px}
+.help-det summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent)}
+.help-det p{margin:6px 0 0;font-size:13px;line-height:1.6;color:var(--fg)}
 
 @media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}

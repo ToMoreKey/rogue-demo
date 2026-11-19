@@ -326,6 +326,9 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dex-icard{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;min-width:0;display:grid;gap:2px;justify-items:center;cursor:pointer}
 .dex-icard.r4{border-color:var(--r4)}
 .dex-hint{background:var(--ink);border:1px solid var(--accent);border-radius:4px;padding:6px 8px;font-size:12px;color:var(--fg)}
+.help-det{background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px;margin-bottom:8px}
+.help-det summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent)}
+.help-det p{margin:6px 0 0;font-size:13px;line-height:1.6;color:var(--fg)}
 
 @media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
@@ -4395,6 +4398,47 @@ function renderHelp() {
       <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
     </ul>
+  </div>
+
+  <div class="panel" id="help-endgame">
+    <h2>🌌 後編・クリア後の要素ガイド</h2>
+    <p class="sub" style="margin:0 0 10px">中盤〜本編クリア後に解放されるやり込み要素の説明（タップで開閉）</p>
+    <details class="help-det">
+      <summary>🏰 天蓋の塔（無限回廊）</summary>
+      <p>本編クリア（虚空の神殿・極級）で解放されるエンドレスダンジョンです。<br>
+      5階ごとの節目の強敵で「2択」、10階ごとのボスで「3択」の祝福を獲得でき、同じラン中ずっと効果が累積します。<br>
+      獲得した回廊コインは交換所で★8神話装備や称号と交換できます（50階以降は獲得コイン2倍）。</p>
+    </details>
+    <details class="help-det">
+      <summary>🕳️ 深淵ダンジョン</summary>
+      <p>全15ダンジョン（A〜O）の極級をすべてクリアすると解放されます。<br>
+      全50階固定・難度1〜10の段階挑戦で、難度が上がるごとに「呪い」が累積します（回復半減・詠唱遅延など）。<br>
+      50階の「深淵の主」を倒すと、極めて低い確率で★9神話レア装備がドロップすることがあります。</p>
+    </details>
+    <details class="help-det">
+      <summary>✨ 極意と進化第3段階</summary>
+      <p>本編クリア後、進化スキル枠（戦士・魔法使い・僧侶・英雄）の上限が30SPに解放され、第3段階スキルを習得できます。<br>
+      同時にステータス画面に全キャラ共通パッシブ「極意」（10項目・各最大Lv10）が解放されます。<br>
+      スキル枠と極意はそれぞれ街・ステータス画面からゴールドでリセットしてSPを振り直せます。</p>
+    </details>
+    <details class="help-det">
+      <summary>⚔️ 装備強化（★6〜★9）・神話レア・複数特性</summary>
+      <p>★5→★6は上級石、★6→★7は時の欠片（D〜Fのボス）、★7→★8は機神の核（H・Iのボス）、★8→★9は創世の欠片（Oのボス）で強化できます。<br>
+      神話レアは通常より高い基礎倍率を持ち、★9神話ドロップ品は武器0〜3個・防具0〜2個の複数特性が付くことがあります。<br>
+      ★9神話装備は鍛冶屋の再鍛造で特性数と内容を一括で振り直せます。</p>
+    </details>
+    <details class="help-det">
+      <summary>📖 図鑑・🏆 実績・称号</summary>
+      <p>ステータス画面の「📖 図鑑」「🏆 実績」から、遭遇・撃破した敵（全94種）と入手した装備（全22種）、実績（全36種）を確認できます。<br>
+      コンプリートや実績達成の報酬は回廊コインと称号のみで、本編クリア前のコインはクリア後にまとめて付与されます。<br>
+      獲得した称号はステータス画面で1つ選んで装備でき、キャラ名の横に表示されます。</p>
+    </details>
+    <details class="help-det">
+      <summary>🏆 天蓋の塔 ランキング</summary>
+      <p>天蓋の塔カードの「🏆 ランキング」から上位20位と自分の順位換算を確認できます。<br>
+      送信設定でニックネーム（1〜12文字）と同意を保存したプレイヤーのみ、自己ベスト更新時に自動で記録が送信されます。<br>
+      送信した記録は運営者の確認後に掲載されるため、ランキングへの反映には時間がかかります。</p>
+    </details>
   </div>`;
 }
 
