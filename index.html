@@ -964,11 +964,11 @@ const ABYSS_CFG = {
     { lv: 10, pow: 19.2, hpMult: 0.65, atkMult: 3.15, bossKey: 'deep',   bossSuffix: '・極', bossMult: 1.09, coins: 100, clearGold: 2000, mythicRate: 0.020 }
   ]
 };
-// ランキング設定（フォームの送信先・質問IDは運営者が設定後に別途記入。未設定時は送信のみ無効）
+// ランキング設定（Googleフォームの送信先・質問ID。docs/ranking_setup.md の D を参照。空にすると送信のみ無効）
 const RANKING_CFG = {
-  formUrl: '',
-  entryName: '',
-  entryFloor: '',
+  formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSf07yvFY41jFlZud8H2KHnM9aZCk2dUNPDsOsF9dtmsQNeFYA/formResponse',
+  entryName: 'entry.1313231289',
+  entryFloor: 'entry.201299640',
   rankingUrl: 'data/ranking.json',
   top: 20,
   nameMax: 12,

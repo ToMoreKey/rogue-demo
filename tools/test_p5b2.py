@@ -67,6 +67,8 @@ with sync_playwright() as pw:
 
     pg.route('**/data/ranking.json*', handle_ranking)
     pg.goto(URL)
+    # 本番設定（実フォームのURL）に依存しないよう、テストでは最初に未設定へ戻す（送信テストの箇所で改めてダミーを設定する）
+    pg.evaluate("() => { const c = window.__rogue.RANKING_CFG; c.formUrl = ''; c.entryName = ''; c.entryFloor = ''; }")
     pg.evaluate('''() => {
         const R = window.__rogue;
         R.setHeadless(false); R.noTimer(true);
