@@ -33,11 +33,13 @@
 - `tools/test_p3.py` … P3機能テスト（G〜I解放・★8/機神の核・進化枠第2段階・前編完・オーラ・敵ID/ドット絵）
 - `tools/test_p4.py` … P4機能テスト（J〜O解放・★9/創世の欠片・怒り形態・ゲームクリア・神話レア・Lv140）
 - `tools/test_p5a.py` … P5a機能テスト（天蓋の塔・解放・祝福30種・コイン・交換所★8神話・称号・ドロップ）
+- `tools/test_p5b1.py` … P5b-1機能テスト（深淵ダンジョン・呪い・★9神話・複数特性・極意・進化第3段階）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
 - `docs/dev_notes_P3.md` … P3（G〜I前編完成）で決定したバランス数値・仕様・BOT検証結果メモ
 - `docs/dev_notes_P4.md` … P4（J〜O後編完成）で決定したバランス数値・仕様・BOT検証結果メモ
 - `docs/dev_notes_P5a.md` … P5a（無限回廊「天蓋の塔」）で決定した数値・仕様・BOT検証結果メモ
+- `docs/dev_notes_P5b1.md` … P5b-1（深淵・進化第3段階・極意・★9神話）で決定した数値・仕様・BOT検証結果メモ
 - `manifest.json` / `sw.js` … PWA設定・オフライン対応
 - `icon-*.png` ほか … アイコン
 
@@ -60,12 +62,14 @@ python3 tools/build.py
 python3 tools/bot.py                    # 全75セル制覇BOT・周回モード（3シード）
 python3 tools/bot.py --mode linear      # 線形モード（各セル1回ずつ、レベル差確認）
 python3 tools/bot.py --mode tower       # 無限回廊「天蓋の塔」BOT（3シード）
-python3 tools/test_save_migration.py    # v1/v2/v3セーブ→v4移行
+python3 tools/bot.py --mode abyss       # 深淵ダンジョンBOT（難度1〜10、3シード）
+python3 tools/test_save_migration.py    # v1/v2/v3/v4セーブ→v5移行
 python3 tools/test_p1.py                # P1機能テスト（A〜Cドロップ上限・解放ルール・戦力値・ビルド再現性）
 python3 tools/test_p2.py                # P2機能テスト（D〜F解放・ドロップ上限・時の欠片/★7・30SPスキル・ドット絵）
 python3 tools/test_p3.py                # P3機能テスト（G〜I解放・★8/機神の核・進化第2段階・前編完・オーラ）
 python3 tools/test_p4.py                # P4機能テスト（J〜O解放・★9/創世の欠片・怒り形態・ゲームクリア・神話レア・Lv140）
 python3 tools/test_p5a.py               # P5a機能テスト（天蓋の塔・祝福30種・コイン・交換所・称号）
+python3 tools/test_p5b1.py              # P5b-1機能テスト（深淵・呪い・★9神話・複数特性・極意・進化第3段階）
 ```
 
 - BOTの目安（P4・全75セル / P5a・無限回廊）:

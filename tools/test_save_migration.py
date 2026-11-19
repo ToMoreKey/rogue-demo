@@ -21,7 +21,7 @@ def check(name, cond, detail=''):
 def strip_ids(o):
     """読み込み時に装備IDは振り直されるので、比較では無視する"""
     if isinstance(o, dict):
-        return {k: strip_ids(v) for k, v in o.items() if k != 'id'}
+        return {k: strip_ids(v) for k, v in o.items() if k not in ('id', 'props')}
     if isinstance(o, list):
         return [strip_ids(x) for x in o]
     return o
@@ -52,8 +52,8 @@ with sync_playwright() as pw:
     # 1. v1 → v3 連鎖変換と内容の保持
     ctx, pg, errs = fresh_page(b, raw_v1)
     stored = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('v1 save is rewritten as v4', stored.get('v') == 4, stored.get('v'))
-    check('SAVE_VERSION is 4', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 4)
+    check('v1 save is rewritten as v5', stored.get('v') == 5, stored.get('v'))
+    check('SAVE_VERSION is 5', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 5)
     sp, op = stored['p'], v1['p']
     for k in ['lv', 'exp', 'sp', 'gold', 'bank', 'hp', 'mp', 'skills', 'skillPts', 'passiveSkills',
               'equippedSkills', 'potions', 'stats', 'weapon', 'armor', 'bag']:
@@ -84,13 +84,13 @@ with sync_playwright() as pw:
     check('v3 save is stable across reload', before == after)
     pg.evaluate('()=>{G.p.gold+=100; window.__rogue.save();}')
     s3 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('later saves are v4', s3['v'] == 4 and s3['p']['gold'] == op['gold'] + 100)
+    check('later saves are v5', s3['v'] == 5 and s3['p']['gold'] == op['gold'] + 100)
     ctx.close()
 
-    # 2. v2 → v4 変換 (Lv22: A上級 rec18 がクリア済みとなり A超級が解放される)
+    # 2. v2 → v5 変換 (Lv22: A上級 rec18 がクリア済みとなり A超級が解放される)
     ctx, pg, errs = fresh_page(b, raw_v2)
     stored2 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('v2 save is rewritten as v4', stored2.get('v') == 4, stored2.get('v'))
+    check('v2 save is rewritten as v5', stored2.get('v') == 5, stored2.get('v'))
     check('v2->v3 A.high cleared & super unlocked',
           pg.evaluate('()=>window.__rogue.isDiffUnlocked(G.p, window.__rogue.DUNGEONS[0], window.__rogue.DIFFS[3])') is True)
     check('v2->v3 C.high (rec33) not cleared & C.super locked',
@@ -100,20 +100,22 @@ with sync_playwright() as pw:
     check('no page errors (v2 migration)', errs == [], errs)
     ctx.close()
 
-    # 3. v が無いセーブは v1 扱い → v4 になる
+    # 3. v が無いセーブは v1 扱い → v5 になる
     nov = dict(v1); nov.pop('v')
     ctx, pg, errs = fresh_page(b, json.dumps(nov))
-    check('save without v is treated as v1 -> v4', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 4)
+    check('save without v is treated as v1 -> v5', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 5)
     ctx.close()
 
-    # 4. migrateSave 単体 (v1->v4, v3->v4)
+    # 4. migrateSave 単体 (v1->v5, v3->v5, v4->v5)
     ctx, pg, errs = fresh_page(b)
     r = pg.evaluate('''(v1)=>{const m=window.__rogue.migrateSave;
       const a=m(JSON.parse(JSON.stringify(v1)));
       const v3=m({v:3,p:{lv:50,cleared:{},bagCap:60}});
-      return {null1:m(null), noP:m({v:1}), v1v:a&&a.v, same:m(a)===a, v3v:v3&&v3.v, hasTower:!!(v3&&v3.p&&v3.p.tower), future:m({v:99,p:{}}).v, str:m('x')};}''', v1)
+      const v4=m({v:4,p:{lv:80,cleared:{},bagCap:60,tower:{best:10,coins:5,totalCoins:5,title:null,titles:[]},weapon:{id:1,slot:'weapon',star:5,rarity:1,roll:0.9,prop:'flame'}}});
+      return {null1:m(null), noP:m({v:1}), v1v:a&&a.v, same:m(a)===a, v3v:v3&&v3.v, hasTower:!!(v3&&v3.p&&v3.p.tower), v4v:v4&&v4.v, hasAbyss:!!(v4&&v4.p&&v4.p.abyss), hasMastery:!!(v4&&v4.p&&v4.p.mastery), propsOk:Array.isArray(v4&&v4.p&&v4.p.weapon&&v4.p.weapon.props)&&v4.p.weapon.props[0]==='flame', future:m({v:99,p:{}}).v, str:m('x')};}''', v1)
     check('migrateSave(null/garbage) -> null', r['null1'] is None and r['noP'] is None and r['str'] is None, r)
-    check('migrateSave v1 -> v4, v3 -> v4 (+tower), v4 unchanged', r['v1v'] == 4 and r['same'] and r['v3v'] == 4 and r['hasTower'])
+    check('migrateSave v1 -> v5, v3 -> v5 (+tower), v4 -> v5 (+abyss/+mastery/+props), v5 unchanged',
+          r['v1v'] == 5 and r['same'] and r['v3v'] == 5 and r['hasTower'] and r['v4v'] == 5 and r['hasAbyss'] and r['hasMastery'] and r['propsOk'], r)
     check('migrateSave leaves future versions alone', r['future'] == 99)
     ctx.close()
 
@@ -124,10 +126,10 @@ with sync_playwright() as pw:
         check('%s -> new game, no crash' % label, ok and errs == [], errs)
         ctx.close()
 
-    # 6. セーブなしの新規 → 保存すると v4
+    # 6. セーブなしの新規 → 保存すると v5
     ctx, pg, errs = fresh_page(b)
     pg.evaluate('()=>window.__rogue.save()')
-    check('new game saves as v4', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 4)
+    check('new game saves as v5', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 5)
     ctx.close()
     b.close()
 

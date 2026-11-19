@@ -95,6 +95,51 @@ BOT = r"""
    };
  };
 
+ if(mode==='abyss'){
+   const results=[];
+   for(const bld of ['std','enh']){
+     const perDiff=[];
+     for(let lv=1; lv<=10; lv++){
+       let clears=0, totalTicks=0, trials=5;
+       for(let tr=0; tr<trials; tr++){
+         const p=G.p=R.newPlayer();
+         p.lv=bld==='std'?126:132; p.sp=bld==='std'?170:320; p.ending=true; p.gold=200000;
+         for(const d of R.DUNGEONS){ p.cleared[d.id]={novice:true,mid:true,high:true,super:true,extreme:true}; }
+         p.abyss={best:10,cleared:{1:true,2:true,3:true,4:true,5:true,6:true,7:true,8:true,9:true,10:true}};
+         p.potions={hp:25,mp:25};
+         if(bld==='std'){
+           p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=3; p.weapon.roll=0.9; p.weapon.prop='flame'; p.weapon.props=['flame'];
+           p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=3; p.armor.roll=0.9;
+           R.ACTS.spAlloc({tree:'sword',amount:30}); R.ACTS.spAlloc({tree:'magic',amount:30}); R.ACTS.spAlloc({tree:'life',amount:30});
+           R.ACTS.spAlloc({tree:'warrior',amount:20}); R.ACTS.spAlloc({tree:'mage',amount:20}); R.ACTS.spAlloc({tree:'cleric',amount:20}); R.ACTS.spAlloc({tree:'hero',amount:20});
+           p.equippedSkills=['requiem','hagun','starSword'];
+         }else{
+           p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=4; p.weapon.roll=1.0; p.weapon.prop='flame'; p.weapon.props=['flame'];
+           p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=4; p.armor.roll=1.0;
+           R.ACTS.spAlloc({tree:'sword',amount:30}); R.ACTS.spAlloc({tree:'magic',amount:30}); R.ACTS.spAlloc({tree:'life',amount:30});
+           R.ACTS.spAlloc({tree:'warrior',amount:30}); R.ACTS.spAlloc({tree:'mage',amount:30}); R.ACTS.spAlloc({tree:'cleric',amount:30}); R.ACTS.spAlloc({tree:'hero',amount:30});
+           for(const m of R.MASTERY_LIST) for(let k=0;k<8;k++) R.ACTS.masteryUp({id:m.id});
+           p.equippedSkills=['goddess','heroAdvent','skyStar'];
+         }
+         p.hp=R.maxHp(p); p.mp=R.maxMp(p);
+         let t=0;
+         R.startAbyssRun(lv);
+         while(G.run && t<10000){
+           const hpR=G.p.hp/R.maxHp(G.p);
+           if(hpR<0.35&&G.p.potions.hp>0) R.usePotion('hp');
+           else if(G.p.mp<(bld==='enh'?85:40)&&G.p.potions.mp>0) R.usePotion('mp');
+           R.tick(); t++;
+         }
+         totalTicks+=t;
+         if(G.last && G.last.result==='clear') clears++;
+       }
+       perDiff.push({lv, clearRate:Math.round(clears/trials*100), avgTicks:Math.round(totalTicks/trials)});
+     }
+     results.push({build:bld, seed, perDiff});
+   }
+   return {mode:'abyss', seed, results};
+ }
+
  if(mode==='tower'){
    const p=G.p;
    p.lv=126; p.sp=200; p.ending=true; p.gold=100000;
@@ -182,7 +227,7 @@ BOT = r"""
 """
 
 ap = argparse.ArgumentParser()
-ap.add_argument('--mode', choices=['loop', 'linear', 'tower'], default='loop')
+ap.add_argument('--mode', choices=['loop', 'linear', 'tower', 'abyss'], default='loop')
 ap.add_argument('--bless', choices=['opt', 'rand'], default='opt')
 ap.add_argument('html', nargs='?', default=os.path.join(os.path.dirname(__file__), '..', 'index.html'))
 args = ap.parse_args()

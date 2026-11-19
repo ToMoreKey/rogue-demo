@@ -188,7 +188,8 @@ function renderDungeonSelect() {
       <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
         ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
-      </div></article>` + (() => {
+      </div></article>`;
+  })() + (() => {
     const abSt = isAbyssUnlocked(p0);
     const abLv = clamp(G.abyssLv || 1, 1, 10);
     const abDiff = ABYSS_CFG.diffs[abLv];
