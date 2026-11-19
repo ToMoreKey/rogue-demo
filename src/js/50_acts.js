@@ -252,6 +252,10 @@ const ACTS = {
     const h = DEX_ITEM_HINTS[d.hkey] || '';
     el.textContent = d.label ? `${d.label}: ${h}` : h;
   },
+  claimDex(d) {
+    const res = claimDexReward(d.key);
+    if (res && res.ok) openDexModal(G.dexTab || 'enemies');
+  },
   towerRanking() { G.rankMsg = ''; openRankingModal(); },
   saveRankOptIn() {
     if (!isRankingSubmitConfigured()) { toast('ランキング送信は準備中です'); return; }

@@ -763,13 +763,24 @@ function openDexModal(tab = 'enemies') {
   }
   const gotTotal = itemKeys.filter(x => itMap[x.key]).length;
 
+  const rewardBtn = (key, ready, label) => {
+    const claimed = !!(dex.rewards && dex.rewards[key]);
+    if (claimed) return `<span class="badge rec">✓ 受取済</span>`;
+    if (!ready) return `<span class="sub">${esc(label)}</span>`;
+    if (!p.ending) return `<span class="sub">🔒 本編クリアで受け取り可能</span>`;
+    return `<button class="btn small primary" data-act="claimDex" data-key="${key}">🎁 受け取る（${esc(label)}）</button>`;
+  };
+
   let body = '';
   if (G.dexTab === 'enemies') {
-    body = `<p class="sub" style="margin:0">発見 <b>${seenTotal} / ${allEnemies.length}</b></p>
+    const allEnReady = seenTotal === allEnemies.length;
+    body = `<div class="dex-gh"><span class="sub">発見 <b>${seenTotal} / ${allEnemies.length}</b></span>${rewardBtn('all_enemies', allEnReady, '🪙100＋称号「図鑑博士」')}</div>
       <div class="dex-scroll">${groups.map(g => {
         const gSeen = g.list.filter(e => enMap[e.id] && enMap[e.id].seen).length;
+        const reqList = g.id === 'O' ? g.list.slice(0, 6) : g.list;
+        const gReady = reqList.every(e => enMap[e.id] && enMap[e.id].seen);
         return `<div class="dex-grp">
-          <div class="dex-gh"><b>${esc(g.title)}</b><span class="sub">発見 ${gSeen}/${g.list.length}</span></div>
+          <div class="dex-gh"><b>${esc(g.title)}</b><span class="sub">発見 ${gSeen}/${g.list.length}</span>${rewardBtn('grp_' + g.id, gReady, `🪙${g.rewardCoins}`)}</div>
           <div class="dex-grid">${g.list.map(e => {
             const rec = enMap[e.id], seen = !!(rec && rec.seen);
             return `<div class="dex-card">
@@ -797,7 +808,8 @@ function openDexModal(tab = 'enemies') {
           </div>`;
         }).join('')}</div></div>`;
     };
-    body = `<p class="sub" style="margin:0">入手 <b>${gotTotal} / ${itemKeys.length}</b></p>
+    const allItReady = gotTotal === itemKeys.length;
+    body = `<div class="dex-gh"><span class="sub">入手 <b>${gotTotal} / ${itemKeys.length}</b></span>${rewardBtn('all_items', allItReady, '🪙100＋称号「蒐集家」')}</div>
       <div class="dex-hint" id="dex-hint-box">未入手の装備をタップすると入手条件のヒントが表示されます。</div>
       <div class="dex-scroll">
         ${renderSlotGrid('weapon', '武器（★1〜★9）', false)}

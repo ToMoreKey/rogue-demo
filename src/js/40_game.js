@@ -911,3 +911,50 @@ async function submitTowerRank(best, opts = {}) {
   }
 }
 
+function claimDexReward(key) {
+  const p = G.p;
+  if (!p || !p.ending) { toast('本編クリアで受け取り可能になります'); return { ok: false, reason: 'locked' }; }
+  p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
+  p.dex.rewards = p.dex.rewards || {};
+  if (p.dex.rewards[key]) { toast('すでに受け取り済みです'); return { ok: false, reason: 'claimed' }; }
+  const enMap = p.dex.enemies || {}, itMap = p.dex.items || {};
+  const groups = dexEnemyGroups();
+  let coins = 0, titleId = null;
+  if (key === 'all_enemies') {
+    const all = groups.flatMap(g => g.list);
+    if (!all.every(e => enMap[e.id] && enMap[e.id].seen)) return { ok: false, reason: 'incomplete' };
+    coins = 100; titleId = 't_dex_en';
+  } else if (key === 'all_items') {
+    const req = [];
+    for (const sl of ['weapon', 'armor']) {
+      for (const st of DEX_STARS) req.push(`${sl}_${st}`);
+      for (const st of DEX_MYTHICS) req.push(`${sl}_m${st}`);
+    }
+    if (!req.every(k => itMap[k])) return { ok: false, reason: 'incomplete' };
+    coins = 100; titleId = 't_dex_it';
+  } else if (key && key.startsWith('grp_')) {
+    const gid = key.slice(4);
+    const g = groups.find(x => x.id === gid);
+    if (!g) return { ok: false, reason: 'invalid' };
+    const reqList = gid === 'O' ? g.list.slice(0, 6) : g.list; // 通常敵5＋ボス1（深淵は主3体）
+    if (!reqList.every(e => enMap[e.id] && enMap[e.id].seen)) return { ok: false, reason: 'incomplete' };
+    coins = g.rewardCoins;
+  } else {
+    return { ok: false, reason: 'invalid' };
+  }
+  p.dex.rewards[key] = true;
+  p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 };
+  p.tower.coins = (p.tower.coins || 0) + coins;
+  p.tower.totalCoins = (p.tower.totalCoins || 0) + coins;
+  let titleName = '';
+  if (titleId) {
+    p.tower.titles = p.tower.titles || [];
+    if (!p.tower.titles.includes(titleId)) p.tower.titles.push(titleId);
+    const tObj = TOWER_TITLES.find(t => t.id === titleId);
+    titleName = tObj ? tObj.name : '';
+  }
+  save();
+  toast(titleName ? `回廊コイン ${coins}枚と称号「${titleName}」を獲得！` : `回廊コイン ${coins}枚を獲得！`);
+  return { ok: true, coins, title: titleName };
+}
+

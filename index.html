@@ -933,7 +933,9 @@ const TOWER_TITLES = [
   { id: 't_c3',   name: '祝福を纏う者',   desc: '交換所で獲得',             price: 700 },
   { id: 't_c4',   name: '無限の求道者',   desc: '交換所で獲得',             price: 1100 },
   { id: 't_c5',   name: '終焉を超えし者', desc: '交換所で獲得',             price: 1600 },
-  { id: 't_c6',   name: '天蓋の守護神',   desc: '交換所で獲得',             price: 2400 }
+  { id: 't_c6',   name: '天蓋の守護神',   desc: '交換所で獲得',             price: 2400 },
+  { id: 't_dex_en', name: '図鑑博士',     desc: '敵図鑑を全コンプリートで獲得' },
+  { id: 't_dex_it', name: '蒐集家',       desc: '装備図鑑を全コンプリートで獲得' }
 ];
 /* ================= 深淵ダンジョンデータ ================= */
 const ABYSS_CURSES = [
@@ -2638,6 +2640,53 @@ async function submitTowerRank(best, opts = {}) {
   }
 }
 
+function claimDexReward(key) {
+  const p = G.p;
+  if (!p || !p.ending) { toast('本編クリアで受け取り可能になります'); return { ok: false, reason: 'locked' }; }
+  p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
+  p.dex.rewards = p.dex.rewards || {};
+  if (p.dex.rewards[key]) { toast('すでに受け取り済みです'); return { ok: false, reason: 'claimed' }; }
+  const enMap = p.dex.enemies || {}, itMap = p.dex.items || {};
+  const groups = dexEnemyGroups();
+  let coins = 0, titleId = null;
+  if (key === 'all_enemies') {
+    const all = groups.flatMap(g => g.list);
+    if (!all.every(e => enMap[e.id] && enMap[e.id].seen)) return { ok: false, reason: 'incomplete' };
+    coins = 100; titleId = 't_dex_en';
+  } else if (key === 'all_items') {
+    const req = [];
+    for (const sl of ['weapon', 'armor']) {
+      for (const st of DEX_STARS) req.push(`${sl}_${st}`);
+      for (const st of DEX_MYTHICS) req.push(`${sl}_m${st}`);
+    }
+    if (!req.every(k => itMap[k])) return { ok: false, reason: 'incomplete' };
+    coins = 100; titleId = 't_dex_it';
+  } else if (key && key.startsWith('grp_')) {
+    const gid = key.slice(4);
+    const g = groups.find(x => x.id === gid);
+    if (!g) return { ok: false, reason: 'invalid' };
+    const reqList = gid === 'O' ? g.list.slice(0, 6) : g.list; // 通常敵5＋ボス1（深淵は主3体）
+    if (!reqList.every(e => enMap[e.id] && enMap[e.id].seen)) return { ok: false, reason: 'incomplete' };
+    coins = g.rewardCoins;
+  } else {
+    return { ok: false, reason: 'invalid' };
+  }
+  p.dex.rewards[key] = true;
+  p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 };
+  p.tower.coins = (p.tower.coins || 0) + coins;
+  p.tower.totalCoins = (p.tower.totalCoins || 0) + coins;
+  let titleName = '';
+  if (titleId) {
+    p.tower.titles = p.tower.titles || [];
+    if (!p.tower.titles.includes(titleId)) p.tower.titles.push(titleId);
+    const tObj = TOWER_TITLES.find(t => t.id === titleId);
+    titleName = tObj ? tObj.name : '';
+  }
+  save();
+  toast(titleName ? `回廊コイン ${coins}枚と称号「${titleName}」を獲得！` : `回廊コイン ${coins}枚を獲得！`);
+  return { ok: true, coins, title: titleName };
+}
+
 const ACTS = {
   nav(d) {
     const v = d.v;
@@ -2891,6 +2940,10 @@ const ACTS = {
     if (!el) return;
     const h = DEX_ITEM_HINTS[d.hkey] || '';
     el.textContent = d.label ? `${d.label}: ${h}` : h;
+  },
+  claimDex(d) {
+    const res = claimDexReward(d.key);
+    if (res && res.ok) openDexModal(G.dexTab || 'enemies');
   },
   towerRanking() { G.rankMsg = ''; openRankingModal(); },
   saveRankOptIn() {
@@ -3764,13 +3817,24 @@ function openDexModal(tab = 'enemies') {
   }
   const gotTotal = itemKeys.filter(x => itMap[x.key]).length;
 
+  const rewardBtn = (key, ready, label) => {
+    const claimed = !!(dex.rewards && dex.rewards[key]);
+    if (claimed) return `<span class="badge rec">✓ 受取済</span>`;
+    if (!ready) return `<span class="sub">${esc(label)}</span>`;
+    if (!p.ending) return `<span class="sub">🔒 本編クリアで受け取り可能</span>`;
+    return `<button class="btn small primary" data-act="claimDex" data-key="${key}">🎁 受け取る（${esc(label)}）</button>`;
+  };
+
   let body = '';
   if (G.dexTab === 'enemies') {
-    body = `<p class="sub" style="margin:0">発見 <b>${seenTotal} / ${allEnemies.length}</b></p>
+    const allEnReady = seenTotal === allEnemies.length;
+    body = `<div class="dex-gh"><span class="sub">発見 <b>${seenTotal} / ${allEnemies.length}</b></span>${rewardBtn('all_enemies', allEnReady, '🪙100＋称号「図鑑博士」')}</div>
       <div class="dex-scroll">${groups.map(g => {
         const gSeen = g.list.filter(e => enMap[e.id] && enMap[e.id].seen).length;
+        const reqList = g.id === 'O' ? g.list.slice(0, 6) : g.list;
+        const gReady = reqList.every(e => enMap[e.id] && enMap[e.id].seen);
         return `<div class="dex-grp">
-          <div class="dex-gh"><b>${esc(g.title)}</b><span class="sub">発見 ${gSeen}/${g.list.length}</span></div>
+          <div class="dex-gh"><b>${esc(g.title)}</b><span class="sub">発見 ${gSeen}/${g.list.length}</span>${rewardBtn('grp_' + g.id, gReady, `🪙${g.rewardCoins}`)}</div>
           <div class="dex-grid">${g.list.map(e => {
             const rec = enMap[e.id], seen = !!(rec && rec.seen);
             return `<div class="dex-card">
@@ -3798,7 +3862,8 @@ function openDexModal(tab = 'enemies') {
           </div>`;
         }).join('')}</div></div>`;
     };
-    body = `<p class="sub" style="margin:0">入手 <b>${gotTotal} / ${itemKeys.length}</b></p>
+    const allItReady = gotTotal === itemKeys.length;
+    body = `<div class="dex-gh"><span class="sub">入手 <b>${gotTotal} / ${itemKeys.length}</b></span>${rewardBtn('all_items', allItReady, '🪙100＋称号「蒐集家」')}</div>
       <div class="dex-hint" id="dex-hint-box">未入手の装備をタップすると入手条件のヒントが表示されます。</div>
       <div class="dex-scroll">
         ${renderSlotGrid('weapon', '武器（★1〜★9）', false)}

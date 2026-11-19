@@ -79,5 +79,7 @@ const TOWER_TITLES = [
   { id: 't_c3',   name: '祝福を纏う者',   desc: '交換所で獲得',             price: 700 },
   { id: 't_c4',   name: '無限の求道者',   desc: '交換所で獲得',             price: 1100 },
   { id: 't_c5',   name: '終焉を超えし者', desc: '交換所で獲得',             price: 1600 },
-  { id: 't_c6',   name: '天蓋の守護神',   desc: '交換所で獲得',             price: 2400 }
+  { id: 't_c6',   name: '天蓋の守護神',   desc: '交換所で獲得',             price: 2400 },
+  { id: 't_dex_en', name: '図鑑博士',     desc: '敵図鑑を全コンプリートで獲得' },
+  { id: 't_dex_it', name: '蒐集家',       desc: '装備図鑑を全コンプリートで獲得' }
 ];
