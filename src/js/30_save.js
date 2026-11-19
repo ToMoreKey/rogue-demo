@@ -1,7 +1,7 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -79,6 +79,14 @@ const migrations = {
     }
     p.dex = dex;
     return Object.assign({}, d, { v: 6, p });
+  },
+  // v6 → v7: 実績(ach)・保留コイン(pendingAchCoins)・実績用統計(achStats)を追加
+  6: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.ach || typeof p.ach !== 'object') p.ach = {};
+    if (typeof p.pendingAchCoins !== 'number') p.pendingAchCoins = 0;
+    if (!p.achStats || typeof p.achStats !== 'object') p.achStats = { totalGold: 0, blessings: 0, noDmgBoss: false };
+    return Object.assign({}, d, { v: 7, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -173,6 +181,17 @@ function load() {
       }
     }
     for (const it of [p.weapon, p.armor, ...p.bag]) recordDexItem(p, it);
+    p.ach = {};
+    if (s.ach && typeof s.ach === 'object') {
+      for (const [k, v] of Object.entries(s.ach)) if (typeof v === 'string' && v) p.ach[k] = v;
+    }
+    p.pendingAchCoins = num(s.pendingAchCoins, 0);
+    p.achStats = { totalGold: 0, blessings: 0, noDmgBoss: false };
+    if (s.achStats && typeof s.achStats === 'object') {
+      p.achStats.totalGold = num(s.achStats.totalGold, 0);
+      p.achStats.blessings = num(s.achStats.blessings, 0);
+      p.achStats.noDmgBoss = !!s.achStats.noDmgBoss;
+    }
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
@@ -202,6 +221,8 @@ function load() {
     if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
+    if (migrated || !s.ach) checkAchievements(null, true);
+    if (p.ending && p.pendingAchCoins > 0) flushPendingAchCoins(p, true);
     if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; }
     if (d.sel) for (const dg of DUNGEONS) {
       const df = diffOf(d.sel[dg.id]);

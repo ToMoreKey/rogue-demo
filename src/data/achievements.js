@@ -48,8 +48,8 @@ const ACHIEVEMENTS = [
     cond: p => !!(p.tower && p.tower.best >= 100),
     prog: p => `最高 ${(p.tower && p.tower.best) || 0} / 100階` },
   { id: 'tw_bless50', cat: '回廊', name: '祝福されし者', desc: '天蓋の塔で祝福を累計50個取得', coins: 25, titleId: 'a_bless', ev: 'bless',
-    cond: p => !!(p.stats && (p.stats.blessings || 0) >= 50),
-    prog: p => `${(p.stats && p.stats.blessings) || 0} / 50個` },
+    cond: p => !!(p.achStats && (p.achStats.blessings || 0) >= 50),
+    prog: p => `${(p.achStats && p.achStats.blessings) || 0} / 50個` },
   { id: 'tw_coin1k', cat: '回廊', name: '回廊の富豪', desc: '回廊コインを累計1,000枚獲得', coins: 30, ev: 'run',
     cond: p => !!(p.tower && (p.tower.totalCoins || 0) >= 1000),
     prog: p => `${fmt((p.tower && p.tower.totalCoins) || 0)} / 1,000枚` },
@@ -95,8 +95,8 @@ const ACHIEVEMENTS = [
     cond: p => (p.stats && p.stats.runs || 0) >= 100,
     prog: p => `${fmt((p.stats && p.stats.runs) || 0)} / 100回` },
   { id: 'st_gold1m', cat: '累計', name: '黄金王', desc: '累計獲得ゴールド 1,000,000G', coins: 30, titleId: 'a_gold1m', ev: 'gold',
-    cond: p => (p.stats && p.stats.totalGold || 0) >= 1000000,
-    prog: p => `${fmt((p.stats && p.stats.totalGold) || 0)} / 1,000,000G` },
+    cond: p => (p.achStats && p.achStats.totalGold || 0) >= 1000000,
+    prog: p => `${fmt((p.achStats && p.achStats.totalGold) || 0)} / 1,000,000G` },
 
   // 図鑑 (2)
   { id: 'dx_en', cat: '図鑑', name: '完全なる魔物録', desc: '敵図鑑（全94種）をコンプリート', coins: 50, ev: 'dex',
@@ -106,5 +106,5 @@ const ACHIEVEMENTS = [
 
   // やり込み (1, hidden)
   { id: 'sp_nodmg_boss', cat: 'やり込み', name: '完全なる勝利', desc: 'ボス戦でノーダメージ勝利', coins: 30, titleId: 'a_nodmg', hidden: true, ev: 'kill',
-    cond: p => !!(p.stats && p.stats.noDmgBoss) }
+    cond: p => !!(p.achStats && p.achStats.noDmgBoss) }
 ];

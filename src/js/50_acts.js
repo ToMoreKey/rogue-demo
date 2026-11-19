@@ -107,7 +107,7 @@ const ACTS = {
         }
       }
     }
-    save(); renderHUD(); renderStatus();
+    save(); checkAchievements('sp'); renderHUD(); renderStatus();
     // チュートリアル step 41: ヒールを取得したら step 5 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 41) {
       if (G.p.skills['heal']) {
@@ -329,7 +329,7 @@ const ACTS = {
     p.mastery[item.id] = cur + 1;
     p.hp = Math.min(maxHp(p), p.hp);
     p.mp = Math.min(maxMp(p), p.mp);
-    save(); renderHUD(); renderStatus();
+    save(); checkAchievements('sp'); renderHUD(); renderStatus();
   },
   masteryReset() {
     const p = G.p;

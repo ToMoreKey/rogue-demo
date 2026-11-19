@@ -138,7 +138,7 @@ function isDiffUnlocked(p, d, df) {
 }
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
@@ -159,4 +159,45 @@ function recordDexItem(p, it) {
   p.dex.items = p.dex.items || {};
   const k = dexItemKey(it);
   if (k) p.dex.items[k] = true;
+}
+function flushPendingAchCoins(p, silent = false) {
+  if (!p || !p.ending || !(p.pendingAchCoins > 0)) return 0;
+  const c = p.pendingAchCoins;
+  p.pendingAchCoins = 0;
+  p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 };
+  p.tower.coins = (p.tower.coins || 0) + c;
+  p.tower.totalCoins = (p.tower.totalCoins || 0) + c;
+  if (!silent && !G.headless) toast(`保留していた実績報酬 コイン+${c}枚を受け取りました！`);
+  return c;
+}
+function checkAchievements(ev = null, silent = false) {
+  const p = G.p;
+  if (!p) return [];
+  p.ach = p.ach || {};
+  p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 };
+  p.tower.titles = p.tower.titles || [];
+  const unlocked = [];
+  const today = new Date().toISOString().slice(0, 10);
+  for (const a of ACHIEVEMENTS) {
+    if (ev && a.ev !== ev) continue;
+    if (p.ach[a.id]) continue;
+    if (!a.cond(p)) continue;
+    p.ach[a.id] = today;
+    if (a.titleId && !p.tower.titles.includes(a.titleId)) p.tower.titles.push(a.titleId);
+    if (a.coins > 0) {
+      if (p.ending) {
+        p.tower.coins = (p.tower.coins || 0) + a.coins;
+        p.tower.totalCoins = (p.tower.totalCoins || 0) + a.coins;
+      } else {
+        p.pendingAchCoins = (p.pendingAchCoins || 0) + a.coins;
+      }
+    }
+    unlocked.push(a);
+    if (!silent && !G.headless) {
+      const tObj = a.titleId && TOWER_TITLES.find(t => t.id === a.titleId);
+      const tail = p.ending ? `🪙+${a.coins}` : `🪙+${a.coins}(クリア後付与)`;
+      toast(`🏆 実績解除「${a.name}」 ${tail}${tObj ? ` 称号「${tObj.name}」` : ''}`);
+    }
+  }
+  return unlocked;
 }

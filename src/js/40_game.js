@@ -43,6 +43,7 @@ function genMythic9(slot) {
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
   recordDexItem(p, it);
+  checkAchievements('item');
   if (G.opts.autoEquip && !hasProp(it, 'madness') && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
@@ -113,6 +114,9 @@ function pickBlessing(id) {
   run.tower.pendingChoice = null;
   run.phase = 'next';
   const p = G.p;
+  p.achStats = p.achStats || { totalGold: 0, blessings: 0, noDmgBoss: false };
+  p.achStats.blessings = (p.achStats.blessings || 0) + 1;
+  checkAchievements('bless');
   p.hp = Math.min(maxHp(p), p.hp);
   p.mp = Math.min(maxMp(p), p.mp);
   addLog(`祝福「${b.name}」を獲得！（${b.desc}）`, 'l-gold');
@@ -223,6 +227,7 @@ function spawnEnemy(boss, miniboss = false) {
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
   run.phase = 'battle';
+  if (boss) run.bossHitTaken = false;
   recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
   renderEnemy(true);
@@ -413,6 +418,7 @@ function enemyAct() {
   if (run.kishin > 0) run.kishin--;
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
+  if (run.enemy && run.enemy.boss && dmg > 0) run.bossHitTaken = true;
   addLog(`${en.name}の${en.raged ? '終焉の一撃' : '攻撃'}！ ${dmg}ダメージを受けた。`, 'l-dmg');
   popDamage('player', String(dmg), 'bad'); hitFlash('player');
   if (run.guard > 0) { run.guard--; if (run.guard === 0) addLog('鉄壁の効果が切れた。', 'l-sys'); }
@@ -471,7 +477,12 @@ function onKill() {
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
   addLog(`${en.name}を倒した！ EXP+${expGain}　${goldGain}G`, 'l-gold');
   p.gold += goldGain; run.gold += goldGain;
+  p.achStats = p.achStats || { totalGold: 0, blessings: 0, noDmgBoss: false };
+  p.achStats.totalGold = (p.achStats.totalGold || 0) + goldGain;
+  if (en.boss && !run.bossHitTaken) p.achStats.noDmgBoss = true;
   gainExp(expGain);
+  checkAchievements('kill');
+  checkAchievements('gold');
   if (run.tower) {
     if (te.killHeal > 0) {
       const h = Math.max(1, Math.round(maxHp(p) * te.killHeal)), b = p.hp;
@@ -562,6 +573,7 @@ function onKill() {
 function gainExp(n) {
   const p = G.p, run = G.run;
   if (p.lv >= LV_CAP) return;
+  const lv0 = p.lv;
   p.exp += n;
   while (p.lv < LV_CAP && p.exp >= expNeed(p.lv)) {
     p.exp -= expNeed(p.lv);
@@ -573,6 +585,7 @@ function gainExp(n) {
     addLog(`レベルアップ！ Lv${p.lv} になった。SP+1`, 'l-gold');
   }
   if (p.lv >= LV_CAP) p.exp = 0;
+  if (p.lv > lv0) checkAchievements('lv');
 }
 
 function finishRun(result) {
@@ -625,6 +638,7 @@ function finishRun(result) {
     if (run.d.id === 'O' && run.df.id === 'extreme' && firstClear && !p.ending) {
       p.ending = true;
       ending = true;
+      flushPendingAchCoins(p);
     }
     clearGold = Math.round(run.df.clearGold * DUNGEON_REWARD[run.d.id]);
     clearSp = firstClear ? run.df.clearSp : 0;
@@ -638,6 +652,12 @@ function finishRun(result) {
     p.hp = Math.max(1, Math.round(maxHp(p) * 0.25));
   }
   p.stats.runs++;
+  if (clearGold > 0) {
+    p.achStats = p.achStats || { totalGold: 0, blessings: 0, noDmgBoss: false };
+    p.achStats.totalGold = (p.achStats.totalGold || 0) + clearGold;
+  }
+  checkAchievements('run');
+  if (clearGold > 0) checkAchievements('gold');
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
@@ -742,6 +762,7 @@ function smithUpgrade(id) {
   p.gold -= cost;
   it.star++;
   recordDexItem(p, it);
+  checkAchievements('item');
   save();
   toast(`${itemName(it)} を ★${it.star} に強化した！`);
   renderAll();
@@ -954,6 +975,7 @@ function claimDexReward(key) {
     titleName = tObj ? tObj.name : '';
   }
   save();
+  checkAchievements('dex');
   toast(titleName ? `回廊コイン ${coins}枚と称号「${titleName}」を獲得！` : `回廊コイン ${coins}枚を獲得！`);
   return { ok: true, coins, title: titleName };
 }
