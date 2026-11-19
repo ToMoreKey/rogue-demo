@@ -244,6 +244,14 @@ const ACTS = {
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
+  openDex() { openDexModal(G.dexTab || 'enemies'); },
+  dexTab(d) { openDexModal(d.tab || 'enemies'); },
+  dexHint(d) {
+    const el = $('#dex-hint-box');
+    if (!el) return;
+    const h = DEX_ITEM_HINTS[d.hkey] || '';
+    el.textContent = d.label ? `${d.label}: ${h}` : h;
+  },
   towerRanking() { G.rankMsg = ''; openRankingModal(); },
   saveRankOptIn() {
     if (!isRankingSubmitConfigured()) { toast('ランキング送信は準備中です'); return; }

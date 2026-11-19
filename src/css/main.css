@@ -297,6 +297,21 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .rk-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .rk-in{flex:1;min-width:140px;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px}
 .rk-chk{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--muted);line-height:1.45;cursor:pointer}
+.dex-tabs{display:flex;gap:6px}
+.dex-scroll{max-height:58vh;overflow-y:auto;display:grid;gap:10px;padding-right:2px}
+.dex-grp{background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;display:grid;gap:6px}
+.dex-gh{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px}
+.dex-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dex-card{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;min-width:0;display:grid;gap:2px;justify-items:center}
+.dex-spr{width:48px;height:48px;display:grid;place-items:center}
+.dex-spr svg,.dex-spr img{width:44px;height:44px;object-fit:contain}
+.dex-sil{filter:brightness(0) contrast(1.2);opacity:.75}
+.dex-nm{font-size:11px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+.dex-sub{font-size:10px;color:var(--muted)}
+.dex-igrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dex-icard{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 4px;text-align:center;min-width:0;display:grid;gap:2px;justify-items:center;cursor:pointer}
+.dex-icard.r4{border-color:var(--r4)}
+.dex-hint{background:var(--ink);border:1px solid var(--accent);border-radius:4px;padding:6px 8px;font-size:12px;color:var(--fg)}
 
 @media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
