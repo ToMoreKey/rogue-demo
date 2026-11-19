@@ -73,13 +73,16 @@ with sync_playwright() as pw:
         const mp5 = R.maxMp(G.p);
         G.run = null;
         // 主の配置 (1-3: abyss_gula, 4-7: abyss_mirror, 8-10: abyss_deep)
+        R.setRng(() => 0.99); // 奇襲の霧(先制)が発動しないよう固定（未装備のテスト用プレイヤーが即死して不安定になるため）
         const bossAt = (lv) => {
             G.p.hp = R.maxHp(G.p); G.p.mp = R.maxMp(G.p);
             R.startAbyssRun(lv); G.run.floor = 50; R.spawnEnemy(true, false);
             const res = { id: G.run.enemy.id, name: G.run.enemy.name };
             G.run = null; return res;
         };
-        return { ae1, mp1, ae5, mp5, b1: bossAt(1), b3: bossAt(3), b6: bossAt(6), b10: bossAt(10) };
+        const rr = { ae1, mp1, ae5, mp5, b1: bossAt(1), b3: bossAt(3), b6: bossAt(6), b10: bossAt(10) };
+        R.setRng(null);
+        return rr;
     }''')
     check('Abyss curses accumulate cleanly (healHalf, ctPlus, mpDown, etc.)',
           curse_res['ae1']['healMult'] == 0.5 and curse_res['ae1']['ctAdd'] == 0
