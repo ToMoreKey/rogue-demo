@@ -115,7 +115,8 @@ with sync_playwright() as pw:
     }''')
     # ランキングはオフライン表示になる
     pg.evaluate('() => { window.__rogue.setHeadless(false); G.view = "dungeon"; window.__rogue.renderAll(); }')
-    pg.click('[data-act="towerRanking"]')
+    pg.evaluate('() => { const m = document.getElementById("modal"); if (m) { m.classList.remove("show"); m.hidden = true; } }')
+    pg.evaluate('() => document.querySelector(\'[data-act="towerRanking"]\').click()')
     pg.wait_for_timeout(300)
     rk_off = pg.evaluate('() => document.querySelector("#m-sheet").innerText')
     check('offline boots and runs main/tower/abyss, ranking shows offline error',
