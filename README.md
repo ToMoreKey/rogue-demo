@@ -42,6 +42,7 @@
 - `tools/test_p5b1.py` … P5b-1機能テスト（深淵ダンジョン・呪い・★9神話・複数特性・極意・進化第3段階）
 - `tools/test_p5b2.py` … P5b-2機能テスト（ランキング表示・検証・キャッシュ・自動/手動送信・セーブ）
 - `tools/test_p6a.py` … P6a機能テスト（敵図鑑94種・装備図鑑22種・移行・報酬・420pxレイアウト）
+- `tools/test_p6b.py` … P6b機能テスト（実績36種・保留コイン・隠し実績・称号装備・移行・420pxレイアウト）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
 - `docs/dev_notes_P3.md` … P3（G〜I前編完成）で決定したバランス数値・仕様・BOT検証結果メモ
@@ -80,6 +81,7 @@ python3 tools/test_p5a.py               # P5a機能テスト（天蓋の塔・�
 python3 tools/test_p5b1.py              # P5b-1機能テスト（深淵・呪い・★9神話・複数特性・極意・進化第3段階）
 python3 tools/test_p5b2.py              # P5b-2機能テスト（ランキング表示・検証・キャッシュ・送信・セーブ）
 python3 tools/test_p6a.py               # P6a機能テスト（敵図鑑・装備図鑑・移行・報酬・420pxレイアウト）
+python3 tools/test_p6b.py               # P6b機能テスト（実績・保留コイン・称号装備・移行・420pxレイアウト）
 ```
 
 - BOTの目安（P4・全75セル / P5a・無限回廊）:

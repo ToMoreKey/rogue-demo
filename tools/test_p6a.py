@@ -104,7 +104,7 @@ with sync_playwright() as pw:
         };
     }''')
     check('v5 -> v6 migration populates dex enemies (seen=true, kills=0) and owned items',
-          mig['v'] == 6 and mig['aBossSeen'] and mig['aBossKills'] == 0
+          mig['v'] >= 6 and mig['aBossSeen'] and mig['aBossKills'] == 0
           and not mig['cBossSeen'] and mig['w4'] and mig['a3'], mig)
 
     # 3. 図鑑モーダルUI・シルエット・「？？？」・ヒント・報酬制御・420pxレイアウト

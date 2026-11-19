@@ -72,6 +72,7 @@ with sync_playwright() as pw:
         let _s = 77;
         R.setRng(() => ((_s = (_s * 1664525 + 1013904223) >>> 0) / 4294967296));
         G.p = R.newPlayer(); G.p.ending = true; G.p.lv = 126;
+        G.p.ach = { eq_mythic: 'done' };
         R.startTowerRun();
         const atk0 = R.playerAtk(G.p);
         // 5F撃破で2択出現
@@ -125,6 +126,7 @@ with sync_playwright() as pw:
         const R = window.__rogue;
         R.setHeadless(true); R.noTimer(true);
         G.p = R.newPlayer(); G.p.ending = true; G.p.lv = 126;
+        G.p.ach = { eq_mythic: 'done' };
         const c10 = R.TOWER_CFG.coinsForFloor(10);
         const c50 = R.TOWER_CFG.coinsForFloor(50);
         R.startTowerRun();
@@ -149,6 +151,7 @@ with sync_playwright() as pw:
         const R = window.__rogue;
         R.setHeadless(true); R.noTimer(true);
         G.p = R.newPlayer(); G.p.ending = true; G.p.lv = 126;
+        G.p.ach = { eq_mythic: 'done' };
         const noStar9Mythic = !R.TOWER_SHOP.some(x => x.star >= 9);
         // コイン不足で買えない (300 < 600)
         G.p.tower.coins = 300;
@@ -182,7 +185,8 @@ with sync_playwright() as pw:
         R.setHeadless(true); R.noTimer(true);
         let _s = 55;
         R.setRng(() => ((_s = (_s * 1664525 + 1013904223) >>> 0) / 4294967296));
-        G.p = R.newPlayer(); G.p.ending = true; G.p.lv = 126; G.p.bagCap = 120;
+        G.p = R.newPlayer(); G.p.ending = true; G.p.lv = 126;
+        G.p.ach = { eq_mythic: 'done' }; G.p.bagCap = 120;
         G.tutorial = { done: true };
         R.startTowerRun();
         let maxRar = 0, max30Boss = 0, has9At60 = false;
