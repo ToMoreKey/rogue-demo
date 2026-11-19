@@ -24,6 +24,7 @@ JS_ORDER = [
     'data/tower.js',
     'data/abyss.js',
     'data/ranking.js',
+    'data/dex.js',
     'assets/enemy_images.js',
     'assets/char_skins.js',
     'data/skins.js',

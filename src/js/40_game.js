@@ -42,6 +42,7 @@ function genMythic9(slot) {
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
+  recordDexItem(p, it);
   if (G.opts.autoEquip && !hasProp(it, 'madness') && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
@@ -222,6 +223,7 @@ function spawnEnemy(boss, miniboss = false) {
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
   run.phase = 'battle';
+  recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
   renderEnemy(true);
   if (ae && ae.preempt > 0 && rnd() < ae.preempt) {
@@ -436,6 +438,7 @@ function battleRound() {
     en.id = (run.d.boss && run.d.boss.rageId) || 'o_boss_rage';
     en.name = (run.d.boss && run.d.boss.rageName) || '終焉神ニヒル・真';
     en.atk = Math.round(en.atk * 1.35);
+    recordDexEnemy(p, en.id, false);
     addLog('ニヒルの仮面が砕け散った！ 終焉神ニヒル・真へと姿を変え、攻撃力が激増した！', 'l-dmg');
     renderEnemy(true);
   }
@@ -463,6 +466,7 @@ function battleRound() {
 function onKill() {
   const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
+  recordDexEnemy(p, en.id, true);
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
   addLog(`${en.name}を倒した！ EXP+${expGain}　${goldGain}G`, 'l-gold');
@@ -737,6 +741,7 @@ function smithUpgrade(id) {
   }
   p.gold -= cost;
   it.star++;
+  recordDexItem(p, it);
   save();
   toast(`${itemName(it)} を ★${it.star} に強化した！`);
   renderAll();

@@ -1,7 +1,7 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -47,6 +47,38 @@ const migrations = {
     p.armor = fixProps(p.armor);
     if (Array.isArray(p.bag)) p.bag = p.bag.map(fixProps);
     return Object.assign({}, d, { v: 5, p });
+  },
+  // v5 → v6: 図鑑(dex)を追加し、クリア済みダンジョンの敵・所持装備を引き継ぐ
+  5: d => {
+    const p = Object.assign({}, d.p);
+    const dex = (p.dex && typeof p.dex === 'object') ? p.dex : { enemies: {}, items: {}, rewards: {} };
+    dex.enemies = dex.enemies || {};
+    dex.items = dex.items || { weapon_1: true, armor_1: true };
+    dex.rewards = dex.rewards || {};
+    if (p.cleared && typeof p.cleared === 'object') {
+      for (const dg of DUNGEONS) {
+        const sc = p.cleared[dg.id];
+        if (sc && Object.values(sc).some(Boolean)) {
+          for (const m of dg.mobs) dex.enemies[m.id] = dex.enemies[m.id] || { seen: true, kills: 0 };
+          dex.enemies[dg.boss.id] = dex.enemies[dg.boss.id] || { seen: true, kills: 0 };
+          if (dg.id === 'O' && sc.extreme && dg.boss.rageId) {
+            dex.enemies[dg.boss.rageId] = dex.enemies[dg.boss.rageId] || { seen: true, kills: 0 };
+          }
+        }
+      }
+    }
+    if (p.abyss && p.abyss.cleared) {
+      if (p.abyss.cleared[1] || p.abyss.cleared[2] || p.abyss.cleared[3]) dex.enemies.abyss_gula = dex.enemies.abyss_gula || { seen: true, kills: 0 };
+      if (p.abyss.cleared[4] || p.abyss.cleared[5] || p.abyss.cleared[6] || p.abyss.cleared[7]) dex.enemies.abyss_mirror = dex.enemies.abyss_mirror || { seen: true, kills: 0 };
+      if (p.abyss.cleared[8] || p.abyss.cleared[9] || p.abyss.cleared[10]) dex.enemies.abyss_deep = dex.enemies.abyss_deep || { seen: true, kills: 0 };
+    }
+    for (const it of [p.weapon, p.armor, ...(Array.isArray(p.bag) ? p.bag : [])]) {
+      if (it && typeof it === 'object' && it.slot && it.star) {
+        dex.items[`${it.slot}_${it.rarity === 4 ? 'm' : ''}${it.star}`] = true;
+      }
+    }
+    p.dex = dex;
+    return Object.assign({}, d, { v: 6, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -126,6 +158,21 @@ function load() {
         for (let lv = 1; lv <= 10; lv++) if (s.abyss.cleared[lv]) p.abyss.cleared[lv] = true;
       }
     }
+    p.dex = { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} };
+    if (s.dex && typeof s.dex === 'object') {
+      if (s.dex.enemies && typeof s.dex.enemies === 'object') {
+        for (const [k, v] of Object.entries(s.dex.enemies)) {
+          if (v && typeof v === 'object' && v.seen) p.dex.enemies[k] = { seen: true, kills: num(v.kills, 0) };
+        }
+      }
+      if (s.dex.items && typeof s.dex.items === 'object') {
+        for (const [k, v] of Object.entries(s.dex.items)) if (v) p.dex.items[k] = true;
+      }
+      if (s.dex.rewards && typeof s.dex.rewards === 'object') {
+        for (const [k, v] of Object.entries(s.dex.rewards)) if (v) p.dex.rewards[k] = true;
+      }
+    }
+    for (const it of [p.weapon, p.armor, ...p.bag]) recordDexItem(p, it);
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {

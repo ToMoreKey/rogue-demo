@@ -975,6 +975,47 @@ const RANKING_CFG = {
   maxFloor: 500,
   cacheKey: 'rogue_ranking_cache_v1'
 };
+// 図鑑データ（敵図鑑94種・装備図鑑22種）
+const DEX_STARS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+const DEX_MYTHICS = [8, 9];
+const DEX_ITEM_HINTS = {
+  1: '初期装備または序盤ダンジョンのドロップで入手',
+  2: 'ダンジョンA〜Cのドロップで入手',
+  3: 'ダンジョンA以降のドロップで入手',
+  4: 'ダンジョンB以降のドロップで入手',
+  5: 'ダンジョンC以降のドロップで入手',
+  6: '★5を鍛冶屋で強化（またはD〜Fのボスドロップ）',
+  7: '★6を時の欠片（D〜Fのボス）で強化（またはG・Hのボスドロップ）',
+  8: '★7を機神の核（H・Iのボス）で強化（またはI〜Nのボスドロップ）',
+  9: '★8を創世の欠片（Oのボス）で強化（またはOのボスドロップ）',
+  m8: '天蓋の塔の回廊コイン交換所で交換（600枚）',
+  m9: '深淵ダンジョンの主を撃破すると低確率でドロップ'
+};
+
+const dexItemKey = it => it ? `${it.slot}_${it.rarity === 4 ? 'm' : ''}${it.star}` : '';
+
+function dexEnemyGroups() {
+  const groups = DUNGEONS.map(d => {
+    const list = [
+      ...d.mobs.map(m => ({ id: m.id, name: m.name, shape: m.shape, dId: d.id, boss: false })),
+      { id: d.boss.id, name: d.boss.name, shape: d.boss.shape, dId: d.id, boss: true }
+    ];
+    if (d.id === 'O' && d.boss && d.boss.rageId) {
+      list.push({ id: d.boss.rageId, name: d.boss.rageName || '終焉神ニヒル・真', shape: d.boss.shape, dId: 'O', boss: true, bossFilter: 'hue-rotate(140deg) saturate(1.6)' });
+    }
+    return { id: d.id, title: `${d.id} ${d.name}`, rewardCoins: 5, list };
+  });
+  groups.push({
+    id: 'ABYSS',
+    title: '深淵の主',
+    rewardCoins: 15,
+    list: ['gula', 'mirror', 'deep'].map(k => {
+      const b = ABYSS_BOSSES[k];
+      return { id: b.id, name: b.name, shape: b.shape, dId: 'Z', boss: true };
+    })
+  });
+  return groups;
+}
 /* 敵の画像（高品質PNG）。id をキーに data URI を登録。無い敵は従来のドット絵(shape)で表示 */
 const ENEMY_IMG = {
   a_slime: { sz: 0.8, src: 'data:image/png;base64,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' },
@@ -1432,16 +1473,32 @@ function isDiffUnlocked(p, d, df) {
 }
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
   return p;
 }
+function recordDexEnemy(p, id, isKill = false) {
+  if (!p || !id) return;
+  p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
+  p.dex.enemies = p.dex.enemies || {};
+  const cur = p.dex.enemies[id] || { seen: true, kills: 0 };
+  cur.seen = true;
+  if (isKill) cur.kills = (cur.kills || 0) + 1;
+  p.dex.enemies[id] = cur;
+}
+function recordDexItem(p, it) {
+  if (!p || !it) return;
+  p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
+  p.dex.items = p.dex.items || {};
+  const k = dexItemKey(it);
+  if (k) p.dex.items[k] = true;
+}
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -1487,6 +1544,38 @@ const migrations = {
     p.armor = fixProps(p.armor);
     if (Array.isArray(p.bag)) p.bag = p.bag.map(fixProps);
     return Object.assign({}, d, { v: 5, p });
+  },
+  // v5 → v6: 図鑑(dex)を追加し、クリア済みダンジョンの敵・所持装備を引き継ぐ
+  5: d => {
+    const p = Object.assign({}, d.p);
+    const dex = (p.dex && typeof p.dex === 'object') ? p.dex : { enemies: {}, items: {}, rewards: {} };
+    dex.enemies = dex.enemies || {};
+    dex.items = dex.items || { weapon_1: true, armor_1: true };
+    dex.rewards = dex.rewards || {};
+    if (p.cleared && typeof p.cleared === 'object') {
+      for (const dg of DUNGEONS) {
+        const sc = p.cleared[dg.id];
+        if (sc && Object.values(sc).some(Boolean)) {
+          for (const m of dg.mobs) dex.enemies[m.id] = dex.enemies[m.id] || { seen: true, kills: 0 };
+          dex.enemies[dg.boss.id] = dex.enemies[dg.boss.id] || { seen: true, kills: 0 };
+          if (dg.id === 'O' && sc.extreme && dg.boss.rageId) {
+            dex.enemies[dg.boss.rageId] = dex.enemies[dg.boss.rageId] || { seen: true, kills: 0 };
+          }
+        }
+      }
+    }
+    if (p.abyss && p.abyss.cleared) {
+      if (p.abyss.cleared[1] || p.abyss.cleared[2] || p.abyss.cleared[3]) dex.enemies.abyss_gula = dex.enemies.abyss_gula || { seen: true, kills: 0 };
+      if (p.abyss.cleared[4] || p.abyss.cleared[5] || p.abyss.cleared[6] || p.abyss.cleared[7]) dex.enemies.abyss_mirror = dex.enemies.abyss_mirror || { seen: true, kills: 0 };
+      if (p.abyss.cleared[8] || p.abyss.cleared[9] || p.abyss.cleared[10]) dex.enemies.abyss_deep = dex.enemies.abyss_deep || { seen: true, kills: 0 };
+    }
+    for (const it of [p.weapon, p.armor, ...(Array.isArray(p.bag) ? p.bag : [])]) {
+      if (it && typeof it === 'object' && it.slot && it.star) {
+        dex.items[`${it.slot}_${it.rarity === 4 ? 'm' : ''}${it.star}`] = true;
+      }
+    }
+    p.dex = dex;
+    return Object.assign({}, d, { v: 6, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -1566,6 +1655,21 @@ function load() {
         for (let lv = 1; lv <= 10; lv++) if (s.abyss.cleared[lv]) p.abyss.cleared[lv] = true;
       }
     }
+    p.dex = { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} };
+    if (s.dex && typeof s.dex === 'object') {
+      if (s.dex.enemies && typeof s.dex.enemies === 'object') {
+        for (const [k, v] of Object.entries(s.dex.enemies)) {
+          if (v && typeof v === 'object' && v.seen) p.dex.enemies[k] = { seen: true, kills: num(v.kills, 0) };
+        }
+      }
+      if (s.dex.items && typeof s.dex.items === 'object') {
+        for (const [k, v] of Object.entries(s.dex.items)) if (v) p.dex.items[k] = true;
+      }
+      if (s.dex.rewards && typeof s.dex.rewards === 'object') {
+        for (const [k, v] of Object.entries(s.dex.rewards)) if (v) p.dex.rewards[k] = true;
+      }
+    }
+    for (const it of [p.weapon, p.armor, ...p.bag]) recordDexItem(p, it);
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
@@ -1650,6 +1754,7 @@ function genMythic9(slot) {
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
+  recordDexItem(p, it);
   if (G.opts.autoEquip && !hasProp(it, 'madness') && gearScore(it) > gearScore(p[slot])) {
     const old = p[slot];
     p[slot] = it;
@@ -1830,6 +1935,7 @@ function spawnEnemy(boss, miniboss = false) {
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
   run.phase = 'battle';
+  recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
   renderEnemy(true);
   if (ae && ae.preempt > 0 && rnd() < ae.preempt) {
@@ -2044,6 +2150,7 @@ function battleRound() {
     en.id = (run.d.boss && run.d.boss.rageId) || 'o_boss_rage';
     en.name = (run.d.boss && run.d.boss.rageName) || '終焉神ニヒル・真';
     en.atk = Math.round(en.atk * 1.35);
+    recordDexEnemy(p, en.id, false);
     addLog('ニヒルの仮面が砕け散った！ 終焉神ニヒル・真へと姿を変え、攻撃力が激増した！', 'l-dmg');
     renderEnemy(true);
   }
@@ -2071,6 +2178,7 @@ function battleRound() {
 function onKill() {
   const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
+  recordDexEnemy(p, en.id, true);
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
   addLog(`${en.name}を倒した！ EXP+${expGain}　${goldGain}G`, 'l-gold');
@@ -2345,6 +2453,7 @@ function smithUpgrade(id) {
   }
   p.gold -= cost;
   it.star++;
+  recordDexItem(p, it);
   save();
   toast(`${itemName(it)} を ★${it.star} に強化した！`);
   renderAll();
@@ -4082,7 +4191,7 @@ function boot() {
 window.G = G;
 window.__rogue = {
   migrateSave, SAVE_VERSION, SAVE_KEY, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
-  TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
+  TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
