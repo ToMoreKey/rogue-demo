@@ -15,6 +15,8 @@
   - `assets/` … base64画像（敵・装備アイコン・キャラ）。中身は書き換えない
   - `js/` … ロジック（`30_save.js` がセーブとバージョン移行）
 - `tools/build.py` … `src/` から `index.html` を生成
+- `docs/gemini_prompt_P6a.md` / `P6b.md` / `P6c.md` … P6（図鑑／実績・称号／チュートリアル・ヘルプ・PWA）をGeminiに依頼するための指示書
+- `docs/release_checklist.md` … 公開前チェックリスト（dev → main）
 - `docs/gemini_prompt_P5b2.md` … P5b-2（ランキングの送信・表示）をGeminiに依頼するための指示書
 - `docs/ranking_setup.md` … ランキング（Googleフォーム＋手動反映）の準備と更新の手順
 - `tools/make_ranking.py` … フォーム回答のCSVから `data/ranking.json` を作る
