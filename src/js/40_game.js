@@ -658,6 +658,10 @@ function finishRun(result) {
   }
   checkAchievements('run');
   if (clearGold > 0) checkAchievements('gold');
+  if (!p.abyssNoticeShown && isAbyssUnlocked(p).ok) {
+    p.abyssNoticeShown = true;
+    if (!G.headless) toast('🕳️ 深淵ダンジョンが解放されました！');
+  }
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,

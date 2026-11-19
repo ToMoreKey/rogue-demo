@@ -867,6 +867,26 @@ function openDexModal(tab = 'enemies') {
   $('#modal').hidden = false; G.modalOpen = true;
 }
 
+function openUnlockNoticeModal() {
+  const rows = [
+    { name: '🏰 天蓋の塔（無限回廊）', desc: '階層は無限。10階ごとの祝福と回廊コイン交換所でさらなる高みへ！', to: 'tower' },
+    { name: '🕳️ 深淵ダンジョン', desc: '全15ダンジョンの極級クリアで解放。累積する呪いと★9神話ドロップに挑もう。', to: 'abyss' },
+    { name: '✨ 極意（共通パッシブ）', desc: '全キャラ共通のパッシブ強化10種が解放されました。', to: 'status' },
+    { name: '⚔️ 進化枠 第3段階', desc: '各進化スキル枠の上限が30SPに拡張され、究極スキルを習得できます。', to: 'status' },
+    { name: '📖 図鑑・🏆 実績・称号', desc: '魔物・装備の記録や実績達成で回廊コインと称号を獲得できます。', to: 'dex' }
+  ];
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">🎉 クリア後の新要素が解放！</h2>
+    <p class="sub" style="margin:0">虚空の神殿・極級の踏破により、以下のエンドコンテンツが解放されました。</p>
+    <div style="display:grid;gap:6px">${rows.map(r => `
+      <div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div style="min-width:0"><div><b>${esc(r.name)}</b></div><div class="sub">${esc(r.desc)}</div></div>
+        <button class="btn small primary" data-act="jumpNotice" data-to="${r.to}">見る</button>
+      </div>`).join('')}</div>
+    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="mTown">街へ戻る</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+
 function openModal() {
   const l = G.last; if (!l) return;
   const p = G.p;

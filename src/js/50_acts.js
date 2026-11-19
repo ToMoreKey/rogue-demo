@@ -368,6 +368,26 @@ const ACTS = {
     openTowerShopModal();
     if (G.view === 'status') renderStatus();
   },
-  mTown() { closeModal(); G.view = 'town'; renderAll(); ensureLoop(); }
+  mTown() {
+    const wasEnding = !!(G.last && G.last.ending);
+    closeModal();
+    if (wasEnding && G.p && G.p.ending && !G.p.unlockNoticeShown) {
+      G.p.unlockNoticeShown = true;
+      save();
+      openUnlockNoticeModal();
+      return;
+    }
+    G.view = 'town'; renderAll(); ensureLoop();
+  },
+  jumpNotice(d) {
+    closeModal();
+    if (d.to === 'tower' || d.to === 'abyss') {
+      G.view = 'dungeon'; renderAll(); ensureLoop();
+    } else if (d.to === 'status') {
+      G.view = 'status'; renderAll(); ensureLoop();
+    } else if (d.to === 'dex') {
+      G.view = 'status'; renderAll(); openDexModal('enemies');
+    }
+  }
 };
 

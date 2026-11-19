@@ -1,7 +1,7 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 7;
+const SAVE_VERSION = 8;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -87,6 +87,13 @@ const migrations = {
     if (typeof p.pendingAchCoins !== 'number') p.pendingAchCoins = 0;
     if (!p.achStats || typeof p.achStats !== 'object') p.achStats = { totalGold: 0, blessings: 0, noDmgBoss: false };
     return Object.assign({}, d, { v: 7, p });
+  },
+  // v7 → v8: 本編クリア後のお知らせ出し済みフラグを追加（既クリアは出し済み扱い）
+  7: d => {
+    const p = Object.assign({}, d.p);
+    if (typeof p.unlockNoticeShown !== 'boolean') p.unlockNoticeShown = !!(p.ending || (p.cleared && p.cleared.O && p.cleared.O.extreme));
+    if (typeof p.abyssNoticeShown !== 'boolean') p.abyssNoticeShown = isAbyssUnlocked(p).ok;
+    return Object.assign({}, d, { v: 8, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -141,6 +148,8 @@ function load() {
     }
     p.part1Cleared = !!s.part1Cleared || !!(p.cleared && p.cleared.I && p.cleared.I.high);
     p.ending = !!s.ending || !!(p.cleared && p.cleared.O && p.cleared.O.extreme);
+    p.unlockNoticeShown = typeof s.unlockNoticeShown === 'boolean' ? s.unlockNoticeShown : !!p.ending;
+    p.abyssNoticeShown = typeof s.abyssNoticeShown === 'boolean' ? s.abyssNoticeShown : isAbyssUnlocked(p).ok;
     if (s.tower && typeof s.tower === 'object') {
       const validTitle = id => TOWER_TITLES.some(t => t.id === id);
       const ts = Array.isArray(s.tower.titles) ? [...new Set(s.tower.titles.filter(validTitle))] : [];

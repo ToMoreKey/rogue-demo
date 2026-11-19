@@ -1620,7 +1620,7 @@ function isDiffUnlocked(p, d, df) {
 }
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
@@ -1686,7 +1686,7 @@ function checkAchievements(ev = null, silent = false) {
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 7;
+const SAVE_VERSION = 8;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -1772,6 +1772,13 @@ const migrations = {
     if (typeof p.pendingAchCoins !== 'number') p.pendingAchCoins = 0;
     if (!p.achStats || typeof p.achStats !== 'object') p.achStats = { totalGold: 0, blessings: 0, noDmgBoss: false };
     return Object.assign({}, d, { v: 7, p });
+  },
+  // v7 → v8: 本編クリア後のお知らせ出し済みフラグを追加（既クリアは出し済み扱い）
+  7: d => {
+    const p = Object.assign({}, d.p);
+    if (typeof p.unlockNoticeShown !== 'boolean') p.unlockNoticeShown = !!(p.ending || (p.cleared && p.cleared.O && p.cleared.O.extreme));
+    if (typeof p.abyssNoticeShown !== 'boolean') p.abyssNoticeShown = isAbyssUnlocked(p).ok;
+    return Object.assign({}, d, { v: 8, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -1826,6 +1833,8 @@ function load() {
     }
     p.part1Cleared = !!s.part1Cleared || !!(p.cleared && p.cleared.I && p.cleared.I.high);
     p.ending = !!s.ending || !!(p.cleared && p.cleared.O && p.cleared.O.extreme);
+    p.unlockNoticeShown = typeof s.unlockNoticeShown === 'boolean' ? s.unlockNoticeShown : !!p.ending;
+    p.abyssNoticeShown = typeof s.abyssNoticeShown === 'boolean' ? s.abyssNoticeShown : isAbyssUnlocked(p).ok;
     if (s.tower && typeof s.tower === 'object') {
       const validTitle = id => TOWER_TITLES.some(t => t.id === id);
       const ts = Array.isArray(s.tower.titles) ? [...new Set(s.tower.titles.filter(validTitle))] : [];
@@ -2579,6 +2588,10 @@ function finishRun(result) {
   }
   checkAchievements('run');
   if (clearGold > 0) checkAchievements('gold');
+  if (!p.abyssNoticeShown && isAbyssUnlocked(p).ok) {
+    p.abyssNoticeShown = true;
+    if (!G.headless) toast('🕳️ 深淵ダンジョンが解放されました！');
+  }
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
@@ -3271,7 +3284,27 @@ const ACTS = {
     openTowerShopModal();
     if (G.view === 'status') renderStatus();
   },
-  mTown() { closeModal(); G.view = 'town'; renderAll(); ensureLoop(); }
+  mTown() {
+    const wasEnding = !!(G.last && G.last.ending);
+    closeModal();
+    if (wasEnding && G.p && G.p.ending && !G.p.unlockNoticeShown) {
+      G.p.unlockNoticeShown = true;
+      save();
+      openUnlockNoticeModal();
+      return;
+    }
+    G.view = 'town'; renderAll(); ensureLoop();
+  },
+  jumpNotice(d) {
+    closeModal();
+    if (d.to === 'tower' || d.to === 'abyss') {
+      G.view = 'dungeon'; renderAll(); ensureLoop();
+    } else if (d.to === 'status') {
+      G.view = 'status'; renderAll(); ensureLoop();
+    } else if (d.to === 'dex') {
+      G.view = 'status'; renderAll(); openDexModal('enemies');
+    }
+  }
 };
 
 /* ================= render: HUD ================= */
@@ -4140,6 +4173,26 @@ function openDexModal(tab = 'enemies') {
     </div>
     ${body}
     <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+
+function openUnlockNoticeModal() {
+  const rows = [
+    { name: '🏰 天蓋の塔（無限回廊）', desc: '階層は無限。10階ごとの祝福と回廊コイン交換所でさらなる高みへ！', to: 'tower' },
+    { name: '🕳️ 深淵ダンジョン', desc: '全15ダンジョンの極級クリアで解放。累積する呪いと★9神話ドロップに挑もう。', to: 'abyss' },
+    { name: '✨ 極意（共通パッシブ）', desc: '全キャラ共通のパッシブ強化10種が解放されました。', to: 'status' },
+    { name: '⚔️ 進化枠 第3段階', desc: '各進化スキル枠の上限が30SPに拡張され、究極スキルを習得できます。', to: 'status' },
+    { name: '📖 図鑑・🏆 実績・称号', desc: '魔物・装備の記録や実績達成で回廊コインと称号を獲得できます。', to: 'dex' }
+  ];
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">🎉 クリア後の新要素が解放！</h2>
+    <p class="sub" style="margin:0">虚空の神殿・極級の踏破により、以下のエンドコンテンツが解放されました。</p>
+    <div style="display:grid;gap:6px">${rows.map(r => `
+      <div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div style="min-width:0"><div><b>${esc(r.name)}</b></div><div class="sub">${esc(r.desc)}</div></div>
+        <button class="btn small primary" data-act="jumpNotice" data-to="${r.to}">見る</button>
+      </div>`).join('')}</div>
+    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="mTown">街へ戻る</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
 }
 
