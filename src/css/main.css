@@ -10,11 +10,14 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.55;
-  padding-block:8px 92px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+html{-webkit-text-size-adjust:100%;height:100%}
+body{margin:0;height:100vh;height:100dvh;overflow:hidden;background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.55;
+  padding-block:8px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 button{font:inherit;color:inherit}
 .wrap{max-width:560px;margin:0 auto}
+/* 画面全体はスクロールさせず、#app の中だけをスクロールさせる。
+   下のタブは常に画面の一番下に固定され、アドレスバーの出入りでもズレない */
+#app{height:calc(100vh - 8px);height:calc(100dvh - 8px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 
 /* HUD */
 .hud{display:grid;gap:10px;padding:6px 0 12px}
@@ -255,6 +258,10 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .skill.q{border-color:var(--accent);color:var(--accent)}
 .skill:disabled{opacity:.4;cursor:not-allowed}
 .controls .row{margin-bottom:10px}
+/* 戦闘中の4ボタン（スキル自動・生命の薬・魔力の薬・撤退）は、幅が狭くても1行に4個並べる */
+.controls .row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.controls .row .btn{padding:4px 2px;font-size:12px;line-height:1.25;min-height:38px;white-space:nowrap;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+#btn-autoskill small{font-size:11px;opacity:.9}
 .log{height:190px;overflow:auto;background:var(--ink);border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:13px;line-height:1.65;overscroll-behavior:contain}
 .log div{overflow-wrap:anywhere}
 .log .l-sys{color:var(--muted)} .log .l-hit{color:var(--fg)} .log .l-dmg{color:#f2a0a5} .log .l-good{color:var(--good)} .log .l-gold{color:var(--accent)}
@@ -318,4 +325,6 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .help-det p{margin:6px 0 0;font-size:13px;line-height:1.6;color:var(--fg)}
 
 @media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}}
+/* 画面の高さが低い端末では、戦闘画面を少し詰めて、撤退ボタンが下のタブに隠れないようにする */
+@media (max-height:700px){.arena{padding:8px 10px;margin-bottom:6px}.fighter .spr{width:min(100%,60px)}.hud{gap:6px;padding:2px 0 6px}.controls .row{margin-bottom:6px}.skill-row{margin-bottom:6px}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
