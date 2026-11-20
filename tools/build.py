@@ -35,6 +35,7 @@ JS_ORDER = [
     'js/10_art.js',
     'js/20_state.js',
     'js/30_save.js',
+    'js/35_backup.js',
     'js/40_game.js',
     'js/50_acts.js',
     'js/60_render.js',
@@ -81,6 +82,8 @@ DEV_CSS = ('#dev-badge{position:fixed;top:env(safe-area-inset-top,0px);right:env
 def to_dev(html):
     """本番ビルドの文字列から、テスト版ビルドを作る。置換は各1箇所を必須にする。"""
     html = sub_once(html, "const SAVE_KEY = 'rogue_test_save_v1';", "const SAVE_KEY = 'rogue_dev_save_v1';")
+    html = sub_once(html, "const BACKUP_META_KEY = 'rogue_backup_meta_v1';", "const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';")
+    html = sub_once(html, "const IDB_BACKUP_NAME = 'rogue_backup_db_v1';", "const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';")
     html = sub_once(html, "const TUT_SAVE_KEY = 'rogue_tut_done_v1';", "const TUT_SAVE_KEY = 'rogue_dev_tut_done_v1';")
     html = sub_once(html, "cacheKey: 'rogue_ranking_cache_v1'", "cacheKey: 'rogue_dev_ranking_cache_v1'")
     # ランキング送信を無効化（フォームURLを空にする。表示は data/ranking.json の読み取りのみ）

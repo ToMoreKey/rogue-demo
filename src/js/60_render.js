@@ -573,10 +573,87 @@ function renderStatus() {
       </div></div>
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       <button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>
-      <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button></div>`;
+      <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
+        <div class="sub" style="margin-bottom:6px;font-size:12px">セーブの書き出し・読み込み（バックアップ／引き継ぎ）<br>最終書き出し：<b>${formatBackupDate(readBackupMeta().lastExportAt)}</b></div>
+        <div class="row" style="flex-wrap:wrap;gap:6px">
+          <button class="btn small" data-act="exportSaveFile">セーブを書き出す（ファイル）</button>
+          <button class="btn small" data-act="exportSaveCode">セーブを書き出す（コード）</button>
+          <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
+        </div>
+      </div></div>`;
 }
 
 /* ================= render: modal ================= */
+function openExportCodeModal(code) {
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">セーブコード</h2>
+    <p class="sub" style="margin:0 0 8px">以下のコードをコピーして安全な場所に保管してください。</p>
+    <textarea id="exp-code" readonly style="width:100%;box-sizing:border-box;height:110px;background:#0d111a;color:#e6edf3;border:1px solid #2b3245;border-radius:6px;padding:8px;font-size:11px">${esc(code)}</textarea>
+    <div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  const ta = $('#exp-code');
+  if (ta) { ta.focus(); ta.select(); }
+}
+function openImportSaveModal(preview, errorMsg) {
+  const cur = summarizeSavePlayer(G.p);
+  const prevHtml = preview ? `
+    <div style="background:#111722;border:1px solid #2b3245;border-radius:8px;padding:10px;margin:10px 0;font-size:12px">
+      <div style="font-weight:bold;margin-bottom:6px;color:var(--gold)">現在のセーブを置き換えますか？</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><div style="color:var(--muted)">現在</div><div>Lv ${cur.lv}</div><div>${fmt(cur.gold)} G</div><div>${esc(cur.progress)}</div></div>
+        <div><div style="color:var(--accent)">書き出し側</div><div>Lv ${preview.summary.lv}</div><div>${fmt(preview.summary.gold)} G</div><div>${esc(preview.summary.progress)}</div></div>
+      </div>
+    </div>` : '';
+  const errHtml = errorMsg ? `<p id="imp-err" style="color:#ff7b72;font-size:12px;margin:8px 0">${esc(errorMsg)}</p>` : '';
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">セーブを読み込む</h2>
+    <p class="sub" style="margin:0 0 8px">書き出した JSON ファイルを選ぶか、セーブコードを貼り付けてください。</p>
+    <div style="margin-bottom:8px"><input id="imp-file" type="file" accept=".json,application/json,text/plain" style="max-width:100%;font-size:12px"></div>
+    <textarea id="imp-code" placeholder="ここにセーブコード（RGS1:...）またはJSONを貼り付け" style="width:100%;box-sizing:border-box;height:90px;background:#0d111a;color:#e6edf3;border:1px solid #2b3245;border-radius:6px;padding:8px;font-size:11px">${preview ? esc($('#imp-code')?.value || '') : ''}</textarea>
+    ${errHtml}
+    ${prevHtml}
+    <div class="act" style="gap:8px">
+      ${preview ? '<button class="btn primary" data-act="confirmImportSave">読み込む</button>' : '<button class="btn primary" data-act="validateImportInput">確認する</button>'}
+      <button class="btn" data-act="closeTowerModal">キャンセル</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  const fi = $('#imp-file');
+  if (fi) {
+    fi.onchange = async () => {
+      const f = fi.files && fi.files[0];
+      if (!f) return;
+      try {
+        const text = await f.text();
+        const ta = $('#imp-code');
+        if (ta) ta.value = text;
+        ACTS.validateImportInput();
+      } catch (e) {
+        openImportSaveModal(null, 'ファイルの読み込みに失敗しました。');
+      }
+    };
+  }
+}
+function openIdbRestoreModal(rec) {
+  let sum = { lv: 1, gold: 0, progress: '' };
+  try {
+    const parsed = JSON.parse(rec.raw);
+    const mig = migrateSave(parsed);
+    if (mig && mig.p) sum = summarizeSavePlayer(mig.p);
+  } catch (e) {}
+  G._pendingIdbRestore = rec;
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">前回のデータが見つかりました</h2>
+    <p class="sub" style="margin:0 0 10px">前回のセーブデータのバックアップが見つかりました。復元しますか？</p>
+    <div style="background:#111722;border:1px solid #2b3245;border-radius:8px;padding:10px;margin:0 0 12px;font-size:12px">
+      <div>Lv ${sum.lv} ／ ${fmt(sum.gold)} G ／ ${esc(sum.progress)}</div>
+    </div>
+    <div class="act" style="gap:8px">
+      <button class="btn primary" data-act="restoreIdbSave">復元する</button>
+      <button class="btn" data-act="dismissIdbRestore">新しく始める</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
 function openBlessModal() {
   const run = G.run;
   if (!run || !run.tower || !run.tower.pendingChoice) return;
@@ -1085,6 +1162,7 @@ function renderHelp() {
       <li><b>強化石はダンジョンでドロップ</b>：ダンジョンA〜Cで対応した強化石が8%の確率で入手できる（上位素材は特定ダンジョンのボス等がドロップ）</li>
       <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
+      <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面下部の「データ」から、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
     </ul>
   </div>
 

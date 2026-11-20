@@ -27,8 +27,12 @@ committed = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
 check('本番ビルドが、コミット済み index.html と一致', prod == committed)
 check('本番ビルドにテスト版の印が無い', all(x not in prod for x in ('rogue_dev_', 'dev-badge', '[TEST]')))
 check('本番ビルドはランキング送信先が入っている', "formUrl: 'https://docs.google.com/forms/" in prod)
-check('テスト版: セーブ・チュートリアル・ランキングキャッシュのキーが別', all(x in dev for x in (
-    "SAVE_KEY = 'rogue_dev_save_v1'", "rogue_dev_tut_done_v1", "rogue_dev_ranking_cache_v1")) and "SAVE_KEY = 'rogue_test_save_v1'" not in dev)
+check('テスト版: セーブ・チュートリアル・ランキングキャッシュ・バックアップのキーとIDB名が別', all(x in dev for x in (
+    "SAVE_KEY = 'rogue_dev_save_v1'", "rogue_dev_tut_done_v1", "rogue_dev_ranking_cache_v1",
+    "BACKUP_META_KEY = 'rogue_dev_backup_meta_v1'", "IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1'"))
+    and "SAVE_KEY = 'rogue_test_save_v1'" not in dev
+    and "BACKUP_META_KEY = 'rogue_backup_meta_v1'" not in dev
+    and "IDB_BACKUP_NAME = 'rogue_backup_db_v1'" not in dev)
 check('テスト版: ランキング送信先が空', "formUrl: ''" in dev and 'docs.google.com/forms' not in dev)
 check('テスト版: TEST表示とタイトル', 'id="dev-badge"' in dev and '<title>[TEST] rogue_test</title>' in dev)
 sw_main = open(os.path.join(site, 'sw.js'), encoding='utf-8').read()
