@@ -213,15 +213,16 @@ function spawnEnemy(boss, miniboss = false) {
   }
   const S = scaleOf(run, run.floor);
   const ae = run.abyss ? abyssEff(run) : null;
+  const ease = (!run.tower && !run.abyss && run.d && run.df) ? earlyEase(run.d.id, run.df.id) : { hp: 1, atk: 1 };
   const Shp = run.tower ? Math.pow(S, 0.45) : S;
   const Sa = run.tower ? Math.pow(S, 0.98) : Math.pow(S, TUNE.atkExp);
   const hpMult = run.tower ? (boss ? 1.85 : miniboss ? 1.3 : 1) : (boss ? (run.abyss ? run.abyss.dfA.bossMult * TUNE.bossHp : TUNE.bossHp) : miniboss ? 1.55 : 1) * (run.abyss && run.abyss.dfA.hpMult ? run.abyss.dfA.hpMult : 1);
   const atkMult = run.tower ? (boss ? 0.90 : miniboss ? 1.02 : 1) : (boss ? (run.abyss ? run.abyss.dfA.bossMult * TUNE.bossAtk * ae.bossAtkMult : TUNE.bossAtk) : miniboss ? 1.15 : 1) * (run.abyss && run.abyss.dfA.atkMult ? run.abyss.dfA.atkMult : 1);
   const defMult = run.tower ? (boss ? 1.0 : 1) : (boss ? TUNE.bossDef : miniboss ? 1.1 : 1);
-  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * hpMult * (ae ? ae.enHpMult : 1)));
+  const hp = Math.max(1, Math.round(base.hp * Shp * TUNE.hpScale * hpMult * (ae ? ae.enHpMult : 1) * ease.hp));
   run.enemy = {
     id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
-    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * atkMult * (ae ? ae.enAtkMult : 1))),
+    atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * atkMult * (ae ? ae.enAtkMult : 1) * ease.atk)),
     def: Math.round(base.def * Sa * TUNE.defScale * defMult),
     exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (miniboss ? 1.5 : 1))),
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
