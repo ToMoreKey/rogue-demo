@@ -1,12 +1,13 @@
 const itemIcon = it => {
-  const src = (ITEM_ICON[it.slot] || [])[it.star];
-  return src ? `<span class="it-ico"><img src="${src}" alt="" draggable="false"></span>` : '';
+  const arr = ITEM_ICON[it.slot] || [];
+  const src = arr[it.star] || arr[Math.min(it.star, 5)];
+  const badge = it.star >= 6 && !arr[it.star] ? `<i class="it-sb">★${it.star}</i>` : '';
+  return src ? `<span class="it-ico"><img src="${src}" alt="" draggable="false">${badge}</span>` : '';
 };
 
 // パッシブボーナス計算
 function passiveBonus(p) {
-  const pts = p.skillPts || {};
-  const passives = p.passiveSkills || {};
+  const passives = (p && p.passiveSkills) || {};
   let atkMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1;
   if (passives.sword15) atkMult *= 1.15;
   if (passives.warrior10) atkMult *= 1.30;
@@ -17,9 +18,32 @@ function passiveBonus(p) {
   if (passives.hero10) { atkMult *= 1.25; hpMult *= 1.25; mpMult *= 1.25; }
   return { atkMult, hpMult, mpMult, mpCostMult, healMult };
 }
+// 極意ボーナス計算（極意を振ったときの増分のみ）
+function masteryBonus(p) {
+  const m = (p && p.mastery) || {};
+  let atkMult = 1, defMult = 1, hpMult = 1, mpMult = 1, healMult = 1;
+  let critAdd = 0, dmgMult = 1, takenMult = 1, expMult = 1, goldMult = 1;
+  for (const item of MASTERY_LIST) {
+    const r = Number(m[item.id]) || 0;
+    if (!r) continue;
+    const v = item.per * r;
+    if (item.key === 'atkPct') atkMult *= (1 + v);
+    else if (item.key === 'defPct') defMult *= (1 + v);
+    else if (item.key === 'hpPct') hpMult *= (1 + v);
+    else if (item.key === 'mpPct') mpMult *= (1 + v);
+    else if (item.key === 'critAdd') critAdd += v;
+    else if (item.key === 'dmgPct') dmgMult *= (1 + v);
+    else if (item.key === 'takenPct') takenMult *= Math.max(0.2, 1 + v);
+    else if (item.key === 'healPct') healMult *= (1 + v);
+    else if (item.key === 'expPct') expMult *= (1 + v);
+    else if (item.key === 'goldPct') goldMult *= (1 + v);
+  }
+  return { atkMult, defMult, hpMult, mpMult, healMult, critAdd, dmgMult, takenMult, expMult, goldMult };
+}
 function enemyArt(en, dId) {
-  const im = ENEMY_IMG[en.id];
-  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false">`;
+  const im = ENEMY_IMG[en.id] || (en.fallbackId && ENEMY_IMG[en.fallbackId]);
+  const st = en.bossFilter ? ` style="filter:${en.bossFilter}"` : '';
+  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
   return spriteSVG(en.shape, PAL[dId][en.shape]);
 }
 
@@ -29,11 +53,15 @@ function skinFrames(sk) {
   if (sk.tiers) for (const k of [5, 4, 3]) if (st >= k && sk.tiers[k]) return sk.tiers[k];
   return { img: sk.img, atk: sk.atk };
 }
+function auraClass(p) {
+  const s = Math.max((p && p.weapon && p.weapon.star) || 0, (p && p.armor && p.armor.star) || 0);
+  return s >= 9 ? ' aura-9' : s === 8 ? ' aura-8' : s === 7 ? ' aura-7' : s === 6 ? ' aura-6' : '';
+}
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う
-  const fr = skinFrames(sk);
-  if (fr.img) return `<img class="sprite sprite-img" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
-  return sk.svg.replace('<svg class="sprite"', `<svg class="sprite" style="width:100%;height:auto;${extraStyle || ''}"`);
+  const fr = skinFrames(sk), au = auraClass(G.p);
+  if (fr.img) return `<img class="sprite sprite-img${au}" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
+  return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
 // 防具の★に応じた「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
 function skinTier(sk) {

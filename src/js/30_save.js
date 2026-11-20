@@ -1,11 +1,100 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 2;
-// migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {3: fn, ...} を足すだけで連鎖する。
+const SAVE_VERSION = 8;
+// migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
-  1: d => Object.assign({}, d, { v: 2 })
+  1: d => Object.assign({}, d, { v: 2 }),
+  // v2 → v3: クリア記録 cleared（セルの rec 以下の Lv ならクリア済み扱い）と bagCap（既定60）を追加
+  2: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.cleared || typeof p.cleared !== 'object') {
+      const cleared = {};
+      const lv = Number(p.lv) || 1;
+      const hasClears = p.stats && Number(p.stats.clears) > 0;
+      for (const dg of DUNGEONS) {
+        cleared[dg.id] = {};
+        dg.rec.forEach((r, i) => {
+          const df = DIFFS[i];
+          if (df && lv >= r && (lv > 1 || hasClears)) cleared[dg.id][df.id] = true;
+        });
+      }
+      p.cleared = cleared;
+    }
+    if (!p.bagCap) p.bagCap = BAG_CAP;
+    return Object.assign({}, d, { v: 3, p });
+  },
+  // v3 → v4: 無限回廊「天蓋の塔」用の記録 p.tower を追加
+  3: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.tower || typeof p.tower !== 'object') {
+      p.tower = { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    }
+    return Object.assign({}, d, { v: 4, p });
+  },
+  // v4 → v5: 深淵(abyss)・極意(mastery)・複数特性(props)を追加
+  4: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.abyss || typeof p.abyss !== 'object') p.abyss = { best: 0, cleared: {} };
+    if (!p.mastery || typeof p.mastery !== 'object') p.mastery = {};
+    const fixProps = it => {
+      if (!it || typeof it !== 'object') return it;
+      if (!Array.isArray(it.props)) it.props = it.prop ? [it.prop] : [];
+      return it;
+    };
+    p.weapon = fixProps(p.weapon);
+    p.armor = fixProps(p.armor);
+    if (Array.isArray(p.bag)) p.bag = p.bag.map(fixProps);
+    return Object.assign({}, d, { v: 5, p });
+  },
+  // v5 → v6: 図鑑(dex)を追加し、クリア済みダンジョンの敵・所持装備を引き継ぐ
+  5: d => {
+    const p = Object.assign({}, d.p);
+    const dex = (p.dex && typeof p.dex === 'object') ? p.dex : { enemies: {}, items: {}, rewards: {} };
+    dex.enemies = dex.enemies || {};
+    dex.items = dex.items || { weapon_1: true, armor_1: true };
+    dex.rewards = dex.rewards || {};
+    if (p.cleared && typeof p.cleared === 'object') {
+      for (const dg of DUNGEONS) {
+        const sc = p.cleared[dg.id];
+        if (sc && Object.values(sc).some(Boolean)) {
+          for (const m of dg.mobs) dex.enemies[m.id] = dex.enemies[m.id] || { seen: true, kills: 0 };
+          dex.enemies[dg.boss.id] = dex.enemies[dg.boss.id] || { seen: true, kills: 0 };
+          if (dg.id === 'O' && sc.extreme && dg.boss.rageId) {
+            dex.enemies[dg.boss.rageId] = dex.enemies[dg.boss.rageId] || { seen: true, kills: 0 };
+          }
+        }
+      }
+    }
+    if (p.abyss && p.abyss.cleared) {
+      if (p.abyss.cleared[1] || p.abyss.cleared[2] || p.abyss.cleared[3]) dex.enemies.abyss_gula = dex.enemies.abyss_gula || { seen: true, kills: 0 };
+      if (p.abyss.cleared[4] || p.abyss.cleared[5] || p.abyss.cleared[6] || p.abyss.cleared[7]) dex.enemies.abyss_mirror = dex.enemies.abyss_mirror || { seen: true, kills: 0 };
+      if (p.abyss.cleared[8] || p.abyss.cleared[9] || p.abyss.cleared[10]) dex.enemies.abyss_deep = dex.enemies.abyss_deep || { seen: true, kills: 0 };
+    }
+    for (const it of [p.weapon, p.armor, ...(Array.isArray(p.bag) ? p.bag : [])]) {
+      if (it && typeof it === 'object' && it.slot && it.star) {
+        dex.items[`${it.slot}_${it.rarity === 4 ? 'm' : ''}${it.star}`] = true;
+      }
+    }
+    p.dex = dex;
+    return Object.assign({}, d, { v: 6, p });
+  },
+  // v6 → v7: 実績(ach)・保留コイン(pendingAchCoins)・実績用統計(achStats)を追加
+  6: d => {
+    const p = Object.assign({}, d.p);
+    if (!p.ach || typeof p.ach !== 'object') p.ach = {};
+    if (typeof p.pendingAchCoins !== 'number') p.pendingAchCoins = 0;
+    if (!p.achStats || typeof p.achStats !== 'object') p.achStats = { totalGold: 0, blessings: 0, noDmgBoss: false };
+    return Object.assign({}, d, { v: 7, p });
+  },
+  // v7 → v8: 本編クリア後のお知らせ出し済みフラグを追加（既クリアは出し済み扱い）
+  7: d => {
+    const p = Object.assign({}, d.p);
+    if (typeof p.unlockNoticeShown !== 'boolean') p.unlockNoticeShown = !!(p.ending || (p.cleared && p.cleared.O && p.cleared.O.extreme));
+    if (typeof p.abyssNoticeShown !== 'boolean') p.abyssNoticeShown = isAbyssUnlocked(p).ok;
+    return Object.assign({}, d, { v: 8, p });
+  }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
 function migrateSave(raw) {
@@ -28,7 +117,10 @@ function cleanItem(it) {
   const slot = it.slot === 'weapon' || it.slot === 'armor' ? it.slot : null;
   const star = Math.round(Number(it.star)), rarity = Math.round(Number(it.rarity)), roll = Number(it.roll);
   if (!slot || !(star >= 1 && star <= MAX_STAR) || !(rarity >= 0 && rarity <= MAX_RARITY) || !isFinite(roll)) return null;
-  return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: slot === 'weapon' && PROPS[it.prop] ? it.prop : null, locked: !!it.locked };
+  const dict = slot === 'armor' ? ARMOR_PROPS : PROPS;
+  const rawPs = Array.isArray(it.props) && it.props.length ? it.props : (it.prop ? [it.prop] : []);
+  const props = [...new Set(rawPs.filter(k => dict[k]))];
+  return { id: Number(it.id) || 0, slot, star, rarity, roll: clamp(roll, 0.5, 1), prop: props[0] || null, props, locked: !!it.locked };
 }
 function load() {
   try {
@@ -41,13 +133,80 @@ function load() {
     const num = (v, def, lo = 0, hi = 1e12) => { v = Number(v); return isFinite(v) ? clamp(Math.floor(v), lo, hi) : def; };
     const p = base;
     p.lv = num(s.lv, 1, 1, LV_CAP); p.exp = num(s.exp, 0); p.sp = num(s.sp, 0); p.gold = num(s.gold, 50); p.bank = num(s.bank, 0);
+    p.bagCap = num(s.bagCap, BAG_CAP, BAG_CAP, MAX_BAG_CAP);
     p.weapon = cleanItem(s.weapon); p.armor = cleanItem(s.armor);
-    p.bag = Array.isArray(s.bag) ? s.bag.map(cleanItem).filter(Boolean).slice(0, BAG_CAP) : [];
+    p.bag = Array.isArray(s.bag) ? s.bag.map(cleanItem).filter(Boolean).slice(0, p.bagCap) : [];
+    p.cleared = {};
+    if (s.cleared && typeof s.cleared === 'object') {
+      for (const dg of DUNGEONS) {
+        const sc = s.cleared[dg.id];
+        if (sc && typeof sc === 'object') {
+          p.cleared[dg.id] = {};
+          for (const df of DIFFS) if (sc[df.id]) p.cleared[dg.id][df.id] = true;
+        }
+      }
+    }
+    p.part1Cleared = !!s.part1Cleared || !!(p.cleared && p.cleared.I && p.cleared.I.high);
+    p.ending = !!s.ending || !!(p.cleared && p.cleared.O && p.cleared.O.extreme);
+    p.unlockNoticeShown = typeof s.unlockNoticeShown === 'boolean' ? s.unlockNoticeShown : !!p.ending;
+    p.abyssNoticeShown = typeof s.abyssNoticeShown === 'boolean' ? s.abyssNoticeShown : isAbyssUnlocked(p).ok;
+    if (s.tower && typeof s.tower === 'object') {
+      const validTitle = id => TOWER_TITLES.some(t => t.id === id);
+      const ts = Array.isArray(s.tower.titles) ? [...new Set(s.tower.titles.filter(validTitle))] : [];
+      p.tower = {
+        best: num(s.tower.best, 0),
+        coins: num(s.tower.coins, 0),
+        totalCoins: num(s.tower.totalCoins, 0),
+        title: s.tower.title && ts.includes(s.tower.title) ? s.tower.title : null,
+        titles: ts,
+        nick: typeof s.tower.nick === 'string' ? s.tower.nick.slice(0, RANKING_CFG.nameMax) : '',
+        rankOptIn: !!s.tower.rankOptIn,
+        sentBest: num(s.tower.sentBest, 0)
+      };
+    }
+    p.mastery = {};
+    if (s.mastery && typeof s.mastery === 'object') {
+      for (const m of MASTERY_LIST) p.mastery[m.id] = num(s.mastery[m.id], 0, 0, MASTERY_MAX);
+    }
+    p.abyss = { best: 0, cleared: {} };
+    if (s.abyss && typeof s.abyss === 'object') {
+      p.abyss.best = num(s.abyss.best, 0, 0, 10);
+      if (s.abyss.cleared && typeof s.abyss.cleared === 'object') {
+        for (let lv = 1; lv <= 10; lv++) if (s.abyss.cleared[lv]) p.abyss.cleared[lv] = true;
+      }
+    }
+    p.dex = { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} };
+    if (s.dex && typeof s.dex === 'object') {
+      if (s.dex.enemies && typeof s.dex.enemies === 'object') {
+        for (const [k, v] of Object.entries(s.dex.enemies)) {
+          if (v && typeof v === 'object' && v.seen) p.dex.enemies[k] = { seen: true, kills: num(v.kills, 0) };
+        }
+      }
+      if (s.dex.items && typeof s.dex.items === 'object') {
+        for (const [k, v] of Object.entries(s.dex.items)) if (v) p.dex.items[k] = true;
+      }
+      if (s.dex.rewards && typeof s.dex.rewards === 'object') {
+        for (const [k, v] of Object.entries(s.dex.rewards)) if (v) p.dex.rewards[k] = true;
+      }
+    }
+    for (const it of [p.weapon, p.armor, ...p.bag]) recordDexItem(p, it);
+    p.ach = {};
+    if (s.ach && typeof s.ach === 'object') {
+      for (const [k, v] of Object.entries(s.ach)) if (typeof v === 'string' && v) p.ach[k] = v;
+    }
+    p.pendingAchCoins = num(s.pendingAchCoins, 0);
+    p.achStats = { totalGold: 0, blessings: 0, noDmgBoss: false };
+    if (s.achStats && typeof s.achStats === 'object') {
+      p.achStats.totalGold = num(s.achStats.totalGold, 0);
+      p.achStats.blessings = num(s.achStats.blessings, 0);
+      p.achStats.noDmgBoss = !!s.achStats.noDmgBoss;
+    }
     p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
     p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
     if (s.skillPts && typeof s.skillPts === 'object') {
       for (const k of ['sword','magic','life','warrior','mage','cleric','hero']) {
-        p.skillPts[k] = num(s.skillPts[k], 0, 0, 20);
+        const tree = SKILL_TREES.find(t => t.id === k);
+        p.skillPts[k] = num(s.skillPts[k], 0, 0, tree ? tree.maxSp : 30);
       }
     }
     p.passiveSkills = {};
@@ -68,10 +227,16 @@ function load() {
       for (const st of STONES) p.stones[st.id] = num(s.stones[st.id], 0, 0, 999);
     }
     let id = 1; [p.weapon, p.armor, ...p.bag].forEach(it => { if (it) it.id = id++; }); p.nextId = id;
+    if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
+    if (migrated || !s.ach) checkAchievements(null, true);
+    if (p.ending && p.pendingAchCoins > 0) flushPendingAchCoins(p, true);
     if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; }
-    if (d.sel) for (const { id: k } of DUNGEONS) if (DIFFS.some(x => x.id === d.sel[k])) G.sel[k] = d.sel[k];
+    if (d.sel) for (const dg of DUNGEONS) {
+      const df = diffOf(d.sel[dg.id]);
+      if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;
+    }
     if (Array.isArray(d.shopSel) && d.shopSel.length === 4) G.shopSel = d.shopSel.map(Boolean);
     if (typeof d.autoSellRarity === 'number' && d.autoSellRarity >= -1 && d.autoSellRarity <= 3) G.autoSellRarity = d.autoSellRarity;
     if (migrated) save();   // 移行できたらすぐ新しい形式で書き戻す

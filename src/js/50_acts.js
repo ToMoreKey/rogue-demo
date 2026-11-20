@@ -26,7 +26,11 @@ const ACTS = {
   shopToggle(d) { const i = Number(d.i); G.shopSel[i] = !G.shopSel[i]; save(); renderTown(); },
   dep() { bankMove('dep', false); }, wd() { bankMove('wd', false); },
   depAll() { bankMove('dep', true); }, wdAll() { bankMove('wd', true); },
-  diff(d) { G.sel[d.d] = d.df; save(); renderDungeonSelect(); },
+  diff(d) {
+    const dg = dungeonOf(d.d), df = diffOf(d.df);
+    if (!dg || !df || !isDiffUnlocked(G.p, dg, df)) { toast('この難易度はまだ解放されていません'); return; }
+    G.sel[d.d] = d.df; save(); renderDungeonSelect();
+  },
   go(d) {
     // チュートリアル step 1: ダンジョンA novice を選んだら step 2 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 1) {
@@ -80,8 +84,14 @@ const ACTS = {
     const amount = Number(d.amount) || 1;
     if (p.sp < amount) { toast('SPが足りません'); return; }
     const curPts = p.skillPts[d.tree] || 0;
-    if (curPts >= tree.maxSp) { toast('このスキル枠はすでに最大です'); return; }
-    if (curPts + amount > tree.maxSp) { toast(`最大${tree.maxSp}SPまでしか割り振れません`); return; }
+    let cap = tree.maxSp;
+    if (tree.stage2When && !tree.stage2When(p)) cap = Math.min(cap, 10);
+    else if (tree.stage3When && !tree.stage3When(p)) cap = Math.min(cap, 20);
+    if (curPts >= cap) {
+      const msg = (cap === 10 && tree.stage2Desc) || (cap === 20 && tree.stage3Desc) || 'このスキル枠はすでに最大です';
+      toast(msg); return;
+    }
+    if (curPts + amount > cap) { toast(`最大${cap}SPまでしか割り振れません`); return; }
     const prevPts = curPts;
     p.sp -= amount;
     p.skillPts[d.tree] = curPts + amount;
@@ -97,7 +107,7 @@ const ACTS = {
         }
       }
     }
-    save(); renderHUD(); renderStatus();
+    save(); checkAchievements('sp'); renderHUD(); renderStatus();
     // チュートリアル step 41: ヒールを取得したら step 5 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 41) {
       if (G.p.skills['heal']) {
@@ -118,6 +128,9 @@ const ACTS = {
     delete G[key];
     const tree = SKILL_TREES.find(t => t.id === d.tree);
     if (!tree) return;
+    const cost = skillResetCost(p);
+    if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
+    p.gold -= cost;
     const pts = p.skillPts[d.tree] || 0;
     // SPを返還
     p.sp += pts;
@@ -138,6 +151,15 @@ const ACTS = {
           if (ms.passive) delete p.passiveSkills[ms.passive];
         }
         toast(`「${evoTree.name}」の条件を満たさなくなりリセットされました`);
+      } else if (evoTree.stage2When && !evoTree.stage2When(p) && (p.skillPts[evoTree.id] || 0) > 10) {
+        const excess = p.skillPts[evoTree.id] - 10;
+        p.sp += excess;
+        p.skillPts[evoTree.id] = 10;
+        for (const ms of evoTree.milestones) if (ms.sp > 10) {
+          if (ms.id) delete p.skills[ms.id];
+          if (ms.passive) delete p.passiveSkills[ms.passive];
+        }
+        toast(`「${evoTree.name}」の第2段階が未解放となり10SPに戻りました`);
       }
     }
     save();
@@ -199,21 +221,173 @@ const ACTS = {
   debugAllGear() {
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
-    for (const slot of ['weapon', 'armor']) for (let star = 1; star <= MAX_STAR; star++) for (let r = 0; r < 4; r++) {
-      if (p.bag.length >= BAG_CAP) break;
+    for (const slot of ['weapon', 'armor']) for (let star = 1; star <= SMITH_MAX_STAR; star++) for (let r = 0; r < 4; r++) {
+      if (p.bag.length >= (p.bagCap || BAG_CAP)) break;
       p.bag.push(mkItem(p, { slot, star, rarity: r, roll: 1 })); n++;
     }
     save(); toast(`テスト用装備を${n}個追加しました`); renderAll();
   },
   smithUpgrade(d) { smithUpgrade(d.id); },
+  smithReforge(d) { smithReforge(d.id); },
+  buyShop(d) { buyShopItem(d.id); },
+  expandBag() { expandBag(); },
   autoSellRaritySet(d) {
     const v = Number(d.v);
     if (v >= -1 && v <= 3) { G.autoSellRarity = v; save(); renderTown(); }
   },
   mRetry() {
     const l = G.last; closeModal();
-    if (l) startRun(l.d.id, l.df.id);
+    if (l && l.tower) startTowerRun();
+    else if (l && l.abyss) startAbyssRun(l.abyss.lv);
+    else if (l) startRun(l.d.id, l.df.id);
   },
-  mTown() { closeModal(); G.view = 'town'; renderAll(); ensureLoop(); }
+  abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
+  goAbyss() { startAbyssRun(G.abyssLv || 1); },
+  goTower() { startTowerRun(); },
+  openDex() { openDexModal(G.dexTab || 'enemies'); },
+  openAch() { openDexModal('ach'); },
+  dexTab(d) { openDexModal(d.tab || 'enemies'); },
+  equipStatusTitle(d) {
+    const p = G.p;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (!(p.tower.titles || []).includes(d.id)) return;
+    p.tower.title = p.tower.title === d.id ? null : d.id;
+    save(); renderStatus();
+  },
+  dexHint(d) {
+    const el = $('#dex-hint-box');
+    if (!el) return;
+    const h = DEX_ITEM_HINTS[d.hkey] || '';
+    el.textContent = d.label ? `${d.label}: ${h}` : h;
+  },
+  claimDex(d) {
+    const res = claimDexReward(d.key);
+    if (res && res.ok) openDexModal(G.dexTab || 'enemies');
+  },
+  towerRanking() { G.rankMsg = ''; openRankingModal(); },
+  saveRankOptIn() {
+    if (!isRankingSubmitConfigured()) { toast('ランキング送信は準備中です'); return; }
+    const p = G.p; p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 };
+    const inEl = $('#rk-nick'), chkEl = $('#rk-agree'), msgEl = $('#rk-form-msg');
+    const nc = cleanRankNick(inEl ? inEl.value : '');
+    if (!nc.ok) { if (msgEl) msgEl.textContent = nc.error; toast(nc.error); return; }
+    if (!chkEl || !chkEl.checked) {
+      const m = '同意のチェックを入れてください';
+      if (msgEl) msgEl.textContent = m; toast(m); return;
+    }
+    p.tower.nick = nc.name;
+    p.tower.rankOptIn = true;
+    save();
+    G.rankMsg = '送信設定を保存しました';
+    toast(G.rankMsg);
+    openRankingModal();
+  },
+  clearRankOptIn() {
+    const p = G.p;
+    if (p.tower) { p.tower.rankOptIn = false; save(); }
+    G.rankMsg = 'ランキング送信を解除しました';
+    toast(G.rankMsg);
+    openRankingModal();
+  },
+  async manualRankSubmit() {
+    const p = G.p;
+    await submitTowerRank(p && p.tower ? p.tower.best : 0, { manual: true });
+    if (G.modalOpen && $('#rk-submit-box')) openRankingModal();
+  },
+  pickBless(d) { pickBlessing(d.id); },
+  towerBlessList() { openBlessListModal(); },
+  closeTowerModal() { closeModal(); },
+  towerShop() { openTowerShopModal(); },
+  buyTowerShop(d) {
+    const p = G.p, item = TOWER_SHOP.find(x => x.id === d.id);
+    if (!item || !p.ending) return;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (p.tower.coins < item.price) { toast('回廊コインが足りません'); return; }
+    if (p.bag.length >= (p.bagCap || BAG_CAP)) { toast('バッグがいっぱいです'); return; }
+    p.tower.coins -= item.price;
+    const it = mkItem(p, { slot: item.slot, star: item.star, rarity: 4, roll: 1.0 });
+    const out = receiveItem(it);
+    save();
+    toast(`${itemName(it)}を手に入れた！${out === 'equipped' ? '（装備）' : ''}`);
+    openTowerShopModal(); renderTown();
+  },
+  buyTowerTitle(d) {
+    const p = G.p, t = TOWER_TITLES.find(x => x.id === d.id && x.price);
+    if (!t || !p.ending) return;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (p.tower.titles.includes(t.id)) return;
+    if (p.tower.coins < t.price) { toast('回廊コインが足りません'); return; }
+    p.tower.coins -= t.price;
+    p.tower.titles.push(t.id);
+    p.tower.title = t.id;
+    save();
+    toast(`称号「${t.name}」を獲得した！`);
+    openTowerShopModal();
+  },
+  masteryUp(d) {
+    const p = G.p, item = MASTERY_LIST.find(x => x.id === d.id);
+    if (!item) return;
+    if (!p.ending) { toast('本編クリア（虚空の神殿・極級）で解放されます'); return; }
+    p.mastery = p.mastery || {};
+    const cur = p.mastery[item.id] || 0;
+    if (cur >= MASTERY_MAX) { toast('最大ランクです'); return; }
+    const cost = masteryCost(cur + 1);
+    if (p.sp < cost) { toast(`SPが足りません（必要: ${cost}SP）`); return; }
+    p.sp -= cost;
+    p.mastery[item.id] = cur + 1;
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
+    save(); checkAchievements('sp'); renderHUD(); renderStatus();
+  },
+  masteryReset() {
+    const p = G.p;
+    if (!p.ending) return;
+    const m = p.mastery || {};
+    let refund = 0;
+    for (const item of MASTERY_LIST) {
+      const r = m[item.id] || 0;
+      for (let k = 1; k <= r; k++) refund += masteryCost(k);
+    }
+    if (refund <= 0) { toast('リセットする極意がありません'); return; }
+    const cost = skillResetCost(p);
+    if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
+    p.gold -= cost;
+    p.sp += refund;
+    p.mastery = {};
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
+    save(); toast(`極意をリセットし、${refund}SPが戻りました`);
+    renderHUD(); renderStatus();
+  },
+  equipTowerTitle(d) {
+    const p = G.p;
+    p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
+    if (!p.tower.titles.includes(d.id)) return;
+    p.tower.title = (p.tower.title === d.id) ? null : d.id;
+    save();
+    openTowerShopModal();
+    if (G.view === 'status') renderStatus();
+  },
+  mTown() {
+    const wasEnding = !!(G.last && G.last.ending);
+    closeModal();
+    if (wasEnding && G.p && G.p.ending && !G.p.unlockNoticeShown) {
+      G.p.unlockNoticeShown = true;
+      save();
+      openUnlockNoticeModal();
+      return;
+    }
+    G.view = 'town'; renderAll(); ensureLoop();
+  },
+  jumpNotice(d) {
+    closeModal();
+    if (d.to === 'tower' || d.to === 'abyss') {
+      G.view = 'dungeon'; renderAll(); ensureLoop();
+    } else if (d.to === 'status') {
+      G.view = 'status'; renderAll(); ensureLoop();
+    } else if (d.to === 'dex') {
+      G.view = 'status'; renderAll(); openDexModal('enemies');
+    }
+  }
 };
 

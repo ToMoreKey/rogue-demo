@@ -1,7 +1,7 @@
 {
   "name": "Rogue Demo",
   "short_name": "Rogue",
-  "description": "ブラウザで遊べるローグライクRPG（デモ版）",
+  "description": "全15ダンジョン・無限回廊「天蓋の塔」・深淵に挑むブラウザRPG",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",
