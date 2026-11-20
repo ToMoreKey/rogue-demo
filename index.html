@@ -283,7 +283,6 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .tut-bubble.arrow-down::after{border-top-color:var(--accent);bottom:-17px;left:50%;transform:translateX(-50%)}
 .tut-bubble.arrow-up::after{border-bottom-color:var(--accent);top:-17px;left:50%;transform:translateX(-50%)}
 .tut-bubble b{color:var(--accent);display:block;margin-bottom:4px;font-family:var(--font-display)}
-.tut-skip{position:fixed;bottom:calc(96px + env(safe-area-inset-bottom,0px));right:16px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer;pointer-events:all;font-family:var(--font-display);z-index:210}
 
 /* modal + toast */
 .modal{position:fixed;inset:0;z-index:50;background:rgba(5,8,12,.8);display:grid;place-items:center;
@@ -415,7 +414,6 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 <div id="tut-overlay" aria-hidden="true">
   <div class="tut-hole" id="tut-hole"></div>
   <div class="tut-bubble" id="tut-bubble"></div>
-  <button class="tut-skip" id="tut-skip">スキップ</button>
 </div>
 
 <script>
@@ -4492,11 +4490,6 @@ function tutDone() {
   tutHide();
 }
 
-function tutSkip() {
-  tutDone();
-  toast('チュートリアルをスキップしました');
-}
-
 // step 0: ダンジョンタブを押す
 // step 1: ダンジョンA novice の「挑戦」ボタンを押す
 // step 2: 戦闘中 (HP監視中、オーバーレイなし)
@@ -4673,8 +4666,6 @@ function boot() {
   if (!load()) { G.p = newPlayer(); }
   // チュートリアル中: captureフェーズで全クリックを横取りし、許可ACTのみ実行
   document.addEventListener('click', e => {
-    if (e.target.closest('#tut-skip')) return; // スキップは通常フローで処理
-
     const b = e.target.closest('[data-act]');
     if (!b) return;
 
@@ -4699,7 +4690,6 @@ function boot() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target && e.target.id === 'bank-amt') { e.preventDefault(); bankMove('dep', false); }
   });
-  document.getElementById('tut-skip').addEventListener('click', () => tutSkip());
   setInterval(() => {
     const p = G.p;
     if (G.view === 'town' && !G.run && p.hp < maxHp(p)) { p.hp = Math.min(maxHp(p), p.hp + 2); renderHUD(); if (G.townView === 'plaza') renderTown(); }

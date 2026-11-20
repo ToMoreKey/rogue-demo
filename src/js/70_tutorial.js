@@ -17,11 +17,6 @@ function tutDone() {
   tutHide();
 }
 
-function tutSkip() {
-  tutDone();
-  toast('チュートリアルをスキップしました');
-}
-
 // step 0: ダンジョンタブを押す
 // step 1: ダンジョンA novice の「挑戦」ボタンを押す
 // step 2: 戦闘中 (HP監視中、オーバーレイなし)

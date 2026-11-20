@@ -3,8 +3,6 @@ function boot() {
   if (!load()) { G.p = newPlayer(); }
   // チュートリアル中: captureフェーズで全クリックを横取りし、許可ACTのみ実行
   document.addEventListener('click', e => {
-    if (e.target.closest('#tut-skip')) return; // スキップは通常フローで処理
-
     const b = e.target.closest('[data-act]');
     if (!b) return;
 
@@ -29,7 +27,6 @@ function boot() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target && e.target.id === 'bank-amt') { e.preventDefault(); bankMove('dep', false); }
   });
-  document.getElementById('tut-skip').addEventListener('click', () => tutSkip());
   setInterval(() => {
     const p = G.p;
     if (G.view === 'town' && !G.run && p.hp < maxHp(p)) { p.hp = Math.min(maxHp(p), p.hp + 2); renderHUD(); if (G.townView === 'plaza') renderTown(); }
