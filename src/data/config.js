@@ -1,5 +1,9 @@
 /* ================= data ================= */
 const SAVE_KEY = 'rogue_test_save_v1';
+// テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
+const IS_DEV_BUILD = false;
+const BACKUP_META_KEY = 'rogue_backup_meta_v1';
+const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
 const MAX_BAG_CAP = 120;
 const TICK_MS = 650;

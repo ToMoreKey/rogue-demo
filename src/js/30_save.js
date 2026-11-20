@@ -110,7 +110,10 @@ function migrateSave(raw) {
   return d;   // v が最新、または未来の版ならそのまま（読み込み側の検証に任せる）
 }
 function save() {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity })); } catch (e) { /* storage unavailable */ }
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity }));
+    if (typeof idbMirrorSave === 'function') idbMirrorSave(false);
+  } catch (e) { /* storage unavailable */ }
 }
 function cleanItem(it) {
   if (!it || typeof it !== 'object') return null;

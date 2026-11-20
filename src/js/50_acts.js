@@ -219,6 +219,7 @@ const ACTS = {
   },
   // テスト用: 全種類の武器・防具（★1〜5 × レア度4種）をバッグに追加
   debugAllGear() {
+    if (!IS_DEV_BUILD) return;
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
     for (const slot of ['weapon', 'armor']) for (let star = 1; star <= SMITH_MAX_STAR; star++) for (let r = 0; r < 4; r++) {
@@ -388,6 +389,90 @@ const ACTS = {
     } else if (d.to === 'dex') {
       G.view = 'status'; renderAll(); openDexModal('enemies');
     }
+  },
+  exportSaveFile() {
+    const payload = buildSavePayload();
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const fname = `rogue-save-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    writeBackupMeta({ lastExportAt: Date.now() });
+    toast('セーブファイルを書き出しました');
+    if (G.view === 'status') renderStatus();
+  },
+  async exportSaveCode() {
+    const payload = buildSavePayload();
+    const code = await encodeSaveCode(payload);
+    writeBackupMeta({ lastExportAt: Date.now() });
+    let copied = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(code);
+        copied = true;
+      }
+    } catch (e) {}
+    if (copied) {
+      toast('セーブコードをクリップボードにコピーしました');
+      if (G.view === 'status') renderStatus();
+    } else {
+      openExportCodeModal(code);
+      if (G.view === 'status') renderStatus();
+    }
+  },
+  openImportModal() {
+    if (G.run) { toast('探索中は読み込めません'); return; }
+    G._pendingImport = null;
+    openImportSaveModal(null, '');
+  },
+  async validateImportInput() {
+    const el = $('#imp-code');
+    const txt = el ? el.value : '';
+    const res = await decodeAndValidateSaveInput(txt);
+    if (!res.ok) {
+      G._pendingImport = null;
+      openImportSaveModal(null, res.error);
+      return;
+    }
+    G._pendingImport = res;
+    openImportSaveModal(res, '');
+  },
+  confirmImportSave() {
+    if (G.run) { toast('探索中は読み込めません'); return; }
+    const pend = G._pendingImport;
+    if (!pend || !pend.payload) return;
+    G._pendingImport = null;
+    if (applyImportedSave(pend.payload)) {
+      closeModal();
+      toast('セーブデータを読み込みました');
+    } else {
+      openImportSaveModal(null, 'セーブデータの読み込みに失敗しました。');
+    }
+  },
+  restoreIdbSave() {
+    const pend = G._pendingIdbRestore;
+    G._pendingIdbRestore = null;
+    if (!pend || !pend.raw) { closeModal(); return; }
+    try { localStorage.setItem(SAVE_KEY, pend.raw); } catch (e) {}
+    if (load()) {
+      G.tutorial = { done: true };
+      try { localStorage.setItem(TUT_SAVE_KEY, '1'); } catch (e) {}
+      if (typeof tutHide === 'function') tutHide();
+      closeModal();
+      renderAll();
+      toast('前回のセーブデータを復元しました');
+    } else {
+      closeModal();
+      toast('復元に失敗しました');
+    }
+  },
+  dismissIdbRestore() {
+    G._pendingIdbRestore = null;
+    closeModal();
   }
 };
 

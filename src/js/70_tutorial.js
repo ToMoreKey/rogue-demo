@@ -37,6 +37,7 @@ const TUT_MSGS = {
 
 function tutAllowClick(step, b) {
   const act = b.dataset.act, v = b.dataset.v, tree = b.dataset.tree, id = b.dataset.id;
+  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore') return true;
   switch (step) {
     case 0:  return act === 'nav' && v === 'dungeon';
     case 1:  return act === 'go' && b.dataset.d === 'A';
