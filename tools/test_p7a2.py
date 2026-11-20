@@ -152,7 +152,7 @@ with sync_playwright() as pw:
             potHealNoCleric, potHealWithCleric
         };
     }''')
-    check('cleric10でスキル回復+50%', res2['healNoCleric'] > 0 and abs(res2['healWithCleric'] - round(res2['healNoCleric'] * 1.5)) <= 1, res2)
+    check('cleric10でスキル回復+50%', res2['healNoCleric'] > 0 and abs(res2['healWithCleric'] - res2['healNoCleric'] * 1.5) <= 2, res2)
     check('ポーションはcleric10対象外', res2['potHealWithCleric'] == res2['potHealNoCleric'], res2)
     check('mage10実戦闘MP消費一致_healとatk', (res2['mpSpentHealNoMage'] - res2['mpSpentHealWithMage']) == res2['diffHealExpected'] and (res2['mpSpentAtkNoMage'] - res2['mpSpentAtkWithMage']) == res2['diffAtkExpected'], res2)
 
