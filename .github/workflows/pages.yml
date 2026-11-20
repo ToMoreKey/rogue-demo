@@ -1,0 +1,42 @@
+# 本番（main）とテスト版（dev）を、1つの GitHub Pages サイトにまとめて公開する。
+#   https://tomorekey.github.io/rogue-demo/      … 本番（main）
+#   https://tomorekey.github.io/rogue-demo/dev/  … テスト版（dev。セーブ・ランキングは本番と別）
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          path: dev
+      - name: Build site
+        run: python3 dev/tools/make_site.py --main main --dev dev --out _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

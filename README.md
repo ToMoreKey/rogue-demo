@@ -48,6 +48,7 @@
 - `tools/test_p7a1.py` … P7a-1機能テスト（ヘルプ文言更新・旧表記削除・420pxレイアウト）
 - `tools/test_p7a2.py` … P7a-2機能テスト（パッシブ5種反映・MP消費下限1・空オブジェクト不変・表示一致・旧セーブ互換）
 - `tools/test_debug2.py` … デバッグ2回目総合監査＆再発防止テスト（0-1〜0-4・1-1〜1-9・未知スキルIDガード）
+- `tools/test_variants.py` … 本番ビルドとテスト版ビルドの分離テスト（セーブ・ランキング・TEST表示。公開の仕組みは `docs/deploy_setup.md`）
 - `tools/test_p7b.py` … P7b機能テスト（序盤緩和倍率の適用範囲・回廊/深淵/後編不変・序盤計測基準）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
@@ -93,6 +94,7 @@ python3 tools/test_debug1.py            # デバッグ1回目総合監査＆再�
 python3 tools/test_p7a1.py              # P7a-1機能テスト（ヘルプ文言更新・旧表記削除・420pxレイアウト）
 python3 tools/test_p7a2.py              # P7a-2機能テスト（パッシブ5種反映・MP消費下限1・表示一致・旧セーブ互換）
 python3 tools/test_debug2.py            # デバッグ2回目総合監査＆再発防止テスト
+python3 tools/test_variants.py          # 本番／テスト版の分離テスト
 python3 tools/test_p7b.py               # P7b機能テスト（序盤緩和倍率・回廊/深淵/後編不変・序盤計測）
 ```
 
