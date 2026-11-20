@@ -13,7 +13,7 @@
 - テスト版のビルドは `python3 tools/build.py <出力先> --variant dev`。置換は `tools/build.py` の `to_dev`。サイトの組み立ては `tools/make_site.py`。
 - テスト: `python3 tools/test_variants.py`（分離の確認）。
 
-## 2. 最初の設定（運営者が1回だけ）
+## 2. 最初の設定（運営者が1回だけ。2026-11-20 に完了・動作確認済み）
 順番を守ってください（本番が一時的に見えなくなるのを防ぐため）。
 
 1. GitHub で `ToMoreKey/rogue-demo` を開く → **Settings** → 左メニュー **Environments** → **github-pages** をクリック（まだ無ければ手順3のあとに作られる。その場合は手順3→1の順でもよい）。

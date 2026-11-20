@@ -354,3 +354,12 @@ P7 はデバッグ部隊の通しプレイ後に、採用された項目の数�
 
 ### P7a の結果（2026-11-20）
 ヘルプ文言を更新（P7a-1）。スキルツリーのパッシブ5種（sword15・warrior10・hero10の攻撃、mage10のMP消費、cleric10の回復）を説明どおりに反映し、`TUNE` を一括調整（P7a-2）。BOT基準は運営者承認のうえ更新（`docs/p7_balance_plan.md` 4b章）。本編の敗北は基準より増えたが、時間は維持。体感はデバッグ部隊の通しプレイで確認する。
+
+### 公開URL（本番とテスト版）（2026-11-20）
+| | URL | 元のブランチ | 備考 |
+|---|---|---|---|
+| 本番 | https://tomorekey.github.io/rogue-demo/ | `main` | 公開はすべて完成後に一括。ランキング送信あり |
+| テスト版 | https://tomorekey.github.io/rogue-demo/dev/ | `dev` | `dev` への push で約1分で更新。右上に「TEST版」。セーブ・ランキングは本番と別（ランキング送信なし） |
+
+- 仕組み・設定手順・トラブル時の戻し方は `docs/deploy_setup.md`。分離のテストは `tools/test_variants.py`。
+- デバッグ部隊に渡すのはテスト版URL。本番URLは公開（`dev` → `main` のマージ）まで案内しない。
