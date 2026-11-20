@@ -47,6 +47,7 @@
 - `tools/test_debug1.py` … デバッグ1回目総合監査＆再発防止テスト（1-1〜1-9・360px/420pxレイアウト・聖域DEF表示）
 - `tools/test_p7a1.py` … P7a-1機能テスト（ヘルプ文言更新・旧表記削除・420pxレイアウト）
 - `tools/test_p7a2.py` … P7a-2機能テスト（パッシブ5種反映・MP消費下限1・空オブジェクト不変・表示一致・旧セーブ互換）
+- `tools/test_debug2.py` … デバッグ2回目総合監査＆再発防止テスト（0-1〜0-4・1-1〜1-9・未知スキルIDガード）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
 - `docs/dev_notes_P3.md` … P3（G〜I前編完成）で決定したバランス数値・仕様・BOT検証結果メモ
@@ -90,6 +91,7 @@ python3 tools/test_p6c.py               # P6c機能テスト（クリア後お�
 python3 tools/test_debug1.py            # デバッグ1回目総合監査＆再発防止テスト
 python3 tools/test_p7a1.py              # P7a-1機能テスト（ヘルプ文言更新・旧表記削除・420pxレイアウト）
 python3 tools/test_p7a2.py              # P7a-2機能テスト（パッシブ5種反映・MP消費下限1・表示一致・旧セーブ互換）
+python3 tools/test_debug2.py            # デバッグ2回目総合監査＆再発防止テスト
 ```
 
 - BOTの目安（P4・全75セル / P5a・無限回廊）:

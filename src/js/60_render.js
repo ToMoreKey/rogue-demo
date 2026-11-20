@@ -287,7 +287,7 @@ function renderBattle() {
       $('#skill-row').innerHTML = '<span class="empty">ステータス画面のスキルセットで、スロットにスキルを装備しましょう。</span>';
     } else {
       $('#skill-row').innerHTML = slots.map((id, i) => {
-        if (!id) return `<span class="skill" style="opacity:.35;cursor:default">─ S${i+1}<small>空き</small></span>`;
+        if (!id || !SK[id]) return `<span class="skill" style="opacity:.35;cursor:default">─ S${i+1}<small>空き</small></span>`;
         const s = SK[id]; const ct = ctMap[id] || 0; const mpCost = skillMpCost(p, s);
         const usable = ct === 0 && p.mp >= mpCost;
         return `<span class="skill ${usable ? '' : 'disabled'}" style="opacity:${usable ? 1 : 0.5};cursor:default">
@@ -443,7 +443,7 @@ function renderSkillSlots(p) {
 
   // スロット表示
   const slotHtml = slots.map((id, i) => {
-    if (!id) return `<div class="sk-slot">
+    if (!id || !SK[id]) return `<div class="sk-slot">
       <div class="sk-slot-num">スロット${i + 1}</div>
       <div class="sk-slot-empty">空き</div>
     </div>`;
