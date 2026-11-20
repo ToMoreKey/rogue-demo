@@ -269,7 +269,6 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .tut-bubble.arrow-down::after{border-top-color:var(--accent);bottom:-17px;left:50%;transform:translateX(-50%)}
 .tut-bubble.arrow-up::after{border-bottom-color:var(--accent);top:-17px;left:50%;transform:translateX(-50%)}
 .tut-bubble b{color:var(--accent);display:block;margin-bottom:4px;font-family:var(--font-display)}
-.tut-skip{position:fixed;bottom:calc(96px + env(safe-area-inset-bottom,0px));right:16px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 12px;color:var(--muted);font-size:12px;cursor:pointer;pointer-events:all;font-family:var(--font-display);z-index:210}
 
 /* modal + toast */
 .modal{position:fixed;inset:0;z-index:50;background:rgba(5,8,12,.8);display:grid;place-items:center;
