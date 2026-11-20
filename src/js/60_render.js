@@ -273,7 +273,7 @@ function renderBattle() {
     ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
     : stTxt;
   document.querySelectorAll('.speed .btn').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === G.opts.speed));
-  const as = $('#btn-autoskill'); as.textContent = `スキル自動：${G.opts.autoSkill ? 'ON' : 'OFF'}`; as.classList.toggle('on', G.opts.autoSkill);
+  const as = $('#btn-autoskill'); as.innerHTML = `スキル自動<small>${G.opts.autoSkill ? 'ON' : 'OFF'}</small>`; as.classList.toggle('on', G.opts.autoSkill);
   const bh = $('#btn-pot-hp'), bm = $('#btn-pot-mp');
   bh.textContent = `生命の薬 ×${p.potions.hp}`; bh.disabled = p.potions.hp <= 0;
   bm.textContent = `魔力の薬 ×${p.potions.mp}`; bm.disabled = p.potions.mp <= 0;
