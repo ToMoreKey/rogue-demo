@@ -287,7 +287,7 @@ function canUse(id) {
   const p = G.p, run = G.run;
   if (id === 'attack') return true;
   if (!p.skills[id]) return false;
-  if (p.mp < SK[id].mp) return false;
+  if (p.mp < skillMpCost(p, SK[id])) return false;
   if (run && (run.skillCt[id] || 0) > 0) return false;
   return true;
 }
@@ -322,12 +322,12 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id], te = towerEff(run), pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
-  p.mp -= s.mp;
+  const s = SK[id], te = towerEff(run), psb = p.passiveSkills ? passiveBonus(p) : { healMult: 1 }, pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
+  p.mp -= skillMpCost(p, s);
   // CTをセット
   if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
   if (s.type === 'heal') {
-    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * pb.healMult * (ae ? ae.healMult : 1))); const before = p.hp;
+    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * psb.healMult * pb.healMult * (ae ? ae.healMult : 1))); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
     if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
@@ -364,7 +364,7 @@ function playerAct() {
   const s = id === 'attack' ? { name: '攻撃', hits: 1, mult: 1 } : SK[id];
   const te = towerEff(run), ae = run.abyss ? abyssEff(run) : null;
   if (id !== 'attack') {
-    p.mp -= s.mp;
+    p.mp -= skillMpCost(p, s);
     if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
   }
   if (hasProp(p.weapon, 'madness')) {

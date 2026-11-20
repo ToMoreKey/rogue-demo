@@ -2,6 +2,7 @@
 """P7a-1 ヘルプ文言更新（新表記・旧表記削除・420pxレイアウト）テスト"""
 import functools
 import http.server
+import re
 import socketserver
 import sys
 import threading
@@ -66,9 +67,10 @@ with sync_playwright() as pw:
     check('420px横溢れなし', overflow <= 0, f'overflow={overflow}')
     check('ページエラーなし', len(errors) == 0, f'errors={errors}')
 
-    # 4. sw.js キャッシュバージョン確認
+    # 4. sw.js キャッシュバージョン確認（v25以上）
     sw_text = (ROOT / 'sw.js').read_text(encoding='utf-8')
-    check('sw_cache_v25', "const CACHE = 'rogue-v25';" in sw_text)
+    m_sw = re.search(r"const CACHE = 'rogue-v(\d+)';", sw_text)
+    check('sw_cache_v25_or_later', bool(m_sw and int(m_sw.group(1)) >= 25), m_sw.group(0) if m_sw else '')
 
     b.close()
 

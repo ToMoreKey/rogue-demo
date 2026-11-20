@@ -445,7 +445,7 @@ const MAX_BAG_CAP = 120;
 const TICK_MS = 650;
 
 const LV_CAP = 140;
-const TUNE = { floorSpan: 0.8, atkExp: 0.92, hpScale: 1, atkScale: 1, defScale: 1, bossHp: 2.2, bossAtk: 1.25, bossDef: 1, expScale: 1, goldScale: 0.30, floorRegen: 0 };
+const TUNE = { floorSpan: 0.8, atkExp: 0.92, hpScale: 1.35, atkScale: 1.02, defScale: 1, bossHp: 2.5, bossAtk: 1.4, bossDef: 1, expScale: 1, goldScale: 0.30, floorRegen: 0 };
 const RARITY = [
   { id: 'common', name: 'コモン',     mult: 1.0, sell: 10 },
   { id: 'rare',   name: 'レア',       mult: 1.4, sell: 30 },
@@ -697,7 +697,7 @@ const SKILL_TREES = [
     stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
-      { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：全ステータスが25%上昇', passive: 'hero10' },
+      { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
       { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
       { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },
       { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
@@ -1604,7 +1604,8 @@ const bestGearItem = (p, slot) => {
   }
   return best;
 };
-const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.mastery ? masteryBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
+const skillMpCost = (p, s) => Math.max(1, Math.round(s.mp * (p && p.passiveSkills ? passiveBonus(p).mpCostMult : 1)));
+const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.passiveSkills ? passiveBonus(p).atkMult : 1) * (p.mastery ? masteryBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
 const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? masteryBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 
 function mkItem(p, o) {
@@ -2220,7 +2221,7 @@ function canUse(id) {
   const p = G.p, run = G.run;
   if (id === 'attack') return true;
   if (!p.skills[id]) return false;
-  if (p.mp < SK[id].mp) return false;
+  if (p.mp < skillMpCost(p, SK[id])) return false;
   if (run && (run.skillCt[id] || 0) > 0) return false;
   return true;
 }
@@ -2255,12 +2256,12 @@ function tickSkillCt() {
 }
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
-  const s = SK[id], te = towerEff(run), pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
-  p.mp -= s.mp;
+  const s = SK[id], te = towerEff(run), psb = p.passiveSkills ? passiveBonus(p) : { healMult: 1 }, pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
+  p.mp -= skillMpCost(p, s);
   // CTをセット
   if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
   if (s.type === 'heal') {
-    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * pb.healMult * (ae ? ae.healMult : 1))); const before = p.hp;
+    const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * psb.healMult * pb.healMult * (ae ? ae.healMult : 1))); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
     addLog(`${s.name}！ HPが${p.hp - before}回復した。`, 'l-good'); popDamage('player', `+${p.hp - before}`, 'heal');
     if (s.mpFull) { const mb = p.mp; p.mp = maxMp(p); if (p.mp > mb) addLog(`MPが${p.mp - mb}回復した。`, 'l-good'); }
@@ -2297,7 +2298,7 @@ function playerAct() {
   const s = id === 'attack' ? { name: '攻撃', hits: 1, mult: 1 } : SK[id];
   const te = towerEff(run), ae = run.abyss ? abyssEff(run) : null;
   if (id !== 'attack') {
-    p.mp -= s.mp;
+    p.mp -= skillMpCost(p, s);
     if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
   }
   if (hasProp(p.weapon, 'madness')) {
@@ -3591,7 +3592,7 @@ function renderBattle() {
   bm.textContent = `魔力の薬 ×${p.potions.mp}`; bm.disabled = p.potions.mp <= 0;
   const slots = p.equippedSkills || [null, null, null];
   const ctMap = run.skillCt || {};
-  const key = slots.map(id => id + (id ? (ctMap[id] || 0) : 0) + (id && p.mp >= SK[id]?.mp ? 1 : 0)).join(',');
+  const key = slots.map(id => id + (id ? (ctMap[id] || 0) : 0) + (id && SK[id] && p.mp >= skillMpCost(p, SK[id]) ? 1 : 0)).join(',') + '|' + (p.passiveSkills && p.passiveSkills.mage10 ? 1 : 0);
   if (key !== run.skKey) {
     run.skKey = key;
     const hasAny = slots.some(id => !!id);
@@ -3600,10 +3601,10 @@ function renderBattle() {
     } else {
       $('#skill-row').innerHTML = slots.map((id, i) => {
         if (!id) return `<span class="skill" style="opacity:.35;cursor:default">─ S${i+1}<small>空き</small></span>`;
-        const s = SK[id]; const ct = ctMap[id] || 0;
-        const usable = ct === 0 && p.mp >= s.mp;
+        const s = SK[id]; const ct = ctMap[id] || 0; const mpCost = skillMpCost(p, s);
+        const usable = ct === 0 && p.mp >= mpCost;
         return `<span class="skill ${usable ? '' : 'disabled'}" style="opacity:${usable ? 1 : 0.5};cursor:default">
-          ${s.name}<small>${ct > 0 ? `CT:${ct}` : `MP:${s.mp}`}</small>
+          ${s.name}<small>${ct > 0 ? `CT:${ct}` : `MP:${mpCost}`}</small>
         </span>`;
       }).join('');
     }
@@ -3702,7 +3703,7 @@ function renderSkillTrees(p) {
         <span class="ms-icon">${icon}</span>
         <div class="ms-detail">
           <b class="ms-name">${ms.name}</b>
-          <span class="ms-desc">${ms.desc}${ms.id && SK[ms.id] ? ` <small>MP${SK[ms.id].mp} CT${SK[ms.id].ct}T</small>` : ''}</span>
+          <span class="ms-desc">${ms.desc}${ms.id && SK[ms.id] ? ` <small>MP${skillMpCost(p, SK[ms.id])} CT${SK[ms.id].ct}T</small>` : ''}</span>
         </div>
       </div>`;
     }).join('');
@@ -3763,7 +3764,7 @@ function renderSkillSlots(p) {
     return `<div class="sk-slot filled">
       <div class="sk-slot-num">スロット${i + 1}</div>
       <div class="sk-slot-name">${s.name}</div>
-      <div class="sk-slot-mp">MP ${s.mp}</div>
+      <div class="sk-slot-mp">MP ${skillMpCost(p, s)}</div>
       <div class="sk-slot-ct">CT ${s.ct}T</div>
       <button class="btn small" style="font-size:10px;padding:2px 6px;margin-top:4px" data-act="unequipSkill" data-slot="${i}">外す</button>
     </div>`;
@@ -3782,7 +3783,7 @@ function renderSkillSlots(p) {
       return `<div class="sk-list-item ${isEquipped ? 'equipped' : ''}">
         <div style="flex:1;min-width:0">
           <div class="sk-list-name">${s.name}${isEquipped ? ` <span style="font-size:10px;color:var(--accent)">▶ S${eqSlot + 1}</span>` : ''}</div>
-          <div class="sk-list-meta"><span class="mp">MP ${s.mp}</span><span class="ct">CT ${s.ct}T</span><span>${s.desc}</span></div>
+          <div class="sk-list-meta"><span class="mp">MP ${skillMpCost(p, s)}</span><span class="ct">CT ${s.ct}T</span><span>${s.desc}</span></div>
         </div>
         <div class="sk-equip-btns">${equipBtns}</div>
       </div>`;
@@ -4374,7 +4375,7 @@ function renderHelp() {
 
     <h3 style="font-size:13px;margin:14px 0 6px;color:var(--muted)">── 習得できるスキル一覧 ──</h3>
     <div class="help-table">
-      ${SK_ORDER.map(id => { const s = SK[id]; return `<div class="help-row"><span class="help-facility">${s.name}</span><span>${s.desc} <small style="color:var(--accent)">MP${s.mp} CT${s.ct}T</small></span></div>`; }).join('')}
+      ${SK_ORDER.map(id => { const s = SK[id]; return `<div class="help-row"><span class="help-facility">${s.name}</span><span>${s.desc} <small style="color:var(--accent)">MP${skillMpCost(G.p, s)} CT${s.ct}T</small></span></div>`; }).join('')}
     </div>
   </div>
 
@@ -4708,7 +4709,7 @@ window.__rogue = {
   TUNE, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
-  maxHp, maxMp, playerAtk, playerDef, armorDef, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
+  maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, save, load, equipBest, newPlayer, usePotion, scaleOf,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
   noTimer(v) { G.noTimer = !!v; ensureLoop(); },

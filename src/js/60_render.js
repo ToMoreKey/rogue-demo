@@ -279,7 +279,7 @@ function renderBattle() {
   bm.textContent = `魔力の薬 ×${p.potions.mp}`; bm.disabled = p.potions.mp <= 0;
   const slots = p.equippedSkills || [null, null, null];
   const ctMap = run.skillCt || {};
-  const key = slots.map(id => id + (id ? (ctMap[id] || 0) : 0) + (id && p.mp >= SK[id]?.mp ? 1 : 0)).join(',');
+  const key = slots.map(id => id + (id ? (ctMap[id] || 0) : 0) + (id && SK[id] && p.mp >= skillMpCost(p, SK[id]) ? 1 : 0)).join(',') + '|' + (p.passiveSkills && p.passiveSkills.mage10 ? 1 : 0);
   if (key !== run.skKey) {
     run.skKey = key;
     const hasAny = slots.some(id => !!id);
@@ -288,10 +288,10 @@ function renderBattle() {
     } else {
       $('#skill-row').innerHTML = slots.map((id, i) => {
         if (!id) return `<span class="skill" style="opacity:.35;cursor:default">─ S${i+1}<small>空き</small></span>`;
-        const s = SK[id]; const ct = ctMap[id] || 0;
-        const usable = ct === 0 && p.mp >= s.mp;
+        const s = SK[id]; const ct = ctMap[id] || 0; const mpCost = skillMpCost(p, s);
+        const usable = ct === 0 && p.mp >= mpCost;
         return `<span class="skill ${usable ? '' : 'disabled'}" style="opacity:${usable ? 1 : 0.5};cursor:default">
-          ${s.name}<small>${ct > 0 ? `CT:${ct}` : `MP:${s.mp}`}</small>
+          ${s.name}<small>${ct > 0 ? `CT:${ct}` : `MP:${mpCost}`}</small>
         </span>`;
       }).join('');
     }
@@ -390,7 +390,7 @@ function renderSkillTrees(p) {
         <span class="ms-icon">${icon}</span>
         <div class="ms-detail">
           <b class="ms-name">${ms.name}</b>
-          <span class="ms-desc">${ms.desc}${ms.id && SK[ms.id] ? ` <small>MP${SK[ms.id].mp} CT${SK[ms.id].ct}T</small>` : ''}</span>
+          <span class="ms-desc">${ms.desc}${ms.id && SK[ms.id] ? ` <small>MP${skillMpCost(p, SK[ms.id])} CT${SK[ms.id].ct}T</small>` : ''}</span>
         </div>
       </div>`;
     }).join('');
@@ -451,7 +451,7 @@ function renderSkillSlots(p) {
     return `<div class="sk-slot filled">
       <div class="sk-slot-num">スロット${i + 1}</div>
       <div class="sk-slot-name">${s.name}</div>
-      <div class="sk-slot-mp">MP ${s.mp}</div>
+      <div class="sk-slot-mp">MP ${skillMpCost(p, s)}</div>
       <div class="sk-slot-ct">CT ${s.ct}T</div>
       <button class="btn small" style="font-size:10px;padding:2px 6px;margin-top:4px" data-act="unequipSkill" data-slot="${i}">外す</button>
     </div>`;
@@ -470,7 +470,7 @@ function renderSkillSlots(p) {
       return `<div class="sk-list-item ${isEquipped ? 'equipped' : ''}">
         <div style="flex:1;min-width:0">
           <div class="sk-list-name">${s.name}${isEquipped ? ` <span style="font-size:10px;color:var(--accent)">▶ S${eqSlot + 1}</span>` : ''}</div>
-          <div class="sk-list-meta"><span class="mp">MP ${s.mp}</span><span class="ct">CT ${s.ct}T</span><span>${s.desc}</span></div>
+          <div class="sk-list-meta"><span class="mp">MP ${skillMpCost(p, s)}</span><span class="ct">CT ${s.ct}T</span><span>${s.desc}</span></div>
         </div>
         <div class="sk-equip-btns">${equipBtns}</div>
       </div>`;
@@ -1062,7 +1062,7 @@ function renderHelp() {
 
     <h3 style="font-size:13px;margin:14px 0 6px;color:var(--muted)">── 習得できるスキル一覧 ──</h3>
     <div class="help-table">
-      ${SK_ORDER.map(id => { const s = SK[id]; return `<div class="help-row"><span class="help-facility">${s.name}</span><span>${s.desc} <small style="color:var(--accent)">MP${s.mp} CT${s.ct}T</small></span></div>`; }).join('')}
+      ${SK_ORDER.map(id => { const s = SK[id]; return `<div class="help-row"><span class="help-facility">${s.name}</span><span>${s.desc} <small style="color:var(--accent)">MP${skillMpCost(G.p, s)} CT${s.ct}T</small></span></div>`; }).join('')}
     </div>
   </div>
 
