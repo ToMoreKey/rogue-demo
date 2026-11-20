@@ -33,6 +33,7 @@ check('テスト版: セーブ・チュートリアル・ランキングキャ�
     and "SAVE_KEY = 'rogue_test_save_v1'" not in dev
     and "BACKUP_META_KEY = 'rogue_backup_meta_v1'" not in dev
     and "IDB_BACKUP_NAME = 'rogue_backup_db_v1'" not in dev)
+check('テスト用の全装備ボタン: 本番は出さず、テスト版だけ出す', 'const IS_DEV_BUILD = false;' in prod and 'const IS_DEV_BUILD = true;' in dev)
 check('テスト版: ランキング送信先が空', "formUrl: ''" in dev and 'docs.google.com/forms' not in dev)
 check('テスト版: TEST表示とタイトル', 'id="dev-badge"' in dev and '<title>[TEST] rogue_test</title>' in dev)
 sw_main = open(os.path.join(site, 'sw.js'), encoding='utf-8').read()
@@ -79,6 +80,12 @@ with sync_playwright() as pw:
     keys = pd.evaluate('() => Object.keys(localStorage)')
     check('テスト版: テスト版キーに保存される', 'rogue_dev_save_v1' in keys, keys)
     check('テスト版の保存で、本番のセーブが変わらない', pg.evaluate('() => JSON.parse(localStorage.getItem("rogue_test_save_v1")).p.gold') == 12345)
+    pg.evaluate('() => document.getElementById("nav-status").click()')
+    pd.evaluate('() => { G.tutorial = { done: true }; document.getElementById("nav-status").click(); }')
+    pg.wait_for_timeout(300); pd.wait_for_timeout(300)
+    check('画面: 本番に「全装備を入手」ボタンが無い', pg.evaluate('() => !document.querySelector("[data-act=debugAllGear]")'))
+    check('画面: テスト版には「全装備を入手」ボタンがある', pd.evaluate('() => !!document.querySelector("[data-act=debugAllGear]")'))
+    check('本番: 直接呼んでも全装備は入らない', pg.evaluate('() => { const n = G.p.bag.length; window.__rogue.ACTS.debugAllGear(); return G.p.bag.length === n; }'))
     check('テスト版: 420pxで横スクロールなし', pd.evaluate('() => document.documentElement.scrollWidth <= document.documentElement.clientWidth'))
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()

@@ -572,7 +572,7 @@ function renderStatus() {
         </button>`).join('')}
       </div></div>
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
-      <button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>
+      ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="sub" style="margin-bottom:6px;font-size:12px">セーブの書き出し・読み込み（バックアップ／引き継ぎ）<br>最終書き出し：<b>${formatBackupDate(readBackupMeta().lastExportAt)}</b></div>

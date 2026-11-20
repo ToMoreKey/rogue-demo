@@ -219,6 +219,7 @@ const ACTS = {
   },
   // テスト用: 全種類の武器・防具（★1〜5 × レア度4種）をバッグに追加
   debugAllGear() {
+    if (!IS_DEV_BUILD) return;
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
     for (const slot of ['weapon', 'armor']) for (let star = 1; star <= SMITH_MAX_STAR; star++) for (let r = 0; r < 4; r++) {

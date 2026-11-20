@@ -438,6 +438,8 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 
 /* ================= data ================= */
 const SAVE_KEY = 'rogue_test_save_v1';
+// テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
+const IS_DEV_BUILD = false;
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -3404,6 +3406,7 @@ const ACTS = {
   },
   // テスト用: 全種類の武器・防具（★1〜5 × レア度4種）をバッグに追加
   debugAllGear() {
+    if (!IS_DEV_BUILD) return;
     if (G.run) { toast('探索中は使えません'); return; }
     const p = G.p; let n = 0;
     for (const slot of ['weapon', 'armor']) for (let star = 1; star <= SMITH_MAX_STAR; star++) for (let r = 0; r < 4; r++) {
@@ -4234,7 +4237,7 @@ function renderStatus() {
         </button>`).join('')}
       </div></div>
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
-      <button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>
+      ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="sub" style="margin-bottom:6px;font-size:12px">セーブの書き出し・読み込み（バックアップ／引き継ぎ）<br>最終書き出し：<b>${formatBackupDate(readBackupMeta().lastExportAt)}</b></div>

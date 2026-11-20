@@ -84,6 +84,7 @@ def to_dev(html):
     html = sub_once(html, "const SAVE_KEY = 'rogue_test_save_v1';", "const SAVE_KEY = 'rogue_dev_save_v1';")
     html = sub_once(html, "const BACKUP_META_KEY = 'rogue_backup_meta_v1';", "const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';")
     html = sub_once(html, "const IDB_BACKUP_NAME = 'rogue_backup_db_v1';", "const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';")
+    html = sub_once(html, "const IS_DEV_BUILD = false;", "const IS_DEV_BUILD = true;")
     html = sub_once(html, "const TUT_SAVE_KEY = 'rogue_tut_done_v1';", "const TUT_SAVE_KEY = 'rogue_dev_tut_done_v1';")
     html = sub_once(html, "cacheKey: 'rogue_ranking_cache_v1'", "cacheKey: 'rogue_dev_ranking_cache_v1'")
     # ランキング送信を無効化（フォームURLを空にする。表示は data/ranking.json の読み取りのみ）
