@@ -366,3 +366,6 @@ P7 はデバッグ部隊の通しプレイ後に、採用された項目の数�
 
 ### P8（セーブのバックアップ・引き継ぎ）の決定（2026-11-20）
 セーブをファイル／コードで書き出し・読み込みでき、`persist()` と IndexedDB で消えにくくする。控えめな案内（トースト、7日に1回）。クラウド保存はしない。詳細は `docs/change_P8_backup.md`、依頼は `docs/gemini_prompt_P8.md`。確認は先にテスト版（/dev/）で行い、公開は運営者が決める。
+
+### P9（ゲーム内の不具合報告）の決定（2026-11-22）
+Googleフォーム経由（ランキングと同方式）で、種類・内容・診断情報を蓄積する。診断情報にセーブデータ・個人情報は含めない。運営者がCSVを書き出し、`tools/make_bug_report.py` で対策リストを作る。詳細は `docs/change_P9_bugreport.md`、運用は `docs/bugreport_setup.md`、依頼は `docs/gemini_prompt_P9.md`。
