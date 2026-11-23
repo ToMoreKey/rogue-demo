@@ -37,7 +37,8 @@ check('テスト版: セーブ・チュートリアル・ランキングキャ�
     and "rogue_bugreport_queue_v1" not in dev
     and "rogue_bugreport_last_v1" not in dev)
 check('テスト用の全装備ボタン: 本番は出さず、テスト版だけ出す', 'const IS_DEV_BUILD = false;' in prod and 'const IS_DEV_BUILD = true;' in dev)
-check('テスト版: ランキング送信先が空', "formUrl: ''" in dev and 'docs.google.com/forms' not in dev)
+check('テスト版: ランキング送信先が空', "formUrl: ''" in dev and '1FAIpQLSf07yvFY41jFlZud8H2KHnM9aZCk2dUNPDsOsF9dtmsQNeFYA' not in dev)
+check('不具合報告の送信先: 本番・テスト版の両方に入っている（ランキングとは別）', "reportUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd8nq" in prod and "reportUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd8nq" in dev)
 check('テスト版: TEST表示とタイトル', 'id="dev-badge"' in dev and '<title>[TEST] rogue_test</title>' in dev)
 sw_main = open(os.path.join(site, 'sw.js'), encoding='utf-8').read()
 sw_dev = open(os.path.join(site, 'dev', 'sw.js'), encoding='utf-8').read()

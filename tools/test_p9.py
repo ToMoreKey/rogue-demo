@@ -54,6 +54,8 @@ with sync_playwright() as pw:
     pg.evaluate('() => { G.tutorial = { done: true }; const o = document.getElementById("tut-overlay"); if (o) o.hidden = true; }')
 
     # 基準1 & 5: 入口2か所から開き、reportUrl空時は「準備中」、同意・5〜500文字制限が効く
+    # 本番の設定値に依存しないよう、最初は未設定（空）の状態にする
+    pg.evaluate('() => { const C = window.__rogue.BUGREPORT_CFG; window.__bugcfg0 = Object.assign({}, C); C.reportUrl = ""; C.entryKind = ""; C.entryText = ""; C.entryDiag = ""; }')
     pg.click('#nav-help')
     pg.wait_for_timeout(150)
     help_txt = pg.evaluate('() => document.querySelector("#view-help").innerText')

@@ -1,8 +1,8 @@
 const BUGREPORT_CFG = {
-  reportUrl: '',
-  entryKind: '',
-  entryText: '',
-  entryDiag: '',
+  reportUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd8nqnJ3vg-BGtE9hNYN3PTCsm7GlawkoPvpCkdqYPg2pHCXA/formResponse',
+  entryKind: 'entry.1918085854',
+  entryText: 'entry.947697768',
+  entryDiag: 'entry.1511050774',
   rateLimitSec: 60,
   textMin: 5,
   textMax: 500,
