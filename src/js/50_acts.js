@@ -473,6 +473,33 @@ const ACTS = {
   dismissIdbRestore() {
     G._pendingIdbRestore = null;
     closeModal();
+  },
+  openBugReport() {
+    openBugReportModal('', false);
+  },
+  async submitBugReport() {
+    const kind = ($('#br-kind') && $('#br-kind').value) || '不具合';
+    const text = ($('#br-text') && $('#br-text').value) || '';
+    const agree = !!($('#br-agree') && $('#br-agree').checked);
+    const diag = ($('#br-diag') && $('#br-diag').value) || buildBugDiag();
+    if (!isBugReportConfigured()) { openBugReportModal('準備中です', true); return; }
+    if (!agree) { openBugReportModal('送信への同意チェックが必要です', true); return; }
+    const wait = bugReportWaitSec();
+    if (wait > 0) { openBugReportModal(`連続送信は${BUGREPORT_CFG.rateLimitSec}秒に1回までです（あと${wait}秒）`, true); return; }
+    const res = await sendBugReport(kind, text, diag);
+    if (res.ok) {
+      closeModal();
+      toast('送信しました。ありがとうございます');
+    } else if (res.queued) {
+      closeModal();
+      toast('オフラインのため端末に保存しました（接続時に再送します）');
+    } else if (res.reason === 'invalid_length') {
+      openBugReportModal(`内容は${BUGREPORT_CFG.textMin}〜${BUGREPORT_CFG.textMax}文字で入力してください`, true);
+    } else if (res.reason === 'rate_limit') {
+      openBugReportModal(`連続送信は${BUGREPORT_CFG.rateLimitSec}秒に1回までです（あと${res.wait}秒）`, true);
+    } else {
+      openBugReportModal('送信できませんでした', true);
+    }
   }
 };
 

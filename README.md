@@ -54,6 +54,7 @@
 - `tools/test_variants.py` … 本番ビルドとテスト版ビルドの分離テスト（セーブ・ランキング・TEST表示。公開の仕組みは `docs/deploy_setup.md`）
 - `tools/test_p7b.py` … P7b機能テスト（序盤緩和倍率の適用範囲・回廊/深淵/後編不変・序盤計測基準）
 - `tools/test_p8.py` … P8機能テスト（セーブ書き出し/読み込み・旧版移行・不正入力拒否・IndexedDB復元・本番/開発分離）
+- `tools/test_p9.py` … P9機能テスト（不具合報告UI・診断情報・POST傍受・レート制限・オフラインキュー・集計連携）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
 - `docs/dev_notes_P3.md` … P3（G〜I前編完成）で決定したバランス数値・仕様・BOT検証結果メモ
@@ -102,6 +103,7 @@ python3 tools/test_noskip.py            # チュートリアル（スキップ�
 python3 tools/test_variants.py          # 本番／テスト版の分離テスト
 python3 tools/test_p7b.py               # P7b機能テスト（序盤緩和倍率・回廊/深淵/後編不変・序盤計測）
 python3 tools/test_p8.py                # P8機能テスト（書き出し/読み込み・旧版移行・不正拒否・IDB復元・分離）
+python3 tools/test_p9.py                # P9機能テスト（不具合報告UI・診断情報・POST傍受・キュー・集計連携）
 ```
 
 - BOTの目安（P4・全75セル / P5a・無限回廊）:

@@ -26,6 +26,7 @@ JS_ORDER = [
     'data/tower.js',
     'data/abyss.js',
     'data/ranking.js',
+    'data/bugreport.js',
     'data/dex.js',
     'data/achievements.js',
     'assets/enemy_images.js',
@@ -36,6 +37,7 @@ JS_ORDER = [
     'js/20_state.js',
     'js/30_save.js',
     'js/35_backup.js',
+    'js/36_bugreport.js',
     'js/40_game.js',
     'js/50_acts.js',
     'js/60_render.js',
@@ -64,6 +66,13 @@ def build():
                 sys.exit('src/%s が build.py の JS_ORDER/CSS_ORDER に未登録です' % rel)
     css = ''.join(read(p) for p in CSS_ORDER)
     js = ''.join(read(p) for p in JS_ORDER)
+    sw_txt = open(os.path.join(ROOT, 'sw.js'), encoding='utf-8').read()
+    m_cache = re.search(r"const CACHE = '([^']+)';", sw_txt)
+    if not m_cache:
+        sys.exit('sw.js の CACHE が見つかりません')
+    js, n_ver = re.subn(r"const APP_VERSION = '[^']*';", f"const APP_VERSION = '{m_cache.group(1)}';", js)
+    if n_ver != 1:
+        sys.exit('APP_VERSION の置換が1箇所ではありません（%d）' % n_ver)
     # str.replace は置換文字列を解釈しないので、base64やバックスラッシュも安全
     return tpl.replace('{{CSS}}', css.rstrip('\n')).replace('{{JS}}', js.rstrip('\n'))
 
@@ -85,6 +94,11 @@ def to_dev(html):
     html = sub_once(html, "const BACKUP_META_KEY = 'rogue_backup_meta_v1';", "const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';")
     html = sub_once(html, "const IDB_BACKUP_NAME = 'rogue_backup_db_v1';", "const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';")
     html = sub_once(html, "const IS_DEV_BUILD = false;", "const IS_DEV_BUILD = true;")
+    html, n_av = re.subn(r"const APP_VERSION = 'rogue-(v\d+)';", r"const APP_VERSION = 'rogue-dev-\1';", html)
+    if n_av != 1:
+        sys.exit('dev ビルド: APP_VERSION の置換が1箇所ではありません（%d）' % n_av)
+    html = sub_once(html, "queueKey: 'rogue_bugreport_queue_v1'", "queueKey: 'rogue_dev_bugreport_queue_v1'")
+    html = sub_once(html, "rateKey: 'rogue_bugreport_last_v1'", "rateKey: 'rogue_dev_bugreport_last_v1'")
     html = sub_once(html, "const TUT_SAVE_KEY = 'rogue_tut_done_v1';", "const TUT_SAVE_KEY = 'rogue_dev_tut_done_v1';")
     html = sub_once(html, "cacheKey: 'rogue_ranking_cache_v1'", "cacheKey: 'rogue_dev_ranking_cache_v1'")
     # ランキング送信を無効化（フォームURLを空にする。表示は data/ranking.json の読み取りのみ）

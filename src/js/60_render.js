@@ -580,11 +580,67 @@ function renderStatus() {
           <button class="btn small" data-act="exportSaveFile">セーブを書き出す（ファイル）</button>
           <button class="btn small" data-act="exportSaveCode">セーブを書き出す（コード）</button>
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
+          <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
       </div></div>`;
 }
 
 /* ================= render: modal ================= */
+function openBugReportModal(statusMsg, isErr) {
+  const configured = isBugReportConfigured();
+  const wait = bugReportWaitSec();
+  const diag = buildBugDiag();
+  const qLen = readBugQueue().length;
+  const notice = !configured
+    ? '<p id="br-notice" style="color:#ff7b72;font-size:12px;margin:6px 0">準備中です（送信先が未設定のため送信できません）</p>'
+    : (wait > 0 ? `<p id="br-notice" style="color:#ff7b72;font-size:12px;margin:6px 0">連続送信は${BUGREPORT_CFG.rateLimitSec}秒に1回までです（あと${wait}秒）</p>` : '');
+  const msgHtml = statusMsg ? `<p id="br-msg" style="color:${isErr ? '#ff7b72' : 'var(--good)'};font-size:12px;margin:6px 0">${esc(statusMsg)}</p>` : '';
+  const qHtml = qLen > 0 ? `<p class="sub" style="font-size:11px;margin:4px 0">未送信キュー：${qLen}件（オンライン時に再送されます）</p>` : '';
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">不具合・ご意見を送る</h2>
+    ${notice}${msgHtml}${qHtml}
+    <div style="margin:8px 0">
+      <label for="br-kind" style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">種類</label>
+      <select id="br-kind" style="width:100%;padding:6px 8px;background:#0d111a;color:#e6edf3;border:1px solid #2b3245;border-radius:6px;font-size:13px">
+        <option value="不具合">不具合</option>
+        <option value="バランス">バランス</option>
+        <option value="要望">要望</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+    <div style="margin:8px 0">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px">
+        <label for="br-text">内容（${BUGREPORT_CFG.textMin}〜${BUGREPORT_CFG.textMax}文字）</label>
+        <span id="br-count">0 / ${BUGREPORT_CFG.textMax}</span>
+      </div>
+      <textarea id="br-text" maxlength="${BUGREPORT_CFG.textMax}" placeholder="不具合の状況やご意見をご記入ください" style="width:100%;box-sizing:border-box;height:96px;background:#0d111a;color:#e6edf3;border:1px solid #2b3245;border-radius:6px;padding:8px;font-size:12px"></textarea>
+      <div class="sub" style="font-size:11px;margin-top:4px">どの画面で何を押したか、書いてもらえると助かります</div>
+    </div>
+    <div style="margin:8px 0">
+      <label for="br-diag" style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">送信される診断情報（読み取り専用）</label>
+      <textarea id="br-diag" readonly style="width:100%;box-sizing:border-box;height:58px;background:#0d111a;color:#8b949e;border:1px solid #2b3245;border-radius:6px;padding:6px;font-size:11px">${esc(diag)}</textarea>
+    </div>
+    <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;margin:8px 0;cursor:pointer">
+      <input type="checkbox" id="br-agree" style="margin-top:2px">
+      <span>内容と診断情報（セーブデータ・名前は含みません）を送信することに同意します</span>
+    </label>
+    <div class="act" style="gap:8px">
+      <button class="btn primary" id="br-send" data-act="submitBugReport" disabled>送信する</button>
+      <button class="btn" data-act="closeTowerModal">キャンセル</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  const ta = $('#br-text'), cnt = $('#br-count'), agr = $('#br-agree'), btn = $('#br-send');
+  const syncState = () => {
+    const len = ta ? ta.value.trim().length : 0;
+    if (cnt) cnt.textContent = `${ta ? ta.value.length : 0} / ${BUGREPORT_CFG.textMax}`;
+    const okLen = len >= BUGREPORT_CFG.textMin && len <= BUGREPORT_CFG.textMax;
+    const okAgree = !!(agr && agr.checked);
+    if (btn) btn.disabled = !(configured && wait === 0 && okLen && okAgree);
+  };
+  if (ta) ta.addEventListener('input', syncState);
+  if (agr) agr.addEventListener('change', syncState);
+  syncState();
+}
 function openExportCodeModal(code) {
   $('#m-sheet').innerHTML = `
     <h2 id="m-title">セーブコード</h2>
@@ -1163,6 +1219,7 @@ function renderHelp() {
       <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
       <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面下部の「データ」から、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
+      <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」から、不具合やバランスのご意見を送信できる</li>
     </ul>
   </div>
 
@@ -1205,6 +1262,9 @@ function renderHelp() {
       送信設定でニックネーム（1〜12文字）と同意を保存したプレイヤーのみ、自己ベスト更新時に自動で記録が送信されます。<br>
       送信した記録は運営者の確認後に掲載されるため、ランキングへの反映には時間がかかります。</p>
     </details>
+  </div>
+  <div class="panel" style="text-align:center">
+    <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
   </div>`;
 }
 
