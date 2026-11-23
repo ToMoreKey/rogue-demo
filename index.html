@@ -451,6 +451,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
+const APP_VERSION = 'rogue-v35';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -1033,6 +1034,17 @@ const RANKING_CFG = {
   nameMax: 12,
   maxFloor: 500,
   cacheKey: 'rogue_ranking_cache_v1'
+};
+const BUGREPORT_CFG = {
+  reportUrl: '',
+  entryKind: '',
+  entryText: '',
+  entryDiag: '',
+  rateLimitSec: 60,
+  textMin: 5,
+  textMax: 500,
+  queueKey: 'rogue_bugreport_queue_v1',
+  rateKey: 'rogue_bugreport_last_v1'
 };
 // 図鑑データ（敵図鑑94種・装備図鑑22種）
 const DEX_STARS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -2208,6 +2220,150 @@ function maybeShowBackupToast() {
     writeBackupMeta({ lastPromptAt: now });
     toast('セーブの書き出しをおすすめします（設定）');
   }
+}
+/* ================= bugreport ================= */
+const _bugErrors = [];
+
+function sanitizeErrPart(s, maxLen = 120) {
+  return String(s || '')
+    .replace(/https?:\/\/\S+/gi, '[url]')
+    .replace(/file:\/\/\S+/gi, '[file]')
+    .replace(/[;|]/g, ' ')
+    .replace(/[\r\n]+/g, ' ')
+    .trim()
+    .slice(0, maxLen);
+}
+function pushBugError(msg, file, line) {
+  const m = sanitizeErrPart(msg || 'Error', 120);
+  const f = file ? sanitizeErrPart(String(file).split(/[\\/]/).pop().split('?')[0], 40) : '';
+  const loc = f ? `@${f}${line ? ':' + line : ''}` : '';
+  const entry = (m + loc).slice(0, 120);
+  if (!entry) return;
+  _bugErrors.push(entry);
+  while (_bugErrors.length > 3) _bugErrors.shift();
+}
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('error', e => {
+    pushBugError(e && e.message ? e.message : 'ScriptError', e && e.filename, e && e.lineno);
+  });
+  window.addEventListener('unhandledrejection', e => {
+    const r = e && e.reason;
+    const msg = r && r.message ? r.message : String(r || 'UnhandledRejection');
+    pushBugError(msg, '', 0);
+  });
+}
+function parseUaShort() {
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : '';
+  let br = 'Other';
+  if (/Edg\//i.test(ua)) br = 'Edge';
+  else if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) br = 'Chrome';
+  else if (/Firefox\//i.test(ua)) br = 'Firefox';
+  else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) br = 'Safari';
+  let os = 'Other';
+  if (/Android/i.test(ua)) os = 'Android';
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+  else if (/Windows/i.test(ua)) os = 'Windows';
+  else if (/Mac OS X|Macintosh/i.test(ua)) os = 'macOS';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+  return `${br} ${os}`;
+}
+function buildBugDiag() {
+  const p = G && G.p ? G.p : null;
+  const run = G && G.run ? G.run : null;
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 0;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 0;
+  const b = IS_DEV_BUILD ? 'dev' : 'prod';
+  const ver = typeof APP_VERSION === 'string' ? APP_VERSION : 'unknown';
+  const lv = p ? (Number(p.lv) || 1) : 1;
+  const dg = run && run.d ? run.d.id : '-';
+  const fl = run ? (Number(run.floor) || 1) : '-';
+  const view = G && G.view ? G.view : '-';
+  const err = _bugErrors.length ? _bugErrors.join(' | ') : '-';
+  return `build=${b}; ver=${ver}; vp=${vw}x${vh}; ua=${parseUaShort()}; lv=${lv}; dg=${dg}; fl=${fl}; view=${view}; err=${err}`;
+}
+function isBugReportConfigured() {
+  return !!(BUGREPORT_CFG.reportUrl && BUGREPORT_CFG.entryKind && BUGREPORT_CFG.entryText && BUGREPORT_CFG.entryDiag);
+}
+function bugReportWaitSec() {
+  try {
+    const last = Number(localStorage.getItem(BUGREPORT_CFG.rateKey) || 0);
+    if (!last || !isFinite(last)) return 0;
+    const rem = Math.ceil((last + BUGREPORT_CFG.rateLimitSec * 1000 - Date.now()) / 1000);
+    return rem > 0 ? rem : 0;
+  } catch (e) { return 0; }
+}
+function readBugQueue() {
+  try {
+    const raw = localStorage.getItem(BUGREPORT_CFG.queueKey);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.slice(-5) : [];
+  } catch (e) { return []; }
+}
+function writeBugQueue(arr) {
+  try {
+    localStorage.setItem(BUGREPORT_CFG.queueKey, JSON.stringify((arr || []).slice(-5)));
+  } catch (e) {}
+}
+function buildBugFormData(kind, text, diag) {
+  const fd = new FormData();
+  fd.append(BUGREPORT_CFG.entryKind, kind);
+  fd.append(BUGREPORT_CFG.entryText, text);
+  fd.append(BUGREPORT_CFG.entryDiag, diag);
+  return fd;
+}
+async function sendBugReport(kind, text, diag) {
+  if (!isBugReportConfigured()) return { ok: false, reason: 'not_configured' };
+  const cleanText = String(text || '').trim();
+  if (cleanText.length < BUGREPORT_CFG.textMin || cleanText.length > BUGREPORT_CFG.textMax) {
+    return { ok: false, reason: 'invalid_length' };
+  }
+  const wait = bugReportWaitSec();
+  if (wait > 0) return { ok: false, reason: 'rate_limit', wait };
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  if (offline) {
+    const q = readBugQueue();
+    q.push({ kind, text: cleanText, diag, ts: Date.now() });
+    writeBugQueue(q);
+    return { ok: false, queued: true };
+  }
+  try {
+    await fetch(BUGREPORT_CFG.reportUrl, { method: 'POST', mode: 'no-cors', body: buildBugFormData(kind, cleanText, diag) });
+    try { localStorage.setItem(BUGREPORT_CFG.rateKey, String(Date.now())); } catch (e) {}
+    return { ok: true };
+  } catch (e) {
+    const q = readBugQueue();
+    q.push({ kind, text: cleanText, diag, ts: Date.now() });
+    writeBugQueue(q);
+    return { ok: false, queued: true };
+  }
+}
+let _flushingQueue = false;
+async function flushBugQueue() {
+  if (_flushingQueue || !isBugReportConfigured()) return 0;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return 0;
+  const q = readBugQueue();
+  if (!q.length) return 0;
+  _flushingQueue = true;
+  let sent = 0;
+  const remain = [];
+  try {
+    for (let i = 0; i < q.length; i++) {
+      const it = q[i];
+      if (!it || !it.text) continue;
+      try {
+        await fetch(BUGREPORT_CFG.reportUrl, { method: 'POST', mode: 'no-cors', body: buildBugFormData(it.kind || 'その他', it.text, it.diag || '') });
+        sent++;
+      } catch (e) {
+        for (let j = i; j < q.length; j++) remain.push(q[j]);
+        break;
+      }
+    }
+    writeBugQueue(remain);
+  } finally {
+    _flushingQueue = false;
+  }
+  return sent;
 }
 
 /* ================= toast ================= */
@@ -3671,6 +3827,33 @@ const ACTS = {
   dismissIdbRestore() {
     G._pendingIdbRestore = null;
     closeModal();
+  },
+  openBugReport() {
+    openBugReportModal('', false);
+  },
+  async submitBugReport() {
+    const kind = ($('#br-kind') && $('#br-kind').value) || '不具合';
+    const text = ($('#br-text') && $('#br-text').value) || '';
+    const agree = !!($('#br-agree') && $('#br-agree').checked);
+    const diag = ($('#br-diag') && $('#br-diag').value) || buildBugDiag();
+    if (!isBugReportConfigured()) { openBugReportModal('準備中です', true); return; }
+    if (!agree) { openBugReportModal('送信への同意チェックが必要です', true); return; }
+    const wait = bugReportWaitSec();
+    if (wait > 0) { openBugReportModal(`連続送信は${BUGREPORT_CFG.rateLimitSec}秒に1回までです（あと${wait}秒）`, true); return; }
+    const res = await sendBugReport(kind, text, diag);
+    if (res.ok) {
+      closeModal();
+      toast('送信しました。ありがとうございます');
+    } else if (res.queued) {
+      closeModal();
+      toast('オフラインのため端末に保存しました（接続時に再送します）');
+    } else if (res.reason === 'invalid_length') {
+      openBugReportModal(`内容は${BUGREPORT_CFG.textMin}〜${BUGREPORT_CFG.textMax}文字で入力してください`, true);
+    } else if (res.reason === 'rate_limit') {
+      openBugReportModal(`連続送信は${BUGREPORT_CFG.rateLimitSec}秒に1回までです（あと${res.wait}秒）`, true);
+    } else {
+      openBugReportModal('送信できませんでした', true);
+    }
   }
 };
 
@@ -4256,11 +4439,67 @@ function renderStatus() {
           <button class="btn small" data-act="exportSaveFile">セーブを書き出す（ファイル）</button>
           <button class="btn small" data-act="exportSaveCode">セーブを書き出す（コード）</button>
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
+          <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
       </div></div>`;
 }
 
 /* ================= render: modal ================= */
+function openBugReportModal(statusMsg, isErr) {
+  const configured = isBugReportConfigured();
+  const wait = bugReportWaitSec();
+  const diag = buildBugDiag();
+  const qLen = readBugQueue().length;
+  const notice = !configured
+    ? '<p id="br-notice" style="color:#ff7b72;font-size:12px;margin:6px 0">準備中です（送信先が未設定のため送信できません）</p>'
+    : (wait > 0 ? `<p id="br-notice" style="color:#ff7b72;font-size:12px;margin:6px 0">連続送信は${BUGREPORT_CFG.rateLimitSec}秒に1回までです（あと${wait}秒）</p>` : '');
+  const msgHtml = statusMsg ? `<p id="br-msg" style="color:${isErr ? '#ff7b72' : 'var(--good)'};font-size:12px;margin:6px 0">${esc(statusMsg)}</p>` : '';
+  const qHtml = qLen > 0 ? `<p class="sub" style="font-size:11px;margin:4px 0">未送信キュー：${qLen}件（オンライン時に再送されます）</p>` : '';
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">不具合・ご意見を送る</h2>
+    ${notice}${msgHtml}${qHtml}
+    <div style="margin:8px 0">
+      <label for="br-kind" style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">種類</label>
+      <select id="br-kind" style="width:100%;padding:6px 8px;background:#0d111a;color:#e6edf3;border:1px solid #2b3245;border-radius:6px;font-size:13px">
+        <option value="不具合">不具合</option>
+        <option value="バランス">バランス</option>
+        <option value="要望">要望</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+    <div style="margin:8px 0">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px">
+        <label for="br-text">内容（${BUGREPORT_CFG.textMin}〜${BUGREPORT_CFG.textMax}文字）</label>
+        <span id="br-count">0 / ${BUGREPORT_CFG.textMax}</span>
+      </div>
+      <textarea id="br-text" maxlength="${BUGREPORT_CFG.textMax}" placeholder="不具合の状況やご意見をご記入ください" style="width:100%;box-sizing:border-box;height:96px;background:#0d111a;color:#e6edf3;border:1px solid #2b3245;border-radius:6px;padding:8px;font-size:12px"></textarea>
+      <div class="sub" style="font-size:11px;margin-top:4px">どの画面で何を押したか、書いてもらえると助かります</div>
+    </div>
+    <div style="margin:8px 0">
+      <label for="br-diag" style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">送信される診断情報（読み取り専用）</label>
+      <textarea id="br-diag" readonly style="width:100%;box-sizing:border-box;height:58px;background:#0d111a;color:#8b949e;border:1px solid #2b3245;border-radius:6px;padding:6px;font-size:11px">${esc(diag)}</textarea>
+    </div>
+    <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;margin:8px 0;cursor:pointer">
+      <input type="checkbox" id="br-agree" style="margin-top:2px">
+      <span>内容と診断情報（セーブデータ・名前は含みません）を送信することに同意します</span>
+    </label>
+    <div class="act" style="gap:8px">
+      <button class="btn primary" id="br-send" data-act="submitBugReport" disabled>送信する</button>
+      <button class="btn" data-act="closeTowerModal">キャンセル</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  const ta = $('#br-text'), cnt = $('#br-count'), agr = $('#br-agree'), btn = $('#br-send');
+  const syncState = () => {
+    const len = ta ? ta.value.trim().length : 0;
+    if (cnt) cnt.textContent = `${ta ? ta.value.length : 0} / ${BUGREPORT_CFG.textMax}`;
+    const okLen = len >= BUGREPORT_CFG.textMin && len <= BUGREPORT_CFG.textMax;
+    const okAgree = !!(agr && agr.checked);
+    if (btn) btn.disabled = !(configured && wait === 0 && okLen && okAgree);
+  };
+  if (ta) ta.addEventListener('input', syncState);
+  if (agr) agr.addEventListener('change', syncState);
+  syncState();
+}
 function openExportCodeModal(code) {
   $('#m-sheet').innerHTML = `
     <h2 id="m-title">セーブコード</h2>
@@ -4839,6 +5078,7 @@ function renderHelp() {
       <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
       <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面下部の「データ」から、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
+      <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」から、不具合やバランスのご意見を送信できる</li>
     </ul>
   </div>
 
@@ -4881,6 +5121,9 @@ function renderHelp() {
       送信設定でニックネーム（1〜12文字）と同意を保存したプレイヤーのみ、自己ベスト更新時に自動で記録が送信されます。<br>
       送信した記録は運営者の確認後に掲載されるため、ランキングへの反映には時間がかかります。</p>
     </details>
+  </div>
+  <div class="panel" style="text-align:center">
+    <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
   </div>`;
 }
 
@@ -5135,6 +5378,8 @@ function boot() {
     if (G.view === 'town' && !G.run && p.hp < maxHp(p)) { p.hp = Math.min(maxHp(p), p.hp + 2); renderHUD(); if (G.townView === 'plaza') renderTown(); }
   }, 1000);
   window.addEventListener('pagehide', () => { save(); idbMirrorSave(true); });
+  window.addEventListener('online', () => { flushBugQueue(); });
+  flushBugQueue();
   renderAll();
   // 新規プレイヤーのみチュートリアルを開始
   tutInit();
@@ -5153,7 +5398,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
