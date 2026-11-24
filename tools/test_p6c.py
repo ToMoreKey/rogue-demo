@@ -79,10 +79,17 @@ with sync_playwright() as pw:
 
     # 2. ヘルプ画面に6つの後編・クリア後項目がある + 420px幅
     pg.click('#nav-help')
-    help_res = pg.evaluate('''() => ({
-        txt: document.querySelector('#view-help').innerText,
-        ov: document.documentElement.scrollWidth - window.innerWidth
-    })''')
+    help_res = pg.evaluate('''() => {
+        const txts = [];
+        let maxOv = 0;
+        for (const t of ['intro', 'world', 'skill', 'status', 'endgame']) {
+            window.__rogue.ACTS.helpTab({ tab: t });
+            txts.push(document.querySelector('#view-help').innerText);
+            maxOv = Math.max(maxOv, document.documentElement.scrollWidth - window.innerWidth);
+        }
+        window.__rogue.ACTS.helpTab({ tab: 'intro' });
+        return { txt: txts.join('\\n'), ov: maxOv };
+    }''')
     check('help includes all 6 endgame sections and 420px no overflow',
           all(k in help_res['txt'] for k in ['天蓋の塔', '深淵ダンジョン', '極意と進化第3段階', '装備強化', '図鑑・🏆 実績・称号', 'ランキング'])
           and '「撤退」は負けではない' in help_res['txt'] and help_res['ov'] <= 0,

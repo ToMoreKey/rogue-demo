@@ -45,9 +45,21 @@ with sync_playwright() as pw:
     pg.click('#nav-help')
     pg.wait_for_timeout(150)
 
-    help_text = pg.evaluate('() => document.querySelector("#view-help").innerText')
-    overflow = pg.evaluate('() => document.documentElement.scrollWidth - window.innerWidth')
-    has_endgame = pg.evaluate('() => !!document.getElementById("help-endgame")')
+    help_all = pg.evaluate('''() => {
+        const txts = [];
+        let maxOv = 0, hasEnd = false;
+        for (const t of ['intro', 'world', 'skill', 'status', 'endgame']) {
+            window.__rogue.ACTS.helpTab({ tab: t });
+            txts.push(document.querySelector('#view-help').innerText);
+            maxOv = Math.max(maxOv, document.documentElement.scrollWidth - window.innerWidth);
+            if (document.getElementById('help-endgame')) hasEnd = true;
+        }
+        window.__rogue.ACTS.helpTab({ tab: 'intro' });
+        return { txt: txts.join('\\n'), ov: maxOv, hasEnd };
+    }''')
+    help_text = help_all['txt']
+    overflow = help_all['ov']
+    has_endgame = help_all['hasEnd']
 
     # 1. 新しい文言が表示されていること
     check('鍛冶屋最大★9表記', '最大★9。★6以上は上位の強化素材が必要' in help_text)

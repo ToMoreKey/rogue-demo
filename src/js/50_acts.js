@@ -29,6 +29,15 @@ const ACTS = {
     if (app) app.scrollTop = 0;
     window.scrollTo(0, 0);
   },
+  helpTab(d) {
+    const t = d && d.tab;
+    if (!['intro', 'world', 'skill', 'status', 'endgame'].includes(t)) return;
+    G.helpTab = t;
+    renderHelp();
+    const app = document.getElementById('app');
+    if (app) app.scrollTop = 0;
+    window.scrollTo(0, 0);
+  },
   townEnter(d) { G.townView = d.v; renderTown(); },
   townBack() { G.townView = 'plaza'; renderTown(); },
   inn() { const p = G.p; if (p.mp >= maxMp(p)) { toast('MPはすでに満タンです'); return; } p.mp = maxMp(p); save(); toast('ぐっすり眠った。MPが全回復した！'); renderAll(); },

@@ -457,7 +457,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v37';
+const APP_VERSION = 'rogue-v38';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -1532,6 +1532,7 @@ const G = {
   smithOpen: false,
   townView: 'plaza',  // 'plaza'|'inn'|'shop'|'smith'|'bank'
   statusTab: 'hero',  // 'hero'|'gear'|'skill'|'mastery'|'data' (memory only)
+  helpTab: 'intro',   // 'intro'|'world'|'skill'|'status'|'endgame' (memory only)
   tutorial: null  // { step: 0-6, done: false } or null
 };
 
@@ -3390,6 +3391,15 @@ const ACTS = {
     if (app) app.scrollTop = 0;
     window.scrollTo(0, 0);
   },
+  helpTab(d) {
+    const t = d && d.tab;
+    if (!['intro', 'world', 'skill', 'status', 'endgame'].includes(t)) return;
+    G.helpTab = t;
+    renderHelp();
+    const app = document.getElementById('app');
+    if (app) app.scrollTop = 0;
+    window.scrollTo(0, 0);
+  },
   townEnter(d) { G.townView = d.v; renderTown(); },
   townBack() { G.townView = 'plaza'; renderTown(); },
   inn() { const p = G.p; if (p.mp >= maxMp(p)) { toast('MPはすでに満タンです'); return; } p.mp = maxMp(p); save(); toast('ぐっすり眠った。MPが全回復した！'); renderAll(); },
@@ -4362,6 +4372,13 @@ function renderSkillSlots(p) {
   </div>`;
 }
 
+function renderSubTabs(tabs, curTab, actName, ariaLabel) {
+  return `<div class="st-tabs" role="tablist" aria-label="${esc(ariaLabel)}">${tabs.map(t => {
+    const on = t.id === curTab;
+    return `<button class="st-tab${on ? ' on' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-act="${actName}" data-tab="${t.id}">${t.label}${t.dot ? '<i class="st-dot" aria-hidden="true"></i>' : ''}</button>`;
+  }).join('')}</div>`;
+}
+
 function renderStatus() {
   const p = G.p;
   const tab = ['hero', 'gear', 'skill', 'mastery', 'data'].includes(G.statusTab) ? G.statusTab : 'hero';
@@ -4379,10 +4396,7 @@ function renderStatus() {
     { id: 'mastery', label: '極意',   dot: !!(p.ending && p.sp > 0) },
     { id: 'data',    label: 'データ', dot: false }
   ];
-  const tabBarHtml = `<div class="st-tabs" role="tablist" aria-label="ステータス項目">${tabs.map(t => {
-    const on = t.id === tab;
-    return `<button class="st-tab${on ? ' on' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-act="statusTab" data-tab="${t.id}">${t.label}${t.dot ? '<i class="st-dot" aria-hidden="true"></i>' : ''}</button>`;
-  }).join('')}</div>`;
+  const tabBarHtml = renderSubTabs(tabs, tab, 'statusTab', 'ステータス項目');
   const heroPanels = `
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
@@ -4994,7 +5008,17 @@ function closeModal() { $('#modal').hidden = true; G.modalOpen = false; ensureLo
 
 /* ================= render: help ================= */
 function renderHelp() {
-  $('#view-help').innerHTML = `
+  const tab = ['intro', 'world', 'skill', 'status', 'endgame'].includes(G.helpTab) ? G.helpTab : 'intro';
+  G.helpTab = tab;
+  const tabs = [
+    { id: 'intro',   label: 'はじめに', dot: false },
+    { id: 'world',   label: '街・迷宮', dot: false },
+    { id: 'skill',   label: 'スキル',   dot: false },
+    { id: 'status',  label: 'ステータス', dot: false },
+    { id: 'endgame', label: '後編',     dot: false }
+  ];
+  const tabBarHtml = renderSubTabs(tabs, tab, 'helpTab', 'ヘルプ項目');
+  const introPanels = `
   <div class="panel help-guide">
     <div class="help-badge">⚠️ まずここを読もう</div>
     <h2 style="margin:8px 0 4px;font-size:18px">初心者ガイド</h2>
@@ -5020,7 +5044,18 @@ function renderHelp() {
       <div class="help-step"><span class="help-step-n">4</span><div><b>繰り返してボスを倒す</b><br><span class="sub">まずはダンジョンAの初級クリアを目標に！</span></div></div>
     </div>
   </div>
-
+  <div class="panel">
+    <h2>💡 その他のヒント</h2>
+    <ul class="help-tips">
+      <li><b>自動売却フィルター</b>：売却所でレア度を設定しておくと、ダンジョンで拾った不要装備を自動で売却できる</li>
+      <li><b>強化石はダンジョンでドロップ</b>：ダンジョンA〜Cで対応した強化石が8%の確率で入手できる（上位素材は特定ダンジョンのボス等がドロップ）</li>
+      <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
+      <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
+      <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面の「データ」タブから、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
+      <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」タブから、不具合やバランスのご意見を送信できる</li>
+    </ul>
+  </div>`;
+  const worldPanels = `
   <div class="panel">
     <h2>🏘️ 街タブでできること</h2>
     <div class="help-table">
@@ -5032,7 +5067,6 @@ function renderHelp() {
       <div class="help-row"><span class="help-facility">銀行</span><span>ゴールドを預けて敗北時のロストを防ぐ</span></div>
     </div>
   </div>
-
   <div class="panel">
     <h2>⚔️ ダンジョンタブでできること</h2>
     <div class="help-table">
@@ -5042,8 +5076,8 @@ function renderHelp() {
       <div class="help-row"><span class="help-facility help-retreat-cell">撤退ボタン</span><span>いつでも押せる。街に帰還してHP<b>全回復</b></span></div>
       <div class="help-row"><span class="help-facility">敗北</span><span>ゴールドが半分失われ、HP25%で帰還</span></div>
     </div>
-  </div>
-
+  </div>`;
+  const skillPanels = `
   <div class="panel">
     <h2>🎯 スキルシステムガイド</h2>
 
@@ -5091,32 +5125,20 @@ function renderHelp() {
     <div class="help-table">
       ${SK_ORDER.map(id => { const s = SK[id]; return `<div class="help-row"><span class="help-facility">${s.name}</span><span>${s.desc} <small style="color:var(--accent)">MP${skillMpCost(G.p, s)} CT${s.ct}T</small></span></div>`; }).join('')}
     </div>
-  </div>
-
+  </div>`;
+  const statusPanels = `
   <div class="panel">
     <h2>📊 ステータスタブでできること</h2>
+    <p class="sub" style="margin:0 0 8px">上部の5つのタブ（勇者／装備／スキル／極意／データ）で項目を切り替えられます。</p>
     <div class="help-table">
-      <div class="help-row"><span class="help-facility">HP / MP</span><span>現在値と最大値を確認</span></div>
-      <div class="help-row"><span class="help-facility">ATK / DEF</span><span>攻撃力・防御力を確認</span></div>
-      <div class="help-row"><span class="help-facility">装備中の武器・防具</span><span>現在の装備と★ランクを確認・変更</span></div>
-      <div class="help-row"><span class="help-facility">スキルポイント（SP）</span><span>Lvアップで獲得。スキル習得に使用</span></div>
-      <div class="help-row"><span class="help-facility">強化石の所持数</span><span>鍛冶屋での★強化に必要な素材</span></div>
-      <div class="help-row"><span class="help-facility">バッグ</span><span>拾った装備の一覧。ロック・装備変更が可能</span></div>
+      <div class="help-row"><span class="help-facility">勇者</span><span>レベル・HP/MP・ATK/DEF・SPの確認、📖 図鑑・🏆 実績の閲覧、称号の装備、外見変更</span></div>
+      <div class="help-row"><span class="help-facility">装備</span><span>装備中の武器・防具の確認、おまかせ装備・自動装備切替、バッグ（ロック・装備変更・拡張）、薬の使用、強化石の所持数確認</span></div>
+      <div class="help-row"><span class="help-facility">スキル</span><span>スキルセット（S1〜S3に最大3つ装備）と、スキル枠（基本枠・進化枠へのSP割り振り・リセット）</span></div>
+      <div class="help-row"><span class="help-facility">極意</span><span>本編クリア後に解放される全キャラ共通パッシブ（10項目・各最大Lv10）の強化とリセット</span></div>
+      <div class="help-row"><span class="help-facility">データ</span><span>セーブデータの書き出し（ファイル／コード）・読み込み（バックアップ／引き継ぎ）、不具合・ご意見の送信、初期化</span></div>
     </div>
-  </div>
-
-  <div class="panel">
-    <h2>💡 その他のヒント</h2>
-    <ul class="help-tips">
-      <li><b>自動売却フィルター</b>：売却所でレア度を設定しておくと、ダンジョンで拾った不要装備を自動で売却できる</li>
-      <li><b>強化石はダンジョンでドロップ</b>：ダンジョンA〜Cで対応した強化石が8%の確率で入手できる（上位素材は特定ダンジョンのボス等がドロップ）</li>
-      <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
-      <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
-      <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面の「データ」タブから、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
-      <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」タブから、不具合やバランスのご意見を送信できる</li>
-    </ul>
-  </div>
-
+  </div>`;
+  const endgamePanels = `
   <div class="panel" id="help-endgame">
     <h2>🌌 後編・クリア後の要素ガイド</h2>
     <p class="sub" style="margin:0 0 10px">中盤〜本編クリア後に解放されるやり込み要素の説明（タップで開閉）</p>
@@ -5156,10 +5178,10 @@ function renderHelp() {
       送信設定でニックネーム（1〜12文字）と同意を保存したプレイヤーのみ、自己ベスト更新時に自動で記録が送信されます。<br>
       送信した記録は運営者の確認後に掲載されるため、ランキングへの反映には時間がかかります。</p>
     </details>
-  </div>
-  <div class="panel" style="text-align:center">
-    <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
   </div>`;
+  const bodyByTab = { intro: introPanels, world: worldPanels, skill: skillPanels, status: statusPanels, endgame: endgamePanels };
+  const footHtml = `<div class="help-foot" style="text-align:center;padding:4px 0"><button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button></div>`;
+  $('#view-help').innerHTML = tabBarHtml + (bodyByTab[tab] || introPanels) + footHtml;
 }
 
 /* ================= render: all ================= */
