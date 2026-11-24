@@ -157,6 +157,8 @@ with sync_playwright() as pw:
     # 基準5: 本番とテスト版で localStorage & IndexedDB 名が別 & 420px横溢れなし & ヘルプ追記
     pg.click('#nav-status')
     pg.wait_for_timeout(150)
+    pg.click('[data-act="statusTab"][data-tab="data"]')
+    pg.wait_for_timeout(100)
     ui_prod = pg.evaluate('''() => ({
         ov: document.documentElement.scrollWidth - window.innerWidth,
         statusTxt: document.querySelector('#view-status').innerText,

@@ -9,6 +9,7 @@ const G = {
   resetArm: false,
   smithOpen: false,
   townView: 'plaza',  // 'plaza'|'inn'|'shop'|'smith'|'bank'
+  statusTab: 'hero',  // 'hero'|'gear'|'skill'|'mastery'|'data' (memory only)
   tutorial: null  // { step: 0-6, done: false } or null
 };
 

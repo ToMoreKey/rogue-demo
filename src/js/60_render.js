@@ -284,7 +284,7 @@ function renderBattle() {
     run.skKey = key;
     const hasAny = slots.some(id => !!id);
     if (!hasAny) {
-      $('#skill-row').innerHTML = '<span class="empty">ステータス画面のスキルセットで、スロットにスキルを装備しましょう。</span>';
+      $('#skill-row').innerHTML = '<span class="empty">ステータス画面の「スキル」タブで、スロットにスキルを装備しましょう。</span>';
     } else {
       $('#skill-row').innerHTML = slots.map((id, i) => {
         if (!id || !SK[id]) return `<span class="skill" style="opacity:.35;cursor:default">─ S${i+1}<small>空き</small></span>`;
@@ -487,13 +487,26 @@ function renderSkillSlots(p) {
 
 function renderStatus() {
   const p = G.p;
+  const tab = ['hero', 'gear', 'skill', 'mastery', 'data'].includes(G.statusTab) ? G.statusTab : 'hero';
+  G.statusTab = tab;
   const pSkin = CHAR_SKINS.find(x => x.id === (p.skin || 'ruby')) || CHAR_SKINS[0];
   const pTier = skinTier(pSkin), pKey = pSkin.id + ':' + pTier;
   let tierChanged = false;
   if (G._lastLook && G._lastLook.startsWith(pSkin.id + ':') && G._lastLook !== pKey) tierChanged = true;
   G._lastLook = pKey;
   const bag = [...p.bag].sort((a, b) => b.rarity - a.rarity || b.star - a.star || itemPower(b) - itemPower(a));
-  $('#view-status').innerHTML = `
+  const tabs = [
+    { id: 'hero',    label: '勇者',   dot: false },
+    { id: 'gear',    label: '装備',   dot: false },
+    { id: 'skill',   label: 'スキル', dot: p.sp > 0 },
+    { id: 'mastery', label: '極意',   dot: !!(p.ending && p.sp > 0) },
+    { id: 'data',    label: 'データ', dot: false }
+  ];
+  const tabBarHtml = `<div class="st-tabs" role="tablist" aria-label="ステータス項目">${tabs.map(t => {
+    const on = t.id === tab;
+    return `<button class="st-tab${on ? ' on' : ''}" role="tab" aria-selected="${on ? 'true' : 'false'}" data-act="statusTab" data-tab="${t.id}">${t.label}${t.dot ? '<i class="st-dot" aria-hidden="true"></i>' : ''}</button>`;
+  }).join('')}</div>`;
+  const heroPanels = `
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
         <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
@@ -526,19 +539,16 @@ function renderStatus() {
             return `<button class="pill ${eq ? 'on' : ''}" data-act="equipStatusTitle" data-id="${tid}" title="${esc(tt.desc)}">${eq ? '✓ ' : ''}${esc(tt.name)}</button>`;
           }).join('')}</div>`}
     </div>
-    <div class="panel"><h2>極意（共通パッシブ）${p.ending ? ` <span class="sub">残りSP: ${p.sp}</span>` : ''}</h2>
-      ${!p.ending
-        ? '<p class="empty">🔒 本編クリア（虚空の神殿・極級）で解放されます。</p>'
-        : `<div style="display:grid;gap:6px">${MASTERY_LIST.map(it => {
-            const r = (p.mastery && p.mastery[it.id]) || 0;
-            const cost = r < MASTERY_MAX ? masteryCost(r + 1) : 0;
-            return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <div><div><b>${esc(it.name)}</b> <span class="sub">Lv ${r} / ${MASTERY_MAX}</span></div><div class="sub">${esc(it.desc)}</div></div>
-              <button class="btn small primary" data-act="masteryUp" data-id="${it.id}" ${r < MASTERY_MAX && p.sp >= cost ? '' : 'disabled'}>${r >= MASTERY_MAX ? 'MAX' : `+1 (${cost}SP)`}</button>
-            </div>`;
-          }).join('')}</div>
-          <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
-    </div>
+    <div class="panel"><h2>外見変更</h2>
+      <p class="sub" style="margin:0 0 12px">主人公の外見を選択できます。</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+        ${CHAR_SKINS.map(sk => `<button class="skin-card ${(p.skin || 'ruby') === sk.id ? 'selected' : ''}" data-act="changeSkin" data-id="${sk.id}">
+          <div style="width:64px;height:64px;margin:0 auto 6px;overflow:hidden">${skinArt(sk, 'width:64px;height:64px')}</div>
+          <div style="font-size:13px;font-weight:bold">${sk.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${sk.job}</div>
+        </button>`).join('')}
+      </div></div>`;
+  const gearPanels = `
     <div class="panel"><h2>装備</h2>
       <div class="items">
         <div><p class="slot-t">手（武器）</p>${p.weapon ? itemCard(p.weapon) : '<p class="empty">装備なし</p>'}</div>
@@ -552,8 +562,6 @@ function renderStatus() {
       <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>
       ${(p.bagCap || BAG_CAP) < MAX_BAG_CAP ? `<div class="row" style="margin-bottom:10px"><button class="btn small" data-act="expandBag" ${p.gold >= bagExpandCost(p.bagCap || BAG_CAP) ? '' : 'disabled'}>バッグ拡張 +10枠（${fmt(bagExpandCost(p.bagCap || BAG_CAP))}G）</button></div>` : ''}
       ${bag.length ? `<div class="items">${bag.map(it => itemCard(it, { actions: true, compare: true })).join('')}</div>` : '<p class="empty">バッグは空です。ダンジョンで装備を入手しましょう。</p>'}</div>
-    ${renderSkillSlots(p)}
-    ${renderSkillTrees(p)}
     <div class="panel"><h2>薬</h2><p class="sub">ダンジョンの戦闘中にも使えます（探索画面のボタン）。</p>
       <div class="row">
         <button class="btn small" data-act="potion" data-k="hp" ${p.potions.hp > 0 ? '' : 'disabled'}>生命の薬 ×${p.potions.hp}（HP30%）</button>
@@ -561,16 +569,23 @@ function renderStatus() {
       </div></div>
     <div class="panel"><h2>強化石</h2><p class="sub">鍛冶屋での強化に使います。</p>
       <div class="row" style="flex-wrap:wrap;gap:8px">${STONES.map(st => `<span style="background:${st.color}22;border:1px solid ${st.color};border-radius:6px;padding:4px 10px;font-size:13px"><span style="color:${st.color}">●</span> ${st.name} <b>×${p.stones[st.id] || 0}</b></span>`).join('')}</div>
-      <p class="sub" style="margin:8px 0 0">初級：A　中級：B　上級：C　時の欠片：D〜Fのボス・強敵</p></div>
-    <div class="panel"><h2>外見変更</h2>
-      <p class="sub" style="margin:0 0 12px">主人公の外見を選択できます。</p>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
-        ${CHAR_SKINS.map(sk => `<button class="skin-card ${(p.skin || 'ruby') === sk.id ? 'selected' : ''}" data-act="changeSkin" data-id="${sk.id}">
-          <div style="width:64px;height:64px;margin:0 auto 6px;overflow:hidden">${skinArt(sk, 'width:64px;height:64px')}</div>
-          <div style="font-size:13px;font-weight:bold">${sk.name}</div>
-          <div style="font-size:11px;color:var(--muted)">${sk.job}</div>
-        </button>`).join('')}
-      </div></div>
+      <p class="sub" style="margin:8px 0 0">初級：A　中級：B　上級：C　時の欠片：D〜Fのボス・強敵</p></div>`;
+  const skillPanels = `${renderSkillSlots(p)}${renderSkillTrees(p)}`;
+  const masteryPanels = `
+    <div class="panel"><h2>極意（共通パッシブ）${p.ending ? ` <span class="sub">残りSP: ${p.sp}</span>` : ''}</h2>
+      ${!p.ending
+        ? '<p class="empty">🔒 本編クリア（虚空の神殿・極級）で解放されます。</p>'
+        : `<div style="display:grid;gap:6px">${MASTERY_LIST.map(it => {
+            const r = (p.mastery && p.mastery[it.id]) || 0;
+            const cost = r < MASTERY_MAX ? masteryCost(r + 1) : 0;
+            return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <div><div><b>${esc(it.name)}</b> <span class="sub">Lv ${r} / ${MASTERY_MAX}</span></div><div class="sub">${esc(it.desc)}</div></div>
+              <button class="btn small primary" data-act="masteryUp" data-id="${it.id}" ${r < MASTERY_MAX && p.sp >= cost ? '' : 'disabled'}>${r >= MASTERY_MAX ? 'MAX' : `+1 (${cost}SP)`}</button>
+            </div>`;
+          }).join('')}</div>
+          <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
+    </div>`;
+  const dataPanels = `
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
@@ -583,6 +598,8 @@ function renderStatus() {
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
       </div></div>`;
+  const bodyByTab = { hero: heroPanels, gear: gearPanels, skill: skillPanels, mastery: masteryPanels, data: dataPanels };
+  $('#view-status').innerHTML = tabBarHtml + (bodyByTab[tab] || heroPanels);
 }
 
 /* ================= render: modal ================= */
@@ -1004,8 +1021,8 @@ function openUnlockNoticeModal() {
   const rows = [
     { name: '🏰 天蓋の塔（無限回廊）', desc: '階層は無限。10階ごとの祝福と回廊コイン交換所でさらなる高みへ！', to: 'tower' },
     { name: '🕳️ 深淵ダンジョン', desc: '全15ダンジョンの極級クリアで解放。累積する呪いと★9神話ドロップに挑もう。', to: 'abyss' },
-    { name: '✨ 極意（共通パッシブ）', desc: '全キャラ共通のパッシブ強化10種が解放されました。', to: 'status' },
-    { name: '⚔️ 進化枠 第3段階', desc: '各進化スキル枠の上限が30SPに拡張され、究極スキルを習得できます。', to: 'status' },
+    { name: '✨ 極意（共通パッシブ）', desc: '全キャラ共通のパッシブ強化10種が解放されました。', to: 'status', tab: 'mastery' },
+    { name: '⚔️ 進化枠 第3段階', desc: '各進化スキル枠の上限が30SPに拡張され、究極スキルを習得できます。', to: 'status', tab: 'skill' },
     { name: '📖 図鑑・🏆 実績・称号', desc: '魔物・装備の記録や実績達成で回廊コインと称号を獲得できます。', to: 'dex' }
   ];
   $('#m-sheet').innerHTML = `
@@ -1014,7 +1031,7 @@ function openUnlockNoticeModal() {
     <div style="display:grid;gap:6px">${rows.map(r => `
       <div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <div style="min-width:0"><div><b>${esc(r.name)}</b></div><div class="sub">${esc(r.desc)}</div></div>
-        <button class="btn small primary" data-act="jumpNotice" data-to="${r.to}">見る</button>
+        <button class="btn small primary" data-act="jumpNotice" data-to="${r.to}"${r.tab ? ` data-tab="${r.tab}"` : ''}>見る</button>
       </div>`).join('')}</div>
     <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="mTown">街へ戻る</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
@@ -1157,7 +1174,7 @@ function renderHelp() {
       <div class="help-skill-num">1</div>
       <div>
         <b>SPを割り振ってスキルを取得しよう</b>
-        <p class="sub" style="margin:4px 0 0">ダンジョンでレベルアップするとSP（スキルポイント）を獲得できます。ステータス画面の「スキル枠」でSPを好きな枠に割り振り、一定ポイントに達すると自動でスキルを習得します。</p>
+        <p class="sub" style="margin:4px 0 0">ダンジョンでレベルアップするとSP（スキルポイント）を獲得できます。ステータス画面の「スキル」タブ（スキル枠）でSPを好きな枠に割り振り、一定ポイントに達すると自動でスキルを習得します。</p>
       </div>
     </div>
 
@@ -1165,7 +1182,7 @@ function renderHelp() {
       <div class="help-skill-num">2</div>
       <div>
         <b>習得したスキルをスロットに装備しよう</b>
-        <p class="sub" style="margin:4px 0 0">習得しただけでは使われません。ステータス画面の「スキルセット」でスロット（S1〜S3）に装備することで、戦闘で自動発動されるようになります。3つまで同時に装備できます。</p>
+        <p class="sub" style="margin:4px 0 0">習得しただけでは使われません。ステータス画面の「スキル」タブ（スキルセット）でスロット（S1〜S3）に装備することで、戦闘で自動発動されるようになります。3つまで同時に装備できます。</p>
       </div>
     </div>
 
@@ -1218,8 +1235,8 @@ function renderHelp() {
       <li><b>強化石はダンジョンでドロップ</b>：ダンジョンA〜Cで対応した強化石が8%の確率で入手できる（上位素材は特定ダンジョンのボス等がドロップ）</li>
       <li><b>銀行は敗北前に使おう</b>：ゴールドが溜まったら銀行に預けておくとリスクヘッジになる</li>
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
-      <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面下部の「データ」から、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
-      <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」から、不具合やバランスのご意見を送信できる</li>
+      <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面の「データ」タブから、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
+      <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」タブから、不具合やバランスのご意見を送信できる</li>
     </ul>
   </div>
 
