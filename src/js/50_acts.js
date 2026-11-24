@@ -497,6 +497,11 @@ const ACTS = {
   openBugReport() {
     openBugReportModal('', false);
   },
+  toggleAnalyticsOptOut() {
+    const next = !isAnalyticsOptOut();
+    setAnalyticsOptOut(next);
+    if (G.view === 'status') renderStatus();
+  },
   async submitBugReport() {
     const kind = ($('#br-kind') && $('#br-kind').value) || '不具合';
     const text = ($('#br-text') && $('#br-text').value) || '';

@@ -457,7 +457,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v38';
+const APP_VERSION = 'rogue-v39';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -1051,6 +1051,16 @@ const BUGREPORT_CFG = {
   textMax: 500,
   queueKey: 'rogue_bugreport_queue_v1',
   rateKey: 'rogue_bugreport_last_v1'
+};
+const ANALYTICS_CFG = {
+  reportUrl: '',
+  entryStats: '',
+  intervalHours: 24,
+  anonIdKey: 'rogue_anon_id_v1',
+  lastSentKey: 'rogue_stats_last_v1',
+  launchKey: 'rogue_stats_launch_v1',
+  playSecKey: 'rogue_stats_playsec_v1',
+  optOutKey: 'rogue_stats_optout_v1'
 };
 // 図鑑データ（敵図鑑94種・装備図鑑22種）
 const DEX_STARS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -2372,6 +2382,114 @@ async function flushBugQueue() {
     _flushingQueue = false;
   }
   return sent;
+}
+/* ================= analytics (P10) ================= */
+let _sessionLastTickAt = Date.now();
+
+function getOrCreateAnonId() {
+  try {
+    const cur = localStorage.getItem(ANALYTICS_CFG.anonIdKey);
+    if (cur && /^[0-9a-f]{16}$/.test(cur)) return cur;
+  } catch (e) {}
+  let id = '';
+  try {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      const buf = new Uint8Array(8);
+      crypto.getRandomValues(buf);
+      for (let i = 0; i < buf.length; i++) id += buf[i].toString(16).padStart(2, '0');
+    }
+  } catch (e) {}
+  while (id.length < 16) id += Math.floor(Math.random() * 16).toString(16);
+  id = id.slice(0, 16);
+  try { localStorage.setItem(ANALYTICS_CFG.anonIdKey, id); } catch (e) {}
+  return id;
+}
+function recordAnalyticsLaunch() {
+  _sessionLastTickAt = Date.now();
+  try {
+    const n = Math.max(0, Math.floor(Number(localStorage.getItem(ANALYTICS_CFG.launchKey) || 0))) + 1;
+    localStorage.setItem(ANALYTICS_CFG.launchKey, String(n));
+    return n;
+  } catch (e) { return 1; }
+}
+function flushAnalyticsPlayTime() {
+  const now = Date.now();
+  const dt = Math.max(0, Math.min(60, (now - _sessionLastTickAt) / 1000));
+  _sessionLastTickAt = now;
+  try {
+    const cur = Math.max(0, Number(localStorage.getItem(ANALYTICS_CFG.playSecKey) || 0));
+    localStorage.setItem(ANALYTICS_CFG.playSecKey, String(Math.round(cur + dt)));
+  } catch (e) {}
+}
+function getAnalyticsLaunchCount() {
+  try {
+    return Math.max(1, Math.floor(Number(localStorage.getItem(ANALYTICS_CFG.launchKey) || 1)));
+  } catch (e) { return 1; }
+}
+function getAnalyticsPlayHours() {
+  flushAnalyticsPlayTime();
+  try {
+    const sec = Math.max(0, Number(localStorage.getItem(ANALYTICS_CFG.playSecKey) || 0));
+    return (sec / 3600).toFixed(1);
+  } catch (e) { return '0.0'; }
+}
+function isAnalyticsOptOut() {
+  try { return localStorage.getItem(ANALYTICS_CFG.optOutKey) === '1'; } catch (e) { return false; }
+}
+function setAnalyticsOptOut(optOut) {
+  try {
+    if (optOut) localStorage.setItem(ANALYTICS_CFG.optOutKey, '1');
+    else localStorage.removeItem(ANALYTICS_CFG.optOutKey);
+  } catch (e) {}
+}
+function highestReachedDungeon(p) {
+  if (!p) return 'A';
+  let highest = 'A';
+  for (const d of DUNGEONS) {
+    const cl = p.cleared && p.cleared[d.id];
+    const hasCl = cl && DIFFS.some(df => !!cl[df.id]);
+    if (hasCl || isDungeonUnlocked(p, d)) highest = d.id;
+  }
+  return highest;
+}
+function buildAnalyticsLine(isNew) {
+  const p = G && G.p ? G.p : null;
+  const id = getOrCreateAnonId();
+  const ver = typeof APP_VERSION === 'string' ? APP_VERSION : 'unknown';
+  const lv = p ? (Number(p.lv) || 1) : 1;
+  const dg = highestReachedDungeon(p);
+  const clear = (p && (p.ending || (p.cleared && p.cleared.O && p.cleared.O.extreme))) ? 1 : 0;
+  const tw = (p && p.tower && Number(p.tower.best)) || 0;
+  const ab = (p && p.abyss && Number(p.abyss.best)) || 0;
+  const hours = getAnalyticsPlayHours();
+  const launch = getAnalyticsLaunchCount();
+  const vw = typeof window !== 'undefined' ? window.innerWidth : 0;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 0;
+  const nw = isNew ? 1 : 0;
+  return `id=${id}; ver=${ver}; lv=${lv}; dg=${dg}; clear=${clear}; tw=${tw}; ab=${ab}; hours=${hours}; launch=${launch}; vp=${vw}x${vh}; new=${nw}`;
+}
+async function maybeSendAnalytics() {
+  if (IS_DEV_BUILD) return { sent: false, reason: 'dev' };
+  if (!ANALYTICS_CFG.reportUrl || !ANALYTICS_CFG.entryStats) return { sent: false, reason: 'unconfigured' };
+  if (isAnalyticsOptOut()) return { sent: false, reason: 'optout' };
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return { sent: false, reason: 'offline' };
+  let last = 0;
+  try { last = Number(localStorage.getItem(ANALYTICS_CFG.lastSentKey) || 0); } catch (e) {}
+  const intervalMs = (Number(ANALYTICS_CFG.intervalHours) || 24) * 3600 * 1000;
+  if (last > 0 && isFinite(last) && Date.now() - last < intervalMs) {
+    return { sent: false, reason: 'interval' };
+  }
+  const isNew = !(last > 0);
+  const line = buildAnalyticsLine(isNew);
+  const fd = new FormData();
+  fd.append(ANALYTICS_CFG.entryStats, line);
+  try {
+    await fetch(ANALYTICS_CFG.reportUrl, { method: 'POST', mode: 'no-cors', body: fd });
+    try { localStorage.setItem(ANALYTICS_CFG.lastSentKey, String(Date.now())); } catch (e) {}
+    return { sent: true, line };
+  } catch (e) {
+    return { sent: false, reason: 'error' };
+  }
 }
 
 /* ================= toast ================= */
@@ -3859,6 +3977,11 @@ const ACTS = {
   openBugReport() {
     openBugReportModal('', false);
   },
+  toggleAnalyticsOptOut() {
+    const next = !isAnalyticsOptOut();
+    setAnalyticsOptOut(next);
+    if (G.view === 'status') renderStatus();
+  },
   async submitBugReport() {
     const kind = ($('#br-kind') && $('#br-kind').value) || '不具合';
     const text = ($('#br-text') && $('#br-text').value) || '';
@@ -4488,6 +4611,12 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
+        <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+          <button class="btn small ${!isAnalyticsOptOut() ? 'on' : ''}" data-act="toggleAnalyticsOptOut" aria-pressed="${!isAnalyticsOptOut()}">匿名の利用状況を送信する：${!isAnalyticsOptOut() ? 'ON' : 'OFF'}</button>
+        </div>
+        <p class="sub" style="margin:6px 0 0;font-size:11px">進行状況（Lv・到達ダンジョン・プレイ時間など）を1日1回匿名で送信します。名前やセーブデータ等の個人情報は送信しません。</p>
       </div></div>`;
   const bodyByTab = { hero: heroPanels, gear: gearPanels, skill: skillPanels, mastery: masteryPanels, data: dataPanels };
   $('#view-status').innerHTML = tabBarHtml + (bodyByTab[tab] || heroPanels);
@@ -5053,6 +5182,7 @@ function renderHelp() {
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
       <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面の「データ」タブから、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
       <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」タブから、不具合やバランスのご意見を送信できる</li>
+      <li><b>匿名の利用状況送信</b>：進行状況（Lv・到達ダンジョン・プレイ時間など、個人情報は含みません）を1日1回匿名で送信します（ステータス画面の「データ」タブでオフにできます）</li>
     </ul>
   </div>`;
   const worldPanels = `
@@ -5442,9 +5572,11 @@ function boot() {
     const p = G.p;
     if (G.view === 'town' && !G.run && p.hp < maxHp(p)) { p.hp = Math.min(maxHp(p), p.hp + 2); renderHUD(); if (G.townView === 'plaza') renderTown(); }
   }, 1000);
-  window.addEventListener('pagehide', () => { save(); idbMirrorSave(true); });
+  window.addEventListener('pagehide', () => { flushAnalyticsPlayTime(); save(); idbMirrorSave(true); });
   window.addEventListener('online', () => { flushBugQueue(); });
   flushBugQueue();
+  recordAnalyticsLaunch();
+  maybeSendAnalytics();
   renderAll();
   // 新規プレイヤーのみチュートリアルを開始
   tutInit();
@@ -5463,7 +5595,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,

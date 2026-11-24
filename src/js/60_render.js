@@ -601,6 +601,12 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
+        <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+          <button class="btn small ${!isAnalyticsOptOut() ? 'on' : ''}" data-act="toggleAnalyticsOptOut" aria-pressed="${!isAnalyticsOptOut()}">匿名の利用状況を送信する：${!isAnalyticsOptOut() ? 'ON' : 'OFF'}</button>
+        </div>
+        <p class="sub" style="margin:6px 0 0;font-size:11px">進行状況（Lv・到達ダンジョン・プレイ時間など）を1日1回匿名で送信します。名前やセーブデータ等の個人情報は送信しません。</p>
       </div></div>`;
   const bodyByTab = { hero: heroPanels, gear: gearPanels, skill: skillPanels, mastery: masteryPanels, data: dataPanels };
   $('#view-status').innerHTML = tabBarHtml + (bodyByTab[tab] || heroPanels);
@@ -1166,6 +1172,7 @@ function renderHelp() {
       <li><b>推奨レベルを目安に</b>：ダンジョン選択画面の推奨レベルを参考に挑む難易度を選ぼう</li>
       <li><b>セーブのバックアップ・引き継ぎ</b>：ステータス画面の「データ」タブから、ファイルまたはコードでセーブを書き出し・読み込みできる</li>
       <li><b>不具合・ご意見の報告</b>：ヘルプ画面下部またはステータス画面の「データ」タブから、不具合やバランスのご意見を送信できる</li>
+      <li><b>匿名の利用状況送信</b>：進行状況（Lv・到達ダンジョン・プレイ時間など、個人情報は含みません）を1日1回匿名で送信します（ステータス画面の「データ」タブでオフにできます）</li>
     </ul>
   </div>`;
   const worldPanels = `
