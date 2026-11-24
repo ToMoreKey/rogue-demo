@@ -235,7 +235,7 @@ function load() {
     G.p = p;
     if (migrated || !s.ach) checkAchievements(null, true);
     if (p.ending && p.pendingAchCoins > 0) flushPendingAchCoins(p, true);
-    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; }
+    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; }
     if (d.sel) for (const dg of DUNGEONS) {
       const df = diffOf(d.sel[dg.id]);
       if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;

@@ -214,6 +214,226 @@ function renderDungeonSelect() {
 }
 
 /* ================= render: battle ================= */
+const SKILL_FX_MAP = {
+  // 斬撃（剣系）
+  strike:         { cat: 'slash', color: 'gold' },
+  multi:          { cat: 'slash', color: 'gold' },
+  ult:            { cat: 'slash', color: 'gold' },
+  flameSlash:     { cat: 'slash', color: 'fire' },
+  skySlash:       { cat: 'slash', color: 'gold' },
+  heroic:         { cat: 'slash', color: 'gold' },
+  // 魔法（攻撃魔法）
+  fireball:       { cat: 'magic', elem: 'fire' },
+  thunder:        { cat: 'magic', elem: 'thunder' },
+  meteor:         { cat: 'magic', elem: 'fire' },
+  blaze:          { cat: 'magic', elem: 'fire' },
+  lightningStorm: { cat: 'magic', elem: 'thunder' },
+  blizzard:       { cat: 'magic', elem: 'ice' },
+  iceAge:         { cat: 'magic', elem: 'ice' },
+  zeroAbs:        { cat: 'magic', elem: 'ice' },
+  // 大技・奥義
+  ultima:         { cat: 'ult',   style: 'dark' },
+  hagun:          { cat: 'ult',   style: 'slash' },
+  tenma:          { cat: 'ult',   style: 'slash' },
+  cosmicNova:     { cat: 'ult',   style: 'dark' },
+  meteorNova:     { cat: 'ult',   style: 'fire' },
+  starSword:      { cat: 'ult',   style: 'slash' },
+  skyStar:        { cat: 'ult',   style: 'slash' },
+  genesisRay:     { cat: 'ult',   style: 'holy' },
+  // 回復
+  heal:           { cat: 'heal' },
+  regen:          { cat: 'heal' },
+  fullheal:       { cat: 'heal' },
+  highRegen:      { cat: 'heal' },
+  saintPrayer:    { cat: 'heal' },
+  resurrection:   { cat: 'heal' },
+  holyLight:      { cat: 'heal' },
+  requiem:        { cat: 'heal' },
+  goddess:        { cat: 'heal' },
+  eternal:        { cat: 'heal' },
+  // 強化（バフ）
+  guard:          { cat: 'buff',  tone: 'def' },
+  magicshield:    { cat: 'buff',  tone: 'def' },
+  barrier:        { cat: 'buff',  tone: 'def' },
+  holyBarrier:    { cat: 'buff',  tone: 'def' },
+  berserk:        { cat: 'buff',  tone: 'atk' },
+  warGod:         { cat: 'buff',  tone: 'atk' },
+  shura:          { cat: 'buff',  tone: 'atk' },
+  kishin:         { cat: 'buff',  tone: 'atk' },
+  heroAwaken:     { cat: 'buff',  tone: 'all' },
+  heroAdvent:     { cat: 'buff',  tone: 'all' }
+};
+const FX_MAX_NODES = 12;
+let _fxCleanupTimer = null;
+let _rageBurstTimer = null;
+
+function isFxEnabled() {
+  return !(G && G.opts && G.opts.fx === false);
+}
+function isReducedMotion() {
+  try {
+    if (G && G._forceReducedMotion) return true;
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) { return false; }
+}
+function getSkillFxSpec(id) {
+  if (id && SKILL_FX_MAP[id]) return SKILL_FX_MAP[id];
+  const s = id && SK[id];
+  if (s) {
+    if (s.type === 'heal') return { cat: 'heal' };
+    if (s.type === 'buff') return { cat: 'buff', tone: (s.awaken || s.advent) ? 'all' : (s.barrier || id === 'guard' || id === 'magicshield') ? 'def' : 'atk' };
+  }
+  return { cat: 'generic' };
+}
+function clearSkillFxLayer() {
+  try {
+    if (_fxCleanupTimer) { clearTimeout(_fxCleanupTimer); _fxCleanupTimer = null; }
+    const layer = $('#fx-layer');
+    if (layer) layer.innerHTML = '';
+    const fe = $('#f-enemy');
+    if (fe) fe.classList.remove('fx-hit-white', 'fx-shake-big');
+  } catch (e) {}
+}
+function clearRageFx() {
+  try {
+    if (_rageBurstTimer) { clearTimeout(_rageBurstTimer); _rageBurstTimer = null; }
+    const arena = $('#arena'), fe = $('#f-enemy'), nm = $('#b-ename');
+    if (arena) arena.classList.remove('rage-active', 'rage-burst', 'rage-reduced');
+    if (fe) fe.classList.remove('rage-aura', 'rage-burst', 'rage-reduced');
+    if (nm) nm.classList.remove('rage-name');
+  } catch (e) {}
+}
+function clearAllBattleFx() {
+  clearSkillFxLayer();
+  clearRageFx();
+}
+function syncBuffAura() {
+  try {
+    const fp = $('#f-player');
+    if (!fp) return;
+    fp.classList.remove('buff-aura-atk', 'buff-aura-def', 'buff-aura-all');
+    const run = G.run;
+    if (!run || !isFxEnabled()) return;
+    if ((run.awaken || 0) > 0 || (run.advent || 0) > 0) {
+      fp.classList.add('buff-aura-all');
+    } else if ((run.berserk || 0) > 0 || (run.warGod || 0) > 0 || (run.shura || 0) > 0 || (run.kishin || 0) > 0) {
+      fp.classList.add('buff-aura-atk');
+    } else if ((run.guard || 0) > 0 || (run.magicShield || 0) > 0 || (run.barrier || 0) > 0 || (run.defBuff || 0) > 0) {
+      fp.classList.add('buff-aura-def');
+    }
+  } catch (e) {}
+}
+function triggerRageFx() {
+  try {
+    if (G.headless) return;
+    const arena = $('#arena'), fe = $('#f-enemy'), nm = $('#b-ename');
+    if (nm) nm.classList.add('rage-name');
+    if (!isFxEnabled()) return;
+    const red = isReducedMotion();
+    if (arena) arena.classList.add('rage-active');
+    if (fe) fe.classList.add('rage-aura');
+    if (red) {
+      if (arena) arena.classList.add('rage-reduced');
+      if (fe) fe.classList.add('rage-reduced');
+      return;
+    }
+    if (arena) { arena.classList.remove('rage-burst'); void arena.offsetWidth; arena.classList.add('rage-burst'); }
+    if (fe) { fe.classList.remove('rage-burst'); void fe.offsetWidth; fe.classList.add('rage-burst'); }
+    if (_rageBurstTimer) clearTimeout(_rageBurstTimer);
+    _rageBurstTimer = setTimeout(() => {
+      _rageBurstTimer = null;
+      if (arena) arena.classList.remove('rage-burst');
+      if (fe) fe.classList.remove('rage-burst');
+    }, 340);
+  } catch (e) {}
+}
+function playSkillFx(id, hitCount) {
+  try {
+    if (G.headless || !isFxEnabled()) return;
+    const layer = $('#fx-layer');
+    if (!layer) return;
+    clearSkillFxLayer();
+    const spec = getSkillFxSpec(id);
+    const cat = spec.cat || 'generic';
+    const spd = Math.max(1, (G.opts && G.opts.speed) || 1);
+    const baseMs = cat === 'ult' ? 760 : cat === 'magic' ? 480 : cat === 'slash' ? 420 : cat === 'heal' ? 460 : cat === 'buff' ? 460 : 320;
+    const dur = clamp(Math.round(baseMs / spd), 150, cat === 'ult' ? 900 : 600);
+    const red = isReducedMotion();
+    layer.style.setProperty('--fx-dur', dur + 'ms');
+
+    const addNode = (cls, html, styleStr) => {
+      if (layer.children.length >= FX_MAX_NODES) return null;
+      const el = document.createElement('div');
+      el.className = 'fx-item ' + cls + (red ? ' fx-reduced' : '');
+      if (styleStr) el.style.cssText = styleStr;
+      if (html) el.innerHTML = html;
+      layer.appendChild(el);
+      return el;
+    };
+
+    if (red) {
+      // prefers-reduced-motion: 閃光・ぶれ・拡大を出さず、短いフェードの色表示のみ
+      const side = (cat === 'heal' || cat === 'buff') ? 'fx-side-player' : 'fx-side-enemy';
+      const toneCls = cat === 'magic' ? ('fx-elem-' + (spec.elem || 'default'))
+                    : cat === 'buff' ? ('fx-tone-' + (spec.tone || 'all'))
+                    : ('fx-cat-' + cat);
+      addNode(`fx-fade-only ${side} ${toneCls}`, '');
+    } else if (cat === 'slash') {
+      const n = clamp(Number(hitCount) || (SK[id] && SK[id].hits) || 1, 1, 5);
+      const isFire = spec.color === 'fire';
+      const angles = [-28, 24, -12, 34, -36];
+      const offsets = [0, -8, 8, -14, 14];
+      for (let i = 0; i < n; i++) {
+        const delay = Math.round((dur * 0.45) * (i / Math.max(1, n)));
+        const svg = `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line ${isFire ? 'fire' : ''}"/></svg>`;
+        addNode('fx-slash fx-side-enemy', svg, `--fx-rot:${angles[i % angles.length]}deg;--fx-off:${offsets[i % offsets.length]}px;animation-delay:${delay}ms`);
+      }
+      const fe = $('#f-enemy');
+      if (fe) { fe.classList.remove('fx-hit-white'); void fe.offsetWidth; fe.classList.add('fx-hit-white'); }
+    } else if (cat === 'magic') {
+      const elem = spec.elem || 'default';
+      addNode(`fx-magic-ring fx-side-enemy fx-elem-${elem}`, '');
+      const angles = [0, 60, 120, 180, 240, 300];
+      for (let i = 0; i < angles.length; i++) {
+        const rad = angles[i] * Math.PI / 180;
+        const dx = Math.round(Math.cos(rad) * 38), dy = Math.round(Math.sin(rad) * 38);
+        addNode(`fx-magic-orb fx-side-enemy fx-elem-${elem}`, '', `--dx:${dx}px;--dy:${dy}px`);
+      }
+    } else if (cat === 'ult') {
+      const st = spec.style || 'slash';
+      addNode(`fx-ult-bg fx-ult-${st}`, '');
+      addNode(`fx-ult-core fx-side-enemy fx-ult-${st}`, `<svg viewBox="0 0 120 120" class="fx-svg"><circle cx="60" cy="60" r="42" class="fx-ult-ring"/><line x1="10" y1="95" x2="110" y2="25" class="fx-ult-line"/><line x1="15" y1="25" x2="105" y2="95" class="fx-ult-line"/></svg>`);
+      const rays = [20, 80, 140, 200, 260, 320];
+      for (let i = 0; i < rays.length; i++) {
+        const rad = rays[i] * Math.PI / 180;
+        const dx = Math.round(Math.cos(rad) * 48), dy = Math.round(Math.sin(rad) * 48);
+        addNode(`fx-ult-spark fx-side-enemy fx-ult-${st}`, '', `--dx:${dx}px;--dy:${dy}px`);
+      }
+      const fe = $('#f-enemy');
+      if (fe) { fe.classList.remove('fx-shake-big', 'fx-hit-white'); void fe.offsetWidth; fe.classList.add('fx-shake-big', 'fx-hit-white'); }
+    } else if (cat === 'heal') {
+      addNode('fx-heal-glow fx-side-player', '');
+      const xs = [-22, -10, 0, 12, 24];
+      for (let i = 0; i < xs.length; i++) {
+        const delay = i * 25;
+        addNode('fx-heal-mote fx-side-player', '', `--hx:${xs[i]}px;animation-delay:${delay}ms`);
+      }
+    } else if (cat === 'buff') {
+      const tone = spec.tone || 'all';
+      addNode(`fx-buff-ring fx-side-player fx-tone-${tone}`, '');
+      addNode(`fx-buff-ring fx-buff-ring2 fx-side-player fx-tone-${tone}`, '');
+      syncBuffAura();
+    } else {
+      addNode('fx-generic-flash fx-side-enemy', '');
+    }
+
+    _fxCleanupTimer = setTimeout(() => {
+      _fxCleanupTimer = null;
+      clearSkillFxLayer();
+    }, dur + 30);
+  } catch (e) {}
+}
+
 let lastEnemyShape = '';
 function renderEnemy(fresh) {
   const run = G.run; if (G.headless || !run || !run.enemy) return;
@@ -229,6 +449,13 @@ function renderBattle() {
   const run = G.run, p = G.p;
   if (!run) return;
   $('#arena').style.setProperty('--a1', run.d.a1); $('#arena').style.setProperty('--a2', run.d.a2);
+  const enNow = run.enemy;
+  const isRaged = !!(enNow && enNow.raged && enNow.hp > 0);
+  const fxOn = isFxEnabled();
+  $('#arena').classList.toggle('rage-active', isRaged && fxOn);
+  $('#f-enemy').classList.toggle('rage-aura', isRaged && fxOn);
+  $('#b-ename').classList.toggle('rage-name', isRaged);
+  syncBuffAura();
   if (run.tower) {
     $('#b-title').textContent = `天蓋の塔　${Math.max(run.floor, 1)}F`;
     let pips = '';
@@ -601,6 +828,12 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
+        <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+          <button class="btn small ${G.opts.fx !== false ? 'on' : ''}" data-act="fxToggle" aria-pressed="${G.opts.fx !== false}">戦闘エフェクト：${G.opts.fx !== false ? 'ON' : 'OFF'}</button>
+        </div>
+        <p class="sub" style="margin:6px 0 0;font-size:11px">スキル発動時のエフェクトやボス激昂時の閃光・オーラ表示を切り替えます（ダメージ数字やログは常に表示されます）。</p>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
@@ -1321,7 +1554,7 @@ function renderAll() {
   if (v === 'town') renderTown();
   if (v === 'dungeon') {
     $('#dg-select').hidden = !!G.run; $('#dg-battle').hidden = !G.run;
-    if (G.run) { renderEnemy(true); renderBattle(); } else renderDungeonSelect();
+    if (G.run) { renderEnemy(true); renderBattle(); } else { if (typeof clearAllBattleFx === 'function') clearAllBattleFx(); renderDungeonSelect(); }
   }
   if (v === 'status') renderStatus();
   if (v === 'help') renderHelp();

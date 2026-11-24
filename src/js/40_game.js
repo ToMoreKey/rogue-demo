@@ -231,6 +231,7 @@ function spawnEnemy(boss, miniboss = false) {
   if (boss) run.bossHitTaken = false;
   recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
+  if (typeof clearRageFx === 'function') clearRageFx();
   renderEnemy(true);
   if (ae && ae.preempt > 0 && rnd() < ae.preempt) {
     addLog(`奇襲の霧！ ${name}の先制攻撃！`, 'l-dmg');
@@ -359,6 +360,7 @@ function playerAct() {
   // heal/buff 系は useSkillEffect で完結
   if (id !== 'attack' && SK[id] && SK[id].type !== 'atk') {
     useSkillEffect(id);
+    if (typeof playSkillFx === 'function') playSkillFx(id, 1);
     return;
   }
   // attack / atk系スキル
@@ -389,6 +391,7 @@ function playerAct() {
     popDamage('enemy', String(dmg), crit ? 'crit' : 'dmg');
   }
   hitFlash('enemy'); playAttackMotion();
+  if (id !== 'attack' && typeof playSkillFx === 'function') playSkillFx(id, Math.max(1, hits || s.hits || 1));
   addLog(`${id === 'attack' ? '' : s.name + '！ '}${en.name}に${hits > 1 ? hits + '回で合計' : ''}${dealt}ダメージ${crits ? '（会心！）' : ''}`, 'l-hit');
   if (s.freeze && en.hp > 0) { run.frozen = typeof s.freeze === 'number' ? s.freeze : 1; addLog(`${en.name}は凍りついた！`, 'l-good'); }
   const stealPct = (hasProp(p.weapon, 'vamp') ? 0.1 : 0) + te.lifeSteal;
@@ -444,10 +447,12 @@ function battleRound() {
     en.fallbackId = en.id;
     en.id = (run.d.boss && run.d.boss.rageId) || 'o_boss_rage';
     en.name = (run.d.boss && run.d.boss.rageName) || '終焉神ニヒル・真';
+    en.bossFilter = 'hue-rotate(140deg) saturate(1.6)';
     en.atk = Math.round(en.atk * 1.35);
     recordDexEnemy(p, en.id, false);
     addLog('ニヒルの仮面が砕け散った！ 終焉神ニヒル・真へと姿を変え、攻撃力が激増した！', 'l-dmg');
     renderEnemy(true);
+    if (typeof triggerRageFx === 'function') triggerRageFx();
   }
   enemyAct();
   if (en.hp <= 0) { onKill(); return; }
@@ -551,6 +556,7 @@ function onKill() {
     }
   }
   run.guard = 0;
+  if (typeof clearRageFx === 'function') clearRageFx();
   if (!(run.abyss && abyssEff(run).noRest) && TUNE.floorRegen > 0 && !en.boss) {
     const h = Math.round(maxHp(p) * TUNE.floorRegen), b = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
@@ -670,6 +676,7 @@ function finishRun(result) {
     abyss: run.abyss ? { lv: run.abyss.lv, coins: result === 'clear' ? run.abyss.dfA.coins : 0, mythicDrops: run.abyss.mythicDrops } : null
   };
   G.run = null;
+  if (typeof clearAllBattleFx === 'function') clearAllBattleFx();
   G.townView = 'plaza';  // 街帰還時は広場に戻る
   save();
   renderAll();
