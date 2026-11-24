@@ -16,3 +16,8 @@
 ## C. 集計する
 1. スプレッドシートを「ファイル→ダウンロード→CSV」で保存。
 2. 私にCSVを渡す → `python3 tools/make_stats.py 回答.csv` で `docs/stats_report.md`（人数・日別アクティブ・到達状況・プレイ時間など）を作ります。
+
+## D. 設定値（運営者が作成済み・公開情報）
+- フォームURL（formResponse）: `https://docs.google.com/forms/d/e/1FAIpQLSfQa7ARhtacX4mo8JLnMsfOr8CSjnRgCHWjXkqkm8ipZU8jzA/formResponse`
+- entry ID（記録）: `entry.1234051955`
+- 反映: P10 の Gemini 実装完了後に、私が `src/data/analytics.js` の `reportUrl` / `entryStats` へ入れる（Geminiは空のまま出荷）。
