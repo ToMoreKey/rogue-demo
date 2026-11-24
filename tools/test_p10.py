@@ -59,6 +59,7 @@ with sync_playwright() as pw:
     pg.evaluate('() => { G.tutorial = { done: true }; const o = document.getElementById("tut-overlay"); if (o) o.hidden = true; }')
 
     # 基準1: URLが空なら通信が一切起きない & devビルドでも通信しない
+    pg.evaluate("() => { const R = window.__rogue; R.ANALYTICS_CFG.reportUrl = ''; R.ANALYTICS_CFG.entryStats = ''; }")
     unconf_res = pg.evaluate('async () => await window.__rogue.maybeSendAnalytics()')
     check('基準1_URL未設定時は通信しない', (not unconf_res['sent']) and unconf_res.get('reason') == 'unconfigured' and len(intercepted) == 0, unconf_res)
 

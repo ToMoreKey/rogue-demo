@@ -34,6 +34,7 @@ function boot() {
     const p = G.p;
     if (G.view === 'town' && !G.run && p.hp < maxHp(p)) { p.hp = Math.min(maxHp(p), p.hp + 2); renderHUD(); if (G.townView === 'plaza') renderTown(); }
   }, 1000);
+  setInterval(() => { if (!document.hidden) flushAnalyticsPlayTime(); else _sessionLastTickAt = Date.now(); }, 30000);
   window.addEventListener('pagehide', () => { flushAnalyticsPlayTime(); save(); idbMirrorSave(true); });
   window.addEventListener('online', () => { flushBugQueue(); });
   flushBugQueue();

@@ -457,7 +457,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v39';
+const APP_VERSION = 'rogue-v40';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -1053,8 +1053,8 @@ const BUGREPORT_CFG = {
   rateKey: 'rogue_bugreport_last_v1'
 };
 const ANALYTICS_CFG = {
-  reportUrl: '',
-  entryStats: '',
+  reportUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSfQa7ARhtacX4mo8JLnMsfOr8CSjnRgCHWjXkqkm8ipZU8jzA/formResponse',
+  entryStats: 'entry.1234051955',
   intervalHours: 24,
   anonIdKey: 'rogue_anon_id_v1',
   lastSentKey: 'rogue_stats_last_v1',
@@ -5572,6 +5572,7 @@ function boot() {
     const p = G.p;
     if (G.view === 'town' && !G.run && p.hp < maxHp(p)) { p.hp = Math.min(maxHp(p), p.hp + 2); renderHUD(); if (G.townView === 'plaza') renderTown(); }
   }, 1000);
+  setInterval(() => { if (!document.hidden) flushAnalyticsPlayTime(); else _sessionLastTickAt = Date.now(); }, 30000);
   window.addEventListener('pagehide', () => { flushAnalyticsPlayTime(); save(); idbMirrorSave(true); });
   window.addEventListener('online', () => { flushBugQueue(); });
   flushBugQueue();
