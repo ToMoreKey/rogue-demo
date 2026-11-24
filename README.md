@@ -57,6 +57,7 @@
 - `tools/test_p9.py` … P9機能テスト（不具合報告UI・診断情報・POST傍受・レート制限・オフラインキュー・集計連携）
 - `tools/test_ui1.py` … UI-1機能テスト（ステータス画面5サブタブ・全パネル網羅・sticky・スクロール・保持・チュートリアル連動）
 - `tools/test_ui2.py` … UI-2機能テスト（ヘルプ画面5サブタブ・全7パネル網羅・sticky・スクロール・保持・ステータス説明更新）
+- `tools/test_p10.py` … P10機能テスト（匿名利用状況送信・24時間間隔・オプトアウト・匿名ID分離・make_stats集計）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
 - `docs/dev_notes_P3.md` … P3（G〜I前編完成）で決定したバランス数値・仕様・BOT検証結果メモ
@@ -108,6 +109,7 @@ python3 tools/test_p8.py                # P8機能テスト（書き出し/読�
 python3 tools/test_p9.py                # P9機能テスト（不具合報告UI・診断情報・POST傍受・キュー・集計連携）
 python3 tools/test_ui1.py               # UI-1機能テスト（ステータス画面5サブタブ・sticky・保持・チュートリアル）
 python3 tools/test_ui2.py               # UI-2機能テスト（ヘルプ画面5サブタブ・全7パネル・sticky・保持）
+python3 tools/test_p10.py               # P10機能テスト（匿名利用状況送信・オプトアウト・make_stats集計）
 ```
 
 - BOTの目安（P4・全75セル / P5a・無限回廊）:

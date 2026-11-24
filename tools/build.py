@@ -27,6 +27,7 @@ JS_ORDER = [
     'data/abyss.js',
     'data/ranking.js',
     'data/bugreport.js',
+    'data/analytics.js',
     'data/dex.js',
     'data/achievements.js',
     'assets/enemy_images.js',
@@ -38,6 +39,7 @@ JS_ORDER = [
     'js/30_save.js',
     'js/35_backup.js',
     'js/36_bugreport.js',
+    'js/37_analytics.js',
     'js/40_game.js',
     'js/50_acts.js',
     'js/60_render.js',
@@ -99,6 +101,15 @@ def to_dev(html):
         sys.exit('dev ビルド: APP_VERSION の置換が1箇所ではありません（%d）' % n_av)
     html = sub_once(html, "queueKey: 'rogue_bugreport_queue_v1'", "queueKey: 'rogue_dev_bugreport_queue_v1'")
     html = sub_once(html, "rateKey: 'rogue_bugreport_last_v1'", "rateKey: 'rogue_dev_bugreport_last_v1'")
+    html, n_an_u = re.subn(r"(const ANALYTICS_CFG = \{\s*reportUrl:\s*)'[^']*'", r"\1''", html)
+    html, n_an_e = re.subn(r"(entryStats:\s*)'[^']*'", r"\1''", html)
+    if n_an_u != 1 or n_an_e != 1:
+        sys.exit('dev ビルド: ANALYTICS_CFG の置換が1箇所ではありません（%d, %d）' % (n_an_u, n_an_e))
+    html = sub_once(html, "anonIdKey: 'rogue_anon_id_v1'", "anonIdKey: 'rogue_dev_anon_id_v1'")
+    html = sub_once(html, "lastSentKey: 'rogue_stats_last_v1'", "lastSentKey: 'rogue_dev_stats_last_v1'")
+    html = sub_once(html, "launchKey: 'rogue_stats_launch_v1'", "launchKey: 'rogue_dev_stats_launch_v1'")
+    html = sub_once(html, "playSecKey: 'rogue_stats_playsec_v1'", "playSecKey: 'rogue_dev_stats_playsec_v1'")
+    html = sub_once(html, "optOutKey: 'rogue_stats_optout_v1'", "optOutKey: 'rogue_dev_stats_optout_v1'")
     html = sub_once(html, "const TUT_SAVE_KEY = 'rogue_tut_done_v1';", "const TUT_SAVE_KEY = 'rogue_dev_tut_done_v1';")
     html = sub_once(html, "cacheKey: 'rogue_ranking_cache_v1'", "cacheKey: 'rogue_dev_ranking_cache_v1'")
     # ランキング送信を無効化（フォームURLを空にする。表示は data/ranking.json の読み取りのみ）
