@@ -43,8 +43,8 @@ function tutAllowClick(step, b) {
     case 1:  return act === 'go' && b.dataset.d === 'A';
     case 3:  return act === 'retreat';
     case 4:  return act === 'nav' && v === 'status';
-    case 41: return act === 'spAlloc' && tree === 'life';
-    case 5:  return (act === 'equipSkill' && id === 'heal') || (act === 'nav' && v === 'status');
+    case 41: return (act === 'spAlloc' && tree === 'life') || (act === 'statusTab' && b.dataset.tab === 'skill');
+    case 5:  return (act === 'equipSkill' && id === 'heal') || (act === 'nav' && v === 'status') || (act === 'statusTab' && b.dataset.tab === 'skill');
     case 6:  return act === 'nav' && v === 'help';
     default: return false;
   }
@@ -53,6 +53,10 @@ function tutAllowClick(step, b) {
 function tutStep(step) {
   if (!G.tutorial || G.tutorial.done) return;
   G.tutorial.step = step;
+  if (step === 41 || step === 5) {
+    G.statusTab = 'skill';
+    if (G.view === 'status') renderStatus();
+  }
   if (step === 5) {
     // ヒール装備ボタンはステータス画面にある → 必ず表示させてからrender
     if (G.view !== 'status') { G.view = 'status'; renderAll(); }
@@ -143,6 +147,10 @@ function renderTutorial() {
   if (!tut || tut.done) { tutHide(); return; }
   const overlay = document.getElementById('tut-overlay');
   const step = tut.step;
+  if ((step === 41 || step === 5) && G.view === 'status' && G.statusTab !== 'skill') {
+    G.statusTab = 'skill';
+    renderStatus();
+  }
 
   // step 2: 戦闘中は何も表示しない（HP監視だけ）
   if (step === 2) { tutHide(); return; }

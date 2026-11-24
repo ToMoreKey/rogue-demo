@@ -171,10 +171,13 @@ with sync_playwright() as pw:
     }''')
     pg.click('#nav-status')
     pg.wait_for_timeout(150)
-    ui_res = pg.evaluate('''() => {
+    hero_txt = pg.evaluate('() => document.querySelector("#view-status").innerText')
+    pg.click('[data-act="statusTab"][data-tab="skill"]')
+    pg.wait_for_timeout(100)
+    ui_res = pg.evaluate('''(heroTxt) => {
         const R = window.__rogue;
         const p = G.p;
-        const stText = document.querySelector('#view-status').innerText;
+        const stText = heroTxt + '\\n' + document.querySelector('#view-status').innerText;
         const heroTree = R.SKILL_TREES.find(t => t.id === 'hero');
         const heroMs = heroTree.milestones.find(m => m.passive === 'hero10');
         return {
@@ -184,7 +187,7 @@ with sync_playwright() as pw:
             heroDesc: heroMs ? heroMs.desc : '',
             ovStatus: document.documentElement.scrollWidth - window.innerWidth
         };
-    }''')
+    }''', hero_txt)
     check('hero10説明文更新', ui_res['heroDesc'] == 'パッシブ：攻撃・最大HP・最大MPが25%上昇', ui_res['heroDesc'])
     check('ステータス表示ATKと計算一致', str(ui_res['calcAtk']) in ui_res['stText'], (ui_res['calcAtk'], ui_res['stText'][:200]))
     check('スキルUI表示MPと計算一致', f"MP {ui_res['calcStrikeMp']}" in ui_res['stText'], ui_res['calcStrikeMp'])

@@ -369,3 +369,6 @@ P7 はデバッグ部隊の通しプレイ後に、採用された項目の数�
 
 ### P9（ゲーム内の不具合報告）の決定（2026-11-22）
 Googleフォーム経由（ランキングと同方式）で、種類・内容・診断情報を蓄積する。診断情報にセーブデータ・個人情報は含めない。運営者がCSVを書き出し、`tools/make_bug_report.py` で対策リストを作る。詳細は `docs/change_P9_bugreport.md`、運用は `docs/bugreport_setup.md`、依頼は `docs/gemini_prompt_P9.md`。
+
+### UI改善の開始（2026-11-24）
+不具合・バランスの調整と並行して、UIを順次改善する。UI-1: ステータス画面をサブタブ（勇者／装備／スキル／極意／データ）に分ける。詳細は `docs/change_UI1_status.md`、依頼は `docs/gemini_prompt_UI1.md`。確認は先にテスト版（/dev/）で行い、公開は運営者の合図で行う。

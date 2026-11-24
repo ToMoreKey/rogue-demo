@@ -142,7 +142,9 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(150)
     res03 = pg.evaluate('''() => {
         const R = window.__rogue;
+        R.ACTS.helpTab({ tab: 'endgame' });
         const txt = document.querySelector('#view-help').innerHTML;
+        R.ACTS.helpTab({ tab: 'intro' });
         const enTotal = R.dexEnemyGroups().reduce((s, g) => s + (g.list ? g.list.length : 0), 0);
         const itTotal = R.DEX_STARS.length * 2 + R.DEX_MYTHICS.length * 2;
         const achTotal = R.ACHIEVEMENTS.length;

@@ -10,6 +10,7 @@ const ACTS = {
     }
     // チュートリアル step 4: ステータスタブを押したら step 41(SP割り振り) へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 4 && v === 'status') {
+      G.statusTab = 'skill';
       G.view = v; renderAll(); ensureLoop();
       setTimeout(() => {
         if (G.p.sp < 3) { G.p.sp = 3; renderHUD(); renderStatus(); }
@@ -18,6 +19,24 @@ const ACTS = {
       return;
     }
     G.view = v; renderAll(); ensureLoop();
+  },
+  statusTab(d) {
+    const t = d && d.tab;
+    if (!['hero', 'gear', 'skill', 'mastery', 'data'].includes(t)) return;
+    G.statusTab = t;
+    renderStatus();
+    const app = document.getElementById('app');
+    if (app) app.scrollTop = 0;
+    window.scrollTo(0, 0);
+  },
+  helpTab(d) {
+    const t = d && d.tab;
+    if (!['intro', 'world', 'skill', 'status', 'endgame'].includes(t)) return;
+    G.helpTab = t;
+    renderHelp();
+    const app = document.getElementById('app');
+    if (app) app.scrollTop = 0;
+    window.scrollTo(0, 0);
   },
   townEnter(d) { G.townView = d.v; renderTown(); },
   townBack() { G.townView = 'plaza'; renderTown(); },
@@ -385,6 +404,7 @@ const ACTS = {
     if (d.to === 'tower' || d.to === 'abyss') {
       G.view = 'dungeon'; renderAll(); ensureLoop();
     } else if (d.to === 'status') {
+      if (d.tab && ['hero', 'gear', 'skill', 'mastery', 'data'].includes(d.tab)) G.statusTab = d.tab;
       G.view = 'status'; renderAll(); ensureLoop();
     } else if (d.to === 'dex') {
       G.view = 'status'; renderAll(); openDexModal('enemies');

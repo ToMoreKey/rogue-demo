@@ -75,6 +75,8 @@ with sync_playwright() as pw:
 
     pg.click('#nav-status')
     pg.wait_for_timeout(150)
+    pg.click('[data-act="statusTab"][data-tab="data"]')
+    pg.wait_for_timeout(100)
     pg.click('#view-status [data-act="openBugReport"]')
     pg.wait_for_timeout(150)
     m_st = pg.evaluate('() => document.querySelector("#m-title").innerText')
