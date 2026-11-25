@@ -31,9 +31,9 @@ BOT = r"""
    };
    A(t0,20); A(t1,20); A(t2,10);
    A(t0,10); A(t1,10); A(t2,20);
-   const order=['genesisRay','skyStar','meteorNova','tenma','starSword','cosmicNova','hagun','zeroAbs','ultima','skySlash','heroic','iceAge','meteor','blizzard','lightningStorm','ult','flameSlash','blaze','thunder','multi','doubleStab','strike','fireball','berserk'];
+   const order=['genesisRay','swordGod','endMagic','nightSky','skyStar','skyMeteorite','heavenStars','thousandMask','meteorNova','tenma','nightParade','starSword','starDust','celestialLance','trumpCard','cosmicNova','hagun','thousandCuts','zeroAbs','divineWrath','ultima','skySlash','shadowPierce','heroic','arcaneMiracle','angelMiracle','grandHeist','iceAge','meteor','holyNova','blizzard','bladeDance','lightningStorm','ult','phantomSlash','flameSlash','judgment','blaze','thunder','rush','multi','doubleStab','strike','fireball','holyBolt','berserk'];
    const heal=['eternal','goddess','requiem','holyLight','saintPrayer','resurrection','fullheal','highRegen','heal','regen','firstAid'];
-   const buff=['heroAdvent','heroAwaken','kishin','shura','warGod','holyBarrier','barrier','guard','magicshield'];
+   const buff=['heroAdvent','heroAwaken','phantomAdvent','kishin','mirageStance','shura','swiftStance','warGod','frenzyEdge','holyBarrier','barrier','guard','shadowStep','magicshield'];
    const slots=[null,null,null];
    const h=heal.find(x=>p.skills[x])||buff.find(x=>p.skills[x]); if(h) slots[0]=h;
    const atk=order.filter(x=>p.skills[x]&&x!==slots[0]).slice(0,2);

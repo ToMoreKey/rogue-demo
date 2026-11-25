@@ -1,6 +1,6 @@
 // ============ R1a: キャラごとのスキルツリー＆説明データ ============
 // 各キャラは 主ツリー(30SP)・第2ツリー(30SP, 主10で解放)・奥義ツリー(30SP, 主20かつ第2が20で解放) の3つを持つ。
-// 暫定箇所には // TODO(R1b) を明記（R1bで各キャラ専用の新規スキル・奥義・クロエ専用ツリーに差し替える）。
+// R1b: 各キャラ専用の新規スキル・奥義・クロエ専用ツリーに本設計済み（数値は初期案。R1cでBOT調整）。
 
 const CHAR_IDS = ['stella', 'ruby', 'silia', 'chloe'];
 
@@ -104,25 +104,24 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#e8dc9b',
       desc: '剣枠20かつ戦士枠20以上で解放。唯一無二の英雄スキル。',
-      // TODO(R1b): 30SP最終技を剣系専用奥義（仮名「剣神の一閃」）に差し替え予定
       unlockWhen: (p) => { const s = getCharSkillPts(p, 'stella'); return (s.sword || 0) >= 20 && (s.warrior || 0) >= 20; },
       stage2When: (p) => { const s = getCharSkillPts(p, 'stella'); return (s.sword || 0) >= 30 && (s.warrior || 0) >= 20; },
       stage2Desc: '剣枠30かつ戦士枠20で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
       milestones: [
-        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
+        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '3回攻撃（各3倍）' },
         { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
         { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
         { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },
         { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
         { sp: 26, id: 'skyStar',    name: '蒼穹星剣',   desc: '6回攻撃（各4倍）' },
-        { sp: 30, id: 'genesisRay', name: '創世の光',   desc: '24倍の創世の一閃' } // TODO(R1b)
+        { sp: 30, id: 'swordGod',   name: '剣神の一閃', desc: '24倍の剣神の一閃' }
       ]
     }
   ],
 
-  // -------- ルビィ（魔法使い）: 魔法枠・魔術師枠・英雄枠コピー（暫定） --------
+  // -------- ルビィ（魔法使い）: 魔法枠・魔術師枠・大魔導枠 --------
   ruby: [
     {
       id: 'magic',
@@ -166,7 +165,6 @@ const CHAR_TREES = {
       ]
     },
     {
-      // TODO(R1b): ルビィの奥義枠（大魔導）は暫定で英雄枠のコピー。R1bで魔法奥義に差し替え予定
       id: 'hero',
       name: '英雄枠',
       icon: '👑',
@@ -179,18 +177,18 @@ const CHAR_TREES = {
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
       milestones: [
-        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' }, // TODO(R1b)
+        { sp: 5,  id: 'arcaneMiracle', name: '大魔導の奇跡', desc: '3回攻撃（各3倍）の大魔法' },
         { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
-        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' }, // TODO(R1b)
-        { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' }, // TODO(R1b)
-        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' }, // TODO(R1b)
-        { sp: 26, id: 'skyStar',    name: '蒼穹星剣',   desc: '6回攻撃（各4倍）' }, // TODO(R1b)
-        { sp: 30, id: 'genesisRay', name: '創世の光',   desc: '24倍の創世の一閃' } // TODO(R1b)
+        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
+        { sp: 20, id: 'starDust',   name: '星屑の極意', desc: '5回攻撃（各3倍）の星屑魔法' },
+        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
+        { sp: 26, id: 'skyMeteorite', name: '蒼穹の流星群', desc: '6回攻撃（各4倍）の流星魔法' },
+        { sp: 30, id: 'endMagic',   name: '終焉の大魔法', desc: '24倍の終焉の大魔法' }
       ]
     }
   ],
 
-  // -------- シリア（聖職者）: 生命枠・詠唱枠・英雄枠コピー（暫定） --------
+  // -------- シリア（聖職者）: 生命枠・詠唱枠・聖女枠 --------
   silia: [
     {
       id: 'life',
@@ -202,12 +200,15 @@ const CHAR_TREES = {
       unlockWhen: () => true,
       milestones: [
         { sp: 3,  id: 'heal',        name: 'ヒール',         desc: '最大HPの35%を回復する' },
+        { sp: 5,  id: 'holyBolt',    name: '聖光弾',         desc: '聖なる光弾で1.8倍のダメージ' },
         { sp: 6,  id: 'regen',       name: 'リジェネ',       desc: '3ターン間毎ターン最大HPの15%回復' },
         { sp: 10, id: 'barrier',     name: 'バリア',         desc: 'ダメージを3回無効化するバリアを張る' },
+        { sp: 13, id: 'judgment',    name: '聖裁',           desc: '聖なる裁きを2回放つ（各1.5倍）' },
         { sp: 15, id: null,          name: 'HP最大値+20%',   desc: 'パッシブ：最大HPが20%上昇する', passive: 'life15' },
         { sp: 20, id: 'fullheal',    name: 'フルヒール',     desc: '最大HPの70%を回復する' },
         { sp: 23, id: 'highRegen',   name: 'ハイリジェネ',   desc: '3ターン間毎ターン最大HPの25%回復' },
         { sp: 26, id: 'holyBarrier', name: 'ホーリーバリア', desc: 'ダメージを5回無効化するバリアを張る' },
+        { sp: 28, id: 'holyNova',    name: '聖なる爆光',     desc: '5倍の聖なる爆光' },
         { sp: 30, id: 'saintPrayer', name: '聖女の祈り',     desc: '最大HPを全回復する' }
       ]
     },
@@ -228,12 +229,12 @@ const CHAR_TREES = {
         { sp: 10, id: null,           name: 'HP/MP回復+50%', desc: 'パッシブ：全回復系の効果が50%上昇', passive: 'cleric10' },
         { sp: 15, id: 'holyLight',    name: 'ホーリーライト', desc: '最大HP全回復＋3ターン防御1.5倍' },
         { sp: 20, id: 'requiem',      name: 'レクイエム',     desc: 'HP・MPを全回復する' },
+        { sp: 22, id: 'divineWrath',  name: '神罰',           desc: '9倍の神罰の一撃' },
         { sp: 25, id: 'goddess',      name: '女神の奇跡',     desc: 'HP・MP全回復＋4ターン防御2倍' },
         { sp: 30, id: 'eternal',      name: '永劫の祈り',     desc: 'HP全回復＋5ターン35%再生＋3回バリア' }
       ]
     },
     {
-      // TODO(R1b): シリアの奥義枠（聖女）は暫定で英雄枠のコピー。R1bで聖属性攻撃・聖女奥義に差し替え予定
       id: 'hero',
       name: '英雄枠',
       icon: '👑',
@@ -246,21 +247,20 @@ const CHAR_TREES = {
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
       milestones: [
-        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' }, // TODO(R1b)
+        { sp: 5,  id: 'angelMiracle', name: '天使の奇跡', desc: '3回攻撃（各3倍）の聖なる光' },
         { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
-        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' }, // TODO(R1b)
-        { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' }, // TODO(R1b)
-        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' }, // TODO(R1b)
-        { sp: 26, id: 'skyStar',    name: '蒼穹星剣',   desc: '6回攻撃（各4倍）' }, // TODO(R1b)
+        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
+        { sp: 20, id: 'celestialLance', name: '聖槍の極意', desc: '5回攻撃（各3倍）の聖槍' },
+        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
+        { sp: 26, id: 'heavenStars', name: '蒼穹の聖星', desc: '6回攻撃（各4倍）の聖星' },
         { sp: 30, id: 'genesisRay', name: '創世の光',   desc: '24倍の創世の一閃' }
       ]
     }
   ],
 
-  // -------- クロエ（盗賊）: 剣枠コピー（3SPのみダブルスタブ）＋戦士枠コピー＋英雄枠コピー（暫定） --------
+  // -------- クロエ（盗賊）: 盗技枠・怪盗枠・大怪盗枠（全て新規） --------
   chloe: [
     {
-      // TODO(R1b): クロエの主ツリー（盗技）は3SP「ダブルスタブ」と12SP「応急手当」以外、暫定で剣枠のコピー
       id: 'sword',
       name: '盗技枠',
       icon: '🗡️',
@@ -269,19 +269,18 @@ const CHAR_TREES = {
       desc: '盗賊の技を極める。手数と連撃のスキルと応急手当を習得。',
       unlockWhen: () => true,
       milestones: [
-        { sp: 3,  id: 'doubleStab', name: 'ダブルスタブ', desc: '1.1倍の素早い2回攻撃' },
-        { sp: 6,  id: 'guard',      name: '鉄壁',         desc: '3回の被攻撃のあいだ防御力2倍' }, // TODO(R1b)
-        { sp: 10, id: 'multi',      name: '連続斬り',     desc: '0.8倍の斬撃を3回放つ' }, // TODO(R1b)
-        { sp: 12, id: 'firstAid',   name: '応急手当',     desc: '最大HPの20%を回復する' },
-        { sp: 15, id: null,         name: '攻撃力+15%',   desc: 'パッシブ：攻撃力が15%上昇する', passive: 'sword15' }, // TODO(R1b)
-        { sp: 20, id: 'ult',        name: '必殺剣',       desc: '4倍の渾身の一撃' }, // TODO(R1b)
-        { sp: 23, id: 'flameSlash', name: '烈火斬',       desc: '炎の斬撃を2回放つ（各1.6倍）' }, // TODO(R1b)
-        { sp: 26, id: 'warGod',     name: '鬼神の構え',   desc: '4ターン攻撃力1.8倍（防御は下がらない）' }, // TODO(R1b)
-        { sp: 30, id: 'skySlash',   name: '天翔斬',       desc: '7倍の秘剣の一撃' } // TODO(R1b)
+        { sp: 3,  id: 'doubleStab',   name: 'ダブルスタブ', desc: '1.1倍の素早い2回攻撃' },
+        { sp: 6,  id: 'shadowStep',   name: '影走り',       desc: '3ターン防御力2倍' },
+        { sp: 10, id: 'rush',         name: 'ラッシュ',     desc: '0.7倍の連撃を4回放つ' },
+        { sp: 12, id: 'firstAid',     name: '応急手当',     desc: '最大HPの20%を回復する' },
+        { sp: 15, id: null,           name: 'クリティカル率+20%', desc: 'パッシブ：クリティカル率が20%上昇する（急所狙い）', passive: 'crit20' },
+        { sp: 20, id: 'bladeDance',   name: '連刃乱舞',     desc: '0.7倍の連撃を6回放つ' },
+        { sp: 23, id: 'phantomSlash', name: '幻影斬',       desc: '幻影の斬撃を3回放つ（各1.2倍）' },
+        { sp: 26, id: 'swiftStance',  name: '疾風の構え',   desc: '4ターン攻撃力1.8倍' },
+        { sp: 30, id: 'shadowPierce', name: '影縫い',       desc: '7倍の影縫いの一撃' }
       ]
     },
     {
-      // TODO(R1b): クロエの第2ツリー（怪盗）は暫定で戦士枠のコピー
       id: 'warrior',
       name: '怪盗枠',
       icon: '🌙',
@@ -294,16 +293,15 @@ const CHAR_TREES = {
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
       milestones: [
-        { sp: 5,  id: 'berserk', name: 'バーサーク', desc: '4ターン攻撃力3倍・防御力半減' }, // TODO(R1b)
-        { sp: 10, id: null,      name: '攻撃力+30%', desc: 'パッシブ：攻撃力がさらに30%上昇', passive: 'warrior10' }, // TODO(R1b)
-        { sp: 15, id: 'shura',   name: '修羅の構え', desc: '4ターン攻撃力4倍・被ダメ1.2倍' }, // TODO(R1b)
-        { sp: 20, id: 'hagun',   name: '破軍の剣',   desc: '12倍の渾身の一撃' }, // TODO(R1b)
-        { sp: 25, id: 'tenma',   name: '天魔滅殺斬', desc: '18倍の極限の一撃' }, // TODO(R1b)
-        { sp: 30, id: 'kishin',  name: '鬼神降臨',   desc: '5ターン攻撃力5倍・被ダメ1.1倍' } // TODO(R1b)
+        { sp: 5,  id: 'frenzyEdge',    name: '狂乱の刃',   desc: '4ターン攻撃力3倍・防御力半減' },
+        { sp: 10, id: null,            name: '全スキルCT-1', desc: 'パッシブ：全スキルのCTが1短縮（最低1）（疾風）', passive: 'swift10' },
+        { sp: 15, id: 'mirageStance',  name: '幻惑の構え', desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
+        { sp: 20, id: 'thousandCuts',  name: '千刃',       desc: '1.5倍の千の刃を8回放つ' },
+        { sp: 25, id: 'nightParade',   name: '百鬼夜行',   desc: '1.5倍の百鬼夜行を12回放つ' },
+        { sp: 30, id: 'phantomAdvent', name: '怪盗降臨',   desc: '5ターン攻撃力5倍・被ダメ1.1倍' }
       ]
     },
     {
-      // TODO(R1b): クロエの奥義枠（大怪盗）は暫定で英雄枠のコピー
       id: 'hero',
       name: '英雄枠',
       icon: '👑',
@@ -316,13 +314,13 @@ const CHAR_TREES = {
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
       milestones: [
-        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' }, // TODO(R1b)
-        { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
-        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' }, // TODO(R1b)
-        { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' }, // TODO(R1b)
-        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' }, // TODO(R1b)
-        { sp: 26, id: 'skyStar',    name: '蒼穹星剣',   desc: '6回攻撃（各4倍）' }, // TODO(R1b)
-        { sp: 30, id: 'genesisRay', name: '創世の光',   desc: '24倍の創世の一閃' } // TODO(R1b)
+        { sp: 5,  id: 'grandHeist',   name: '大怪盗の妙技', desc: '1.5倍の妙技を6回放つ' },
+        { sp: 10, id: null,           name: '全能力+25%',   desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
+        { sp: 15, id: 'heroAwaken',   name: '英雄の覚醒',   desc: '5ターン全ステータス2.5倍' },
+        { sp: 20, id: 'trumpCard',    name: '切り札',       desc: '1.5倍の切り札を10回放つ' },
+        { sp: 22, id: 'heroAdvent',   name: '勇者の光臨',   desc: '6ターン全ステータス3.5倍' },
+        { sp: 26, id: 'thousandMask', name: '千変万化',     desc: '8回攻撃（各3倍）' },
+        { sp: 30, id: 'nightSky',     name: '夜天の大強盗', desc: '12回攻撃（各2倍）' }
       ]
     }
   ]

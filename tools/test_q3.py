@@ -147,7 +147,7 @@ with sync_playwright() as pw:
           and q3_res['uniqueSigCount'] == q3_res['targetCount']
           and q3_res['uniqueDomCount'] == q3_res['targetCount']
           and q3_res['allHasSig']
-          and q3_res['buffCount'] == 10
+          and q3_res['buffCount'] >= 10  # R1b: 汎用バフの新スキルが加わるため以上
           and q3_res['buffUnchanged'],
           (q3_res['targetCount'], q3_res['uniqueSigCount'], q3_res['uniqueDomCount']))
     check('基準2_同分類内でティア昇順に演出時間・要素数・範囲がすべて単調非減少かつ最上位が最も豪華',

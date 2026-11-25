@@ -193,7 +193,7 @@ with sync_playwright() as pw:
         G.p.ending = true;
         R.ACTS.spAlloc({ tree: 'warrior', amount: 10 });
         R.ACTS.spAlloc({ tree: 'hero', amount: 30 });
-        const sOk = ['tenma', 'kishin', 'heroAdvent', 'skyStar', 'genesisRay'].every(id => !!G.p.skills[id]);
+        const sOk = ['tenma', 'kishin', 'heroAdvent', 'skyStar', 'swordGod'].every(id => !!G.p.skills[id]);
         R.ACTS.changeSkin({ id: 'ruby' });
         R.ACTS.spAlloc({ tree: 'magic', amount: 30 });
         R.ACTS.spAlloc({ tree: 'mage', amount: 30 });

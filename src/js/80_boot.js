@@ -65,6 +65,7 @@ window.__rogue = {
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
+  playerAct, enemyAct, useSkillEffect, genBuffMult,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
   noTimer(v) { G.noTimer = !!v; ensureLoop(); },

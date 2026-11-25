@@ -322,12 +322,20 @@ function tickSkillCt() {
     run.skillCt[k] = Math.max(0, (run.skillCt[k] || 0) - 1);
   }
 }
+// R1b: 汎用バフ（SK.gen）の倍率。kind: 'atk' | 'def' | 'taken'
+function genBuffMult(run, kind) {
+  const g = run && run.gen;
+  if (!g || !(g.turns > 0)) return 1;
+  if (kind === 'atk') return (g.atkMult || 1) * (g.allMult || 1);
+  if (kind === 'def') return (g.defMult || 1) * (g.allMult || 1);
+  return g.takenMult || 1;
+}
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
   const s = SK[id], te = towerEff(run), psb = p.passiveSkills ? passiveBonus(p) : { healMult: 1 }, pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
   p.mp -= skillMpCost(p, s);
   // CTをセット
-  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
+  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0) - (psb.ctRed || 0));
   if (s.type === 'heal') {
     const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * psb.healMult * pb.healMult * (ae ? ae.healMult : 1))); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
@@ -339,7 +347,17 @@ function useSkillEffect(id) {
     return true;
   }
   if (s.type === 'buff') {
-    if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
+    if (s.gen) {
+      run.gen = Object.assign({}, s.gen);
+      const parts = [];
+      const g = s.gen;
+      if (g.atkMult) parts.push(`攻撃力が${g.atkMult}倍`);
+      if (g.defMult) parts.push(`防御力が${g.defMult}倍`);
+      if (g.allMult) parts.push(`全ステータスが${g.allMult}倍`);
+      if (g.takenMult) parts.push(`被ダメージが${g.takenMult}倍`);
+      addLog(`${s.name}！ ${parts.join('・')}になった！`, 'l-good');
+    }
+    else if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
     else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 魔法防御力が上がった。', 'l-good'); }
     else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
     else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
@@ -366,16 +384,17 @@ function playerAct() {
   // attack / atk系スキル
   const s = id === 'attack' ? { name: '攻撃', hits: 1, mult: 1 } : SK[id];
   const te = towerEff(run), ae = run.abyss ? abyssEff(run) : null;
+  const pcb = p.passiveSkills ? passiveBonus(p) : { critAdd: 0, ctRed: 0 };
   if (id !== 'attack') {
     p.mp -= skillMpCost(p, s);
-    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
+    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0) - (pcb.ctRed || 0));
   }
   if (hasProp(p.weapon, 'madness')) {
     const loss = Math.ceil(maxHp(p) * 0.1), before = p.hp;
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'atk');
   const pb = masteryBonus(p);
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
@@ -384,7 +403,7 @@ function playerAct() {
   const bossMult = en.boss ? (1 + te.bossDmg) : 1;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
-    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < (0.1 + pb.critAdd));
+    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < (0.1 + pb.critAdd + (pcb.critAdd || 0)));
     en.firstHit = false;
     const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * pb.dmgMult * bossMult, en.def);
     en.hp = Math.max(0, en.hp - dmg); dealt += dmg; hits++; if (crit) crits++;
@@ -416,10 +435,11 @@ function enemyAct() {
     return;
   }
   const pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
-  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
-  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
+  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'def');
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * genBuffMult(run, 'taken') * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
   if (run.shura > 0) run.shura--;
   if (run.kishin > 0) run.kishin--;
+  if (run.gen && run.gen.turns > 0) { run.gen.turns--; if (run.gen.turns === 0) run.gen = null; }
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
   if (run.enemy && run.enemy.boss && dmg > 0) run.bossHitTaken = true;
