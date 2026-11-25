@@ -98,6 +98,8 @@ with sync_playwright() as pw:
     check('画面: 本番に「全装備を入手」ボタンが無い', pg.evaluate('() => !document.querySelector("[data-act=debugAllGear]")'))
     check('画面: テスト版には「全装備を入手」ボタンがある', pd.evaluate('() => !!document.querySelector("[data-act=debugAllGear]")'))
     check('本番: 直接呼んでも全装備は入らない', pg.evaluate('() => { const n = G.p.bag.length; window.__rogue.ACTS.debugAllGear(); return G.p.bag.length === n; }'))
+    check('画面: 本番に「エフェクト確認」ボタンが無く直接呼んでも開かない', pg.evaluate('() => { const hasBtn = !!document.querySelector("[data-act=openFxDebug]"); window.__rogue.ACTS.openFxDebug(); window.__rogue.openFxDebugModal(); return !hasBtn && !G.modalOpen && document.getElementById("modal").hidden; }'))
+    check('画面: テスト版には「エフェクト確認」ボタンがある', pd.evaluate('() => !!document.querySelector("[data-act=openFxDebug]")'))
     check('テスト版: 420pxで横スクロールなし', pd.evaluate('() => document.documentElement.scrollWidth <= document.documentElement.clientWidth'))
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()

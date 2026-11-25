@@ -248,6 +248,57 @@ const ACTS = {
     }
     save(); toast(`テスト用装備を${n}個追加しました`); renderAll();
   },
+  openFxDebug() {
+    if (!IS_DEV_BUILD) return;
+    openFxDebugModal();
+  },
+  fxDbgSkill(d) {
+    if (!IS_DEV_BUILD || !d || !d.id) return;
+    const s = SK[d.id];
+    playSkillFx(d.id, (s && s.hits) || 1, fxDebugTarget());
+  },
+  fxDbgSpeed(d) {
+    if (!IS_DEV_BUILD) return;
+    const v = Number(d && d.v);
+    if ([1, 2, 4].includes(v)) { _fxDbgState.speed = v; renderFxDebugControls(); }
+  },
+  fxDbgRageToggle() {
+    if (!IS_DEV_BUILD) return;
+    _fxDbgState.raged = !_fxDbgState.raged;
+    renderFxDebugArena();
+    renderFxDebugControls();
+  },
+  fxDbgRageBurst() {
+    if (!IS_DEV_BUILD) return;
+    _fxDbgState.raged = true;
+    renderFxDebugArena();
+    renderFxDebugControls();
+    triggerRageFx(fxDebugTarget());
+  },
+  fxDbgBuff(d) {
+    if (!IS_DEV_BUILD) return;
+    const b = (d && d.v) || 'none';
+    if (['none', 'atk', 'def', 'all'].includes(b)) {
+      _fxDbgState.buff = b;
+      syncBuffAura(fxDebugTarget());
+      renderFxDebugControls();
+    }
+  },
+  fxDbgEnemy(d) {
+    if (!IS_DEV_BUILD) return;
+    const e = (d && d.v) === 'boss' ? 'boss' : 'mob';
+    _fxDbgState.enemy = e;
+    renderFxDebugArena();
+    renderFxDebugControls();
+  },
+  fxDbgStop() {
+    if (!IS_DEV_BUILD) return;
+    _fxDbgState.raged = false;
+    _fxDbgState.buff = 'none';
+    clearAllBattleFx(fxDebugTarget());
+    renderFxDebugArena();
+    renderFxDebugControls();
+  },
   smithUpgrade(d) { smithUpgrade(d.id); },
   smithReforge(d) { smithReforge(d.id); },
   buyShop(d) { buyShopItem(d.id); },

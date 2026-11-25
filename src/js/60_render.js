@@ -264,8 +264,8 @@ const SKILL_FX_MAP = {
   heroAdvent:     { cat: 'buff',  tone: 'all' }
 };
 const FX_MAX_NODES = 12;
-let _fxCleanupTimer = null;
-let _rageBurstTimer = null;
+const _battleFxCtx = { cleanupTimer: null, rageBurstTimer: null };
+const _fxDbgState = { speed: 1, raged: false, buff: 'none', enemy: 'mob', cleanupTimer: null, rageBurstTimer: null };
 
 function isFxEnabled() {
   return !(G && G.opts && G.opts.fx === false);
@@ -285,33 +285,69 @@ function getSkillFxSpec(id) {
   }
   return { cat: 'generic' };
 }
-function clearSkillFxLayer() {
+function resolveFxTarget(target) {
+  if (target && target.isDebug) return target;
+  return {
+    isDebug: false,
+    arena: $('#arena'),
+    layer: $('#fx-layer'),
+    fp: $('#f-player'),
+    fe: $('#f-enemy'),
+    nm: $('#b-ename'),
+    timerHost: _battleFxCtx,
+    speed: Math.max(1, (G.opts && G.opts.speed) || 1),
+    forceFx: false
+  };
+}
+function fxDebugTarget() {
+  return {
+    isDebug: true,
+    arena: $('#fxd-arena'),
+    layer: $('#fxd-layer'),
+    fp: $('#fxd-player'),
+    fe: $('#fxd-enemy'),
+    nm: $('#fxd-ename'),
+    timerHost: _fxDbgState,
+    speed: Math.max(1, _fxDbgState.speed || 1),
+    forceFx: true,
+    buffTone: _fxDbgState.buff
+  };
+}
+function clearSkillFxLayer(target) {
   try {
-    if (_fxCleanupTimer) { clearTimeout(_fxCleanupTimer); _fxCleanupTimer = null; }
-    const layer = $('#fx-layer');
-    if (layer) layer.innerHTML = '';
-    const fe = $('#f-enemy');
-    if (fe) fe.classList.remove('fx-hit-white', 'fx-shake-big');
+    const t = resolveFxTarget(target);
+    if (t.timerHost && t.timerHost.cleanupTimer) { clearTimeout(t.timerHost.cleanupTimer); t.timerHost.cleanupTimer = null; }
+    if (t.layer) t.layer.innerHTML = '';
+    if (t.fe) t.fe.classList.remove('fx-hit-white', 'fx-shake-big');
   } catch (e) {}
 }
-function clearRageFx() {
+function clearRageFx(target) {
   try {
-    if (_rageBurstTimer) { clearTimeout(_rageBurstTimer); _rageBurstTimer = null; }
-    const arena = $('#arena'), fe = $('#f-enemy'), nm = $('#b-ename');
-    if (arena) arena.classList.remove('rage-active', 'rage-burst', 'rage-reduced');
-    if (fe) fe.classList.remove('rage-aura', 'rage-burst', 'rage-reduced');
-    if (nm) nm.classList.remove('rage-name');
+    const t = resolveFxTarget(target);
+    if (t.timerHost && t.timerHost.rageBurstTimer) { clearTimeout(t.timerHost.rageBurstTimer); t.timerHost.rageBurstTimer = null; }
+    if (t.arena) t.arena.classList.remove('rage-active', 'rage-burst', 'rage-reduced');
+    if (t.fe) t.fe.classList.remove('rage-aura', 'rage-burst', 'rage-reduced');
+    if (t.nm) t.nm.classList.remove('rage-name');
   } catch (e) {}
 }
-function clearAllBattleFx() {
-  clearSkillFxLayer();
-  clearRageFx();
+function clearAllBattleFx(target) {
+  clearSkillFxLayer(target);
+  clearRageFx(target);
+  if (target && target.isDebug && target.fp) {
+    target.fp.classList.remove('buff-aura-atk', 'buff-aura-def', 'buff-aura-all');
+  }
 }
-function syncBuffAura() {
+function syncBuffAura(target) {
   try {
-    const fp = $('#f-player');
+    const t = resolveFxTarget(target);
+    const fp = t.fp;
     if (!fp) return;
     fp.classList.remove('buff-aura-atk', 'buff-aura-def', 'buff-aura-all');
+    if (t.isDebug) {
+      const tone = t.buffTone || _fxDbgState.buff;
+      if (tone === 'atk' || tone === 'def' || tone === 'all') fp.classList.add('buff-aura-' + tone);
+      return;
+    }
     const run = G.run;
     if (!run || !isFxEnabled()) return;
     if ((run.awaken || 0) > 0 || (run.advent || 0) > 0) {
@@ -323,12 +359,13 @@ function syncBuffAura() {
     }
   } catch (e) {}
 }
-function triggerRageFx() {
+function triggerRageFx(target) {
   try {
     if (G.headless) return;
-    const arena = $('#arena'), fe = $('#f-enemy'), nm = $('#b-ename');
+    const t = resolveFxTarget(target);
+    const arena = t.arena, fe = t.fe, nm = t.nm;
     if (nm) nm.classList.add('rage-name');
-    if (!isFxEnabled()) return;
+    if (!t.forceFx && !isFxEnabled()) return;
     const red = isReducedMotion();
     if (arena) arena.classList.add('rage-active');
     if (fe) fe.classList.add('rage-aura');
@@ -339,23 +376,26 @@ function triggerRageFx() {
     }
     if (arena) { arena.classList.remove('rage-burst'); void arena.offsetWidth; arena.classList.add('rage-burst'); }
     if (fe) { fe.classList.remove('rage-burst'); void fe.offsetWidth; fe.classList.add('rage-burst'); }
-    if (_rageBurstTimer) clearTimeout(_rageBurstTimer);
-    _rageBurstTimer = setTimeout(() => {
-      _rageBurstTimer = null;
-      if (arena) arena.classList.remove('rage-burst');
-      if (fe) fe.classList.remove('rage-burst');
-    }, 340);
+    if (t.timerHost && t.timerHost.rageBurstTimer) clearTimeout(t.timerHost.rageBurstTimer);
+    if (t.timerHost) {
+      t.timerHost.rageBurstTimer = setTimeout(() => {
+        t.timerHost.rageBurstTimer = null;
+        if (arena) arena.classList.remove('rage-burst');
+        if (fe) fe.classList.remove('rage-burst');
+      }, 340);
+    }
   } catch (e) {}
 }
-function playSkillFx(id, hitCount) {
+function playSkillFx(id, hitCount, target) {
   try {
-    if (G.headless || !isFxEnabled()) return;
-    const layer = $('#fx-layer');
+    const t = resolveFxTarget(target);
+    if (G.headless || (!t.forceFx && !isFxEnabled())) return;
+    const layer = t.layer;
     if (!layer) return;
-    clearSkillFxLayer();
+    clearSkillFxLayer(t);
     const spec = getSkillFxSpec(id);
     const cat = spec.cat || 'generic';
-    const spd = Math.max(1, (G.opts && G.opts.speed) || 1);
+    const spd = Math.max(1, t.speed || 1);
     const baseMs = cat === 'ult' ? 760 : cat === 'magic' ? 480 : cat === 'slash' ? 420 : cat === 'heal' ? 460 : cat === 'buff' ? 460 : 320;
     const dur = clamp(Math.round(baseMs / spd), 150, cat === 'ult' ? 900 : 600);
     const red = isReducedMotion();
@@ -388,7 +428,7 @@ function playSkillFx(id, hitCount) {
         const svg = `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line ${isFire ? 'fire' : ''}"/></svg>`;
         addNode('fx-slash fx-side-enemy', svg, `--fx-rot:${angles[i % angles.length]}deg;--fx-off:${offsets[i % offsets.length]}px;animation-delay:${delay}ms`);
       }
-      const fe = $('#f-enemy');
+      const fe = t.fe;
       if (fe) { fe.classList.remove('fx-hit-white'); void fe.offsetWidth; fe.classList.add('fx-hit-white'); }
     } else if (cat === 'magic') {
       const elem = spec.elem || 'default';
@@ -409,7 +449,7 @@ function playSkillFx(id, hitCount) {
         const dx = Math.round(Math.cos(rad) * 48), dy = Math.round(Math.sin(rad) * 48);
         addNode(`fx-ult-spark fx-side-enemy fx-ult-${st}`, '', `--dx:${dx}px;--dy:${dy}px`);
       }
-      const fe = $('#f-enemy');
+      const fe = t.fe;
       if (fe) { fe.classList.remove('fx-shake-big', 'fx-hit-white'); void fe.offsetWidth; fe.classList.add('fx-shake-big', 'fx-hit-white'); }
     } else if (cat === 'heal') {
       addNode('fx-heal-glow fx-side-player', '');
@@ -422,15 +462,18 @@ function playSkillFx(id, hitCount) {
       const tone = spec.tone || 'all';
       addNode(`fx-buff-ring fx-side-player fx-tone-${tone}`, '');
       addNode(`fx-buff-ring fx-buff-ring2 fx-side-player fx-tone-${tone}`, '');
-      syncBuffAura();
+      if (t.isDebug) { _fxDbgState.buff = tone; renderFxDebugControls(); }
+      syncBuffAura(t);
     } else {
       addNode('fx-generic-flash fx-side-enemy', '');
     }
 
-    _fxCleanupTimer = setTimeout(() => {
-      _fxCleanupTimer = null;
-      clearSkillFxLayer();
-    }, dur + 30);
+    if (t.timerHost) {
+      t.timerHost.cleanupTimer = setTimeout(() => {
+        t.timerHost.cleanupTimer = null;
+        clearSkillFxLayer(t);
+      }, dur + 30);
+    }
   } catch (e) {}
 }
 
@@ -818,7 +861,7 @@ function renderStatus() {
     </div>`;
   const dataPanels = `
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
-      ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>' : ''}
+      ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="sub" style="margin-bottom:6px;font-size:12px">セーブの書き出し・読み込み（バックアップ／引き継ぎ）<br>最終書き出し：<b>${formatBackupDate(readBackupMeta().lastExportAt)}</b></div>
@@ -1356,7 +1399,117 @@ function openModal() {
   $('#modal').hidden = false; G.modalOpen = true;
   setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
 }
-function closeModal() { $('#modal').hidden = true; G.modalOpen = false; ensureLoop(); }
+function renderFxDebugArena() {
+  if (!IS_DEV_BUILD) return;
+  const arena = $('#fxd-arena'), fe = $('#fxd-enemy'), nm = $('#fxd-ename'), sprE = $('#fxd-spr-enemy'), sprP = $('#fxd-spr-player');
+  if (!arena || !fe || !nm || !sprE || !sprP) return;
+  const isBoss = _fxDbgState.enemy === 'boss';
+  const dId = isBoss ? 'O' : 'A';
+  const dObj = dungeonOf(dId) || DUNGEONS[0];
+  arena.style.setProperty('--a1', dObj.a1);
+  arena.style.setProperty('--a2', dObj.a2);
+  const raged = !!_fxDbgState.raged;
+  const baseEn = isBoss ? dObj.boss : dObj.mobs[0];
+  const fakeEn = {
+    id: (isBoss && raged && baseEn.rageId) ? baseEn.rageId : baseEn.id,
+    fallbackId: baseEn.id,
+    name: (isBoss && raged && baseEn.rageName) ? baseEn.rageName : baseEn.name,
+    shape: baseEn.shape,
+    raged,
+    bossFilter: raged ? 'hue-rotate(140deg) saturate(1.6)' : ''
+  };
+  sprE.innerHTML = enemyArt(fakeEn, dId);
+  sprP.innerHTML = getPlayerSVG();
+  nm.textContent = fakeEn.name;
+  arena.classList.toggle('rage-active', raged);
+  fe.classList.toggle('rage-aura', raged);
+  nm.classList.toggle('rage-name', raged);
+  syncBuffAura(fxDebugTarget());
+}
+function renderFxDebugControls() {
+  if (!IS_DEV_BUILD) return;
+  const box = $('#fxd-ctrl');
+  if (!box) return;
+  const spd = _fxDbgState.speed || 1;
+  const raged = !!_fxDbgState.raged;
+  const buff = _fxDbgState.buff || 'none';
+  const en = _fxDbgState.enemy || 'mob';
+  box.innerHTML = `
+    <div class="fxd-row">
+      <span class="fxd-lbl">速度</span>
+      ${[1, 2, 4].map(v => `<button class="btn small ${spd === v ? 'on' : ''}" data-act="fxDbgSpeed" data-v="${v}">×${v}</button>`).join('')}
+      <span class="fxd-lbl" style="margin-left:4px">敵</span>
+      <button class="btn small ${en === 'mob' ? 'on' : ''}" data-act="fxDbgEnemy" data-v="mob">雑魚</button>
+      <button class="btn small ${en === 'boss' ? 'on' : ''}" data-act="fxDbgEnemy" data-v="boss">ボス(O)</button>
+    </div>
+    <div class="fxd-row">
+      <span class="fxd-lbl">激昂</span>
+      <button class="btn small ${raged ? 'on' : ''}" data-act="fxDbgRageToggle">激昂表示：${raged ? 'ON' : 'OFF'}</button>
+      <button class="btn small" data-act="fxDbgRageBurst">激昂の瞬間を再生</button>
+      <button class="btn small danger" data-act="fxDbgStop">演出を止める</button>
+    </div>
+    <div class="fxd-row">
+      <span class="fxd-lbl">バフ</span>
+      ${[['none', 'なし'], ['atk', '攻撃'], ['def', '防御'], ['all', '全能力']].map(([k, lbl]) => `<button class="btn small ${buff === k ? 'on' : ''}" data-act="fxDbgBuff" data-v="${k}">${lbl}</button>`).join('')}
+    </div>`;
+}
+function openFxDebugModal() {
+  if (!IS_DEV_BUILD) return;
+  _fxDbgState.speed = 1;
+  _fxDbgState.raged = false;
+  _fxDbgState.buff = 'none';
+  _fxDbgState.enemy = 'mob';
+  const cats = [
+    { key: 'slash', label: '⚔️ 斬撃（剣系）' },
+    { key: 'magic', label: '✨ 魔法（攻撃魔法）' },
+    { key: 'ult',   label: '💥 大技・奥義' },
+    { key: 'heal',  label: '💚 回復' },
+    { key: 'buff',  label: '🛡️ 強化（バフ）' }
+  ];
+  const groupsHtml = cats.map(c => {
+    const ids = SK_ORDER.filter(id => SK[id] && getSkillFxSpec(id).cat === c.key);
+    return `<div class="fxd-grp">
+      <div class="fxd-gh">${esc(c.label)}（${ids.length}）</div>
+      <div class="fxd-grid">${ids.map(id => `<button class="btn small" data-act="fxDbgSkill" data-id="${id}">${esc(SK[id].name)}</button>`).join('')}</div>
+    </div>`;
+  }).join('');
+  const rmNote = isReducedMotion() ? '<p class="sub" id="fxd-rm-note" style="margin:2px 0 0;color:var(--accent);font-size:11px">※ OSの「視差効果を減らす（prefers-reduced-motion）」が有効なため、簡易フェード表示になります。</p>' : '';
+  $('#m-sheet').innerHTML = `
+    <div class="fxd-sticky" id="fxd-sticky">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 id="m-title" style="font-size:17px">🎬 エフェクト確認</h2>
+        <span class="sub" style="margin:0;font-size:11px">※セーブ・戦闘に影響しません</span>
+      </div>
+      <div class="arena fxd-arena" id="fxd-arena">
+        <div class="fx-layer" id="fxd-layer" aria-hidden="true"></div>
+        <div class="arena-row">
+          <div class="fighter" id="fxd-player">
+            <div class="spr" id="fxd-spr-player"></div>
+            <div class="fname">勇者</div>
+          </div>
+          <div class="fighter" id="fxd-enemy">
+            <div class="spr" id="fxd-spr-enemy"></div>
+            <div class="fname" id="fxd-ename">-</div>
+          </div>
+        </div>
+      </div>
+      ${rmNote}
+    </div>
+    <div class="fxd-ctrl" id="fxd-ctrl"></div>
+    <div style="display:grid;gap:8px" id="fxd-skills">${groupsHtml}</div>
+    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  renderFxDebugArena();
+  renderFxDebugControls();
+}
+function closeModal() {
+  if ($('#fxd-arena')) {
+    _fxDbgState.raged = false;
+    _fxDbgState.buff = 'none';
+    clearAllBattleFx(fxDebugTarget());
+  }
+  $('#modal').hidden = true; G.modalOpen = false; ensureLoop();
+}
 
 /* ================= render: help ================= */
 function renderHelp() {

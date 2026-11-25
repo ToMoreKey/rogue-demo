@@ -397,7 +397,19 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .help-det summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent)}
 .help-det p{margin:6px 0 0;font-size:13px;line-height:1.6;color:var(--fg)}
 
-@media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}}
+/* fx debug modal */
+.fxd-sticky{position:sticky;top:-18px;z-index:10;background:var(--panel);padding:4px 0 8px;border-bottom:1px solid var(--line)}
+.fxd-arena{margin-bottom:0;padding:8px 10px}
+.fxd-arena .fighter .spr{width:min(100%,64px)}
+.fxd-ctrl{display:grid;gap:6px;background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px}
+.fxd-row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.fxd-lbl{font-family:var(--font-display);font-size:11px;color:var(--muted);min-width:52px}
+.fxd-grp{background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;display:grid;gap:6px}
+.fxd-gh{font-family:var(--font-display);font-size:13px;color:var(--accent)}
+.fxd-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.fxd-grid .btn{padding:5px 4px;font-size:12px;min-height:34px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}.fxd-arena .fighter .spr{width:min(100%,56px)}}
 /* 画面の高さが低い端末では、戦闘画面を少し詰めて、撤退ボタンが下のタブに隠れないようにする */
 @media (max-height:700px){.arena{padding:8px 10px;margin-bottom:6px}.fighter .spr{width:min(100%,60px)}.hud{gap:6px;padding:2px 0 6px}.controls .row{margin-bottom:6px}.skill-row{margin-bottom:6px}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr,.fighter.rage-aura .spr,.fighter.rage-burst .spr,.fighter.fx-hit-white .spr,.fighter.fx-shake-big .spr,.arena.rage-burst::after{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
