@@ -217,7 +217,7 @@ with sync_playwright() as pw:
         };
     }''')
     check('基準3_速度・敵切替・激昂ON/OFF・激昂の瞬間・バフオーラ・停止がすべて動作し連打でも<=12要素',
-          ctrl_res['dur1'] == '760ms' and ctrl_res['dur4'] == '190ms' and ctrl_res['realSpeedUnchanged']
+          ctrl_res['dur1'] == '840ms' and ctrl_res['dur4'] == '210ms' and ctrl_res['realSpeedUnchanged']
           and ctrl_res['enemyBefore'] != ctrl_res['enemyBoss'] and 'ニヒル' in ctrl_res['enemyBoss']
           and ctrl_res['rageOn']['arenaActive'] and ctrl_res['rageOn']['feAura'] and ctrl_res['rageOn']['nmRage']
           and ('hue-rotate(140deg)' in ctrl_res['rageOn']['filter'])

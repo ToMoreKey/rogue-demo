@@ -60,6 +60,7 @@
 - `tools/test_p10.py` … P10機能テスト（匿名利用状況送信・24時間間隔・オプトアウト・匿名ID分離・make_stats集計）
 - `tools/test_q1.py` … Q1機能テスト（ボス激昂演出・全42スキルエフェクト分類・ON/OFF結果一致・高速12要素上限・reduced-motion）
 - `tools/test_q2.py` … Q2機能テスト（テスト版エフェクト確認パネル・本番非表示・全42スキル再生・操作群・ゲーム状態不変・sticky表示）
+- `tools/test_q3.py` … Q3機能テスト（32スキル固有signature/DOM一意性・同分類内ティア昇順・規定時間終了・高速連打・Q2パネル連動）
 - `docs/dev_notes_P1.md` … P1 で決定したバランス数値・計算式メモ
 - `docs/dev_notes_P2.md` … P2（D〜F追加）で決定したバランス数値・BOT検証結果メモ
 - `docs/dev_notes_P3.md` … P3（G〜I前編完成）で決定したバランス数値・仕様・BOT検証結果メモ
@@ -114,6 +115,7 @@ python3 tools/test_ui2.py               # UI-2機能テスト（ヘルプ画面5
 python3 tools/test_p10.py               # P10機能テスト（匿名利用状況送信・オプトアウト・make_stats集計）
 python3 tools/test_q1.py                # Q1機能テスト（ボス激昂演出・スキルエフェクト・ON/OFF一致・reduced-motion）
 python3 tools/test_q2.py                # Q2機能テスト（テスト版エフェクト確認パネル・本番非表示・全42スキル・状態不変）
+python3 tools/test_q3.py                # Q3機能テスト（32スキル固有signature・同分類ティア順序・Q2パネル連動）
 ```
 
 - BOTの目安（P4・全75セル / P5a・無限回廊）:
