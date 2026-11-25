@@ -41,10 +41,11 @@ function masteryBonus(p) {
   return { atkMult, defMult, hpMult, mpMult, healMult, critAdd, dmgMult, takenMult, expMult, goldMult };
 }
 function enemyArt(en, dId) {
-  const im = ENEMY_IMG[en.id] || (en.fallbackId && ENEMY_IMG[en.fallbackId]);
-  const st = en.bossFilter ? ` style="filter:${en.bossFilter}"` : '';
+  const im = (en && ENEMY_IMG[en.id]) || (en && en.fallbackId && ENEMY_IMG[en.fallbackId]);
+  const filterVal = (en && en.raged) ? 'hue-rotate(140deg) saturate(1.6)' : ((en && en.bossFilter) || '');
+  const st = filterVal ? ` style="filter:${filterVal}"` : '';
   if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
-  return spriteSVG(en.shape, PAL[dId][en.shape]);
+  return `<div${st}>${spriteSVG(en.shape, PAL[dId][en.shape])}</div>`;
 }
 
 // 防具の★に応じた見た目（★3以上で差分画像があれば切り替え。なければ基本絵）

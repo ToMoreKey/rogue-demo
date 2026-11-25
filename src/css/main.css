@@ -240,7 +240,109 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .pip.boss{width:14px}
 .speed{display:flex;gap:4px}
 .speed .btn{min-height:32px;padding:3px 10px;font-size:13px}
-.arena{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
+.arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
+.arena.rage-active{box-shadow:inset 0 0 28px rgba(235,45,75,.38);border-color:#9e3348}
+.arena.rage-burst::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(255,60,80,.55),rgba(180,20,50,.35) 70%);pointer-events:none;z-index:5;animation:rageFlash .32s ease-out forwards}
+.fname.rage-name{color:#ff6b8b;text-shadow:0 0 8px rgba(255,60,100,.65);font-weight:700}
+.fighter.rage-aura .spr{filter:drop-shadow(0 0 8px rgba(255,55,95,.75)) drop-shadow(0 0 16px rgba(175,45,255,.55));animation:ragePulse 2s ease-in-out infinite}
+.fighter.rage-burst .spr{animation:rageBurstSpr .32s ease-out}
+.fighter.fx-hit-white .spr{animation:fxHitWhite .26s ease-out}
+.fighter.fx-shake-sm .spr{animation:fxShakeSm .3s ease-out}
+.fighter.fx-shake-big .spr{animation:fxShakeBig .42s ease-out}
+.fighter.buff-aura-atk .spr{filter:drop-shadow(0 0 7px rgba(255,110,60,.68))}
+.fighter.buff-aura-def .spr{filter:drop-shadow(0 0 7px rgba(85,175,255,.68))}
+.fighter.buff-aura-all .spr{filter:drop-shadow(0 0 8px rgba(255,215,90,.78))}
+.fx-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:4;--fx-dur:420ms}
+.fx-item{position:absolute;pointer-events:none;will-change:transform,opacity}
+.fx-side-player{left:25%;top:44%;transform:translate(-50%,-50%)}
+.fx-side-enemy{left:75%;top:44%;transform:translate(-50%,-50%)}
+.fx-full{inset:0}
+.fx-half-enemy{left:45%;right:0;top:0;bottom:0}
+.fx-half-player{left:0;right:45%;top:0;bottom:0}
+.fx-svg{width:100%;height:100%;display:block;overflow:visible}
+/* Q3 dynamic animations */
+.fx-a-pop{animation:fxAPop var(--fx-dur,420ms) ease-out both}
+.fx-a-ring{animation:fxARing var(--fx-dur,460ms) ease-out both}
+.fx-a-burst{animation:fxABurst var(--fx-dur,460ms) ease-out both}
+.fx-a-conv{animation:fxAConv var(--fx-dur,520ms) ease-in both}
+.fx-a-drop{animation:fxADrop var(--fx-dur,480ms) ease-in both}
+.fx-a-rise{animation:fxARise var(--fx-dur,500ms) ease-out both}
+.fx-a-spin{animation:fxASpin var(--fx-dur,620ms) ease-out both}
+.fx-a-sweep{animation:fxASweep var(--fx-dur,560ms) ease-out both}
+.fx-a-flash{animation:fxAFlash var(--fx-dur,520ms) ease-out both}
+.fx-a-pillar{animation:fxAPillar var(--fx-dur,560ms) ease-out both;transform-origin:50% 100%}
+/* slash */
+.fx-slash{width:96px;height:96px;animation:fxSlashAnim var(--fx-dur,420ms) ease-out both}
+.fx-slash-line{stroke:#fff6d6;stroke-width:6;stroke-linecap:round;filter:drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px #ff9a2e)}
+.fx-slash-line.thin{stroke-width:3.8}
+.fx-slash-line.heavy{stroke-width:8.5}
+.fx-slash-line.fire{stroke:#ffe2b8;filter:drop-shadow(0 0 7px #ff6a1a) drop-shadow(0 0 14px #ff2a00)}
+.fx-slash-line.wind{stroke:#e6fbff;filter:drop-shadow(0 0 7px #5ce1ff) drop-shadow(0 0 14px #2a9df4)}
+.fx-slash-line.crimson{stroke:#ffd6dc;filter:drop-shadow(0 0 9px #ff2a55) drop-shadow(0 0 18px #990022)}
+.fx-slash-line.dark{stroke:#f2d6ff;filter:drop-shadow(0 0 8px #b54aff) drop-shadow(0 0 16px #4a0080)}
+/* magic */
+.fx-magic-ring{width:84px;height:84px;border-radius:50%;border:3px solid var(--fx-c,#9b7aff);box-shadow:0 0 14px var(--fx-c,#9b7aff),inset 0 0 10px var(--fx-c,#9b7aff);animation:fxRingExpand var(--fx-dur,460ms) ease-out forwards}
+.fx-magic-orb{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 10px 2px var(--fx-c,#9b7aff);animation:fxOrbBurst var(--fx-dur,460ms) ease-out forwards}
+.fx-elem-fire{--fx-c:#ff7b2e}
+.fx-elem-ice{--fx-c:#5ce1ff}
+.fx-elem-thunder{--fx-c:#ffe14a}
+.fx-elem-dark{--fx-c:#b56bff}
+.fx-elem-holy{--fx-c:#fff3b8}
+.fx-elem-default{--fx-c:#8a7aff}
+/* ult */
+.fx-ult-bg{inset:0;background:radial-gradient(circle at 75% 44%,rgba(255,240,180,.55),rgba(10,8,20,.68) 70%);animation:fxUltBg var(--fx-dur,720ms) ease-out forwards}
+.fx-ult-bg.fx-ult-dark{background:radial-gradient(circle at 75% 44%,rgba(195,120,255,.58),rgba(8,4,18,.75) 70%)}
+.fx-ult-bg.fx-ult-fire{background:radial-gradient(circle at 75% 44%,rgba(255,120,50,.6),rgba(20,6,6,.75) 70%)}
+.fx-ult-bg.fx-ult-holy{background:radial-gradient(circle at 75% 44%,rgba(255,250,210,.78),rgba(25,20,8,.55) 75%)}
+.fx-ult-bg.fx-ult-crimson{background:radial-gradient(circle at 75% 44%,rgba(255,55,85,.62),rgba(12,2,6,.82) 70%)}
+.fx-ult-bg.fx-ult-sky{background:radial-gradient(circle at 75% 44%,rgba(110,225,255,.62),rgba(6,14,28,.74) 70%)}
+.fx-ult-bg.fx-ult-ice{background:radial-gradient(circle at 75% 44%,rgba(165,245,255,.68),rgba(6,18,32,.76) 72%)}
+.fx-ult-bg.fx-ult-heal{background:radial-gradient(circle at 25% 44%,rgba(140,255,205,.55),rgba(8,22,18,.45) 72%)}
+.fx-ult-core{width:116px;height:116px;animation:fxUltCore var(--fx-dur,720ms) ease-out forwards}
+.fx-ult-ring{fill:none;stroke:#fff6c8;stroke-width:4;filter:drop-shadow(0 0 10px #ffbf3d)}
+.fx-ult-line{stroke:#fff;stroke-width:6;stroke-linecap:round;filter:drop-shadow(0 0 10px #ffdf6b) drop-shadow(0 0 18px #ff5533)}
+.fx-ult-spark{width:12px;height:12px;border-radius:50%;background:#fffbe6;box-shadow:0 0 12px 3px #ffbf3d;animation:fxOrbBurst var(--fx-dur,720ms) ease-out forwards}
+/* heal */
+.fx-heal-glow{width:78px;height:78px;border-radius:50%;background:radial-gradient(circle,rgba(88,201,138,.45),transparent 70%);animation:fxHealGlow var(--fx-dur,460ms) ease-out forwards}
+.fx-heal-mote{width:8px;height:8px;border-radius:50%;background:#b8ffd8;box-shadow:0 0 8px 2px #58c98a;animation:fxHealRise var(--fx-dur,460ms) ease-out both}
+/* buff */
+.fx-buff-ring{width:76px;height:76px;border-radius:50%;border:2.5px solid var(--fx-bc,#ffd45a);box-shadow:0 0 12px var(--fx-bc,#ffd45a);animation:fxBuffRing var(--fx-dur,460ms) ease-out forwards}
+.fx-buff-ring2{width:54px;height:54px;animation-delay:60ms}
+.fx-tone-atk{--fx-bc:#ff7043}
+.fx-tone-def{--fx-bc:#5aa6ee}
+.fx-tone-all{--fx-bc:#ffd45a}
+/* generic & reduced-motion fade */
+.fx-generic-flash{width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);animation:fxGenericFlash var(--fx-dur,320ms) ease-out forwards}
+.fx-fade-only{width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,var(--fx-c,var(--fx-bc,rgba(232,220,155,.42))),transparent 72%);animation:fxSimpleFade .22s ease-out forwards}
+.fx-cat-slash,.fx-cat-ult{--fx-c:rgba(255,220,130,.45)}
+.fx-cat-heal{--fx-c:rgba(88,201,138,.45)}
+.fx-cat-generic{--fx-c:rgba(230,235,255,.4)}
+@keyframes rageFlash{0%{opacity:.95}100%{opacity:0}}
+@keyframes ragePulse{0%,100%{filter:drop-shadow(0 0 6px rgba(255,55,95,.65)) drop-shadow(0 0 14px rgba(175,45,255,.45))}50%{filter:drop-shadow(0 0 13px rgba(255,70,110,.95)) drop-shadow(0 0 22px rgba(200,70,255,.8))}}
+@keyframes rageBurstSpr{0%{transform:scale(1)}30%{transform:scale(1.18) translateX(-5px);filter:brightness(1.8)}60%{transform:scale(1.1) translateX(5px)}100%{transform:scale(1)}}
+@keyframes fxHitWhite{0%{filter:brightness(1)}35%{filter:brightness(2.5) contrast(1.2)}100%{filter:brightness(1)}}
+@keyframes fxShakeSm{0%{transform:translate(0,0)}25%{transform:translate(-5px,1px);filter:brightness(1.9)}55%{transform:translate(5px,-1px)}100%{transform:translate(0,0)}}
+@keyframes fxShakeBig{0%{transform:translate(0,0) scale(1)}20%{transform:translate(-9px,-3px) scale(1.08);filter:brightness(2.3)}45%{transform:translate(9px,3px) scale(1.05)}70%{transform:translate(-5px,2px)}100%{transform:translate(0,0) scale(1)}}
+@keyframes fxSlashAnim{0%{opacity:0;transform:translate(calc(-50% + var(--fx-off,0px)),-50%) rotate(var(--fx-rot,0deg)) scale(.45)}25%{opacity:1;transform:translate(calc(-50% + var(--fx-off,0px)),-50%) rotate(var(--fx-rot,0deg)) scale(1.06)}100%{opacity:0;transform:translate(calc(-50% + var(--fx-off,0px)),-50%) rotate(var(--fx-rot,0deg)) scale(1.15)}}
+@keyframes fxRingExpand{0%{opacity:.95;transform:translate(-50%,-50%) scale(.3)}70%{opacity:.85}100%{opacity:0;transform:translate(-50%,-50%) scale(1.25)}}
+@keyframes fxOrbBurst{0%{opacity:1;transform:translate(-50%,-50%) scale(.6)}100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px))) scale(1.1)}}
+@keyframes fxUltBg{0%{opacity:0}20%{opacity:.92}100%{opacity:0}}
+@keyframes fxUltCore{0%{opacity:0;transform:translate(-50%,-50%) scale(.35) rotate(-18deg)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(0deg)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.28) rotate(12deg)}}
+@keyframes fxHealGlow{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)}}
+@keyframes fxHealRise{0%{opacity:0;transform:translate(calc(-50% + var(--hx,0px)),14px) scale(.7)}25%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--hx,0px)),-32px) scale(1.1)}}
+@keyframes fxBuffRing{0%{opacity:.95;transform:translate(-50%,-50%) scale(.45)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.3)}}
+@keyframes fxGenericFlash{0%{opacity:.9;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)}}
+@keyframes fxSimpleFade{0%{opacity:.75}100%{opacity:0}}
+@keyframes fxAPop{0%{opacity:0;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) rotate(var(--rot,0deg)) scale(.4)}25%{opacity:1;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) rotate(var(--rot,0deg)) scale(1.08)}100%{opacity:0;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) rotate(var(--rot,0deg)) scale(1.18)}}
+@keyframes fxARing{0%{opacity:.95;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) scale(.25)}70%{opacity:.85}100%{opacity:0;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) scale(1.35)}}
+@keyframes fxABurst{0%{opacity:1;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) scale(.55)}100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px))) scale(1.15)}}
+@keyframes fxAConv{0%{opacity:0;transform:translate(calc(-50% + var(--sx,0px)),calc(-50% + var(--sy,0px))) scale(.9)}25%{opacity:1}85%{opacity:1;transform:translate(-50%,-50%) scale(.35)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.2)}}
+@keyframes fxADrop{0%{opacity:0;transform:translate(calc(-50% + var(--sx,0px)),calc(-50% + var(--sy,-56px))) rotate(var(--rot,0deg)) scale(.85)}20%{opacity:1}80%{opacity:1;transform:translate(calc(-50% + var(--ex,0px)),calc(-50% + var(--ey,8px))) rotate(var(--rot,0deg)) scale(1.05)}100%{opacity:0;transform:translate(calc(-50% + var(--ex,0px)),calc(-50% + var(--ey,12px))) rotate(var(--rot,0deg)) scale(1.12)}}
+@keyframes fxARise{0%{opacity:0;transform:translate(calc(-50% + var(--sx,0px)),calc(-50% + var(--sy,26px))) scale(.65)}25%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--ex,0px)),calc(-50% + var(--ey,-36px))) scale(1.12)}}
+@keyframes fxASpin{0%{opacity:0;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) rotate(0deg) scale(.45)}25%{opacity:1}100%{opacity:0;transform:translate(calc(-50% + var(--ox,0px)),calc(-50% + var(--oy,0px))) rotate(var(--rot,180deg)) scale(1.22)}}
+@keyframes fxASweep{0%{opacity:0;transform:translate(-30%,0) scaleX(.3)}25%{opacity:1;transform:translate(0,0) scaleX(1.05)}100%{opacity:0;transform:translate(15%,0) scaleX(1.2)}}
+@keyframes fxAFlash{0%{opacity:0}22%{opacity:.92}100%{opacity:0}}
+@keyframes fxAPillar{0%{opacity:0;transform:translate(calc(-50% + var(--ox,0px)),-50%) scaleX(.35) scaleY(.2)}25%{opacity:1;transform:translate(calc(-50% + var(--ox,0px)),-50%) scaleX(1.05) scaleY(1)}100%{opacity:0;transform:translate(calc(-50% + var(--ox,0px)),-50%) scaleX(1.25) scaleY(1.08)}}
 .arena-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
 .fighter{position:relative;display:grid;gap:5px;justify-items:center;min-width:0;text-align:center}
 .fighter .spr{width:min(100%,112px)}
@@ -330,7 +432,19 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .help-det summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--accent)}
 .help-det p{margin:6px 0 0;font-size:13px;line-height:1.6;color:var(--fg)}
 
-@media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}}
+/* fx debug modal */
+.fxd-sticky{position:sticky;top:-18px;z-index:10;background:var(--panel);padding:4px 0 8px;border-bottom:1px solid var(--line)}
+.fxd-arena{margin-bottom:0;padding:8px 10px}
+.fxd-arena .fighter .spr{width:min(100%,64px)}
+.fxd-ctrl{display:grid;gap:6px;background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px}
+.fxd-row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.fxd-lbl{font-family:var(--font-display);font-size:11px;color:var(--muted);min-width:52px}
+.fxd-grp{background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px;display:grid;gap:6px}
+.fxd-gh{font-family:var(--font-display);font-size:13px;color:var(--accent)}
+.fxd-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.fxd-grid .btn{padding:5px 4px;font-size:12px;min-height:34px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+@media (max-width:420px){.arena-row{gap:8px}.fighter .spr{width:min(100%,92px)}.fxd-arena .fighter .spr{width:min(100%,56px)}}
 /* 画面の高さが低い端末では、戦闘画面を少し詰めて、撤退ボタンが下のタブに隠れないようにする */
 @media (max-height:700px){.arena{padding:8px 10px;margin-bottom:6px}.fighter .spr{width:min(100%,60px)}.hud{gap:6px;padding:2px 0 6px}.controls .row{margin-bottom:6px}.skill-row{margin-bottom:6px}}
-@media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
+@media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr,.fighter.rage-aura .spr,.fighter.rage-burst .spr,.fighter.fx-hit-white .spr,.fighter.fx-shake-sm .spr,.fighter.fx-shake-big .spr,.arena.rage-burst::after{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}

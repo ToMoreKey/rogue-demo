@@ -214,6 +214,576 @@ function renderDungeonSelect() {
 }
 
 /* ================= render: battle ================= */
+const SKILL_FX_MAP = {
+  // 斬撃（剣系 6種）
+  strike:         { cat: 'slash', tier: 'T1', rank: 1, durMs: 360, nodes: 3,  span: 88,  sig: 'slash_t1_single_heavy',   color: 'gold' },
+  multi:          { cat: 'slash', tier: 'T1', rank: 1, durMs: 420, nodes: 3,  span: 92,  sig: 'slash_t1_triple_rapid',   color: 'gold' },
+  flameSlash:     { cat: 'slash', tier: 'T2', rank: 2, durMs: 480, nodes: 5,  span: 102, sig: 'slash_t2_flame_arc',      color: 'fire' },
+  ult:            { cat: 'slash', tier: 'T3', rank: 3, durMs: 560, nodes: 6,  span: 116, sig: 'slash_t3_golden_cross',   color: 'gold' },
+  skySlash:       { cat: 'slash', tier: 'T3', rank: 3, durMs: 600, nodes: 6,  span: 120, sig: 'slash_t3_ascending_wind', color: 'wind' },
+  heroic:         { cat: 'slash', tier: 'T4', rank: 4, durMs: 700, nodes: 8,  span: 136, sig: 'slash_t4_holy_swords',    color: 'gold' },
+  // 魔法（攻撃魔法 8種）
+  fireball:       { cat: 'magic', tier: 'T1', rank: 1, durMs: 380, nodes: 4,  span: 84,  sig: 'magic_t1_fireball_shot',  elem: 'fire' },
+  thunder:        { cat: 'magic', tier: 'T1', rank: 1, durMs: 400, nodes: 4,  span: 88,  sig: 'magic_t1_twin_bolts',     elem: 'thunder' },
+  blaze:          { cat: 'magic', tier: 'T2', rank: 2, durMs: 480, nodes: 6,  span: 100, sig: 'magic_t2_flame_pillar',   elem: 'fire' },
+  blizzard:       { cat: 'magic', tier: 'T3', rank: 3, durMs: 580, nodes: 7,  span: 114, sig: 'magic_t3_blizzard_gust',  elem: 'ice' },
+  lightningStorm: { cat: 'magic', tier: 'T3', rank: 3, durMs: 600, nodes: 7,  span: 118, sig: 'magic_t3_storm_bolts',    elem: 'thunder' },
+  meteor:         { cat: 'magic', tier: 'T3', rank: 3, durMs: 640, nodes: 7,  span: 124, sig: 'magic_t3_meteor_fall',    elem: 'fire' },
+  iceAge:         { cat: 'magic', tier: 'T4', rank: 4, durMs: 740, nodes: 9,  span: 148, sig: 'magic_t4_glacier_spikes', elem: 'ice' },
+  zeroAbs:        { cat: 'magic', tier: 'T5', rank: 5, durMs: 880, nodes: 11, span: 180, sig: 'magic_t5_zero_shatter',   elem: 'ice' },
+  // 大技・奥義（8種）
+  ultima:         { cat: 'ult',   tier: 'U1', rank: 1, durMs: 720, nodes: 7,  span: 140, sig: 'ult_u1_void_implode',     style: 'dark' },
+  hagun:          { cat: 'ult',   tier: 'U1', rank: 1, durMs: 760, nodes: 7,  span: 150, sig: 'ult_u1_crimson_cleave',   style: 'slash' },
+  cosmicNova:     { cat: 'ult',   tier: 'U2', rank: 2, durMs: 840, nodes: 9,  span: 164, sig: 'ult_u2_supernova_burst',  style: 'dark' },
+  starSword:      { cat: 'ult',   tier: 'U2', rank: 2, durMs: 860, nodes: 9,  span: 168, sig: 'ult_u2_pentagram_slash',  style: 'slash' },
+  tenma:          { cat: 'ult',   tier: 'U3', rank: 3, durMs: 940, nodes: 10, span: 184, sig: 'ult_u3_abyss_sigil_rend', style: 'slash' },
+  meteorNova:     { cat: 'ult',   tier: 'U3', rank: 3, durMs: 980, nodes: 10, span: 196, sig: 'ult_u3_meteor_swarm',     style: 'fire' },
+  skyStar:        { cat: 'ult',   tier: 'U4', rank: 4, durMs: 1080, nodes: 11, span: 210, sig: 'ult_u4_azure_starfall',  style: 'slash' },
+  genesisRay:     { cat: 'ult',   tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_genesis_pillar',  style: 'holy' },
+  // 回復（10種）
+  regen:          { cat: 'heal',  tier: 'H1', rank: 1, durMs: 380, nodes: 4,  span: 68,  sig: 'heal_h1_gentle_motes' },
+  heal:           { cat: 'heal',  tier: 'H1', rank: 1, durMs: 420, nodes: 5,  span: 78,  sig: 'heal_h1_emerald_ring' },
+  highRegen:      { cat: 'heal',  tier: 'H2', rank: 2, durMs: 480, nodes: 6,  span: 90,  sig: 'heal_h2_leaf_spiral' },
+  fullheal:       { cat: 'heal',  tier: 'H2', rank: 2, durMs: 520, nodes: 6,  span: 98,  sig: 'heal_h2_vital_column' },
+  holyLight:      { cat: 'heal',  tier: 'H3', rank: 3, durMs: 600, nodes: 7,  span: 112, sig: 'heal_h3_platinum_ray' },
+  resurrection:   { cat: 'heal',  tier: 'H3', rank: 3, durMs: 640, nodes: 8,  span: 118, sig: 'heal_h3_revive_cross' },
+  saintPrayer:    { cat: 'heal',  tier: 'H3', rank: 3, durMs: 640, nodes: 8,  span: 118, sig: 'heal_h3_prayer_diamonds' },
+  requiem:        { cat: 'heal',  tier: 'H4', rank: 4, durMs: 740, nodes: 9,  span: 134, sig: 'heal_h4_soul_butterflies' },
+  goddess:        { cat: 'heal',  tier: 'H4', rank: 4, durMs: 780, nodes: 10, span: 144, sig: 'heal_h4_goddess_halo' },
+  eternal:        { cat: 'heal',  tier: 'H5', rank: 5, durMs: 920, nodes: 12, span: 180, sig: 'heal_h5_eternal_helix' },
+  // 強化（バフ 10種：変更なし）
+  guard:          { cat: 'buff',  tone: 'def' },
+  magicshield:    { cat: 'buff',  tone: 'def' },
+  barrier:        { cat: 'buff',  tone: 'def' },
+  holyBarrier:    { cat: 'buff',  tone: 'def' },
+  berserk:        { cat: 'buff',  tone: 'atk' },
+  warGod:         { cat: 'buff',  tone: 'atk' },
+  shura:          { cat: 'buff',  tone: 'atk' },
+  kishin:         { cat: 'buff',  tone: 'atk' },
+  heroAwaken:     { cat: 'buff',  tone: 'all' },
+  heroAdvent:     { cat: 'buff',  tone: 'all' }
+};
+const FX_MAX_NODES = 12;
+const _battleFxCtx = { cleanupTimer: null, rageBurstTimer: null };
+const _fxDbgState = { speed: 1, raged: false, buff: 'none', enemy: 'mob', cleanupTimer: null, rageBurstTimer: null };
+
+function isFxEnabled() {
+  return !(G && G.opts && G.opts.fx === false);
+}
+function isReducedMotion() {
+  try {
+    if (G && G._forceReducedMotion) return true;
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  } catch (e) { return false; }
+}
+function getSkillFxSpec(id) {
+  if (id && SKILL_FX_MAP[id]) return SKILL_FX_MAP[id];
+  const s = id && SK[id];
+  if (s) {
+    if (s.type === 'heal') return { cat: 'heal' };
+    if (s.type === 'buff') return { cat: 'buff', tone: (s.awaken || s.advent) ? 'all' : (s.barrier || id === 'guard' || id === 'magicshield') ? 'def' : 'atk' };
+  }
+  return { cat: 'generic' };
+}
+function resolveFxTarget(target) {
+  if (target && target.isDebug) return target;
+  return {
+    isDebug: false,
+    arena: $('#arena'),
+    layer: $('#fx-layer'),
+    fp: $('#f-player'),
+    fe: $('#f-enemy'),
+    nm: $('#b-ename'),
+    timerHost: _battleFxCtx,
+    speed: Math.max(1, (G.opts && G.opts.speed) || 1),
+    forceFx: false
+  };
+}
+function fxDebugTarget() {
+  return {
+    isDebug: true,
+    arena: $('#fxd-arena'),
+    layer: $('#fxd-layer'),
+    fp: $('#fxd-player'),
+    fe: $('#fxd-enemy'),
+    nm: $('#fxd-ename'),
+    timerHost: _fxDbgState,
+    speed: Math.max(1, _fxDbgState.speed || 1),
+    forceFx: true,
+    buffTone: _fxDbgState.buff
+  };
+}
+function clearSkillFxLayer(target) {
+  try {
+    const t = resolveFxTarget(target);
+    if (t.timerHost && t.timerHost.cleanupTimer) { clearTimeout(t.timerHost.cleanupTimer); t.timerHost.cleanupTimer = null; }
+    if (t.layer) t.layer.innerHTML = '';
+    if (t.fe) t.fe.classList.remove('fx-hit-white', 'fx-shake-sm', 'fx-shake-big');
+  } catch (e) {}
+}
+function clearRageFx(target) {
+  try {
+    const t = resolveFxTarget(target);
+    if (t.timerHost && t.timerHost.rageBurstTimer) { clearTimeout(t.timerHost.rageBurstTimer); t.timerHost.rageBurstTimer = null; }
+    if (t.arena) t.arena.classList.remove('rage-active', 'rage-burst', 'rage-reduced');
+    if (t.fe) t.fe.classList.remove('rage-aura', 'rage-burst', 'rage-reduced');
+    if (t.nm) t.nm.classList.remove('rage-name');
+  } catch (e) {}
+}
+function clearAllBattleFx(target) {
+  clearSkillFxLayer(target);
+  clearRageFx(target);
+  if (target && target.isDebug && target.fp) {
+    target.fp.classList.remove('buff-aura-atk', 'buff-aura-def', 'buff-aura-all');
+  }
+}
+function syncBuffAura(target) {
+  try {
+    const t = resolveFxTarget(target);
+    const fp = t.fp;
+    if (!fp) return;
+    fp.classList.remove('buff-aura-atk', 'buff-aura-def', 'buff-aura-all');
+    if (t.isDebug) {
+      const tone = t.buffTone || _fxDbgState.buff;
+      if (tone === 'atk' || tone === 'def' || tone === 'all') fp.classList.add('buff-aura-' + tone);
+      return;
+    }
+    const run = G.run;
+    if (!run || !isFxEnabled()) return;
+    if ((run.awaken || 0) > 0 || (run.advent || 0) > 0) {
+      fp.classList.add('buff-aura-all');
+    } else if ((run.berserk || 0) > 0 || (run.warGod || 0) > 0 || (run.shura || 0) > 0 || (run.kishin || 0) > 0) {
+      fp.classList.add('buff-aura-atk');
+    } else if ((run.guard || 0) > 0 || (run.magicShield || 0) > 0 || (run.barrier || 0) > 0 || (run.defBuff || 0) > 0) {
+      fp.classList.add('buff-aura-def');
+    }
+  } catch (e) {}
+}
+function triggerRageFx(target) {
+  try {
+    if (G.headless) return;
+    const t = resolveFxTarget(target);
+    const arena = t.arena, fe = t.fe, nm = t.nm;
+    if (nm) nm.classList.add('rage-name');
+    if (!t.forceFx && !isFxEnabled()) return;
+    const red = isReducedMotion();
+    if (arena) arena.classList.add('rage-active');
+    if (fe) fe.classList.add('rage-aura');
+    if (red) {
+      if (arena) arena.classList.add('rage-reduced');
+      if (fe) fe.classList.add('rage-reduced');
+      return;
+    }
+    if (arena) { arena.classList.remove('rage-burst'); void arena.offsetWidth; arena.classList.add('rage-burst'); }
+    if (fe) { fe.classList.remove('rage-burst'); void fe.offsetWidth; fe.classList.add('rage-burst'); }
+    if (t.timerHost && t.timerHost.rageBurstTimer) clearTimeout(t.timerHost.rageBurstTimer);
+    if (t.timerHost) {
+      t.timerHost.rageBurstTimer = setTimeout(() => {
+        t.timerHost.rageBurstTimer = null;
+        if (arena) arena.classList.remove('rage-burst');
+        if (fe) fe.classList.remove('rage-burst');
+      }, 340);
+    }
+  } catch (e) {}
+}
+function playSkillFx(id, hitCount, target) {
+  try {
+    const t = resolveFxTarget(target);
+    if (G.headless || (!t.forceFx && !isFxEnabled())) return;
+    const layer = t.layer;
+    if (!layer) return;
+    clearSkillFxLayer(t);
+    const spec = getSkillFxSpec(id);
+    const cat = spec.cat || 'generic';
+    const sig = spec.sig || '';
+    const spd = Math.max(1, t.speed || 1);
+    const baseMs = spec.durMs || (cat === 'ult' ? 760 : cat === 'magic' ? 480 : cat === 'slash' ? 420 : cat === 'heal' ? 460 : cat === 'buff' ? 460 : 320);
+    const maxCap = spec.durMs ? 1200 : (cat === 'ult' ? 900 : 600);
+    const dur = clamp(Math.round(baseMs / spd), 150, maxCap);
+    const red = isReducedMotion();
+    layer.style.setProperty('--fx-dur', dur + 'ms');
+    layer.dataset.sig = sig || cat;
+    layer.dataset.tier = spec.tier || '';
+    layer.dataset.span = String(spec.span || (cat === 'buff' ? 76 : 80));
+
+    const addNode = (cls, html, styleStr) => {
+      if (layer.children.length >= FX_MAX_NODES) return null;
+      const el = document.createElement('div');
+      el.className = 'fx-item ' + cls + (red ? ' fx-reduced' : '');
+      if (styleStr) el.style.cssText = styleStr;
+      if (html) el.innerHTML = html;
+      layer.appendChild(el);
+      return el;
+    };
+    const box = (sz, extra) => `width:${sz}px;height:${sz}px;${extra || ''}`;
+    const hitEnemy = (mode) => {
+      const fe = t.fe;
+      if (!fe) return;
+      fe.classList.remove('fx-hit-white', 'fx-shake-sm', 'fx-shake-big');
+      void fe.offsetWidth;
+      fe.classList.add('fx-hit-white');
+      if (mode === 'sm') fe.classList.add('fx-shake-sm');
+      else if (mode === 'big') fe.classList.add('fx-shake-big');
+    };
+
+    if (red) {
+      // prefers-reduced-motion: 閃光・ぶれ・拡大を出さず、短いフェードの色表示のみ
+      const side = (cat === 'heal' || cat === 'buff') ? 'fx-side-player' : 'fx-side-enemy';
+      const toneCls = cat === 'magic' ? ('fx-elem-' + (spec.elem || 'default'))
+                    : cat === 'buff' ? ('fx-tone-' + (spec.tone || 'all'))
+                    : ('fx-cat-' + cat);
+      addNode(`fx-fade-only ${side} ${toneCls}`, '');
+    } else if (cat === 'buff') {
+      // 強化（バフ）の演出は変えない
+      const tone = spec.tone || 'all';
+      addNode(`fx-buff-ring fx-side-player fx-tone-${tone}`, '');
+      addNode(`fx-buff-ring fx-buff-ring2 fx-side-player fx-tone-${tone}`, '');
+      if (t.isDebug) { _fxDbgState.buff = tone; renderFxDebugControls(); }
+      syncBuffAura(t);
+    } else if (sig === 'slash_t1_single_heavy') {
+      // 強撃 (T1, 3 nodes, 88px): 1本の太い斜め斬撃（白金）と小さな火花2個
+      addNode('fx-slash fx-side-enemy sig-strike', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line heavy"/></svg>`, box(88, '--fx-rot:-22deg'));
+      addNode('fx-magic-orb fx-side-enemy fx-elem-holy', '', '--dx:-26px;--dy:-18px');
+      addNode('fx-magic-orb fx-side-enemy fx-elem-holy', '', '--dx:28px;--dy:16px');
+      hitEnemy('');
+    } else if (sig === 'slash_t1_triple_rapid') {
+      // 連続斬り (T1, 3 nodes, 92px): 角度の違う細い斬撃3本が時間差で連続
+      const rots = [-34, 26, -6], offs = [-10, 10, 0];
+      for (let i = 0; i < 3; i++) {
+        const d = Math.round(dur * 0.22 * i);
+        addNode('fx-slash fx-side-enemy sig-multi', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="10" y1="90" x2="90" y2="10" class="fx-slash-line thin"/></svg>`, box(92, `--fx-rot:${rots[i]}deg;--fx-off:${offs[i]}px;animation-delay:${d}ms`));
+      }
+      hitEnemy('');
+    } else if (sig === 'slash_t2_flame_arc') {
+      // 烈火斬 (T2, 5 nodes, 102px): 炎をまとった円弧の斬撃2段＋火の粉3個
+      addNode('fx-a-pop fx-side-enemy sig-flameSlash', `<svg viewBox="0 0 100 100" class="fx-svg"><path d="M12,76 Q50,12 88,32" fill="none" class="fx-slash-line fire"/></svg>`, box(102, '--rot:-10deg'));
+      addNode('fx-a-pop fx-side-enemy sig-flameSlash', `<svg viewBox="0 0 100 100" class="fx-svg"><path d="M14,28 Q52,88 88,68" fill="none" class="fx-slash-line fire"/></svg>`, box(102, `--rot:12deg;animation-delay:${Math.round(dur * 0.22)}ms`));
+      const sparks = [[-32, -24], [34, -18], [0, -36]];
+      for (let i = 0; i < 3; i++) {
+        addNode('fx-magic-orb fx-side-enemy fx-elem-fire', '', `--dx:${sparks[i][0]}px;--dy:${sparks[i][1]}px`);
+      }
+      hitEnemy('sm');
+    } else if (sig === 'slash_t3_golden_cross') {
+      // 必殺剣 (T3, 6 nodes, 116px): 大きな金の十字（×）斬り2本＋衝撃リング＋短い画面フラッシュ＋火花2＋敵のぶれ
+      addNode('fx-ult-bg sig-ult-flash', '');
+      addNode('fx-slash fx-side-enemy sig-ult', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="8" y1="92" x2="92" y2="8" class="fx-slash-line heavy"/></svg>`, box(116, '--fx-rot:0deg'));
+      addNode('fx-slash fx-side-enemy sig-ult', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="8" y1="8" x2="92" y2="92" class="fx-slash-line heavy"/></svg>`, box(116, `--fx-rot:0deg;animation-delay:${Math.round(dur * 0.14)}ms`));
+      addNode('fx-a-ring fx-side-enemy', '', box(116, 'border-radius:50%;border:3px solid #ffd45a;box-shadow:0 0 14px #ffd45a'));
+      addNode('fx-ult-spark fx-side-enemy', '', '--dx:-42px;--dy:-28px');
+      addNode('fx-ult-spark fx-side-enemy', '', '--dx:42px;--dy:28px');
+      hitEnemy('sm');
+    } else if (sig === 'slash_t3_ascending_wind') {
+      // 天翔斬 (T3, 6 nodes, 120px): 下から上へ駆け上がる縦の青白い風刃＋羽根状の衝撃波が左右へ走る
+      addNode('fx-a-rise fx-side-enemy sig-skySlash', `<svg viewBox="0 0 100 120" class="fx-svg"><path d="M50,114 Q36,58 50,6 Q64,58 50,114 Z" fill="#e6fbff" filter="drop-shadow(0 0 10px #5ce1ff)"/></svg>`, box(120, '--sx:0px;--sy:24px;--ex:0px;--ey:-26px'));
+      addNode('fx-a-pop fx-side-enemy', `<svg viewBox="0 0 100 100" class="fx-svg"><path d="M48,50 Q18,26 6,10 Q24,48 44,64" fill="none" class="fx-slash-line wind"/></svg>`, box(116, '--ox:-18px;--oy:0px'));
+      addNode('fx-a-pop fx-side-enemy', `<svg viewBox="0 0 100 100" class="fx-svg"><path d="M52,50 Q82,26 94,10 Q76,48 56,64" fill="none" class="fx-slash-line wind"/></svg>`, box(116, '--ox:18px;--oy:0px'));
+      addNode('fx-a-ring fx-side-enemy fx-elem-ice', '', box(112, 'border-radius:50%;border:2.5px solid #88f0ff;box-shadow:0 0 12px #5ce1ff'));
+      addNode('fx-magic-orb fx-side-enemy fx-elem-ice', '', '--dx:-44px;--dy:-22px');
+      addNode('fx-magic-orb fx-side-enemy fx-elem-ice', '', '--dx:44px;--dy:-22px');
+      hitEnemy('sm');
+    } else if (sig === 'slash_t4_holy_swords') {
+      // 英雄の奇跡 (T4, 8 nodes, 136px): 金色の聖剣3本が上から降り注ぎ敵を貫く＋金の光柱＋衝撃輪＋白金の粒3
+      addNode('fx-a-pillar fx-side-enemy sig-heroic', '', 'width:68px;height:136px;background:linear-gradient(180deg,rgba(255,248,200,.15),rgba(255,220,110,.7),rgba(255,250,220,.15));border-radius:34px;filter:drop-shadow(0 0 14px #ffd45a)');
+      const sxs = [-26, 0, 26], rots = [12, 0, -12];
+      const swordSvg = `<svg viewBox="0 0 40 100" class="fx-svg"><polygon points="20,92 13,34 20,16 27,34" fill="#fffbe0" stroke="#ffd45a" stroke-width="2"/><rect x="8" y="28" width="24" height="5" rx="2" fill="#ffbf3d"/><rect x="17" y="10" width="6" height="18" fill="#ffd45a"/></svg>`;
+      for (let i = 0; i < 3; i++) {
+        const d = Math.round(dur * 0.14 * i);
+        addNode('fx-a-drop fx-side-enemy', swordSvg, `width:44px;height:112px;--sx:${sxs[i]}px;--sy:-58px;--ex:${sxs[i]}px;--ey:6px;--rot:${rots[i]}deg;animation-delay:${d}ms`);
+      }
+      addNode('fx-a-ring fx-side-enemy', '', box(132, 'border-radius:50%;border:3px solid #fff3b8;box-shadow:0 0 16px #ffd45a'));
+      const pts = [[-46, -24], [46, -24], [0, 38]];
+      for (let i = 0; i < 3; i++) addNode('fx-ult-spark fx-side-enemy', '', `--dx:${pts[i][0]}px;--dy:${pts[i][1]}px`);
+      hitEnemy('big');
+    } else if (sig === 'magic_t1_fireball_shot') {
+      // ファイアボール (T1, 4 nodes, 84px): 火球が飛んで着弾＋小爆発リング＋火の粉2
+      addNode('fx-a-drop fx-side-enemy sig-fireball', '', 'width:26px;height:26px;border-radius:50%;background:radial-gradient(circle,#fff6c0,#ff7b2e 60%,#c82800);box-shadow:0 0 14px #ff6a1a;--sx:-72px;--sy:-18px;--ex:0px;--ey:0px');
+      addNode('fx-magic-ring fx-side-enemy fx-elem-fire', '', box(84));
+      addNode('fx-magic-orb fx-side-enemy fx-elem-fire', '', '--dx:-28px;--dy:-22px');
+      addNode('fx-magic-orb fx-side-enemy fx-elem-fire', '', '--dx:30px;--dy:20px');
+      hitEnemy('');
+    } else if (sig === 'magic_t1_twin_bolts') {
+      // サンダー (T1, 4 nodes, 88px): 稲妻が2本ジグザグに落ちる＋電撃スパーク2
+      const boltSvg = `<svg viewBox="0 0 60 110" class="fx-svg"><polyline points="34,4 16,44 36,48 14,104" fill="none" stroke="#fffbe0" stroke-width="5" stroke-linejoin="round" filter="drop-shadow(0 0 8px #ffe14a)"/></svg>`;
+      addNode('fx-a-pop fx-side-enemy sig-thunder', boltSvg, 'width:56px;height:96px;--ox:-14px;--oy:-6px');
+      addNode('fx-a-pop fx-side-enemy sig-thunder', boltSvg, `width:56px;height:96px;--ox:16px;--oy:-4px;animation-delay:${Math.round(dur * 0.2)}ms`);
+      addNode('fx-magic-orb fx-side-enemy fx-elem-thunder', '', '--dx:-28px;--dy:16px');
+      addNode('fx-magic-orb fx-side-enemy fx-elem-thunder', '', '--dx:28px;--dy:-16px');
+      hitEnemy('');
+    } else if (sig === 'magic_t2_flame_pillar') {
+      // ブレイズ (T2, 6 nodes, 100px): 敵の足元から炎柱が立ち上る＋熱波リング＋火の粉4
+      addNode('fx-a-pillar fx-side-enemy sig-blaze', `<svg viewBox="0 0 70 120" class="fx-svg"><path d="M15,116 Q8,56 35,8 Q62,56 55,116 Z" fill="rgba(255,120,30,.85)" filter="drop-shadow(0 0 12px #ff4500)"/><path d="M25,116 Q22,68 35,26 Q48,68 45,116 Z" fill="#fff2b8"/></svg>`, 'width:68px;height:108px');
+      addNode('fx-magic-ring fx-side-enemy fx-elem-fire', '', box(100));
+      const emb = [[-32, -32], [32, -30], [-24, 14], [26, 16]];
+      for (let i = 0; i < 4; i++) addNode('fx-magic-orb fx-side-enemy fx-elem-fire', '', `--dx:${emb[i][0]}px;--dy:${emb[i][1]}px`);
+      hitEnemy('sm');
+    } else if (sig === 'magic_t3_blizzard_gust') {
+      // ブリザード (T3, 7 nodes, 114px): 氷の結晶・氷片が横殴りに降り注ぐ＋凍結リング
+      addNode('fx-magic-ring fx-side-enemy fx-elem-ice sig-blizzard', '', box(114));
+      const shardSvg = `<svg viewBox="0 0 40 40" class="fx-svg"><polygon points="20,4 32,20 20,36 8,20" fill="#e0faff" stroke="#5ce1ff" stroke-width="2" filter="drop-shadow(0 0 6px #5ce1ff)"/></svg>`;
+      const coords = [[-44, -36, 16, 12], [-34, -18, 28, 22], [-50, 0, 10, 30], [-26, -42, 34, 4], [-38, 12, 22, 34], [-18, -28, 38, 16]];
+      for (let i = 0; i < 6; i++) {
+        const c = coords[i], d = Math.round(dur * 0.08 * i);
+        addNode('fx-a-drop fx-side-enemy', shardSvg, `width:28px;height:28px;--sx:${c[0]}px;--sy:${c[1]}px;--ex:${c[2]}px;--ey:${c[3]}px;--rot:35deg;animation-delay:${d}ms`);
+      }
+      hitEnemy('sm');
+    } else if (sig === 'magic_t3_storm_bolts') {
+      // ライトニングストーム (T3, 7 nodes, 118px): 画面上部から4本の稲妻が連続落下＋帯電リング＋帯電スパーク2
+      const boltSvg = `<svg viewBox="0 0 50 120" class="fx-svg"><polyline points="28,2 12,42 32,48 10,84 28,88 14,118" fill="none" stroke="#fffef0" stroke-width="5" stroke-linejoin="round" filter="drop-shadow(0 0 10px #ffe14a)"/></svg>`;
+      const xs = [-32, -10, 12, 34];
+      for (let i = 0; i < 4; i++) {
+        const d = Math.round(dur * 0.13 * i);
+        addNode('fx-a-pop fx-side-enemy sig-lightningStorm', boltSvg, `width:48px;height:118px;--ox:${xs[i]}px;--oy:-6px;animation-delay:${d}ms`);
+      }
+      addNode('fx-magic-ring fx-side-enemy fx-elem-thunder', '', box(118));
+      addNode('fx-magic-orb fx-side-enemy fx-elem-thunder', '', '--dx:-44px;--dy:0px');
+      addNode('fx-magic-orb fx-side-enemy fx-elem-thunder', '', '--dx:44px;--dy:0px');
+      hitEnemy('sm');
+    } else if (sig === 'magic_t3_meteor_fall') {
+      // メテオ (T3, 7 nodes, 124px): 上空から巨大隕石が落下着弾＋爆発クレーターリング2重＋破片4
+      const metSvg = `<svg viewBox="0 0 80 80" class="fx-svg"><circle cx="40" cy="44" r="22" fill="#ff551a" stroke="#fff0b8" stroke-width="3" filter="drop-shadow(0 0 12px #ff3300)"/><path d="M22,30 L8,6 L34,20 Z" fill="#ffae42"/></svg>`;
+      addNode('fx-a-drop fx-side-enemy sig-meteor', metSvg, 'width:76px;height:76px;--sx:-42px;--sy:-64px;--ex:0px;--ey:4px');
+      addNode('fx-magic-ring fx-side-enemy fx-elem-fire', '', box(124));
+      addNode('fx-a-ring fx-side-enemy', '', `width:116px;height:44px;border-radius:50%;border:3px solid #ff9a2e;box-shadow:0 0 14px #ff5500;--oy:22px`);
+      const frags = [[-44, -26], [44, -26], [-38, 24], [38, 24]];
+      for (let i = 0; i < 4; i++) addNode('fx-magic-orb fx-side-enemy fx-elem-fire', '', `--dx:${frags[i][0]}px;--dy:${frags[i][1]}px`);
+      hitEnemy('sm');
+    } else if (sig === 'magic_t4_glacier_spikes') {
+      // アイスエイジ (T4, 9 nodes, 148px): 画面全体が霜で青白く染まり、地面から大きな氷柱が5本生える＋冷気粒3
+      addNode('fx-ult-bg fx-ult-ice sig-iceAge', '');
+      const spikeSvg = `<svg viewBox="0 0 44 110" class="fx-svg"><polygon points="22,6 38,104 6,104" fill="rgba(190,248,255,.88)" stroke="#fff" stroke-width="2" filter="drop-shadow(0 0 10px #5ce1ff)"/></svg>`;
+      const spx = [-44, -22, 0, 22, 44], sph = [86, 104, 122, 104, 86];
+      for (let i = 0; i < 5; i++) {
+        const d = Math.round(dur * 0.08 * Math.abs(i - 2));
+        addNode('fx-a-pillar fx-side-enemy', spikeSvg, `width:38px;height:${sph[i]}px;--ox:${spx[i]}px;animation-delay:${d}ms`);
+      }
+      const frost = [[-52, -32], [52, -32], [0, -48]];
+      for (let i = 0; i < 3; i++) addNode('fx-magic-orb fx-side-enemy fx-elem-ice', '', `--dx:${frost[i][0]}px;--dy:${frost[i][1]}px`);
+      hitEnemy('big');
+    } else if (sig === 'magic_t5_zero_shatter') {
+      // 絶対零度 (T5, 11 nodes, 180px): 青白い閃光＋暗転→敵が巨大氷塊に閉じ込められ亀裂が入って粉砕（破片7＋衝撃波）
+      addNode('fx-ult-bg fx-ult-ice sig-zeroAbs', '');
+      const coffinSvg = `<svg viewBox="0 0 120 140" class="fx-svg"><polygon points="60,6 108,36 108,104 60,134 12,104 12,36" fill="rgba(165,242,255,.45)" stroke="#fff" stroke-width="3.5" filter="drop-shadow(0 0 16px #5ce1ff)"/><polyline points="60,14 48,64 74,78 52,126" fill="none" stroke="#fff" stroke-width="3"/><polyline points="22,52 60,66 98,48" fill="none" stroke="#fff" stroke-width="2.5"/></svg>`;
+      addNode('fx-a-pop fx-side-enemy', coffinSvg, 'width:128px;height:142px');
+      addNode('fx-a-ring fx-side-enemy', '', box(160, 'border-radius:50%;border:3.5px solid #e6fcff;box-shadow:0 0 20px #5ce1ff'));
+      addNode('fx-a-ring fx-side-enemy', '', box(120, 'border-radius:50%;border:2px dashed #88f0ff'));
+      const sh = [0, 52, 104, 156, 208, 260, 312];
+      for (let i = 0; i < 7; i++) {
+        const rad = sh[i] * Math.PI / 180;
+        const dx = Math.round(Math.cos(rad) * 58), dy = Math.round(Math.sin(rad) * 58);
+        addNode('fx-magic-orb fx-side-enemy fx-elem-ice', '', `--dx:${dx}px;--dy:${dy}px`);
+      }
+      hitEnemy('big');
+    } else if (sig === 'ult_u1_void_implode') {
+      // アルテマ (U1, 7 nodes, 140px): 暗い球体が収束→紫白の爆発（暗転＋重力球コア＋収束球4＋爆発リング）
+      addNode('fx-ult-bg fx-ult-dark sig-ultima', '');
+      addNode('fx-a-pop fx-side-enemy', '', box(96, 'border-radius:50%;background:radial-gradient(circle,#fff,#9b30ff 45%,#120024 75%);box-shadow:0 0 22px #b56bff'));
+      addNode('fx-a-ring fx-side-enemy', '', box(140, 'border-radius:50%;border:3.5px solid #e2b8ff;box-shadow:0 0 18px #b56bff'));
+      const conv = [[-54, -42], [54, -42], [-54, 42], [54, 42]];
+      for (let i = 0; i < 4; i++) {
+        addNode('fx-a-conv fx-side-enemy', '', `width:14px;height:14px;border-radius:50%;background:#e2b8ff;box-shadow:0 0 10px #b56bff;--sx:${conv[i][0]}px;--sy:${conv[i][1]}px`);
+      }
+      hitEnemy('big');
+    } else if (sig === 'ult_u1_crimson_cleave') {
+      // 破軍の剣 (U1, 7 nodes, 150px): 巨大な赤い一閃が画面を横断＋暗転＋衝撃リング＋紅閃スパーク4
+      addNode('fx-ult-bg fx-ult-crimson sig-hagun', '');
+      const cleaveSvg = `<svg viewBox="0 0 220 90" class="fx-svg"><path d="M6,68 Q110,24 214,32 Q110,48 6,68 Z" fill="#fff0f3" stroke="#ff1a4b" stroke-width="3" filter="drop-shadow(0 0 16px #ff1a4b)"/></svg>`;
+      addNode('fx-a-sweep fx-full', cleaveSvg, 'top:18%;height:64%');
+      addNode('fx-a-ring fx-side-enemy', '', box(136, 'border-radius:50%;border:3px solid #ff4d6d;box-shadow:0 0 16px #ff1a4b'));
+      const sp = [[-52, -24], [52, -24], [-42, 28], [42, 28]];
+      for (let i = 0; i < 4; i++) addNode('fx-ult-spark fx-side-enemy', '', `--dx:${sp[i][0]}px;--dy:${sp[i][1]}px`);
+      hitEnemy('big');
+    } else if (sig === 'ult_u2_supernova_burst') {
+      // コズミックノヴァ (U2, 9 nodes, 164px): 小さな星々が敵に収束→超新星の爆発（白〜青紫）＋画面フラッシュ
+      addNode('fx-ult-bg fx-ult-dark sig-cosmicNova', '');
+      const starSvg = `<svg viewBox="0 0 120 120" class="fx-svg"><circle cx="60" cy="60" r="40" fill="none" stroke="#d8b8ff" stroke-width="3"/><polygon points="60,6 70,48 114,60 70,72 60,114 50,72 6,60 50,48" fill="#fff" filter="drop-shadow(0 0 14px #9b7aff)"/></svg>`;
+      addNode('fx-ult-core fx-side-enemy', starSvg, box(132));
+      addNode('fx-a-ring fx-side-enemy', '', box(164, 'border-radius:50%;border:3px solid #b8d8ff;box-shadow:0 0 20px #8a7aff'));
+      for (let i = 0; i < 6; i++) {
+        const rad = (i * 60) * Math.PI / 180;
+        const sx = Math.round(Math.cos(rad) * 64), sy = Math.round(Math.sin(rad) * 64);
+        addNode('fx-a-conv fx-side-enemy', '', `width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 12px #7ad0ff;--sx:${sx}px;--sy:${sy}px`);
+      }
+      hitEnemy('big');
+    } else if (sig === 'ult_u2_pentagram_slash') {
+      // 星剣の極意 (U2, 9 nodes, 168px): 星形（五芒星）の軌跡を5連の斬撃でなぞる（金）＋外周リング＋頂点光2
+      addNode('fx-ult-bg sig-starSword', '');
+      const starLines = [
+        [50, 8, 82, 90], [82, 90, 10, 38], [10, 38, 90, 38], [90, 38, 18, 90], [18, 90, 50, 8]
+      ];
+      for (let i = 0; i < 5; i++) {
+        const L = starLines[i], d = Math.round(dur * 0.1 * i);
+        addNode('fx-a-pop fx-side-enemy', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="${L[0]}" y1="${L[1]}" x2="${L[2]}" y2="${L[3]}" class="fx-slash-line"/></svg>`, box(136, `animation-delay:${d}ms`));
+      }
+      addNode('fx-a-ring fx-side-enemy', '', box(168, 'border-radius:50%;border:3px solid #ffd45a;box-shadow:0 0 18px #ffbf3d'));
+      addNode('fx-ult-spark fx-side-enemy', '', '--dx:0px;--dy:-58px');
+      addNode('fx-ult-spark fx-side-enemy', '', '--dx:0px;--dy:58px');
+      hitEnemy('big');
+    } else if (sig === 'ult_u3_abyss_sigil_rend') {
+      // 天魔滅殺斬 (U3, 10 nodes, 184px): 紫黒の回転魔法陣が足元に出て、4連の魔剣斬撃が連鎖＋衝撃波＋闇スパーク3
+      addNode('fx-ult-bg fx-ult-dark sig-tenma', '');
+      const sigilSvg = `<svg viewBox="0 0 120 120" class="fx-svg"><circle cx="60" cy="60" r="52" fill="none" stroke="#c56bff" stroke-width="3" stroke-dasharray="10 6"/><polygon points="60,12 102,84 18,84" fill="none" stroke="#ff66b2" stroke-width="2.5"/><polygon points="60,108 102,36 18,36" fill="none" stroke="#c56bff" stroke-width="2.5"/></svg>`;
+      addNode('fx-a-spin fx-side-enemy', sigilSvg, box(148, '--rot:220deg'));
+      const rots = [-40, 40, -15, 75];
+      for (let i = 0; i < 4; i++) {
+        const d = Math.round(dur * 0.11 * i);
+        addNode('fx-slash fx-side-enemy', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="6" y1="94" x2="94" y2="6" class="fx-slash-line dark heavy"/></svg>`, box(138, `--fx-rot:${rots[i]}deg;animation-delay:${d}ms`));
+      }
+      addNode('fx-a-ring fx-side-enemy', '', box(184, 'border-radius:50%;border:3.5px solid #c56bff;box-shadow:0 0 22px #9b30ff'));
+      const dsp = [[-58, -36], [58, -36], [0, 56]];
+      for (let i = 0; i < 3; i++) addNode('fx-magic-orb fx-side-enemy fx-elem-dark', '', `--dx:${dsp[i][0]}px;--dy:${dsp[i][1]}px`);
+      hitEnemy('big');
+    } else if (sig === 'ult_u3_meteor_swarm') {
+      // メテオノヴァ (U3, 10 nodes, 196px): 複数の隕石(4個)が降り注ぎ、巨大な炎の爆発ドームが画面の半分を覆う
+      addNode('fx-ult-bg fx-ult-fire sig-meteorNova', '');
+      addNode('fx-a-pop fx-half-enemy', '', 'background:radial-gradient(circle at 55% 50%,rgba(255,235,150,.85),rgba(255,90,20,.65) 55%,transparent 78%)');
+      const mSvg = `<svg viewBox="0 0 60 60" class="fx-svg"><circle cx="30" cy="34" r="16" fill="#ff4500" stroke="#fff2b8" stroke-width="2.5" filter="drop-shadow(0 0 10px #ff3300)"/><path d="M16,22 L4,4 L26,14 Z" fill="#ffae42"/></svg>`;
+      const mCoords = [[-48, -68, -22, -10], [-18, -74, 8, 6], [12, -66, 28, -4], [-32, -56, -6, 18]];
+      for (let i = 0; i < 4; i++) {
+        const c = mCoords[i], d = Math.round(dur * 0.1 * i);
+        addNode('fx-a-drop fx-side-enemy', mSvg, `width:58px;height:58px;--sx:${c[0]}px;--sy:${c[1]}px;--ex:${c[2]}px;--ey:${c[3]}px;animation-delay:${d}ms`);
+      }
+      addNode('fx-a-ring fx-side-enemy', '', box(196, 'border-radius:50%;border:4px solid #ffae42;box-shadow:0 0 24px #ff4500'));
+      const fsp = [[-64, -34], [64, -34], [0, -64]];
+      for (let i = 0; i < 3; i++) addNode('fx-ult-spark fx-side-enemy', '', `--dx:${fsp[i][0]}px;--dy:${fsp[i][1]}px`);
+      hitEnemy('big');
+    } else if (sig === 'ult_u4_azure_starfall') {
+      // 蒼穹星剣 (U4, 11 nodes, 210px): 青い星剣6本が空から降り注ぎ、着弾ごとに星の輝き＋空色の閃光
+      addNode('fx-ult-bg fx-ult-sky sig-skyStar', '');
+      const azSword = `<svg viewBox="0 0 36 100" class="fx-svg"><polygon points="18,94 11,30 18,10 25,30" fill="#e6fcff" stroke="#4ad8ff" stroke-width="2" filter="drop-shadow(0 0 10px #38b6ff)"/><rect x="7" y="26" width="22" height="5" rx="2" fill="#88f0ff"/></svg>`;
+      const xs = [-45, -27, -9, 9, 27, 45];
+      for (let i = 0; i < 6; i++) {
+        const d = Math.round(dur * 0.08 * i);
+        addNode('fx-a-drop fx-side-enemy', azSword, `width:38px;height:112px;--sx:${xs[i]}px;--sy:-68px;--ex:${xs[i]}px;--ey:8px;animation-delay:${d}ms`);
+      }
+      addNode('fx-a-ring fx-side-enemy', '', box(210, 'border-radius:50%;border:4px solid #88f0ff;box-shadow:0 0 24px #38b6ff'));
+      const bsp = [[-66, -24], [66, -24], [0, 62]];
+      for (let i = 0; i < 3; i++) addNode('fx-magic-orb fx-side-enemy fx-elem-ice', '', `--dx:${bsp[i][0]}px;--dy:${bsp[i][1]}px`);
+      hitEnemy('big');
+    } else if (sig === 'ult_u4_genesis_pillar') {
+      // 創世の光 (U4, 12 nodes, 240px): 天から巨大な白金の光柱＋全画面に広がる光の波紋3重＋創世の星紋＋白金光粒6（最上位）
+      addNode('fx-ult-bg fx-ult-holy sig-genesisRay', '');
+      addNode('fx-a-pillar fx-side-enemy', '', 'width:118px;height:220px;background:linear-gradient(180deg,#fff,rgba(255,248,200,.92) 50%,rgba(255,215,100,.3));border-radius:56px;box-shadow:0 0 32px 10px #fff6c8');
+      const crestSvg = `<svg viewBox="0 0 140 140" class="fx-svg"><circle cx="70" cy="70" r="56" fill="none" stroke="#fff" stroke-width="3.5"/><polygon points="70,4 82,56 136,70 82,84 70,136 58,84 4,70 58,56" fill="#fffef2" filter="drop-shadow(0 0 16px #ffd45a)"/></svg>`;
+      addNode('fx-a-spin fx-side-enemy', crestSvg, box(160, '--rot:180deg'));
+      addNode('fx-a-ring fx-side-enemy', '', box(240, 'border-radius:50%;border:4px solid #fff;box-shadow:0 0 28px #ffd45a'));
+      addNode('fx-a-ring fx-side-enemy', '', box(180, `border-radius:50%;border:3px solid #ffe699;animation-delay:${Math.round(dur * 0.12)}ms`));
+      addNode('fx-a-ring fx-side-enemy', '', box(130, `border-radius:50%;border:2.5px solid #fff;animation-delay:${Math.round(dur * 0.24)}ms`));
+      for (let i = 0; i < 6; i++) {
+        const rad = (i * 60) * Math.PI / 180;
+        const dx = Math.round(Math.cos(rad) * 76), dy = Math.round(Math.sin(rad) * 76);
+        addNode('fx-ult-spark fx-side-enemy', '', `--dx:${dx}px;--dy:${dy}px`);
+      }
+      hitEnemy('big');
+    } else if (sig === 'heal_h1_gentle_motes') {
+      // リジェネ (H1, 4 nodes, 68px): 小さな緑の光の粒4個がゆっくり上昇（控えめ）
+      const xs = [-16, -5, 6, 17];
+      for (let i = 0; i < 4; i++) {
+        addNode('fx-heal-mote fx-side-player sig-regen', '', `--hx:${xs[i]}px;animation-delay:${i * 35}ms`);
+      }
+    } else if (sig === 'heal_h1_emerald_ring') {
+      // ヒール (H1, 5 nodes, 78px): 緑の光輪＋粒4
+      addNode('fx-heal-glow fx-side-player sig-heal', '', box(78));
+      const xs = [-18, -6, 6, 18];
+      for (let i = 0; i < 4; i++) {
+        addNode('fx-heal-mote fx-side-player', '', `--hx:${xs[i]}px;animation-delay:${i * 25}ms`);
+      }
+    } else if (sig === 'heal_h2_leaf_spiral') {
+      // ハイリジェネ (H2, 6 nodes, 90px): 若葉形の光4枚が昇り、リングが2重に脈動
+      addNode('fx-a-ring fx-side-player sig-highRegen', '', box(90, 'border-radius:50%;border:2.5px solid #58c98a;box-shadow:0 0 12px #58c98a'));
+      addNode('fx-a-ring fx-side-player', '', box(66, `border-radius:50%;border:2px solid #a8ffce;animation-delay:${Math.round(dur * 0.16)}ms`));
+      const leafSvg = `<svg viewBox="0 0 24 24" class="fx-svg"><path d="M4,20 Q4,4 20,4 Q20,20 4,20 Z" fill="#88f5b6" filter="drop-shadow(0 0 6px #58c98a)"/></svg>`;
+      const lxs = [-22, -8, 8, 22];
+      for (let i = 0; i < 4; i++) {
+        addNode('fx-a-rise fx-side-player', leafSvg, `width:18px;height:18px;--sx:${lxs[i]}px;--sy:20px;--ex:${-lxs[i]}px;--ey:-34px;animation-delay:${i * 30}ms`);
+      }
+    } else if (sig === 'heal_h2_vital_column') {
+      // フルヒール (H2, 6 nodes, 98px): 縦の大きな緑の光柱が勇者を包む＋光輪＋粒4
+      addNode('fx-a-pillar fx-side-player sig-fullheal', '', 'width:56px;height:112px;background:linear-gradient(180deg,rgba(120,255,180,.15),rgba(88,201,138,.72),rgba(180,255,210,.2));border-radius:28px;box-shadow:0 0 16px #58c98a');
+      addNode('fx-heal-glow fx-side-player', '', box(98));
+      const xs = [-24, -8, 8, 24];
+      for (let i = 0; i < 4; i++) addNode('fx-heal-mote fx-side-player', '', `--hx:${xs[i]}px;animation-delay:${i * 22}ms`);
+    } else if (sig === 'heal_h3_platinum_ray') {
+      // ホーリーライト (H3, 7 nodes, 112px): 天から白金の光柱が差し込む＋聖光リング＋きらめき5
+      addNode('fx-a-pillar fx-side-player sig-holyLight', '', 'width:66px;height:124px;background:linear-gradient(180deg,rgba(255,252,220,.9),rgba(255,230,150,.55),transparent);border-radius:32px;box-shadow:0 0 20px #fff3b8');
+      addNode('fx-a-ring fx-side-player', '', box(112, 'border-radius:50%;border:3px solid #fff3b8;box-shadow:0 0 14px #ffd45a'));
+      const sp = [[-28, -28], [28, -28], [-34, 6], [34, 6], [0, -42]];
+      for (let i = 0; i < 5; i++) addNode('fx-ult-spark fx-side-player', '', `--dx:${sp[i][0]}px;--dy:${sp[i][1]}px`);
+    } else if (sig === 'heal_h3_revive_cross') {
+      // リザレクション (H3, 8 nodes, 118px): 足元に魔法陣＋黄金の十字架＋舞い上がる羽根6枚
+      const crossSvg = `<svg viewBox="0 0 80 80" class="fx-svg"><rect x="33" y="10" width="14" height="60" rx="3" fill="#fffbe0" filter="drop-shadow(0 0 10px #ffd45a)"/><rect x="16" y="26" width="48" height="14" rx="3" fill="#fffbe0" filter="drop-shadow(0 0 10px #ffd45a)"/></svg>`;
+      addNode('fx-a-pop fx-side-player sig-resurrection', crossSvg, box(84));
+      addNode('fx-a-ring fx-side-player', '', 'width:118px;height:44px;border-radius:50%;border:3px solid #ffd45a;box-shadow:0 0 16px #ffd45a;--oy:24px');
+      const featherSvg = `<svg viewBox="0 0 24 24" class="fx-svg"><path d="M4,18 Q10,4 22,6 Q14,16 4,18 Z" fill="#fff" filter="drop-shadow(0 0 5px #ffd45a)"/></svg>`;
+      const fxs = [-32, -18, -6, 8, 20, 32];
+      for (let i = 0; i < 6; i++) {
+        addNode('fx-a-rise fx-side-player', featherSvg, `width:18px;height:18px;--sx:${fxs[i]}px;--sy:24px;--ex:${fxs[i]}px;--ey:-38px;animation-delay:${i * 22}ms`);
+      }
+    } else if (sig === 'heal_h3_prayer_diamonds') {
+      // 聖女の祈り (H3, 8 nodes, 118px): 祈りの輪2重とひし形の光6個が周りを回りながら上昇
+      addNode('fx-a-ring fx-side-player sig-saintPrayer', '', box(118, 'border-radius:50%;border:3px solid #98ffd0;box-shadow:0 0 16px #58c98a'));
+      addNode('fx-a-ring fx-side-player', '', box(84, 'border-radius:50%;border:2px dashed #fff'));
+      const diaSvg = `<svg viewBox="0 0 24 24" class="fx-svg"><polygon points="12,2 22,12 12,22 2,12" fill="#e0fff0" stroke="#58c98a" stroke-width="1.5"/></svg>`;
+      const dxs = [-34, -20, -7, 7, 20, 34];
+      for (let i = 0; i < 6; i++) {
+        addNode('fx-a-rise fx-side-player', diaSvg, `width:20px;height:20px;--sx:${dxs[i]}px;--sy:22px;--ex:${-dxs[i]}px;--ey:-36px;animation-delay:${i * 24}ms`);
+      }
+    } else if (sig === 'heal_h4_soul_butterflies') {
+      // レクイエム (H4, 9 nodes, 134px): 青白い鎮魂の光輪2重＋舞う蝶3頭＋花びら4枚
+      addNode('fx-a-pop fx-side-player sig-requiem', '', box(134, 'border-radius:50%;background:radial-gradient(circle,rgba(140,235,255,.45),rgba(120,160,255,.2) 60%,transparent 75%)'));
+      addNode('fx-a-ring fx-side-player', '', box(130, 'border-radius:50%;border:3px solid #88f0ff;box-shadow:0 0 18px #5ce1ff'));
+      const bflySvg = `<svg viewBox="0 0 32 32" class="fx-svg"><path d="M16,16 Q4,4 4,14 Q4,24 16,18 Q28,24 28,14 Q28,4 16,16 Z" fill="#c8f8ff" filter="drop-shadow(0 0 6px #5ce1ff)"/></svg>`;
+      const bxs = [-26, 0, 26];
+      for (let i = 0; i < 3; i++) {
+        addNode('fx-a-rise fx-side-player', bflySvg, `width:26px;height:26px;--sx:${bxs[i]}px;--sy:24px;--ex:${-bxs[i]}px;--ey:-42px;animation-delay:${i * 30}ms`);
+      }
+      const pxs = [[-38, -28], [38, -28], [-32, 18], [32, 18]];
+      for (let i = 0; i < 4; i++) addNode('fx-magic-orb fx-side-player fx-elem-ice', '', `--dx:${pxs[i][0]}px;--dy:${pxs[i][1]}px`);
+    } else if (sig === 'heal_h4_goddess_halo') {
+      // 女神の奇跡 (H4, 10 nodes, 144px): 女神の光輪（ハロー）＋白金の光柱＋羽根6枚が舞い降りる＋聖光リング2
+      const haloSvg = `<svg viewBox="0 0 100 50" class="fx-svg"><ellipse cx="50" cy="25" rx="42" ry="14" fill="none" stroke="#fff6c8" stroke-width="5" filter="drop-shadow(0 0 12px #ffd45a)"/></svg>`;
+      addNode('fx-a-pop fx-side-player sig-goddess', haloSvg, 'width:104px;height:52px;--oy:-38px');
+      addNode('fx-a-pillar fx-side-player', '', 'width:82px;height:144px;background:linear-gradient(180deg,rgba(255,250,210,.78),rgba(255,220,130,.35),transparent);border-radius:40px');
+      addNode('fx-a-ring fx-side-player', '', box(144, 'border-radius:50%;border:3.5px solid #fff3b8;box-shadow:0 0 20px #ffd45a'));
+      addNode('fx-a-ring fx-side-player', '', box(106, 'border-radius:50%;border:2px solid #ffd45a'));
+      const featherSvg = `<svg viewBox="0 0 24 24" class="fx-svg"><path d="M4,18 Q10,4 22,6 Q14,16 4,18 Z" fill="#fffef2" filter="drop-shadow(0 0 6px #ffd45a)"/></svg>`;
+      const fxs = [-36, -22, -8, 8, 22, 36];
+      for (let i = 0; i < 6; i++) {
+        addNode('fx-a-drop fx-side-player', featherSvg, `width:20px;height:20px;--sx:${fxs[i]}px;--sy:-46px;--ex:${-fxs[i] * 0.5}px;--ey:24px;animation-delay:${i * 22}ms`);
+      }
+    } else if (sig === 'heal_h5_eternal_helix') {
+      // 永劫の祈り (H5, 12 nodes, 180px): 永遠の二重螺旋と巨大な光輪、勇者側の画面全体を包む（回復の最上位）
+      addNode('fx-ult-bg fx-ult-heal sig-eternal', '');
+      const helixSvg = `<svg viewBox="0 0 100 140" class="fx-svg"><path d="M22,132 C78,102 22,68 78,38 C40,18 28,8 50,4" fill="none" stroke="#98ffd0" stroke-width="4.5" filter="drop-shadow(0 0 10px #58c98a)"/><path d="M78,132 C22,102 78,68 22,38 C60,18 72,8 50,4" fill="none" stroke="#fff6c8" stroke-width="4.5" filter="drop-shadow(0 0 10px #ffd45a)"/></svg>`;
+      addNode('fx-a-pop fx-side-player', helixSvg, 'width:116px;height:152px');
+      const wheelSvg = `<svg viewBox="0 0 140 140" class="fx-svg"><circle cx="70" cy="70" r="60" fill="none" stroke="#fff6c8" stroke-width="3" stroke-dasharray="12 6"/><polygon points="70,8 84,56 132,70 84,84 70,132 56,84 8,70 56,56" fill="none" stroke="#98ffd0" stroke-width="2.5"/></svg>`;
+      addNode('fx-a-spin fx-side-player', wheelSvg, box(164, '--rot:180deg'));
+      addNode('fx-a-ring fx-side-player', '', box(180, 'border-radius:50%;border:4px solid #fff6c8;box-shadow:0 0 24px #58c98a'));
+      addNode('fx-a-ring fx-side-player', '', box(136, `border-radius:50%;border:3px solid #98ffd0;animation-delay:${Math.round(dur * 0.12)}ms`));
+      addNode('fx-a-ring fx-side-player', '', box(96, `border-radius:50%;border:2px solid #fff;animation-delay:${Math.round(dur * 0.24)}ms`));
+      for (let i = 0; i < 6; i++) {
+        const rad = (i * 60) * Math.PI / 180;
+        const dx = Math.round(Math.cos(rad) * 64), dy = Math.round(Math.sin(rad) * 64);
+        addNode('fx-ult-spark fx-side-player', '', `--dx:${dx}px;--dy:${dy}px`);
+      }
+    } else if (cat === 'heal') {
+      // 未登録healの汎用フォールバック
+      addNode('fx-heal-glow fx-side-player', '');
+      const xs = [-18, 0, 18];
+      for (let i = 0; i < xs.length; i++) addNode('fx-heal-mote fx-side-player', '', `--hx:${xs[i]}px`);
+    } else {
+      // 未登録スキルの汎用フォールバック
+      addNode('fx-generic-flash fx-side-enemy', '');
+    }
+
+    if (t.timerHost) {
+      t.timerHost.cleanupTimer = setTimeout(() => {
+        t.timerHost.cleanupTimer = null;
+        clearSkillFxLayer(t);
+      }, dur + 30);
+    }
+  } catch (e) {}
+}
+
 let lastEnemyShape = '';
 function renderEnemy(fresh) {
   const run = G.run; if (G.headless || !run || !run.enemy) return;
@@ -229,6 +799,13 @@ function renderBattle() {
   const run = G.run, p = G.p;
   if (!run) return;
   $('#arena').style.setProperty('--a1', run.d.a1); $('#arena').style.setProperty('--a2', run.d.a2);
+  const enNow = run.enemy;
+  const isRaged = !!(enNow && enNow.raged && enNow.hp > 0);
+  const fxOn = isFxEnabled();
+  $('#arena').classList.toggle('rage-active', isRaged && fxOn);
+  $('#f-enemy').classList.toggle('rage-aura', isRaged && fxOn);
+  $('#b-ename').classList.toggle('rage-name', isRaged);
+  syncBuffAura();
   if (run.tower) {
     $('#b-title').textContent = `天蓋の塔　${Math.max(run.floor, 1)}F`;
     let pips = '';
@@ -591,7 +1168,7 @@ function renderStatus() {
     </div>`;
   const dataPanels = `
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
-      ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button>' : ''}
+      ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="sub" style="margin-bottom:6px;font-size:12px">セーブの書き出し・読み込み（バックアップ／引き継ぎ）<br>最終書き出し：<b>${formatBackupDate(readBackupMeta().lastExportAt)}</b></div>
@@ -601,6 +1178,12 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
+        <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+          <button class="btn small ${G.opts.fx !== false ? 'on' : ''}" data-act="fxToggle" aria-pressed="${G.opts.fx !== false}">戦闘エフェクト：${G.opts.fx !== false ? 'ON' : 'OFF'}</button>
+        </div>
+        <p class="sub" style="margin:6px 0 0;font-size:11px">スキル発動時のエフェクトやボス激昂時の閃光・オーラ表示を切り替えます（ダメージ数字やログは常に表示されます）。</p>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
@@ -1123,7 +1706,117 @@ function openModal() {
   $('#modal').hidden = false; G.modalOpen = true;
   setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
 }
-function closeModal() { $('#modal').hidden = true; G.modalOpen = false; ensureLoop(); }
+function renderFxDebugArena() {
+  if (!IS_DEV_BUILD) return;
+  const arena = $('#fxd-arena'), fe = $('#fxd-enemy'), nm = $('#fxd-ename'), sprE = $('#fxd-spr-enemy'), sprP = $('#fxd-spr-player');
+  if (!arena || !fe || !nm || !sprE || !sprP) return;
+  const isBoss = _fxDbgState.enemy === 'boss';
+  const dId = isBoss ? 'O' : 'A';
+  const dObj = dungeonOf(dId) || DUNGEONS[0];
+  arena.style.setProperty('--a1', dObj.a1);
+  arena.style.setProperty('--a2', dObj.a2);
+  const raged = !!_fxDbgState.raged;
+  const baseEn = isBoss ? dObj.boss : dObj.mobs[0];
+  const fakeEn = {
+    id: (isBoss && raged && baseEn.rageId) ? baseEn.rageId : baseEn.id,
+    fallbackId: baseEn.id,
+    name: (isBoss && raged && baseEn.rageName) ? baseEn.rageName : baseEn.name,
+    shape: baseEn.shape,
+    raged,
+    bossFilter: raged ? 'hue-rotate(140deg) saturate(1.6)' : ''
+  };
+  sprE.innerHTML = enemyArt(fakeEn, dId);
+  sprP.innerHTML = getPlayerSVG();
+  nm.textContent = fakeEn.name;
+  arena.classList.toggle('rage-active', raged);
+  fe.classList.toggle('rage-aura', raged);
+  nm.classList.toggle('rage-name', raged);
+  syncBuffAura(fxDebugTarget());
+}
+function renderFxDebugControls() {
+  if (!IS_DEV_BUILD) return;
+  const box = $('#fxd-ctrl');
+  if (!box) return;
+  const spd = _fxDbgState.speed || 1;
+  const raged = !!_fxDbgState.raged;
+  const buff = _fxDbgState.buff || 'none';
+  const en = _fxDbgState.enemy || 'mob';
+  box.innerHTML = `
+    <div class="fxd-row">
+      <span class="fxd-lbl">速度</span>
+      ${[1, 2, 4].map(v => `<button class="btn small ${spd === v ? 'on' : ''}" data-act="fxDbgSpeed" data-v="${v}">×${v}</button>`).join('')}
+      <span class="fxd-lbl" style="margin-left:4px">敵</span>
+      <button class="btn small ${en === 'mob' ? 'on' : ''}" data-act="fxDbgEnemy" data-v="mob">雑魚</button>
+      <button class="btn small ${en === 'boss' ? 'on' : ''}" data-act="fxDbgEnemy" data-v="boss">ボス(O)</button>
+    </div>
+    <div class="fxd-row">
+      <span class="fxd-lbl">激昂</span>
+      <button class="btn small ${raged ? 'on' : ''}" data-act="fxDbgRageToggle">激昂表示：${raged ? 'ON' : 'OFF'}</button>
+      <button class="btn small" data-act="fxDbgRageBurst">激昂の瞬間を再生</button>
+      <button class="btn small danger" data-act="fxDbgStop">演出を止める</button>
+    </div>
+    <div class="fxd-row">
+      <span class="fxd-lbl">バフ</span>
+      ${[['none', 'なし'], ['atk', '攻撃'], ['def', '防御'], ['all', '全能力']].map(([k, lbl]) => `<button class="btn small ${buff === k ? 'on' : ''}" data-act="fxDbgBuff" data-v="${k}">${lbl}</button>`).join('')}
+    </div>`;
+}
+function openFxDebugModal() {
+  if (!IS_DEV_BUILD) return;
+  _fxDbgState.speed = 1;
+  _fxDbgState.raged = false;
+  _fxDbgState.buff = 'none';
+  _fxDbgState.enemy = 'mob';
+  const cats = [
+    { key: 'slash', label: '⚔️ 斬撃（剣系）' },
+    { key: 'magic', label: '✨ 魔法（攻撃魔法）' },
+    { key: 'ult',   label: '💥 大技・奥義' },
+    { key: 'heal',  label: '💚 回復' },
+    { key: 'buff',  label: '🛡️ 強化（バフ）' }
+  ];
+  const groupsHtml = cats.map(c => {
+    const ids = SK_ORDER.filter(id => SK[id] && getSkillFxSpec(id).cat === c.key);
+    return `<div class="fxd-grp">
+      <div class="fxd-gh">${esc(c.label)}（${ids.length}）</div>
+      <div class="fxd-grid">${ids.map(id => `<button class="btn small" data-act="fxDbgSkill" data-id="${id}">${esc(SK[id].name)}</button>`).join('')}</div>
+    </div>`;
+  }).join('');
+  const rmNote = isReducedMotion() ? '<p class="sub" id="fxd-rm-note" style="margin:2px 0 0;color:var(--accent);font-size:11px">※ OSの「視差効果を減らす（prefers-reduced-motion）」が有効なため、簡易フェード表示になります。</p>' : '';
+  $('#m-sheet').innerHTML = `
+    <div class="fxd-sticky" id="fxd-sticky">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 id="m-title" style="font-size:17px">🎬 エフェクト確認</h2>
+        <span class="sub" style="margin:0;font-size:11px">※セーブ・戦闘に影響しません</span>
+      </div>
+      <div class="arena fxd-arena" id="fxd-arena">
+        <div class="fx-layer" id="fxd-layer" aria-hidden="true"></div>
+        <div class="arena-row">
+          <div class="fighter" id="fxd-player">
+            <div class="spr" id="fxd-spr-player"></div>
+            <div class="fname">勇者</div>
+          </div>
+          <div class="fighter" id="fxd-enemy">
+            <div class="spr" id="fxd-spr-enemy"></div>
+            <div class="fname" id="fxd-ename">-</div>
+          </div>
+        </div>
+      </div>
+      ${rmNote}
+    </div>
+    <div class="fxd-ctrl" id="fxd-ctrl"></div>
+    <div style="display:grid;gap:8px" id="fxd-skills">${groupsHtml}</div>
+    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  renderFxDebugArena();
+  renderFxDebugControls();
+}
+function closeModal() {
+  if ($('#fxd-arena')) {
+    _fxDbgState.raged = false;
+    _fxDbgState.buff = 'none';
+    clearAllBattleFx(fxDebugTarget());
+  }
+  $('#modal').hidden = true; G.modalOpen = false; ensureLoop();
+}
 
 /* ================= render: help ================= */
 function renderHelp() {
@@ -1321,7 +2014,7 @@ function renderAll() {
   if (v === 'town') renderTown();
   if (v === 'dungeon') {
     $('#dg-select').hidden = !!G.run; $('#dg-battle').hidden = !G.run;
-    if (G.run) { renderEnemy(true); renderBattle(); } else renderDungeonSelect();
+    if (G.run) { renderEnemy(true); renderBattle(); } else { if (typeof clearAllBattleFx === 'function') clearAllBattleFx(); renderDungeonSelect(); }
   }
   if (v === 'status') renderStatus();
   if (v === 'help') renderHelp();
