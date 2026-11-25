@@ -164,6 +164,41 @@ with sync_playwright() as pw:
     check('基準4b_既存バフ不変（鉄壁3回・鬼神の構え4ターン）と、gen のターン経過で切れる',
           r4['guard'] == 3 and r4['warGod'] == 4 and r4['t0'] == 3 and r4['seq'] == [2, 1, 0, 0] and r4['after'] == 1, r4)
 
+    # バーサーク（攻撃3倍・防御半減・4ターン）と英雄の奇跡（全ステータス2倍）の実効果
+    r6 = pg.evaluate('''() => {
+        const R = window.__rogue; R.setHeadless(true); R.noTimer(true);
+        const setup = () => {
+            G.run = null; G.p = R.newPlayer(); const p = G.p; p.lv = 60; p.skills.heroic = true; p.skills.berserk = true;
+            R.startRun('A', 'novice'); R.nextFloor && R.nextFloor();
+            const run = G.run; p.mp = 9999; p.hp = R.maxHp(p); run.enemy.hp = 9e9; run.enemy.maxHp = 9e9; run.enemy.firstHit = false; run.enemy.atk = 250;
+            run.skillCt = {}; run.queued = null; p.equippedSkills = [null, null, null];
+            return { p, run };
+        };
+        const atkDmg = (run) => { const b = run.enemy.hp; R.playerAct(); return b - run.enemy.hp; };
+        const takeDmg = (p, run) => { const b = p.hp; R.enemyAct(); return b - p.hp; };
+        const out = {};
+        let { p, run } = setup();
+        const a0 = atkDmg(run); const d0 = takeDmg(p, run);
+        ({ p, run } = setup());
+        R.useSkillEffect('berserk');
+        const a1 = atkDmg(run); const d1 = takeDmg(p, run);
+        out.berserk = { a0, a1, d0, d1, turns: run.berserk };
+        for (let i = 0; i < 3; i++) takeDmg(p, run);
+        out.berserkAfter = run.berserk;
+        ({ p, run } = setup());
+        p.equippedSkills = ['heroic', null, null]; run.queued = 'heroic';
+        const h = atkDmg(run); out.heroDef = run.heroDef;
+        const dh = takeDmg(p, run);
+        out.hero = { h, dh, after: run.heroDef };
+        out.base = { a0, d0 };
+        return out;
+    }''')
+    b6 = r6['berserk']
+    check('基準6a_バーサーク: 攻撃約3倍（会心ぶれ込みで2〜4.6倍）・被ダメ増・4ターンで切れる',
+          1.9 < b6['a1'] / max(1, b6['a0']) < 4.6 and b6['d1'] > b6['d0'] * 1.5 and b6['turns'] == 3 and r6['berserkAfter'] == 0, r6)
+    check('基準6b_英雄の奇跡: 全ステータス2倍フラグ（防御2倍は次の被弾まで）',
+          r6['heroDef'] == 1 and r6['hero']['after'] == 0 and r6['hero']['dh'] < r6['base']['d0'] * 0.8, r6)
+
     # 4キャラとも全ツリーを最大に振ると全スキルが習得でき、装備スロットに入る
     r5 = pg.evaluate('''() => {
         const R = window.__rogue; const out = {};

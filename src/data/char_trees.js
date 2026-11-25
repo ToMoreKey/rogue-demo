@@ -110,7 +110,7 @@ const CHAR_TREES = {
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
       milestones: [
-        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '3回攻撃（各3倍）' },
+        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（各3倍）' },
         { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
         { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
         { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },

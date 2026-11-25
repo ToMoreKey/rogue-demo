@@ -20,7 +20,7 @@ const SK = {
   // 進化枠（詠唱）スキル
   resurrection: { id: 'resurrection', name: 'リザレクション', mp: 40, ct: 8, type: 'heal', pct: 1.0, desc: '全回復＋次の致死ダメージを1で耐える', revive: true },
   // 進化枠（英雄）スキル
-  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, desc: '3回攻撃（各3倍）' },
+  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, allMult: 2, desc: '全ステータス2倍で3回攻撃（各3倍）' },
   // 進化枠 第2段階（SP15〜20）スキル
   shura:      { id: 'shura',      name: '修羅の構え',     mp: 32, ct: 7, type: 'buff', turns: 4, shura: true,  desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
   hagun:      { id: 'hagun',      name: '破軍の剣',       mp: 60, ct: 8, type: 'atk',  hits: 1, mult: 12.0,  desc: '12倍の渾身の一撃' },
@@ -222,7 +222,7 @@ const SKILL_TREES = [
     stage3When: (p) => !!(p && p.ending),
     stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
-      { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '3回攻撃（各3倍）' },
+      { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（各3倍）' },
       { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
       { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
       { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },

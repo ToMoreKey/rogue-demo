@@ -359,7 +359,7 @@ function useSkillEffect(id) {
     }
     else if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
     else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 魔法防御力が上がった。', 'l-good'); }
-    else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
+    else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍・防御力が半減した！', 'l-good'); }
     else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
     else if (s.shura) { run.shura = s.turns; addLog('修羅の構え！ 攻撃力が4倍になった！', 'l-good'); }
     else if (s.kishin) { run.kishin = s.turns; addLog('鬼神降臨！ 攻撃力が5倍になった！', 'l-good'); }
@@ -394,11 +394,12 @@ function playerAct() {
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'atk');
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.berserk > 0 ? 3 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * (s.allMult || 1) * genBuffMult(run, 'atk');
   const pb = masteryBonus(p);
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
   if (run.advent > 0) run.advent--;
+  if (s.allMult) { run.heroDef = 1; addLog(`${s.name}！ 全ステータスが${s.allMult}倍になった！`, 'l-good'); }
   let dealt = 0, crits = 0, hits = 0;
   const bossMult = en.boss ? (1 + te.bossDmg) : 1;
   for (let i = 0; i < s.hits; i++) {
@@ -435,8 +436,10 @@ function enemyAct() {
     return;
   }
   const pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
-  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'def');
+  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.berserk > 0 ? 0.5 : 1) * (run.heroDef > 0 ? 2 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'def');
   const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * genBuffMult(run, 'taken') * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
+  if (run.berserk > 0) run.berserk--;
+  if (run.heroDef > 0) run.heroDef--;
   if (run.shura > 0) run.shura--;
   if (run.kishin > 0) run.kishin--;
   if (run.gen && run.gen.turns > 0) { run.gen.turns--; if (run.gen.turns === 0) run.gen = null; }
