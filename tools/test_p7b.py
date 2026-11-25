@@ -113,7 +113,7 @@ with sync_playwright() as pw:
         function simA(withHeal, runs, seed) {
             R.setRng(mkRng(seed));
             G.p = R.newPlayer();
-            if (withHeal) { R.ACTS.spAlloc({ tree: 'life', amount: 3 }); G.p.equippedSkills = ['heal', null, null]; }
+            if (withHeal) { R.ACTS.changeSkin({ id: 'silia' }); R.ACTS.spAlloc({ tree: 'life', amount: 3 }); G.p.equippedSkills = ['heal', null, null]; }
             let firstClear = null, clears = 0;
             for (let i = 1; i <= runs; i++) {
                 R.equipBest();

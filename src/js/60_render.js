@@ -217,6 +217,7 @@ function renderDungeonSelect() {
 const SKILL_FX_MAP = {
   // 斬撃（剣系 6種）
   strike:         { cat: 'slash', tier: 'T1', rank: 1, durMs: 360, nodes: 3,  span: 88,  sig: 'slash_t1_single_heavy',   color: 'gold' },
+  doubleStab:     { cat: 'slash', tier: 'T1', rank: 1, durMs: 380, nodes: 3,  span: 90,  sig: 'slash_t1_double_stab',    color: 'gold' },
   multi:          { cat: 'slash', tier: 'T1', rank: 1, durMs: 420, nodes: 3,  span: 92,  sig: 'slash_t1_triple_rapid',   color: 'gold' },
   flameSlash:     { cat: 'slash', tier: 'T2', rank: 2, durMs: 480, nodes: 5,  span: 102, sig: 'slash_t2_flame_arc',      color: 'fire' },
   ult:            { cat: 'slash', tier: 'T3', rank: 3, durMs: 560, nodes: 6,  span: 116, sig: 'slash_t3_golden_cross',   color: 'gold' },
@@ -240,7 +241,8 @@ const SKILL_FX_MAP = {
   meteorNova:     { cat: 'ult',   tier: 'U3', rank: 3, durMs: 980, nodes: 10, span: 196, sig: 'ult_u3_meteor_swarm',     style: 'fire' },
   skyStar:        { cat: 'ult',   tier: 'U4', rank: 4, durMs: 1080, nodes: 11, span: 210, sig: 'ult_u4_azure_starfall',  style: 'slash' },
   genesisRay:     { cat: 'ult',   tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_genesis_pillar',  style: 'holy' },
-  // 回復（10種）
+  // 回復（11種）
+  firstAid:       { cat: 'heal',  tier: 'H1', rank: 1, durMs: 360, nodes: 4,  span: 66,  sig: 'heal_h1_first_aid' },
   regen:          { cat: 'heal',  tier: 'H1', rank: 1, durMs: 380, nodes: 4,  span: 68,  sig: 'heal_h1_gentle_motes' },
   heal:           { cat: 'heal',  tier: 'H1', rank: 1, durMs: 420, nodes: 5,  span: 78,  sig: 'heal_h1_emerald_ring' },
   highRegen:      { cat: 'heal',  tier: 'H2', rank: 2, durMs: 480, nodes: 6,  span: 90,  sig: 'heal_h2_leaf_spiral' },
@@ -445,6 +447,12 @@ function playSkillFx(id, hitCount, target) {
       addNode('fx-slash fx-side-enemy sig-strike', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line heavy"/></svg>`, box(88, '--fx-rot:-22deg'));
       addNode('fx-magic-orb fx-side-enemy fx-elem-holy', '', '--dx:-26px;--dy:-18px');
       addNode('fx-magic-orb fx-side-enemy fx-elem-holy', '', '--dx:28px;--dy:16px');
+      hitEnemy('');
+    } else if (sig === 'slash_t1_double_stab') {
+      // ダブルスタブ (T1, 3 nodes, 90px): 素早い2連の突き閃光＋火花1個
+      addNode('fx-slash fx-side-enemy sig-doubleStab', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="8" y1="62" x2="92" y2="38" class="fx-slash-line wind"/></svg>`, box(90, '--fx-rot:-8deg;--fx-off:-6px'));
+      addNode('fx-slash fx-side-enemy sig-doubleStab', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="8" y1="38" x2="92" y2="62" class="fx-slash-line wind"/></svg>`, box(90, `--fx-rot:8deg;--fx-off:6px;animation-delay:${Math.round(dur * 0.25)}ms`));
+      addNode('fx-magic-orb fx-side-enemy fx-elem-ice', '', '--dx:26px;--dy:0px');
       hitEnemy('');
     } else if (sig === 'slash_t1_triple_rapid') {
       // 連続斬り (T1, 3 nodes, 92px): 角度の違う細い斬撃3本が時間差で連続
@@ -674,6 +682,12 @@ function playSkillFx(id, hitCount, target) {
         addNode('fx-ult-spark fx-side-enemy', '', `--dx:${dx}px;--dy:${dy}px`);
       }
       hitEnemy('big');
+    } else if (sig === 'heal_h1_first_aid') {
+      // 応急手当 (H1, 4 nodes, 66px): 小さな緑十字＋回復粒3個
+      const crossSvg = `<svg viewBox="0 0 32 32" class="fx-svg"><rect x="13" y="5" width="6" height="22" rx="1.5" fill="#98ffd0"/><rect x="5" y="13" width="22" height="6" rx="1.5" fill="#98ffd0"/></svg>`;
+      addNode('fx-a-pop fx-side-player sig-firstAid', crossSvg, box(44));
+      const xs = [-14, 0, 14];
+      for (let i = 0; i < 3; i++) addNode('fx-heal-mote fx-side-player', '', `--hx:${xs[i]}px;animation-delay:${i * 25}ms`);
     } else if (sig === 'heal_h1_gentle_motes') {
       // リジェネ (H1, 4 nodes, 68px): 小さな緑の光の粒4個がゆっくり上昇（控えめ）
       const xs = [-16, -5, 6, 17];
@@ -1000,14 +1014,16 @@ function renderSkillTrees(p) {
     </div>`;
   };
 
-  const baseTrees = SKILL_TREES.filter(t => ['sword','magic','life'].includes(t.id));
-  const evoTrees = SKILL_TREES.filter(t => !['sword','magic','life'].includes(t.id));
+  const charTrees = getCharTrees(p && p.skin);
+  const cMeta = CHAR_CLASS_META[(p && p.skin) || 'ruby'] || CHAR_CLASS_META.stella;
+  const baseTrees = [charTrees[0]];
+  const evoTrees = charTrees.slice(1);
   const unlockedEvo = evoTrees.filter(t => t.unlockWhen(p));
   const lockedEvo = evoTrees.filter(t => !t.unlockWhen(p));
 
   return `<div class="panel" id="skill-trees-panel">
-    <h2>スキル枠</h2>
-    <p class="sub">SPを枠に割り振るとスキルポイントに到達したとき自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
+    <h2>スキル枠（${esc(cMeta.name)}・${esc(cMeta.job)}）</h2>
+    <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
     <div class="st-grid">${baseTrees.map(treeCard).join('')}</div>
     ${unlockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（解放済み）──</p><div class="st-grid">${unlockedEvo.map(treeCard).join('')}</div></div>` : ''}
     ${lockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（未解放）──</p><div class="st-grid locked-trees">${lockedEvo.map(treeCard).join('')}</div></div>` : ''}
@@ -1069,6 +1085,16 @@ function renderSubTabs(tabs, curTab, actName, ariaLabel) {
   }).join('')}</div>`;
 }
 
+function renderCharDescBox(charId) {
+  const m = CHAR_CLASS_META[charId] || CHAR_CLASS_META.stella;
+  const tutTgt = getCharTutorialTarget(m.id);
+  return `<div class="rk-box" id="char-desc-box" style="margin-top:10px;text-align:left">
+    <div style="font-weight:700;color:var(--accent)">${esc(m.name)}（${esc(m.job)}）― ${esc(m.role)}</div>
+    <p style="margin:2px 0 4px;line-height:1.5">${esc(m.blurb)}</p>
+    <div class="sub" style="margin:0;font-size:12px">・<b>得意</b>：${esc(m.strengths)}<br>・<b>弱み</b>：${esc(m.weakness)}<br>・<b>初期スキル（3SP）</b>：${esc(tutTgt.skillName)}</div>
+  </div>`;
+}
+
 function renderStatus() {
   const p = G.p;
   const tab = ['hero', 'gear', 'skill', 'mastery', 'data'].includes(G.statusTab) ? G.statusTab : 'hero';
@@ -1120,15 +1146,17 @@ function renderStatus() {
             return `<button class="pill ${eq ? 'on' : ''}" data-act="equipStatusTitle" data-id="${tid}" title="${esc(tt.desc)}">${eq ? '✓ ' : ''}${esc(tt.name)}</button>`;
           }).join('')}</div>`}
     </div>
-    <div class="panel"><h2>外見変更</h2>
-      <p class="sub" style="margin:0 0 12px">主人公の外見を選択できます。</p>
+    <div class="panel"><h2>外見変更（キャラ変更）</h2>
+      <p class="sub" style="margin:0 0 12px">${G.run ? '⚠️ ダンジョン攻略中はキャラを変更できません。' : 'キャラを切り替えると、そのキャラのスキル・スロットに切り替わります（SPは共通）。'}</p>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
-        ${CHAR_SKINS.map(sk => `<button class="skin-card ${(p.skin || 'ruby') === sk.id ? 'selected' : ''}" data-act="changeSkin" data-id="${sk.id}">
+        ${CHAR_SKINS.map(sk => `<button class="skin-card ${(p.skin || 'ruby') === sk.id ? 'selected' : ''}" data-act="changeSkin" data-id="${sk.id}" ${G.run ? 'disabled' : ''}>
           <div style="width:64px;height:64px;margin:0 auto 6px;overflow:hidden">${skinArt(sk, 'width:64px;height:64px')}</div>
           <div style="font-size:13px;font-weight:bold">${sk.name}</div>
           <div style="font-size:11px;color:var(--muted)">${sk.job}</div>
         </button>`).join('')}
-      </div></div>`;
+      </div>
+      ${renderCharDescBox(p.skin || 'ruby')}
+    </div>`;
   const gearPanels = `
     <div class="panel"><h2>装備</h2>
       <div class="items">
@@ -1809,7 +1837,46 @@ function openFxDebugModal() {
   renderFxDebugArena();
   renderFxDebugControls();
 }
+function openCharSelectModal(pickedId) {
+  G._charSelectOpen = true;
+  if (pickedId !== undefined) G._charSelectPick = pickedId;
+  const cur = G._charSelectPick || null;
+  const order = ['stella', 'ruby', 'silia', 'chloe'];
+  const cards = order.map(cid => {
+    const sk = CHAR_SKINS.find(x => x.id === cid) || CHAR_SKINS[0];
+    const sel = cur === cid;
+    return `<button class="skin-card ${sel ? 'selected' : ''}" data-act="selectStartChar" data-id="${sk.id}">
+      <div style="width:64px;height:64px;margin:0 auto 6px;overflow:hidden">${skinArt(sk, 'width:64px;height:64px')}</div>
+      <div style="font-size:13px;font-weight:bold">${esc(sk.name)}</div>
+      <div style="font-size:11px;color:var(--muted)">${esc(sk.job)}</div>
+    </button>`;
+  }).join('');
+  const descHtml = cur
+    ? renderCharDescBox(cur)
+    : '<div class="rk-box" id="char-desc-box" style="margin-top:10px;text-align:center;color:var(--muted)">上のカードを押すと、そのキャラクターの特徴が表示されます。</div>';
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">キャラクターを選ぼう</h2>
+    <p class="sub" style="margin:0">最初のキャラクターを選んでください。キャラは後から、ステータス画面でいつでも変えられます（ダンジョン攻略中を除く）。スキルはキャラごとに別々に育てます。</p>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px" id="char-select-grid">${cards}</div>
+    ${descHtml}
+    <div class="act" style="grid-template-columns:1fr">
+      <button class="btn primary" id="btn-confirm-char" data-act="confirmStartChar" ${cur ? '' : 'disabled'}>このキャラで始める</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function openV9ResetNoticeModal() {
+  if (!G.p || !G.p.v9ResetNoticePending) return;
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">スキルシステム変更のお知らせ</h2>
+    <p style="margin:6px 0;line-height:1.6">システムが変わりました。SPを全て返却したので、キャラごとに振り直してください。</p>
+    <p class="sub" style="margin:0">・現在の所持SP：<b style="color:var(--accent)">${fmt(G.p.sp)} SP</b>（全キャラ共通プール）<br>・ステータス画面の「スキル」タブで、キャラクターごとにスキル枠へ割り振れます。</p>
+    <div class="act" style="grid-template-columns:1fr">
+      <button class="btn primary" id="btn-close-v9-notice" data-act="closeV9Notice">確認して閉じる</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
 function closeModal() {
+  if (G._charSelectOpen) return;
   if ($('#fxd-arena')) {
     _fxDbgState.raged = false;
     _fxDbgState.buff = 'none';
@@ -1999,6 +2066,10 @@ function renderHelp() {
 
 /* ================= render: all ================= */
 function renderAll() {
+  if ((!G.tutorial || G.tutorial.done) && G._charSelectOpen) {
+    G._charSelectOpen = false;
+    closeModal();
+  }
   const v = G.view;
   for (const id of ['town', 'dungeon', 'status', 'help']) {
     $('#view-' + id).hidden = id !== v;

@@ -172,8 +172,8 @@ with sync_playwright() as pw:
     }''')
     pg.wait_for_timeout(300)
     after_wait_count = pg.evaluate('() => document.getElementById("fx-layer").children.length')
-    check('基準2_全42スキルIDの分類網羅と未分類の汎用フォールバック',
-          sk_res['totalSkills'] == 42 and sk_res['allValid'] and sk_res['allExplicitlyMapped']
+    check('基準2_全スキルIDの分類網羅と未分類の汎用フォールバック',
+          sk_res['totalSkills'] >= 42 and sk_res['allValid'] and sk_res['allExplicitlyMapped']
           and sk_res['unknownFallback'] == 'generic',
           sk_res)
     check('基準2_分類ごとの代表スキルで演出要素が出現し規定時間内に消える',

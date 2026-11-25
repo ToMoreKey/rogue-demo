@@ -1,7 +1,7 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 8;
+const SAVE_VERSION = 9;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -94,6 +94,28 @@ const migrations = {
     if (typeof p.unlockNoticeShown !== 'boolean') p.unlockNoticeShown = !!(p.ending || (p.cleared && p.cleared.O && p.cleared.O.extreme));
     if (typeof p.abyssNoticeShown !== 'boolean') p.abyssNoticeShown = isAbyssUnlocked(p).ok;
     return Object.assign({}, d, { v: 8, p });
+  },
+  // v8 → v9: キャラ別スキルツリー導入。旧 skillPts の消費SPをすべて p.sp に返却し、各キャラの空 chars を作成
+  8: d => {
+    const p = Object.assign({}, d.p);
+    let refund = 0;
+    if (p.skillPts && typeof p.skillPts === 'object') {
+      for (const v of Object.values(p.skillPts)) {
+        const n = Number(v);
+        if (isFinite(n) && n > 0) refund += Math.floor(n);
+      }
+    }
+    p.sp = Math.max(0, (Number(p.sp) || 0) + refund);
+    p.chars = makeDefaultChars();
+    const cid = (p.skin && CHAR_TREES[p.skin]) ? p.skin : 'ruby';
+    p.skin = cid;
+    p.skills = {};
+    p.passiveSkills = {};
+    p.skillPts = p.chars[cid].skillPts;
+    p.equippedSkills = p.chars[cid].equippedSkills;
+    const hadProgress = refund > 0 || (Number(p.lv) || 1) > 1 || (p.stats && (Number(p.stats.runs) || 0) > 0);
+    p.v9ResetNoticePending = hadProgress;
+    return Object.assign({}, d, { v: 9, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -204,33 +226,33 @@ function load() {
       p.achStats.blessings = num(s.achStats.blessings, 0);
       p.achStats.noDmgBoss = !!s.achStats.noDmgBoss;
     }
-    p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
-    p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
-    if (s.skillPts && typeof s.skillPts === 'object') {
-      for (const k of ['sword','magic','life','warrior','mage','cleric','hero']) {
-        const tree = SKILL_TREES.find(t => t.id === k);
-        p.skillPts[k] = num(s.skillPts[k], 0, 0, tree ? tree.maxSp : 30);
+    if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
+    p.chars = makeDefaultChars();
+    if (s.chars && typeof s.chars === 'object') {
+      for (const cid of CHAR_IDS) {
+        const sc = s.chars[cid];
+        if (!sc || typeof sc !== 'object') continue;
+        if (sc.skillPts && typeof sc.skillPts === 'object') {
+          for (const t of getCharTrees(cid)) {
+            p.chars[cid].skillPts[t.id] = num(sc.skillPts[t.id], 0, 0, t.maxSp || 30);
+          }
+        }
+        if (Array.isArray(sc.equippedSkills)) {
+          for (let i = 0; i < 3; i++) {
+            const sid = sc.equippedSkills[i];
+            if (sid && SK[sid]) p.chars[cid].equippedSkills[i] = sid;
+          }
+        }
       }
     }
-    p.passiveSkills = {};
-    if (s.passiveSkills && typeof s.passiveSkills === 'object') {
-      const validPassives = ['sword15','magic15','life15','warrior10','mage10','cleric10','hero10'];
-      for (const k of validPassives) if (s.passiveSkills[k]) p.passiveSkills[k] = true;
-    }
-    p.equippedSkills = [null, null, null];
-    if (Array.isArray(s.equippedSkills)) {
-      for (let i = 0; i < 3; i++) {
-        const id = s.equippedSkills[i];
-        if (id && SK[id]) p.equippedSkills[i] = id;
-      }
-    }
+    p.v9ResetNoticePending = !!s.v9ResetNoticePending;
+    syncActiveCharState(p);
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
     if (s.stones && typeof s.stones === 'object') {
       for (const st of STONES) p.stones[st.id] = num(s.stones[st.id], 0, 0, 999);
     }
     let id = 1; [p.weapon, p.armor, ...p.bag].forEach(it => { if (it) it.id = id++; }); p.nextId = id;
-    if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
     if (migrated || !s.ach) checkAchievements(null, true);

@@ -135,9 +135,10 @@ with sync_playwright() as pw:
         p.abyss = { best: 10, cleared: {1:true,2:true,3:true,4:true,5:true,6:true,7:true,8:true,9:true,10:true} };
         p.weapon = { id: p.nextId++, slot: 'weapon', star: 9, rarity: 4, roll: 1.0, prop: 'madness', props: ['madness', 'flame', 'vamp'], locked: true };
         p.armor = { id: p.nextId++, slot: 'armor', star: 9, rarity: 4, roll: 1.0, prop: 'aegis', props: ['aegis', 'thorns', 'regen'], locked: true };
-        for (const t of ['sword','magic','life','warrior','mage','cleric','hero']) R.ACTS.spAlloc({ tree: t, amount: 30 });
+        R.ACTS.changeSkin({ id: 'stella' });
+        for (const t of R.getCharTrees(p.skin)) R.ACTS.spAlloc({ tree: t.id, amount: 30 });
         for (const m of R.MASTERY_LIST) for (let k = 0; k < 10; k++) R.ACTS.masteryUp({ id: m.id });
-        p.equippedSkills = ['goddess', 'heroAdvent', 'skyStar'];
+        p.equippedSkills = ['firstAid', 'heroAdvent', 'skyStar'];
         p.potions = { hp: 50, mp: 50 };
         p.hp = R.maxHp(p); p.mp = R.maxMp(p);
         let ticks = 0, bad = [];

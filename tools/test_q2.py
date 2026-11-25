@@ -134,9 +134,9 @@ with sync_playwright() as pw:
     }''')
     pg.wait_for_timeout(300)
     after_wait_layer = pg.evaluate('() => document.getElementById("fxd-layer").children.length')
-    check('基準2_全42スキルIDのボタンが5分類に漏れ・重複なく並ぶ',
-          sk_panel_res['grpCount'] == 5 and sk_panel_res['btnCount'] == 42
-          and sk_panel_res['uniqueCount'] == 42 and sk_panel_res['allCovered'],
+    check('基準2_全スキルIDのボタンが5分類に漏れ・重複なく並ぶ',
+          sk_panel_res['grpCount'] == 5 and sk_panel_res['btnCount'] == sk_panel_res['totalSk']
+          and sk_panel_res['uniqueCount'] == sk_panel_res['totalSk'] and sk_panel_res['allCovered'],
           sk_panel_res)
     check('基準2_設定OFFでも全スキルボタンで演出要素が出現し規定時間内に消える（実戦闘DOM非干渉）',
           sk_panel_res['allSpawned'] and sk_panel_res['realBattleLayerEmpty'] and after_wait_layer == 0,

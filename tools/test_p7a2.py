@@ -193,13 +193,13 @@ with sync_playwright() as pw:
     check('スキルUI表示MPと計算一致', f"MP {ui_res['calcStrikeMp']}" in ui_res['stText'], ui_res['calcStrikeMp'])
     check('420px横溢れなし', ui_res['ovStatus'] <= 0, ui_res['ovStatus'])
 
-    # 4. 旧セーブ読み込み互換（v5 相当）
+    # 4. 旧セーブ読み込み互換（v5 相当 → v9 移行でSP返却＆正常データ化）
     mig_ok = pg.evaluate('''() => {
         const R = window.__rogue;
         const p = R.newPlayer();
         const oldSave = { v: 5, p: { lv: 25, exp: 0, sp: 5, gold: 100, bank: 0, hp: 100, mp: 30, weapon: p.weapon, armor: p.armor, bag: [], cleared: {}, skills: { strike: true }, skillPts: { sword: 15, magic: 0, life: 0 }, passiveSkills: { sword15: true }, equippedSkills: ['strike', null, null], potions: { hp: 0, mp: 0 }, stones: {}, stats: { runs: 1, clears: 0, kills: 0 }, nextId: 10 } };
         const m = R.migrateSave(oldSave);
-        return !!(m && m.v === R.SAVE_VERSION && m.p.passiveSkills.sword15 === true);
+        return !!(m && m.v === R.SAVE_VERSION && m.p.sp === 20 && m.p.chars && m.p.chars.stella);
     }''')
     check('旧セーブ読み込み互換', mig_ok)
     check('ページエラーなし', len(errors) == 0, errors)

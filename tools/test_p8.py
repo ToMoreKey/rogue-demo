@@ -46,13 +46,13 @@ with sync_playwright() as pw:
     ctx = b.new_context(viewport={'width': 420, 'height': 800})
     errors = []
 
-    # 基準4前半: 初回プレイヤーには IndexedDB 復元モーダルが出ないこと
+    # 基準4前半: 初回プレイヤーには IndexedDB 復元モーダル（前回のデータが見つかりました）が出ないこと
     pg = ctx.new_page()
     pg.on('pageerror', lambda e: errors.append(str(e)))
     pg.goto(BASE_URL + '/index.html')
     pg.wait_for_timeout(400)
-    first_modal = pg.evaluate('() => !document.querySelector("#modal").hidden')
-    check('初回プレイヤーに復元確認が出ない', first_modal is False, first_modal)
+    first_modal_is_restore = pg.evaluate('() => !document.querySelector("#modal").hidden && (document.querySelector("#m-title")?.innerText || "").includes("前回のデータが見つかりました")')
+    check('初回プレイヤーに復元確認が出ない', first_modal_is_restore is False, first_modal_is_restore)
 
     # 基準1: ファイル(JSON) & コード(RGS1/RGS0) 書き出し → 読み込みで完全一致 & _bak_import 退避
     roundtrip = pg.evaluate('''async () => {
@@ -102,7 +102,7 @@ with sync_playwright() as pw:
         const R = window.__rogue;
         const p = R.newPlayer();
         const results = [];
-        for (const v of [1, 3, 5, 7]) {
+        for (const v of [1, 3, 5, 7, 8]) {
             const inner = { v, p: { lv: 20 + v, exp: 0, sp: 3, gold: 500 + v, bank: 0, hp: 100, mp: 20, weapon: p.weapon, armor: p.armor, bag: [], cleared: {}, skills: {}, skillPts: { sword: 0, magic: 0, life: 0 }, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones: {}, stats: { runs: 1, clears: 0, kills: 0 }, nextId: 5 } };
             const wrap = { app: 'rogue-demo', kind: 'save', saveVersion: v, exportedAt: '2026-01-01T00:00:00Z', data: JSON.stringify(inner) };
             const res = await R.decodeAndValidateSaveInput(JSON.stringify(wrap));
@@ -111,8 +111,8 @@ with sync_playwright() as pw:
         }
         return results;
     }''')
-    check('基準2_旧版v1〜v7書き出しの読み込みとv8移行',
-          all(x['ok'] and x['applied'] and x['curV'] == 8 and x['lv'] == 20 + x['v'] for x in old_mig),
+    check('基準2_旧版v1〜v8書き出しの読み込みと最新v移行',
+          all(x['ok'] and x['applied'] and x['curV'] == 9 and x['lv'] == 20 + x['v'] for x in old_mig),
           old_mig)
 
     # 基準3: 不正入力（壊れたコード・別アプリJSON・途切れコード・未来のsaveVersion）で何も変わらずエラー

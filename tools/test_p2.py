@@ -156,27 +156,36 @@ with sync_playwright() as pw:
         const treesOk = ['sword', 'magic', 'life'].every(k => R.SKILL_TREES.find(t => t.id === k).maxSp === 30);
         const saveKey = R.SAVE_KEY || 'rogue_test_save_v1';
         const oldSave = {
-            v: 3,
+            v: R.SAVE_VERSION,
             p: Object.assign(R.newPlayer(), {
                 lv: 40, sp: 30,
-                skillPts: { sword: 20, magic: 10, life: 5 },
-                skills: { strike: true, heal: true, fireball: true }
+                chars: {
+                    stella: { skillPts: { sword: 20, warrior: 0, hero: 0 }, equippedSkills: [null, null, null] },
+                    ruby:   { skillPts: { magic: 10, mage: 0, hero: 0 },    equippedSkills: [null, null, null] },
+                    silia:  { skillPts: { life: 5, cleric: 0, hero: 0 },    equippedSkills: [null, null, null] },
+                    chloe:  { skillPts: { sword: 0, warrior: 0, hero: 0 },  equippedSkills: [null, null, null] }
+                }
             })
         };
         localStorage.setItem(saveKey, JSON.stringify(oldSave));
         const loaded = R.load();
+        R.ACTS.changeSkin({ id: 'stella' });
         const kept20 = loaded && G.p.skillPts.sword === 20 && !!G.p.skills.strike;
-        // 新スキル9種をすべて習得できるか
+        // 新スキル9種を各キャラの主ツリー30SPで習得できるか
         G.p.sp = 90;
         R.ACTS.spAlloc({ tree: 'sword', amount: 10 });
+        const s3 = ['flameSlash', 'warGod', 'skySlash'].every(id => !!G.p.skills[id]) && G.p.skillPts.sword === 30;
+        R.ACTS.changeSkin({ id: 'ruby' });
         R.ACTS.spAlloc({ tree: 'magic', amount: 20 });
+        const m3 = ['blaze', 'lightningStorm', 'ultima'].every(id => !!G.p.skills[id]) && G.p.skillPts.magic === 30;
+        R.ACTS.changeSkin({ id: 'silia' });
         R.ACTS.spAlloc({ tree: 'life', amount: 25 });
-        const new9 = ['flameSlash', 'warGod', 'skySlash', 'blaze', 'lightningStorm', 'ultima', 'highRegen', 'holyBarrier', 'saintPrayer'];
-        const learnedAll = new9.every(id => !!G.p.skills[id]);
-        const pts30 = G.p.skillPts.sword === 30 && G.p.skillPts.magic === 30 && G.p.skillPts.life === 30;
-        // 戦闘で warGod / holyBarrier / highRegen 発動確認
+        const l3 = ['highRegen', 'holyBarrier', 'saintPrayer'].every(id => !!G.p.skills[id]) && G.p.skillPts.life === 30;
+        const learnedAll = s3 && m3 && l3;
+        const pts30 = s3 && m3 && l3;
+        // 戦闘で holyBarrier / highRegen 発動確認
         G.p.mp = G.p.mmp = 999; G.p.hp = 100; G.p.mhp = 500;
-        G.p.equippedSkills = ['warGod', 'holyBarrier', 'highRegen', 'ultima'];
+        G.p.equippedSkills = ['holyBarrier', 'highRegen', 'saintPrayer'];
         G.p.cleared.C = { high: true };
         R.startRun('D', 'novice');
         for (let i = 0; i < 10 && G.run; i++) R.tick();

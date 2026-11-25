@@ -49,15 +49,22 @@ assert v1['v'] == 1 and v2['v'] == 2
 with sync_playwright() as pw:
     b = pw.chromium.launch()
 
-    # 1. v1 → v3 連鎖変換と内容の保持
+    # 1. v1 → v9 連鎖変換と内容の保持（v8→v9 で全SPが返却されスキル・パッシブ・スロットがリセットされる）
     ctx, pg, errs = fresh_page(b, raw_v1)
     stored = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('v1 save is rewritten as v8', stored.get('v') == 8, stored.get('v'))
-    check('SAVE_VERSION is 8', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 8)
+    check('v1 save is rewritten as v9', stored.get('v') == 9, stored.get('v'))
+    check('SAVE_VERSION is 9', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 9)
     sp, op = stored['p'], v1['p']
-    for k in ['lv', 'exp', 'sp', 'gold', 'bank', 'hp', 'mp', 'skills', 'skillPts', 'passiveSkills',
-              'equippedSkills', 'potions', 'stats', 'weapon', 'armor', 'bag']:
+    for k in ['lv', 'exp', 'gold', 'bank', 'hp', 'mp', 'potions', 'stats', 'weapon', 'armor', 'bag']:
         check('v1 p.%s kept' % k, strip_ids(sp.get(k)) == strip_ids(op.get(k)), (sp.get(k), op.get(k)))
+    v1_spent_sp = sum(int(v) for v in (op.get('skillPts') or {}).values())
+    check('v1->v9 p.sp refunded without loss', sp.get('sp') == op.get('sp', 0) + v1_spent_sp, (sp.get('sp'), op.get('sp'), v1_spent_sp))
+    check('v1->v9 p.chars initialized & skills/passives/equippedSkills reset',
+          isinstance(sp.get('chars'), dict)
+          and all(c in sp['chars'] for c in ('stella', 'ruby', 'silia', 'chloe'))
+          and sp.get('skills') == {} and sp.get('passiveSkills') == {}
+          and sp.get('equippedSkills') == [None, None, None],
+          (sp.get('chars'), sp.get('skills'), sp.get('passiveSkills'), sp.get('equippedSkills')))
     check('v1 p.stones kept (+stone_time,+stone_core,+stone_genesis)',
           sp.get('stones', {}).get('stone_time') == 0 and sp.get('stones', {}).get('stone_core') == 0 and sp.get('stones', {}).get('stone_genesis') == 0 and all(sp['stones'].get(sk) == v for sk, v in op['stones'].items()),
           (sp.get('stones'), op.get('stones')))
@@ -84,13 +91,13 @@ with sync_playwright() as pw:
     check('v3 save is stable across reload', before == after)
     pg.evaluate('()=>{G.p.gold+=100; window.__rogue.save();}')
     s3 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('later saves are v8', s3['v'] == 8 and s3['p']['gold'] == op['gold'] + 100)
+    check('later saves are v9', s3['v'] == 9 and s3['p']['gold'] == op['gold'] + 100)
     ctx.close()
 
-    # 2. v2 → v5 変換 (Lv22: A上級 rec18 がクリア済みとなり A超級が解放される)
+    # 2. v2 → v9 変換 (Lv22: A上級 rec18 がクリア済みとなり A超級が解放される)
     ctx, pg, errs = fresh_page(b, raw_v2)
     stored2 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('v2 save is rewritten as v8', stored2.get('v') == 8, stored2.get('v'))
+    check('v2 save is rewritten as v9', stored2.get('v') == 9, stored2.get('v'))
     check('v2->v3 A.high cleared & super unlocked',
           pg.evaluate('()=>window.__rogue.isDiffUnlocked(G.p, window.__rogue.DUNGEONS[0], window.__rogue.DIFFS[3])') is True)
     check('v2->v3 C.high (rec33) not cleared & C.super locked',
@@ -100,13 +107,13 @@ with sync_playwright() as pw:
     check('no page errors (v2 migration)', errs == [], errs)
     ctx.close()
 
-    # 3. v が無いセーブは v1 扱い → v5 になる
+    # 3. v が無いセーブは v1 扱い → v9 になる
     nov = dict(v1); nov.pop('v')
     ctx, pg, errs = fresh_page(b, json.dumps(nov))
-    check('save without v is treated as v1 -> v8', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 8)
+    check('save without v is treated as v1 -> v9', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 9)
     ctx.close()
 
-    # 4. migrateSave 単体 (v1->v8, v3->v8, v4->v8, v5->v8, v6->v8, v7->v8)
+    # 4. migrateSave 単体 (v1->v9, v3->v9, v4->v9, v5->v9, v6->v9, v7->v9, v8->v9)
     ctx, pg, errs = fresh_page(b)
     r = pg.evaluate('''(v1)=>{const m=window.__rogue.migrateSave;
       const a=m(JSON.parse(JSON.stringify(v1)));
@@ -115,10 +122,11 @@ with sync_playwright() as pw:
       const v5=m({v:5,p:{lv:90,cleared:{A:{novice:true}},bagCap:60,weapon:{id:1,slot:'weapon',star:5,rarity:1,roll:0.9,props:[]}}});
       const v6=m({v:6,p:{lv:95,cleared:{},bagCap:60,dex:{enemies:{},items:{},rewards:{}}}});
       const v7=m({v:7,p:{lv:130,ending:true,cleared:{O:{extreme:true}},bagCap:60,ach:{}}});
-      return {null1:m(null), noP:m({v:1}), v1v:a&&a.v, same:m(a)===a, v3v:v3&&v3.v, hasTower:!!(v3&&v3.p&&v3.p.tower), v4v:v4&&v4.v, hasAbyss:!!(v4&&v4.p&&v4.p.abyss), hasMastery:!!(v4&&v4.p&&v4.p.mastery), propsOk:Array.isArray(v4&&v4.p&&v4.p.weapon&&v4.p.weapon.props)&&v4.p.weapon.props[0]==='flame', v5v:v5&&v5.v, hasDex:!!(v5&&v5.p&&v5.p.dex&&v5.p.dex.enemies&&v5.p.dex.enemies.a_boss&&v5.p.dex.items&&v5.p.dex.items.weapon_5), v6v:v6&&v6.v, hasAch:!!(v6&&v6.p&&v6.p.ach), v7v:v7&&v7.v, noticeShown:v7&&v7.p&&v7.p.unlockNoticeShown===true, future:m({v:99,p:{}}).v, str:m('x')};}''', v1)
+      const v8=m({v:8,p:{lv:60,sp:12,skillPts:{sword:30,magic:20,life:10,warrior:15,mage:10,cleric:0,hero:5},skills:{strike:true,fireball:true},passiveSkills:{sword15:true,warrior10:true},equippedSkills:['strike','fireball',null],cleared:{},bagCap:60,ach:{}}});
+      return {null1:m(null), noP:m({v:1}), v1v:a&&a.v, same:m(a)===a, v3v:v3&&v3.v, hasTower:!!(v3&&v3.p&&v3.p.tower), v4v:v4&&v4.v, hasAbyss:!!(v4&&v4.p&&v4.p.abyss), hasMastery:!!(v4&&v4.p&&v4.p.mastery), propsOk:Array.isArray(v4&&v4.p&&v4.p.weapon&&v4.p.weapon.props)&&v4.p.weapon.props[0]==='flame', v5v:v5&&v5.v, hasDex:!!(v5&&v5.p&&v5.p.dex&&v5.p.dex.enemies&&v5.p.dex.enemies.a_boss&&v5.p.dex.items&&v5.p.dex.items.weapon_5), v6v:v6&&v6.v, hasAch:!!(v6&&v6.p&&v6.p.ach), v7v:v7&&v7.v, noticeShown:v7&&v7.p&&v7.p.unlockNoticeShown===true, v8v:v8&&v8.v, v8sp:v8&&v8.p&&v8.p.sp, v8notice:v8&&v8.p&&v8.p.v9ResetNoticePending, v8chars:!!(v8&&v8.p&&v8.p.chars&&v8.p.chars.stella), future:m({v:99,p:{}}).v, str:m('x')};}''', v1)
     check('migrateSave(null/garbage) -> null', r['null1'] is None and r['noP'] is None and r['str'] is None, r)
-    check('migrateSave v1..v7 -> v8, v8 unchanged',
-          r['v1v'] == 8 and r['same'] and r['v3v'] == 8 and r['hasTower'] and r['v4v'] == 8 and r['hasAbyss'] and r['hasMastery'] and r['propsOk'] and r['v5v'] == 8 and r['hasDex'] and r['v6v'] == 8 and r['hasAch'] and r['v7v'] == 8 and r['noticeShown'], r)
+    check('migrateSave v1..v8 -> v9, v9 unchanged & v8->v9 SP refunded (12+90=102)',
+          r['v1v'] == 9 and r['same'] and r['v3v'] == 9 and r['hasTower'] and r['v4v'] == 9 and r['hasAbyss'] and r['hasMastery'] and r['propsOk'] and r['v5v'] == 9 and r['hasDex'] and r['v6v'] == 9 and r['hasAch'] and r['v7v'] == 9 and r['noticeShown'] and r['v8v'] == 9 and r['v8sp'] == 102 and r['v8notice'] is True and r['v8chars'], r)
     check('migrateSave leaves future versions alone', r['future'] == 99)
     ctx.close()
 
@@ -129,10 +137,10 @@ with sync_playwright() as pw:
         check('%s -> new game, no crash' % label, ok and errs == [], errs)
         ctx.close()
 
-    # 6. セーブなしの新規 → 保存すると v5
+    # 6. セーブなしの新規 → 保存すると v9
     ctx, pg, errs = fresh_page(b)
     pg.evaluate('()=>window.__rogue.save()')
-    check('new game saves as v8', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 8)
+    check('new game saves as v9', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 9)
     ctx.close()
     b.close()
 
