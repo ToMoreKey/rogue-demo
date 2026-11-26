@@ -91,7 +91,7 @@ with sync_playwright() as pw:
         ('mastery', '極意（共通パッシブ）'),
         ('data', 'データ')
     ]
-    exact_match = (len(all_hs) == 11 and all(
+    exact_match = (len(all_hs) == 12 and all(
         any(h.startswith(pref) for h in tab_headings[t]) for t, pref in expected_prefixes
     ))
     check('基準2_全12パネルが欠落・重複なく5タブに割り当て', exact_match, tab_headings)
