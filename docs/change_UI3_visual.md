@@ -11,3 +11,9 @@
    - 装備変更・鍛冶・スキル割り振り/リセット・極意で戦力が変わると、チップが光り「▲ +n」が浮かび、「戦力 A → B（+n）▲ 強くなった！」とトースト（戦闘中は出さない）。
    - 結果画面に「出撃前→現在」の成長パネル（総合戦力・Lv・攻撃力・防御力・最大HP・最大MP・武器/防具の変更）。変化がなければ強化のヒントを表示。
 5. **テスト**: `tools/test_ui3.py`（17シーンの固有性・実描画、区切り見出し、360px横スクロールなし、アリーナ背景、比較の強/弱/同等と自動装備時の「出撃前」比較、結果画面からの装備変更、HUD戦力と通知）。`test_r1b` の berserk テストは乱数を固定して安定化。sw `rogue-v51`。
+
+## UI-3b 街・ステータス・ヘルプの背景バナー
+- `src/js/62_scenes.js` に11シーン追加（town/inn/shop/smith/bank/st_hero/st_gear/st_skill/st_mastery/st_data/help）と `SCENE_ACCENT`。
+- `viewHero(id, icon, title, sub)`（60_render.js）で各画面の先頭にバナー表示。街広場・各施設（宿/売却/鍛冶/銀行）・ステータス5タブ（タブごとに別背景）・ヘルプ。
+- CSS: `.view-hero` / `.vh-ic` / `.vh-tx`（main.css 末尾）。
+- テスト: `tools/test_ui3.py` 基準6a〜6c（バナー背景の有無・横スクロールなし）。全テストOK。sw は `rogue-v52`。

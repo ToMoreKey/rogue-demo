@@ -35,6 +35,10 @@ function renderTown() {
   }
 }
 
+function viewHero(id, icon, title, sub) {
+  return `<div class="view-hero" style="--scene:${sceneUri(id)};--ac:${SCENE_ACCENT[id] || '#9fb'}"><span class="vh-ic">${icon}</span><div class="vh-tx"><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ''}</div></div>`;
+}
+
 function renderPlaza() {
   const p = G.p;
   const hpFull = p.hp >= maxHp(p);
@@ -50,10 +54,8 @@ function renderPlaza() {
   ];
 
   $('#view-town').innerHTML = `
-    <div class="panel">
-      <div class="town-hero"><div><h2>福音の里　広場</h2><p class="sub" style="margin:0">ここにいる間、HPが1秒ごとに <b style="color:var(--fg)">+2</b> 回復します。</p></div></div>
-      <p class="sub" style="margin:8px 0 0">${esc(hpNote)}</p>
-    </div>
+    ${viewHero('town', '🏘️', '福音の里　広場', 'ここにいる間、HPが1秒ごとに <b>+2</b> 回復します。')}
+    <div class="panel"><p class="sub" style="margin:0">${esc(hpNote)}</p></div>
     <div class="panel">
       <h2 style="margin:0 0 12px">施設</h2>
       <div class="plaza-grid">
@@ -156,9 +158,9 @@ function renderFacility(fac) {
 
   const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行' };
   $('#view-town').innerHTML = `
+    ${viewHero(fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦' }[fac] || '', FAC_NAMES[fac] || '', '')}
     <div class="facility-back-bar">
       <button class="btn small" data-act="townBack">← 広場に戻る</button>
-      <span class="facility-title">${FAC_NAMES[fac] || ''}</span>
     </div>
     <div class="panel">${content}</div>`;
 }
@@ -1312,7 +1314,9 @@ function renderStatus() {
         <p class="sub" style="margin:6px 0 0;font-size:11px">進行状況（Lv・到達ダンジョン・プレイ時間など）を1日1回匿名で送信します。名前やセーブデータ等の個人情報は送信しません。</p>
       </div></div>`;
   const bodyByTab = { hero: heroPanels, gear: gearPanels, skill: skillPanels, mastery: masteryPanels, data: dataPanels };
-  $('#view-status').innerHTML = tabBarHtml + (bodyByTab[tab] || heroPanels);
+  const STH = { hero: ['⚔️', '勇者の状態', '能力・経験・称号'], gear: ['🛡️', '装備', '武器・防具・所持品'], skill: ['📜', 'スキル', '習得と装備の管理'], mastery: ['🏯', '極意', '達成で得られる恒久強化'], data: ['📊', 'データ', '記録・設定・セーブ'] };
+  const sth = STH[tab] || STH.hero;
+  $('#view-status').innerHTML = viewHero('st_' + (STH[tab] ? tab : 'hero'), sth[0], sth[1], sth[2]) + tabBarHtml + (bodyByTab[tab] || heroPanels);
 }
 
 /* ================= render: modal ================= */
@@ -2201,7 +2205,7 @@ function renderHelp() {
   </div>`;
   const bodyByTab = { intro: introPanels, world: worldPanels, skill: skillPanels, status: statusPanels, endgame: endgamePanels };
   const footHtml = `<div class="help-foot" style="text-align:center;padding:4px 0"><button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button></div>`;
-  $('#view-help').innerHTML = tabBarHtml + (bodyByTab[tab] || introPanels) + footHtml;
+  $('#view-help').innerHTML = viewHero('help', '📖', 'ヘルプ', '遊び方・世界観・攻略の手引き') + tabBarHtml + (bodyByTab[tab] || introPanels) + footHtml;
 }
 
 /* ================= render: all ================= */

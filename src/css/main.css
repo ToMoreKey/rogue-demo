@@ -488,3 +488,12 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .gr-c.up b{color:#7dffa8}
 .gr-gear{display:flex;gap:8px;font-size:12px;margin-top:4px}.gr-gl{flex:none;width:2.6em;color:var(--muted)}.gr-gn{flex:1;min-width:0}.gr-gn small{color:var(--muted);margin-left:4px}
 @media (prefers-reduced-motion:reduce){.pw.pw-up,.pw.pw-down,.pw-float{animation:none}}
+
+/* 街・ステータス・ヘルプのバナー */
+.view-hero{position:relative;display:flex;align-items:center;gap:12px;min-height:92px;padding:12px 16px;margin:0 0 10px;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.1);border-left:4px solid var(--ac,#888);background:linear-gradient(90deg,rgba(6,8,12,.78),rgba(6,8,12,.15) 75%),var(--scene,none) center/cover no-repeat}
+.vh-ic{flex:none;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;background:rgba(6,8,12,.55);border:1px solid var(--ac,#888);font-size:24px;box-shadow:0 0 12px rgba(0,0,0,.5)}
+.vh-tx{min-width:0}
+.vh-tx h2{margin:0;font-size:18px;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.vh-tx p{margin:3px 0 0;font-size:12px;color:#e6ebf5;text-shadow:0 1px 5px rgba(0,0,0,.9)}
+.vh-tx p b{color:#fff}
+#view-town,#view-status,#view-help{background:radial-gradient(120% 60% at 50% 0,rgba(255,255,255,.035),transparent 60%)}

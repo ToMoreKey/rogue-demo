@@ -117,6 +117,22 @@ with sync_playwright() as pw:
     check('基準5a_HUDに戦力が表示され、装備変更で増える', r5['after'] > r5['before'] and r5['hud1'].replace(',', '') == str(r5['after']), r5)
     check('基準5b_装備変更直後に「戦力 A → B ▲」の通知とチップのアニメーションが出る', '戦力' in r5['txt'] and '▲' in r5['txt'] and 'pw-up' in r5['chipCls'], r5)
 
+    # 基準6: 街・ステータス・ヘルプのバナー背景
+    r6 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); const out = {};
+        const chk = (view, sel) => { G.view = view; R.renderAll(); const el = document.querySelector(sel + ' .view-hero'); const bg = el ? getComputedStyle(el).backgroundImage : ''; return { has: !!el, bg: bg.includes('data:image/svg') || bg.includes('url('), title: el ? el.querySelector('h2').textContent : '' }; };
+        out.town = chk('town', '#view-town');
+        out.help = chk('help', '#view-help');
+        out.status = {};
+        for (const t of ['hero','gear','skill','mastery','data']) { G.statusTab = t; out.status[t] = chk('status', '#view-status'); }
+        G.view = 'town'; G.townFac = 'smith'; try { R.renderAll(); } catch (e) {}
+        out.hscroll = document.documentElement.scrollWidth <= window.innerWidth + 1;
+        return out;
+    }''')
+    check('基準6a_街・ヘルプにバナー背景がある', r6['town']['has'] and r6['town']['bg'] and r6['help']['has'] and r6['help']['bg'], r6)
+    check('基準6b_ステータス5タブすべてにバナー背景がある', all(v['has'] and v['bg'] for v in r6['status'].values()), r6)
+    check('基準6c_横スクロールが発生しない', r6['hscroll'], r6)
+
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()
 
