@@ -528,3 +528,37 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .npc-name{font-family:var(--font-display);font-size:13px;color:var(--nc)}
 .npc-name small{margin-left:8px;font-size:10px;color:var(--muted)}
 .npc-bub p{margin:3px 0 0;font-size:14px;line-height:1.5}
+
+/* 戦闘力 */
+.pw{border-color:var(--rc,var(--line))}
+.pwpanel{border-top-color:var(--rc)!important}
+.pwp-top{display:flex;align-items:flex-end;gap:14px;margin-top:6px}
+.pwp-num{font-family:var(--font-display);font-size:44px;line-height:1;color:var(--rc);text-shadow:0 0 18px color-mix(in srgb,var(--rc) 55%,transparent);font-variant-numeric:tabular-nums}
+.pwp-rank{display:grid;gap:2px;padding-bottom:4px;min-width:0}
+.pwp-badge{display:inline-block;font-weight:800;font-size:14px;padding:1px 10px;border-radius:999px;background:var(--rc);color:#10151a;justify-self:start}
+.pwp-rank small{color:var(--muted);font-size:11px}
+.pwp-bar{height:8px;margin-top:10px;border-radius:5px;background:rgba(0,0,0,.4);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.pwp-bar i{display:block;height:100%;background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 50%,#fff),var(--rc))}
+.pwp-mix{display:flex;height:12px;margin-top:10px;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.pwp-mix i{display:block;height:100%}
+.pwp-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;color:var(--muted)}
+.pwp-leg u{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;text-decoration:none}
+.pwp-tg{margin:10px 0 0;font-size:13px}
+.pwp-tg em,.dc-pw em{font-style:normal;font-weight:800;padding:0 7px;border-radius:999px;color:#10151a}
+.v-easy em{background:#58e08a}.v-ok em{background:#ffd45a}.v-warn em{background:#ff9a4a}.v-bad em{background:#ff6a6a}
+.dc-pw{font-size:12px;color:var(--muted)}.dc-pw b{color:var(--fg)}
+/* 戦闘力の残像（強化＝大きく膨らむ／弱体化＝小さく縮む） */
+.pw-ghosts{position:fixed;left:0;right:0;top:34%;z-index:60;pointer-events:none;display:flex;justify-content:center;align-items:center;flex-direction:column}
+.pw-gh{position:absolute;top:50%;left:50%;font-family:var(--font-display);font-size:54px;white-space:nowrap;font-variant-numeric:tabular-nums;transform:translate(-50%,-50%);opacity:0}
+.pw-gh.main{position:relative;top:auto;left:auto;transform:none;color:#fff;text-shadow:0 0 18px var(--rc),0 2px 8px rgba(0,0,0,.8);opacity:0;animation:pwMain 1.7s ease-out forwards}
+.pw-lab{font-size:13px;font-weight:700;color:var(--rc);text-shadow:0 1px 6px rgba(0,0,0,.9);animation:pwMain 1.7s ease-out forwards;opacity:0}
+.pw-dl{font-size:16px;font-weight:800;margin-top:2px;animation:pwMain 1.7s ease-out forwards;opacity:0;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.pw-ghosts.up .pw-dl{color:#7dffa8}.pw-ghosts.down .pw-dl{color:#9ab4ff}
+.pw-gh{color:var(--rc);-webkit-text-stroke:1px color-mix(in srgb,var(--rc) 70%,#fff)}
+.pw-ghosts.up .pw-gh:not(.main){animation:ghUp 1.2s ease-out forwards}
+.pw-ghosts.down .pw-gh:not(.main){animation:ghDown 1.2s ease-in forwards}
+.pw-gh.g0{animation-delay:0s!important}.pw-gh.g1{animation-delay:.1s!important}.pw-gh.g2{animation-delay:.2s!important}.pw-gh.g3{animation-delay:.3s!important}
+@keyframes ghUp{0%{opacity:.7;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)}}
+@keyframes ghDown{0%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}25%{opacity:.6}100%{opacity:0;transform:translate(-50%,-50%) scale(.35)}}
+@keyframes pwMain{0%{opacity:0;transform:scale(.9)}15%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.pw-ghosts{display:none}}

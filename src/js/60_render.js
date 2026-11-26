@@ -8,11 +8,24 @@ function showPowerChange(a, b) {
   const fl = document.createElement('span'); fl.className = 'pw-float ' + (d > 0 ? 'up' : 'down');
   fl.textContent = (d > 0 ? '▲ +' : '▼ −') + fmt(Math.abs(d));
   el.appendChild(fl); setTimeout(() => fl.remove(), 1600);
-  toast(`戦力 ${fmt(a)} → ${fmt(b)}（${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}）${d > 0 ? '▲ 強くなった！' : '▼'}`);
+  toast(`戦闘力 ${fmt(a)} → ${fmt(b)}（${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}）${d > 0 ? '▲ 強くなった！' : '▼'}`);
+  powerAfterimage(a, b);
+}
+// 戦闘力が上がると「大きくなる残像」、下がると「小さくなる残像」を画面中央に出す
+function powerAfterimage(a, b) {
+  if (G.headless || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  const up = b > a, rk = powerRank(b);
+  const old = document.getElementById('pw-ghosts'); if (old) old.remove();
+  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', rk.color);
+  let h = '';
+  for (let i = 0; i < 4; i++) h += `<span class="pw-gh g${i}">${fmt(b)}</span>`;
+  box.innerHTML = `<div class="pw-lab">戦闘力 ${rk.name}</div>${h}<span class="pw-gh main">${fmt(b)}</span><div class="pw-dl">${up ? '▲ +' : '▼ −'}${fmt(Math.abs(b - a))}</div>`;
+  document.body.appendChild(box); setTimeout(() => box.remove(), 1900);
 }
 function renderHUD() {
   const p = G.p, mh = maxHp(p), mm = maxMp(p), need = expNeed(p.lv);
   { const pw = playerPower(p); const pe = $('#h-pwv'); if (pe) pe.textContent = fmt(pw);
+    const pc = $('#h-pw'); if (pc) { const rk = powerRank(pw); pc.style.setProperty('--rc', rk.color); pc.title = `戦闘力（攻撃＋防御＋HP/8＋MP/20）ランク：${rk.name}`; }
     if (G._pwPrev != null && pw !== G._pwPrev && G._pwArm && Date.now() - G._pwArm < 900 && !G.run && !G.headless) showPowerChange(G._pwPrev, pw);
     G._pwPrev = pw; }
   $('#h-lv').textContent = p.lv;
@@ -198,7 +211,7 @@ function renderDungeonSelect() {
         return `<button class="seg-b ${ok && df.id === sel.id ? 'on' : ''}" aria-pressed="${ok && df.id === sel.id}" data-act="diff" data-d="${d.id}" data-df="${df.id}" ${ok ? '' : 'disabled'}>${ok ? (done ? '✓' : '') + df.name : '🔒' + df.name}<small>${ok ? `${df.floors}階` : '未解放'}</small></button>`;
       }).join('')}</div>
       <p class="dc-info">${dgUnlocked
-        ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>`
+        ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>${(() => { const ri = DIFFS.findIndex(x => x.id === sel.id), rf = refPower(d, ri), v = powerVerdict(playerPower(p0), rf); return `<br><span class="dc-pw v-${v.k}">目安戦闘力 <b>${fmt(rf)}</b>　あなた <b>${fmt(playerPower(p0))}</b>　<em>${v.label}</em></span>`; })()}`
         : `解放条件：ダンジョン${d.unlock.d}（${unlockReqDf}）をクリア`}</p>
       <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></div></article>`;
   }).join('') + dgSection('エンドコンテンツ', '塔・深淵') + (() => {
@@ -1208,7 +1221,22 @@ function renderStatus() {
     { id: 'data',    label: 'データ', dot: false }
   ];
   const tabBarHtml = renderSubTabs(tabs, tab, 'statusTab', 'ステータス項目');
+  const powerPanel = (() => {
+    const pw = playerPower(p), rk = powerRank(pw), at = playerAtk(p), df = playerDef(p), hp = Math.round(maxHp(p) / 8), mp = Math.round(maxMp(p) / 20);
+    const tot = Math.max(1, at + df + hp + mp), seg = (v, c, n) => `<i style="width:${(v / tot * 100).toFixed(1)}%;background:${c}" title="${n} ${fmt(v)}"></i>`;
+    // 挑戦可能で未踏破のうち、いちばん手強いものの目安
+    let tgt = null; for (const dd of DUNGEONS) DIFFS.forEach((dfx, i) => { if (isDiffUnlocked(p, dd, dfx) && !(p.cleared && p.cleared[dd.id] && p.cleared[dd.id][dfx.id])) { if (!tgt || refPower(dd, i) > refPower(tgt.d, tgt.i)) tgt = { d: dd, i }; } });
+    const tv = tgt ? powerVerdict(pw, refPower(tgt.d, tgt.i)) : null;
+    return `<div class="panel pwpanel" style="--rc:${rk.color}"><h2>戦闘力</h2>
+      <div class="pwp-top"><div class="pwp-num" id="pwp-num">${fmt(pw)}</div><div class="pwp-rank"><span class="pwp-badge">${rk.name}</span><small>${rk.next ? `次のランク「${rk.next.name}」まで あと ${fmt(Math.max(0, rk.next.min - pw))}` : '最高ランクです'}</small></div></div>
+      <div class="pwp-bar"><i style="width:${(rk.pct * 100).toFixed(1)}%"></i></div>
+      <div class="pwp-mix">${seg(at, '#ff8a6a', '攻撃力')}${seg(df, '#6aa6ff', '防御力')}${seg(hp, '#58c98a', 'HP/8')}${seg(mp, '#b48cff', 'MP/20')}</div>
+      <div class="pwp-leg"><span><u style="background:#ff8a6a"></u>攻撃 ${fmt(at)}</span><span><u style="background:#6aa6ff"></u>防御 ${fmt(df)}</span><span><u style="background:#58c98a"></u>HP ${fmt(hp)}</span><span><u style="background:#b48cff"></u>MP ${fmt(mp)}</span></div>
+      ${tv ? `<p class="pwp-tg v-${tv.k}">次の挑戦先「ダンジョン${tgt.d.id}・${DIFFS[tgt.i].name}」の目安は <b>${fmt(refPower(tgt.d, tgt.i))}</b>　→　<em>${tv.label}</em></p>` : ''}
+      <p class="sub" style="margin:6px 0 0;font-size:11px">戦闘力＝攻撃力＋防御力＋最大HP÷8＋最大MP÷20。Lv・装備・スキル・極意すべての強化が反映されます（目安は標準的な装備での値）。</p></div>`;
+  })();
   const heroPanels = `
+    ${powerPanel}
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
         <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
@@ -1795,10 +1823,10 @@ function growthHtml(l) {
     return `<div class="gr-gear"><span class="gr-gl">${label}</span>${same ? `<span class="gr-gn">${esc(y.name)}　+${fmt(y.pw)}<small>（変更なし）</small></span>` : `<span class="gr-gn">${x ? esc(x.name) + ' +' + fmt(x.pw) : 'なし'} → <b>${y ? esc(y.name) + ' +' + fmt(y.pw) : 'なし'}</b><span class="gr-d ${(y ? y.pw : 0) >= (x ? x.pw : 0) ? 'up' : 'down'}">${dsign((y ? y.pw : 0) - (x ? x.pw : 0))}</span></span>`}</div>`;
   };
   return `<div class="growth ${dPow > 0 ? 'is-up' : ''}">
-    <div class="gr-head"><span>総合戦力</span><b>${fmt(a.power)} → ${fmt(b.power)}</b><span class="gr-d ${dPow > 0 ? 'up' : dPow < 0 ? 'down' : 'same'}">${dPow > 0 ? '▲ ' : dPow < 0 ? '▼ ' : ''}${dsign(dPow)}</span></div>
+    <div class="gr-head"><span>戦闘力</span><b>${fmt(a.power)} → ${fmt(b.power)}</b><span class="gr-d ${dPow > 0 ? 'up' : dPow < 0 ? 'down' : 'same'}">${dPow > 0 ? '▲ ' : dPow < 0 ? '▼ ' : ''}${dsign(dPow)}</span></div>
     <div class="gr-grid">${rows.map(([n, x, y]) => `<div class="gr-c ${y > x ? 'up' : ''}"><small>${n}</small><span>${fmt(x)}${y !== x ? ` → <b>${fmt(y)}</b>` : ''}</span>${y !== x ? `<em>${dsign(y - x)}</em>` : ''}</div>`).join('')}</div>
     ${gear('weapon', '武器')}${gear('armor', '防具')}
-    ${dPow <= 0 ? '<p class="sub" style="margin:6px 0 0">戦力の変化なし。装備の更新やSPの割り振りで強化しよう。</p>' : ''}
+    ${dPow <= 0 ? '<p class="sub" style="margin:6px 0 0">戦闘力の変化なし。装備の更新やSPの割り振りで強化しよう。</p>' : ''}
   </div>`;
 }
 function openModal() {

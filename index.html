@@ -542,6 +542,40 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .npc-name{font-family:var(--font-display);font-size:13px;color:var(--nc)}
 .npc-name small{margin-left:8px;font-size:10px;color:var(--muted)}
 .npc-bub p{margin:3px 0 0;font-size:14px;line-height:1.5}
+
+/* 戦闘力 */
+.pw{border-color:var(--rc,var(--line))}
+.pwpanel{border-top-color:var(--rc)!important}
+.pwp-top{display:flex;align-items:flex-end;gap:14px;margin-top:6px}
+.pwp-num{font-family:var(--font-display);font-size:44px;line-height:1;color:var(--rc);text-shadow:0 0 18px color-mix(in srgb,var(--rc) 55%,transparent);font-variant-numeric:tabular-nums}
+.pwp-rank{display:grid;gap:2px;padding-bottom:4px;min-width:0}
+.pwp-badge{display:inline-block;font-weight:800;font-size:14px;padding:1px 10px;border-radius:999px;background:var(--rc);color:#10151a;justify-self:start}
+.pwp-rank small{color:var(--muted);font-size:11px}
+.pwp-bar{height:8px;margin-top:10px;border-radius:5px;background:rgba(0,0,0,.4);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.pwp-bar i{display:block;height:100%;background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 50%,#fff),var(--rc))}
+.pwp-mix{display:flex;height:12px;margin-top:10px;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.pwp-mix i{display:block;height:100%}
+.pwp-leg{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;color:var(--muted)}
+.pwp-leg u{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;text-decoration:none}
+.pwp-tg{margin:10px 0 0;font-size:13px}
+.pwp-tg em,.dc-pw em{font-style:normal;font-weight:800;padding:0 7px;border-radius:999px;color:#10151a}
+.v-easy em{background:#58e08a}.v-ok em{background:#ffd45a}.v-warn em{background:#ff9a4a}.v-bad em{background:#ff6a6a}
+.dc-pw{font-size:12px;color:var(--muted)}.dc-pw b{color:var(--fg)}
+/* 戦闘力の残像（強化＝大きく膨らむ／弱体化＝小さく縮む） */
+.pw-ghosts{position:fixed;left:0;right:0;top:34%;z-index:60;pointer-events:none;display:flex;justify-content:center;align-items:center;flex-direction:column}
+.pw-gh{position:absolute;top:50%;left:50%;font-family:var(--font-display);font-size:54px;white-space:nowrap;font-variant-numeric:tabular-nums;transform:translate(-50%,-50%);opacity:0}
+.pw-gh.main{position:relative;top:auto;left:auto;transform:none;color:#fff;text-shadow:0 0 18px var(--rc),0 2px 8px rgba(0,0,0,.8);opacity:0;animation:pwMain 1.7s ease-out forwards}
+.pw-lab{font-size:13px;font-weight:700;color:var(--rc);text-shadow:0 1px 6px rgba(0,0,0,.9);animation:pwMain 1.7s ease-out forwards;opacity:0}
+.pw-dl{font-size:16px;font-weight:800;margin-top:2px;animation:pwMain 1.7s ease-out forwards;opacity:0;text-shadow:0 1px 6px rgba(0,0,0,.9)}
+.pw-ghosts.up .pw-dl{color:#7dffa8}.pw-ghosts.down .pw-dl{color:#9ab4ff}
+.pw-gh{color:var(--rc);-webkit-text-stroke:1px color-mix(in srgb,var(--rc) 70%,#fff)}
+.pw-ghosts.up .pw-gh:not(.main){animation:ghUp 1.2s ease-out forwards}
+.pw-ghosts.down .pw-gh:not(.main){animation:ghDown 1.2s ease-in forwards}
+.pw-gh.g0{animation-delay:0s!important}.pw-gh.g1{animation-delay:.1s!important}.pw-gh.g2{animation-delay:.2s!important}.pw-gh.g3{animation-delay:.3s!important}
+@keyframes ghUp{0%{opacity:.7;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)}}
+@keyframes ghDown{0%{opacity:0;transform:translate(-50%,-50%) scale(2.2)}25%{opacity:.6}100%{opacity:0;transform:translate(-50%,-50%) scale(.35)}}
+@keyframes pwMain{0%{opacity:0;transform:scale(.9)}15%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.pw-ghosts{display:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -555,7 +589,7 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
       </div>
     </div>
     <div class="gauges">
-      <div class="g wide"><div class="g-label"><span>LV <span id="h-lv">1</span><span class="pw" id="h-pw" title="総合戦力（攻撃＋防御＋HP/8＋MP/20）">戦力 <b id="h-pwv">0</b></span></span><span id="h-exp">0/0</span></div><div class="gauge exp"><i id="h-expbar"></i></div></div>
+      <div class="g wide"><div class="g-label"><span>LV <span id="h-lv">1</span><span class="pw" id="h-pw" title="戦闘力（攻撃＋防御＋HP/8＋MP/20）">戦闘力 <b id="h-pwv">0</b></span></span><span id="h-exp">0/0</span></div><div class="gauge exp"><i id="h-expbar"></i></div></div>
       <div class="g"><div class="g-label"><span>HP</span><span id="h-hp">0/0</span></div><div class="gauge hp" id="h-hpg"><i id="h-hpbar"></i></div></div>
       <div class="g"><div class="g-label"><span>MP</span><span id="h-mp">0/0</span></div><div class="gauge mp"><i id="h-mpbar"></i></div></div>
     </div>
@@ -652,7 +686,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v56';
+const APP_VERSION = 'rogue-v57';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2292,6 +2326,33 @@ const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.passiv
 const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? masteryBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 // 総合戦力（UI表示用）: 攻撃力＋防御力＋最大HP/8＋最大MP/20。装備・Lv・スキル・極意の強化が一目でわかる指標（戦闘計算には使わない）
 const playerPower = p => Math.round(playerAtk(p) + playerDef(p) + maxHp(p) / 8 + maxMp(p) / 20);
+// ---- 戦闘力（総合戦力）のランクと、ダンジョン別の目安 ----
+const POWER_RANKS = [
+  { min: 0,    name: '見習い',   color: '#9aa7b4' }, { min: 100,  name: '駆け出し', color: '#7ec8a0' }, { min: 180,  name: '冒険者',   color: '#5ad0e0' },
+  { min: 280,  name: '一人前',   color: '#6aa6ff' }, { min: 400,  name: '熟練者',   color: '#b48cff' }, { min: 550,  name: '精鋭',     color: '#ff8ad8' },
+  { min: 800,  name: '英雄',     color: '#ffb347' }, { min: 1200, name: '伝説',     color: '#ff7a5a' }, { min: 2000, name: '神話',     color: '#ffe066' }
+];
+function powerRank(pw) {
+  let i = 0; for (let k = 0; k < POWER_RANKS.length; k++) if (pw >= POWER_RANKS[k].min) i = k;
+  const cur = POWER_RANKS[i], nxt = POWER_RANKS[i + 1] || null;
+  return { idx: i, name: cur.name, color: cur.color, min: cur.min, next: nxt, pct: nxt ? Math.max(0, Math.min(1, (pw - cur.min) / (nxt.min - cur.min))) : 1 };
+}
+// 各ダンジョン×難易度の「目安戦闘力」：推奨Lv・そのダンジョンの装備★に見合った標準装備で計算（実際の式を使うので調整に追従する）
+const _refPow = {};
+function refPower(d, dfIdx) {
+  const key = d.id + dfIdx; if (_refPow[key] != null) return _refPow[key];
+  const p = newPlayer(); p.lv = d.rec[dfIdx];
+  const st = Math.min(d.maxStar, Math.max(1, Math.round(d.maxStar * (0.55 + 0.1 * dfIdx))));
+  for (const slot of ['weapon', 'armor']) p[slot] = { id: 0, slot, star: st, rarity: 1, roll: 0.7, props: [], prop: null };
+  return (_refPow[key] = playerPower(p));
+}
+function powerVerdict(mine, ref) {
+  const r = mine / Math.max(1, ref);
+  if (r >= 1.3) return { k: 'easy', label: '余裕', r };
+  if (r >= 0.9) return { k: 'ok', label: '適正', r };
+  if (r >= 0.65) return { k: 'warn', label: 'やや危険', r };
+  return { k: 'bad', label: '危険', r };
+}
 const gearSnap = it => it ? { id: it.id, name: itemName(it), pw: gearPower(it), score: gearScore(it) } : null;
 const statSnap = p => ({ lv: p.lv, atk: playerAtk(p), def: playerDef(p), hp: maxHp(p), mp: maxMp(p), power: playerPower(p), weapon: gearSnap(p.weapon), armor: gearSnap(p.armor) });
 
@@ -4879,11 +4940,24 @@ function showPowerChange(a, b) {
   const fl = document.createElement('span'); fl.className = 'pw-float ' + (d > 0 ? 'up' : 'down');
   fl.textContent = (d > 0 ? '▲ +' : '▼ −') + fmt(Math.abs(d));
   el.appendChild(fl); setTimeout(() => fl.remove(), 1600);
-  toast(`戦力 ${fmt(a)} → ${fmt(b)}（${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}）${d > 0 ? '▲ 強くなった！' : '▼'}`);
+  toast(`戦闘力 ${fmt(a)} → ${fmt(b)}（${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}）${d > 0 ? '▲ 強くなった！' : '▼'}`);
+  powerAfterimage(a, b);
+}
+// 戦闘力が上がると「大きくなる残像」、下がると「小さくなる残像」を画面中央に出す
+function powerAfterimage(a, b) {
+  if (G.headless || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  const up = b > a, rk = powerRank(b);
+  const old = document.getElementById('pw-ghosts'); if (old) old.remove();
+  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', rk.color);
+  let h = '';
+  for (let i = 0; i < 4; i++) h += `<span class="pw-gh g${i}">${fmt(b)}</span>`;
+  box.innerHTML = `<div class="pw-lab">戦闘力 ${rk.name}</div>${h}<span class="pw-gh main">${fmt(b)}</span><div class="pw-dl">${up ? '▲ +' : '▼ −'}${fmt(Math.abs(b - a))}</div>`;
+  document.body.appendChild(box); setTimeout(() => box.remove(), 1900);
 }
 function renderHUD() {
   const p = G.p, mh = maxHp(p), mm = maxMp(p), need = expNeed(p.lv);
   { const pw = playerPower(p); const pe = $('#h-pwv'); if (pe) pe.textContent = fmt(pw);
+    const pc = $('#h-pw'); if (pc) { const rk = powerRank(pw); pc.style.setProperty('--rc', rk.color); pc.title = `戦闘力（攻撃＋防御＋HP/8＋MP/20）ランク：${rk.name}`; }
     if (G._pwPrev != null && pw !== G._pwPrev && G._pwArm && Date.now() - G._pwArm < 900 && !G.run && !G.headless) showPowerChange(G._pwPrev, pw);
     G._pwPrev = pw; }
   $('#h-lv').textContent = p.lv;
@@ -5069,7 +5143,7 @@ function renderDungeonSelect() {
         return `<button class="seg-b ${ok && df.id === sel.id ? 'on' : ''}" aria-pressed="${ok && df.id === sel.id}" data-act="diff" data-d="${d.id}" data-df="${df.id}" ${ok ? '' : 'disabled'}>${ok ? (done ? '✓' : '') + df.name : '🔒' + df.name}<small>${ok ? `${df.floors}階` : '未解放'}</small></button>`;
       }).join('')}</div>
       <p class="dc-info">${dgUnlocked
-        ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>`
+        ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>${(() => { const ri = DIFFS.findIndex(x => x.id === sel.id), rf = refPower(d, ri), v = powerVerdict(playerPower(p0), rf); return `<br><span class="dc-pw v-${v.k}">目安戦闘力 <b>${fmt(rf)}</b>　あなた <b>${fmt(playerPower(p0))}</b>　<em>${v.label}</em></span>`; })()}`
         : `解放条件：ダンジョン${d.unlock.d}（${unlockReqDf}）をクリア`}</p>
       <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></div></article>`;
   }).join('') + dgSection('エンドコンテンツ', '塔・深淵') + (() => {
@@ -6079,7 +6153,22 @@ function renderStatus() {
     { id: 'data',    label: 'データ', dot: false }
   ];
   const tabBarHtml = renderSubTabs(tabs, tab, 'statusTab', 'ステータス項目');
+  const powerPanel = (() => {
+    const pw = playerPower(p), rk = powerRank(pw), at = playerAtk(p), df = playerDef(p), hp = Math.round(maxHp(p) / 8), mp = Math.round(maxMp(p) / 20);
+    const tot = Math.max(1, at + df + hp + mp), seg = (v, c, n) => `<i style="width:${(v / tot * 100).toFixed(1)}%;background:${c}" title="${n} ${fmt(v)}"></i>`;
+    // 挑戦可能で未踏破のうち、いちばん手強いものの目安
+    let tgt = null; for (const dd of DUNGEONS) DIFFS.forEach((dfx, i) => { if (isDiffUnlocked(p, dd, dfx) && !(p.cleared && p.cleared[dd.id] && p.cleared[dd.id][dfx.id])) { if (!tgt || refPower(dd, i) > refPower(tgt.d, tgt.i)) tgt = { d: dd, i }; } });
+    const tv = tgt ? powerVerdict(pw, refPower(tgt.d, tgt.i)) : null;
+    return `<div class="panel pwpanel" style="--rc:${rk.color}"><h2>戦闘力</h2>
+      <div class="pwp-top"><div class="pwp-num" id="pwp-num">${fmt(pw)}</div><div class="pwp-rank"><span class="pwp-badge">${rk.name}</span><small>${rk.next ? `次のランク「${rk.next.name}」まで あと ${fmt(Math.max(0, rk.next.min - pw))}` : '最高ランクです'}</small></div></div>
+      <div class="pwp-bar"><i style="width:${(rk.pct * 100).toFixed(1)}%"></i></div>
+      <div class="pwp-mix">${seg(at, '#ff8a6a', '攻撃力')}${seg(df, '#6aa6ff', '防御力')}${seg(hp, '#58c98a', 'HP/8')}${seg(mp, '#b48cff', 'MP/20')}</div>
+      <div class="pwp-leg"><span><u style="background:#ff8a6a"></u>攻撃 ${fmt(at)}</span><span><u style="background:#6aa6ff"></u>防御 ${fmt(df)}</span><span><u style="background:#58c98a"></u>HP ${fmt(hp)}</span><span><u style="background:#b48cff"></u>MP ${fmt(mp)}</span></div>
+      ${tv ? `<p class="pwp-tg v-${tv.k}">次の挑戦先「ダンジョン${tgt.d.id}・${DIFFS[tgt.i].name}」の目安は <b>${fmt(refPower(tgt.d, tgt.i))}</b>　→　<em>${tv.label}</em></p>` : ''}
+      <p class="sub" style="margin:6px 0 0;font-size:11px">戦闘力＝攻撃力＋防御力＋最大HP÷8＋最大MP÷20。Lv・装備・スキル・極意すべての強化が反映されます（目安は標準的な装備での値）。</p></div>`;
+  })();
   const heroPanels = `
+    ${powerPanel}
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
         <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
@@ -6666,10 +6755,10 @@ function growthHtml(l) {
     return `<div class="gr-gear"><span class="gr-gl">${label}</span>${same ? `<span class="gr-gn">${esc(y.name)}　+${fmt(y.pw)}<small>（変更なし）</small></span>` : `<span class="gr-gn">${x ? esc(x.name) + ' +' + fmt(x.pw) : 'なし'} → <b>${y ? esc(y.name) + ' +' + fmt(y.pw) : 'なし'}</b><span class="gr-d ${(y ? y.pw : 0) >= (x ? x.pw : 0) ? 'up' : 'down'}">${dsign((y ? y.pw : 0) - (x ? x.pw : 0))}</span></span>`}</div>`;
   };
   return `<div class="growth ${dPow > 0 ? 'is-up' : ''}">
-    <div class="gr-head"><span>総合戦力</span><b>${fmt(a.power)} → ${fmt(b.power)}</b><span class="gr-d ${dPow > 0 ? 'up' : dPow < 0 ? 'down' : 'same'}">${dPow > 0 ? '▲ ' : dPow < 0 ? '▼ ' : ''}${dsign(dPow)}</span></div>
+    <div class="gr-head"><span>戦闘力</span><b>${fmt(a.power)} → ${fmt(b.power)}</b><span class="gr-d ${dPow > 0 ? 'up' : dPow < 0 ? 'down' : 'same'}">${dPow > 0 ? '▲ ' : dPow < 0 ? '▼ ' : ''}${dsign(dPow)}</span></div>
     <div class="gr-grid">${rows.map(([n, x, y]) => `<div class="gr-c ${y > x ? 'up' : ''}"><small>${n}</small><span>${fmt(x)}${y !== x ? ` → <b>${fmt(y)}</b>` : ''}</span>${y !== x ? `<em>${dsign(y - x)}</em>` : ''}</div>`).join('')}</div>
     ${gear('weapon', '武器')}${gear('armor', '防具')}
-    ${dPow <= 0 ? '<p class="sub" style="margin:6px 0 0">戦力の変化なし。装備の更新やSPの割り振りで強化しよう。</p>' : ''}
+    ${dPow <= 0 ? '<p class="sub" style="margin:6px 0 0">戦闘力の変化なし。装備の更新やSPの割り振りで強化しよう。</p>' : ''}
   </div>`;
 }
 function openModal() {
@@ -7809,7 +7898,7 @@ window.__rogue = {
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
-  playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,
+  playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
   noTimer(v) { G.noTimer = !!v; ensureLoop(); },

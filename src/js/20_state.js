@@ -134,6 +134,33 @@ const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.passiv
 const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? masteryBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
 // 総合戦力（UI表示用）: 攻撃力＋防御力＋最大HP/8＋最大MP/20。装備・Lv・スキル・極意の強化が一目でわかる指標（戦闘計算には使わない）
 const playerPower = p => Math.round(playerAtk(p) + playerDef(p) + maxHp(p) / 8 + maxMp(p) / 20);
+// ---- 戦闘力（総合戦力）のランクと、ダンジョン別の目安 ----
+const POWER_RANKS = [
+  { min: 0,    name: '見習い',   color: '#9aa7b4' }, { min: 100,  name: '駆け出し', color: '#7ec8a0' }, { min: 180,  name: '冒険者',   color: '#5ad0e0' },
+  { min: 280,  name: '一人前',   color: '#6aa6ff' }, { min: 400,  name: '熟練者',   color: '#b48cff' }, { min: 550,  name: '精鋭',     color: '#ff8ad8' },
+  { min: 800,  name: '英雄',     color: '#ffb347' }, { min: 1200, name: '伝説',     color: '#ff7a5a' }, { min: 2000, name: '神話',     color: '#ffe066' }
+];
+function powerRank(pw) {
+  let i = 0; for (let k = 0; k < POWER_RANKS.length; k++) if (pw >= POWER_RANKS[k].min) i = k;
+  const cur = POWER_RANKS[i], nxt = POWER_RANKS[i + 1] || null;
+  return { idx: i, name: cur.name, color: cur.color, min: cur.min, next: nxt, pct: nxt ? Math.max(0, Math.min(1, (pw - cur.min) / (nxt.min - cur.min))) : 1 };
+}
+// 各ダンジョン×難易度の「目安戦闘力」：推奨Lv・そのダンジョンの装備★に見合った標準装備で計算（実際の式を使うので調整に追従する）
+const _refPow = {};
+function refPower(d, dfIdx) {
+  const key = d.id + dfIdx; if (_refPow[key] != null) return _refPow[key];
+  const p = newPlayer(); p.lv = d.rec[dfIdx];
+  const st = Math.min(d.maxStar, Math.max(1, Math.round(d.maxStar * (0.55 + 0.1 * dfIdx))));
+  for (const slot of ['weapon', 'armor']) p[slot] = { id: 0, slot, star: st, rarity: 1, roll: 0.7, props: [], prop: null };
+  return (_refPow[key] = playerPower(p));
+}
+function powerVerdict(mine, ref) {
+  const r = mine / Math.max(1, ref);
+  if (r >= 1.3) return { k: 'easy', label: '余裕', r };
+  if (r >= 0.9) return { k: 'ok', label: '適正', r };
+  if (r >= 0.65) return { k: 'warn', label: 'やや危険', r };
+  return { k: 'bad', label: '危険', r };
+}
 const gearSnap = it => it ? { id: it.id, name: itemName(it), pw: gearPower(it), score: gearScore(it) } : null;
 const statSnap = p => ({ lv: p.lv, atk: playerAtk(p), def: playerDef(p), hp: maxHp(p), mp: maxMp(p), power: playerPower(p), weapon: gearSnap(p.weapon), armor: gearSnap(p.armor) });
 

@@ -98,7 +98,7 @@ with sync_playwright() as pw:
     check('基準4b_現在装備と値の比較・ボタン・成長表示がある', r4['order'] == 3 and r4['btns'] == 3 and r4['growth'], r4)
     check('基準4c_結果画面から装備変更でき、装備中の戦利品は出撃前と比較して「装備中」と出る', r4['afterEquip']['weaponId'] and r4['afterEquip']['equippedTag'] and r4['afterEquip']['labelBefore'], r4)
 
-    # 基準5: 戦力表示（HUD）と、装備変更時の「戦力 A → B ▲」通知
+    # 基準5: 戦力表示（HUD）と、装備変更時の「戦闘力 A → B ▲」通知
     r5 = pg.evaluate('''() => {
         const R = window.__rogue; G.run = null; G.p = R.newPlayer(); const p = G.p; p.lv = 20; R.renderAll();
         const hud0 = document.getElementById('h-pwv').textContent;
@@ -115,7 +115,7 @@ with sync_playwright() as pw:
         return { hud0, hud1: document.getElementById('h-pwv').textContent, before, after, txt, chipCls, pwv: R.playerPower(p) };
     }''')
     check('基準5a_HUDに戦力が表示され、装備変更で増える', r5['after'] > r5['before'] and r5['hud1'].replace(',', '') == str(r5['after']), r5)
-    check('基準5b_装備変更直後に「戦力 A → B ▲」の通知とチップのアニメーションが出る', '戦力' in r5['txt'] and '▲' in r5['txt'] and 'pw-up' in r5['chipCls'], r5)
+    check('基準5b_装備変更直後に「戦闘力 A → B ▲」の通知とチップのアニメーションが出る', '戦闘力' in r5['txt'] and '▲' in r5['txt'] and 'pw-up' in r5['chipCls'], r5)
 
     # 基準6: 街・ステータス・ヘルプのバナー背景
     r6 = pg.evaluate('''() => {
@@ -179,6 +179,32 @@ with sync_playwright() as pw:
         return { back, plaza, still: G.view };
     }''')
     check('基準9_施設内で街タブを押すと広場に戻る（広場では何も起きない）', r9['back'] == 'plaza' and r9['plaza'] and r9['still'] == 'town', r9)
+
+    # 基準10: 戦闘力（ランク・目安・残像）
+    r10 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); G.p.lv = 30; G.view = 'status'; G.statusTab = 'hero'; R.renderAll();
+        const pw = R.playerPower(G.p), rk = R.powerRank(pw);
+        const panel = document.querySelector('#view-status .pwpanel');
+        const numTxt = panel ? panel.querySelector('.pwp-num').textContent.replace(/,/g, '') : '';
+        const r0 = R.powerRank(0), rHi = R.powerRank(99999);
+        const refs = R.DUNGEONS.map(d => R.DIFFS.map((df, i) => R.refPower(d, i)));
+        const mono = refs.every(row => row.every((v, i) => i === 0 || v > row[i - 1]));
+        const vd = [R.powerVerdict(200, 100).k, R.powerVerdict(100, 100).k, R.powerVerdict(70, 100).k, R.powerVerdict(30, 100).k];
+        G.view = 'dungeon'; R.renderAll();
+        const dcPw = document.querySelectorAll('#view-dungeon .dc-pw').length;
+        G.headless = false; 
+        return { pw, rank: rk.name, panel: !!panel, numOk: numTxt == String(pw), r0: r0.name, rHi: rHi.name, hiPct: rHi.pct, mono, vd, dcPw };
+    }''')
+    check('基準10a_ステータスに戦闘力パネル（数値・ランク）が出る', r10['panel'] and r10['numOk'] and r10['r0'] == '見習い' and r10['rHi'] == '神話' and r10['hiPct'] == 1, r10)
+    check('基準10b_目安戦闘力が難易度で単調増加し、判定が余裕→危険の順', r10['mono'] and r10['vd'] == ['easy', 'ok', 'warn', 'bad'], r10)
+    check('基準10c_ダンジョンカードに目安と判定が出る', r10['dcPw'] >= 3, r10)
+    r11 = pg.evaluate('''() => {
+        window.__rogue.powerAfterimage(100, 160); const up = document.getElementById('pw-ghosts');
+        const u = { cls: up && up.className, n: up ? up.querySelectorAll('.pw-gh').length : 0 };
+        window.__rogue.powerAfterimage(160, 100); const dn = document.getElementById('pw-ghosts');
+        return { u, d: dn && dn.className, one: document.querySelectorAll('#pw-ghosts').length };
+    }''')
+    check('基準11_強化は拡大の残像・弱体化は縮小の残像が出る（重複しない）', 'up' in (r11['u']['cls'] or '') and r11['u']['n'] == 5 and 'down' in (r11['d'] or '') and r11['one'] == 1, r11)
 
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()

@@ -85,7 +85,7 @@ with sync_playwright() as pw:
 
     all_hs = [h for hs in tab_headings.values() for h in hs]
     expected_prefixes = [
-        ('hero', '勇者'), ('hero', '称号'), ('hero', '外見変更'),
+        ('hero', '戦闘力'), ('hero', '勇者'), ('hero', '称号'), ('hero', '外見変更'),
         ('gear', '装備'), ('gear', 'バッグ'), ('gear', '薬'), ('gear', '強化石'),
         ('skill', 'スキルセット'), ('skill', 'スキル枠'),
         ('mastery', '極意（共通パッシブ）'),
@@ -94,7 +94,7 @@ with sync_playwright() as pw:
     exact_match = (len(all_hs) == 11 and all(
         any(h.startswith(pref) for h in tab_headings[t]) for t, pref in expected_prefixes
     ))
-    check('基準2_全11パネルが欠落・重複なく5タブに割り当て', exact_match, tab_headings)
+    check('基準2_全12パネルが欠落・重複なく5タブに割り当て', exact_match, tab_headings)
 
     # 極意クリア前表示とSPドット確認
     dot_res = pg.evaluate('''() => {
