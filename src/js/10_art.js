@@ -12,7 +12,7 @@ function passiveBonus(p) {
   if (passives.sword15) atkMult *= 1.15;
   if (passives.warrior10) atkMult *= 1.30;
   if (passives.magic15) mpMult *= 1.20;
-  if (passives.mage10) mpCostMult *= 0.80;
+  if (passives.mage10) { mpCostMult *= 0.80; atkMult *= 1.15; }
   if (passives.life15) hpMult *= 1.20;
   if (passives.cleric10) healMult *= 1.50;
   if (passives.hero10) { atkMult *= 1.25; hpMult *= 1.25; mpMult *= 1.25; }

@@ -5,9 +5,9 @@ const SK = {
   multi:  { id: 'multi',  name: '連続斬り', mp: 14, ct: 3, type: 'atk',  hits: 3, mult: 0.8, desc: '0.8倍の斬撃を3回放つ' },
   ult:    { id: 'ult',    name: '必殺剣',   mp: 26, ct: 5, type: 'atk',  hits: 1, mult: 4.0, desc: '4倍の渾身の一撃' },
   // 魔法枠スキル
-  fireball:  { id: 'fireball',  name: 'ファイアボール', mp: 12, ct: 3, type: 'atk',  hits: 1, mult: 1.8, desc: '炎の魔力で1.8倍のダメージ' },
-  magicshield: { id: 'magicshield', name: 'マジックシールド', mp: 10, ct: 5, type: 'buff', turns: 5, desc: '5ターン魔法防御力1.5倍' },
-  thunder:   { id: 'thunder',   name: 'サンダー',       mp: 18, ct: 3, type: 'atk',  hits: 2, mult: 1.2, desc: '雷撃を2回放つ（各1.2倍）' },
+  fireball:  { id: 'fireball',  name: 'ファイアボール', mp: 8, ct: 2, type: 'atk',  hits: 1, mult: 2.0, desc: '炎の魔力で2倍のダメージ' },
+  magicshield: { id: 'magicshield', name: 'マジックシールド', mp: 10, ct: 5, type: 'buff', turns: 5, desc: '5ターン防御力1.5倍' },
+  thunder:   { id: 'thunder',   name: 'サンダー',       mp: 14, ct: 3, type: 'atk',  hits: 2, mult: 1.2, desc: '雷撃を2回放つ（各1.2倍）' },
   meteor:    { id: 'meteor',    name: 'メテオ',          mp: 30, ct: 6, type: 'atk',  hits: 1, mult: 5.0, desc: '5倍の超高威力魔法攻撃' },
   // 生命枠スキル
   regen:     { id: 'regen',     name: 'リジェネ',       mp: 8,  ct: 4, type: 'heal', pct: 0.15, desc: '毎ターン最大HPの15%を回復（3ターン）', regen: 3 },
@@ -116,8 +116,8 @@ const SKILL_TREES = [
     desc: '魔法を極める。高威力の魔法スキルを習得。',
     unlockWhen: () => true,
     milestones: [
-      { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で1.8倍のダメージ' },
-      { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン魔法防御力1.5倍' },
+      { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で2倍のダメージ' },
+      { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン防御力1.5倍' },
       { sp: 10, id: 'thunder',        name: 'サンダー',             desc: '雷撃を2回放つ（各1.2倍）' },
       { sp: 15, id: null,             name: 'MP最大値+20%',       desc: 'パッシブ：最大MPが20%上昇する', passive: 'magic15' },
       { sp: 20, id: 'meteor',         name: 'メテオ',               desc: '5倍の超高威力魔法攻撃' },
@@ -181,7 +181,7 @@ const SKILL_TREES = [
     stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'blizzard',   name: 'ブリザード',       desc: '4.5倍の氷結魔法で敵を凍らせる' },
-      { sp: 10, id: null,         name: 'MP消費-20%',       desc: 'パッシブ：全スキルのMP消費が20%減少', passive: 'mage10' },
+      { sp: 10, id: null,         name: 'MP消費-20%・攻撃+15%', desc: 'パッシブ：全スキルのMP消費が20%減少し、攻撃力が15%上昇する', passive: 'mage10' },
       { sp: 15, id: 'iceAge',     name: 'アイスエイジ',     desc: '6倍の氷結魔法で敵を凍らせる' },
       { sp: 20, id: 'cosmicNova', name: 'コズミックノヴァ', desc: '14倍の星辰爆発魔法' },
       { sp: 25, id: 'zeroAbs',    name: '絶対零度',         desc: '9倍の氷結魔法で敵を2ターン凍らせる' },

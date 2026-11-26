@@ -132,8 +132,8 @@ const CHAR_TREES = {
       desc: '魔法を極める。高威力の魔法スキルと応急手当を習得。',
       unlockWhen: () => true,
       milestones: [
-        { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で1.8倍のダメージ' },
-        { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン魔法防御力1.5倍' },
+        { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で2倍のダメージ' },
+        { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン防御力1.5倍' },
         { sp: 10, id: 'thunder',        name: 'サンダー',             desc: '雷撃を2回放つ（各1.2倍）' },
         { sp: 12, id: 'firstAid',       name: '応急手当',             desc: '最大HPの20%を回復する' },
         { sp: 15, id: null,             name: 'MP最大値+20%',         desc: 'パッシブ：最大MPが20%上昇する', passive: 'magic15' },
@@ -157,7 +157,7 @@ const CHAR_TREES = {
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
       milestones: [
         { sp: 5,  id: 'blizzard',   name: 'ブリザード',       desc: '4.5倍の氷結魔法で敵を凍らせる' },
-        { sp: 10, id: null,         name: 'MP消費-20%',       desc: 'パッシブ：全スキルのMP消費が20%減少', passive: 'mage10' },
+        { sp: 10, id: null,         name: 'MP消費-20%・攻撃+15%', desc: 'パッシブ：全スキルのMP消費が20%減少し、攻撃力が15%上昇する', passive: 'mage10' },
         { sp: 15, id: 'iceAge',     name: 'アイスエイジ',     desc: '6倍の氷結魔法で敵を凍らせる' },
         { sp: 20, id: 'cosmicNova', name: 'コズミックノヴァ', desc: '14倍の星辰爆発魔法' },
         { sp: 25, id: 'zeroAbs',    name: '絶対零度',         desc: '9倍の氷結魔法で敵を2ターン凍らせる' },

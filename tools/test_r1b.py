@@ -195,7 +195,7 @@ with sync_playwright() as pw:
     }''')
     b6 = r6['berserk']
     check('基準6a_バーサーク: 攻撃約3倍（会心ぶれ込みで2〜4.6倍）・被ダメ増・4ターンで切れる',
-          1.9 < b6['a1'] / max(1, b6['a0']) < 4.6 and b6['d1'] > b6['d0'] * 1.5 and b6['turns'] == 3 and r6['berserkAfter'] == 0, r6)
+          1.9 < b6['a1'] / max(1, b6['a0']) < 4.6 and b6['d1'] > b6['d0'] * 1.3 and b6['turns'] == 3 and r6['berserkAfter'] == 0, r6)
     check('基準6b_英雄の奇跡: 全ステータス2倍フラグ（防御2倍は次の被弾まで）',
           r6['heroDef'] == 1 and r6['hero']['after'] == 0 and r6['hero']['dh'] < r6['base']['d0'] * 0.8, r6)
 

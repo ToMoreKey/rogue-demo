@@ -219,7 +219,7 @@ BOT = r"""
      x4_min_game:Math.round(ticks*650/4/60000*10)/10, steps}, metrics());
  }
 
- let guard=0;
+ let guard=0; const dfl=[];
  while(cells.some(c=>!c.cleared)&&guard++<4000){
    town(); const p=G.p;
    const unlocked=R.isDiffUnlocked
@@ -233,10 +233,10 @@ BOT = r"""
    const wasTried=target.tried; target.tried=true;
    const L=doRun(target);
    if(L&&L.result==='clear'){ target.cleared=true; if(!wasTried) target.firstClear=true; }
-   else if(L&&L.result==='defeat'){ defeats++; target.fail++; }
+   else if(L&&L.result==='defeat'){ defeats++; target.fail++; dfl.push(target.d+target.df+'@Lv'+p.lv); }
    if(runs%10===0) log.push([runs,p.lv,ticks]);
  }
- return Object.assign({mode:'loop', char:cid, done:!cells.some(c=>!c.cleared),runs,defeats,retreats,ticks,lv:G.p.lv,sp:G.p.sp,gold:G.p.gold,log:log.slice(-6),
+ return Object.assign({mode:'loop', char:cid, done:!cells.some(c=>!c.cleared),runs,defeats,retreats,ticks,lv:G.p.lv,sp:G.p.sp,gold:G.p.gold,log:log.slice(-6), defeatList:dfl.reduce((a,x)=>{a[x]=(a[x]||0)+1;return a;},{}),
    x4_min_game:Math.round(ticks*650/4/60000*10)/10, overhead_min:Math.round(runs*20/60*10)/10}, metrics());
 }
 """
@@ -245,6 +245,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--mode', choices=['loop', 'linear', 'tower', 'abyss'], default='loop')
 ap.add_argument('--bless', choices=['opt', 'rand'], default='opt')
 ap.add_argument('--char', choices=['stella', 'ruby', 'silia', 'chloe'], default='stella')
+ap.add_argument('--seeds', type=int, default=3, help='loop/tower/abyss のシード数（1..N）')
 ap.add_argument('html', nargs='?', default=os.path.join(os.path.dirname(__file__), '..', 'index.html'))
 args = ap.parse_args()
 HTML = os.path.abspath(args.html)
@@ -253,7 +254,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.goto('file://' + HTML); pg.wait_for_timeout(400)
-    seeds = (1,) if args.mode == 'linear' else (1, 2, 3)
+    seeds = (1,) if args.mode == 'linear' else tuple(range(1, args.seeds + 1))
     for seed in seeds:
         r = pg.evaluate(BOT, {'seed': seed, 'mode': args.mode, 'blessMode': args.bless, 'charId': args.char})
         print(json.dumps(r, ensure_ascii=False))

@@ -358,7 +358,7 @@ function useSkillEffect(id) {
       addLog(`${s.name}！ ${parts.join('・')}になった！`, 'l-good');
     }
     else if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
-    else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 魔法防御力が上がった。', 'l-good'); }
+    else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 防御力が1.5倍になった。', 'l-good'); }
     else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍・防御力が半減した！', 'l-good'); }
     else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
     else if (s.shura) { run.shura = s.turns; addLog('修羅の構え！ 攻撃力が4倍になった！', 'l-good'); }
@@ -436,9 +436,10 @@ function enemyAct() {
     return;
   }
   const pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
-  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.berserk > 0 ? 0.5 : 1) * (run.heroDef > 0 ? 2 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'def');
+  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.berserk > 0 ? 0.5 : 1) * (run.magicShield > 0 ? 1.5 : 1) * (run.heroDef > 0 ? 2 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'def');
   const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * genBuffMult(run, 'taken') * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
   if (run.berserk > 0) run.berserk--;
+  if (run.magicShield > 0) run.magicShield--;
   if (run.heroDef > 0) run.heroDef--;
   if (run.shura > 0) run.shura--;
   if (run.kishin > 0) run.kishin--;
