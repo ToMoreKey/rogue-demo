@@ -206,6 +206,25 @@ with sync_playwright() as pw:
     }''')
     check('基準11_強化は拡大の残像・弱体化は縮小の残像が出る（重複しない）', 'up' in (r11['u']['cls'] or '') and r11['u']['n'] == 5 and 'down' in (r11['d'] or '') and r11['one'] == 1, r11)
 
+    # 基準12: 装備タブの武器/防具切り替えと切り替え前後の比較
+    r12 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); const p = G.p; p.lv = 30; G.autoSellRarity = -1;
+        const mk = (slot, star, roll) => { const it = R.genItem(R.DIFFS[1], false, slot, star); it.star = star; it.roll = roll; it.rarity = 1; it.props = []; it.prop = null; return it; };
+        p.weapon = mk('weapon', 3, .8); p.armor = mk('armor', 3, .7);
+        const wS = mk('weapon', 5, .9), wW = mk('weapon', 1, .4), aS = mk('armor', 5, .9); p.bag = [wW, wS, aS];
+        G.view = 'status'; G.statusTab = 'gear'; G.gearSlot = 'weapon'; R.renderAll();
+        const q = s => document.querySelectorAll('#view-status ' + s);
+        const out = { btns: q('.gs-btn').length, onW: q('.gs-btn.on')[0].textContent.includes('武器'), wCards: q('.swap-card').length, up: q('.swp.up').length, down: q('.swp.down').length, firstIsStrong: q('.swap-card')[0].textContent.includes(R.itemName(wS)) };
+        q('.gs-btn')[1].click();
+        out.aCards = document.querySelectorAll('#view-status .swap-card').length; out.onA = document.querySelector('#view-status .gs-btn.on').textContent.includes('防具');
+        const btn = document.querySelector('#view-status [data-act="equip"]'); const before = R.playerPower(p); btn.click();
+        out.afterArmor = p.armor === aS; out.stronger = R.playerPower(p) > before; out.fx = !!document.querySelector('#view-status .cur-eq.swap-up');
+        return out;
+    }''')
+    check('基準12a_武器/防具ボタンで種類ごとに候補が切り替わる（強い順）', r12['btns'] == 2 and r12['onW'] and r12['wCards'] == 2 and r12['firstIsStrong'] and r12['aCards'] == 1 and r12['onA'], r12)
+    check('基準12b_候補ごとに切り替え前後の比較（強くなる/弱くなる）が出る', r12['up'] == 1 and r12['down'] == 1, r12)
+    check('基準12c_切り替えで装備が変わり、装備中カードが強化演出になる', r12['afterArmor'] and r12['stronger'] and r12['fx'], r12)
+
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()
 

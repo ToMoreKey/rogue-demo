@@ -86,6 +86,7 @@ const ACTS = {
       }, 600);
     }
   },
+  gearSlot(d) { G.gearSlot = d.slot === 'armor' ? 'armor' : 'weapon'; renderStatus(); },
   equip(d) {
     const p = G.p, it = p.bag.find(x => x.id === Number(d.id)); if (!it) return;
     p.bag = p.bag.filter(x => x !== it);

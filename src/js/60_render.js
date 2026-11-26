@@ -1034,6 +1034,50 @@ function hitFlash(who) {
 }
 
 /* ================= render: status ================= */
+// 装備タブ用：切り替え前→後の比較カード（攻撃/防御・戦闘力の変化を並べて見せる）
+function swapPower(it) {
+  const p = G.p, old = p[it.slot]; p[it.slot] = it;
+  try { return { pw: playerPower(p), atk: playerAtk(p), def: playerDef(p) }; } finally { p[it.slot] = old; }
+}
+function swapCmpHtml(it) {
+  const p = G.p, cur = p[it.slot], isW = it.slot === 'weapon', lab = isW ? '攻撃力' : '防御力';
+  const b0 = { pw: playerPower(p), v: isW ? playerAtk(p) : playerDef(p) }, a = swapPower(it), v1 = isW ? a.atk : a.def;
+  const dv = v1 - b0.v, dp = a.pw - b0.pw, k = dp > 0 ? 'up' : dp < 0 ? 'down' : 'same';
+  const ar = dp > 0 ? '▲' : dp < 0 ? '▼' : '＝';
+  return `<div class="swp ${k}">
+    <div class="swp-h"><span>${lab}</span><span>戦闘力</span></div>
+    <div class="swp-row"><span class="swp-l">今</span><span class="swp-c">${cur ? esc(itemName(cur)) : 'なし'}</span><b>${fmt(b0.v)}</b><b>${fmt(b0.pw)}</b></div>
+    <div class="swp-row to"><span class="swp-l">後</span><span class="swp-c">${esc(itemName(it))}</span><b>${fmt(v1)}<em>${dv ? (dv > 0 ? ' ▲' : ' ▼') + fmt(Math.abs(dv)) : ''}</em></b><b>${fmt(a.pw)}<em>${dp ? (dp > 0 ? ' ▲' : ' ▼') + fmt(Math.abs(dp)) : ''}</em></b></div>
+    <div class="swp-v">${ar} ${dp > 0 ? '強くなる' : dp < 0 ? '弱くなる' : '変化なし'}${dp ? `（戦闘力 ${dp > 0 ? '+' : '−'}${fmt(Math.abs(dp))}）` : ''}</div></div>`;
+}
+function gearSlotPanels(p) {
+  const slot = G.gearSlot === 'armor' ? 'armor' : 'weapon', isW = slot === 'weapon';
+  const cur = p[slot];
+  // 直前の表示から装備が変わっていたら「いま装備中」カードを光らせる（強化＝緑、弱体化＝赤）
+  const seen = G._gearSeen = G._gearSeen || {}, prev = seen[slot], sc = gearScore(cur);
+  let fx = '';
+  if (prev && prev.id !== (cur ? cur.id : 0)) fx = sc >= prev.score ? ' swap-up' : ' swap-down';
+  seen[slot] = { id: cur ? cur.id : 0, score: sc };
+  for (const s2 of ['weapon', 'armor']) if (!seen[s2]) seen[s2] = { id: p[s2] ? p[s2].id : 0, score: gearScore(p[s2]) };
+  const slotBtn = (s, ic, nm) => { const it = p[s]; return `<button class="gs-btn${slot === s ? ' on' : ''}" data-act="gearSlot" data-slot="${s}" aria-pressed="${slot === s}"><span class="gs-ic">${ic}</span><span class="gs-nm">${nm}</span><small>${it ? esc(itemName(it)) : '装備なし'}</small></button>`; };
+  const cands = p.bag.filter(it => it.slot === slot).sort((a, b) => gearScore(b) - gearScore(a));
+  const other = p.bag.filter(it => it.slot !== slot).length;
+  const eqPanel = `<div class="panel"><h2>装備</h2>
+      <div class="gs-row" role="group" aria-label="装備の種類">${slotBtn('weapon', '⚔️', '武器')}${slotBtn('armor', '🛡️', '防具')}</div>
+      <p class="slot-t" style="margin-top:12px">いま装備中の${isW ? '武器' : '防具'}</p>
+      <div class="cur-eq${fx}">${cur ? itemCard(cur, { showRec: false }) : '<p class="empty">装備なし</p>'}</div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn small" data-act="autoEquipNow">⚔ 最強装備</button>
+        <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備（通常はOFF）：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
+      </div></div>`;
+  const bagPanel = `<div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
+      <p class="sub" style="margin:0 0 10px">「${isW ? '武器' : '防具'}」の切り替え候補です（強い順）。ロックすると売却・自動売却から除外できます。</p>
+      ${(p.bagCap || BAG_CAP) < MAX_BAG_CAP ? `<div class="row" style="margin-bottom:10px"><button class="btn small" data-act="expandBag" ${p.gold >= bagExpandCost(p.bagCap || BAG_CAP) ? '' : 'disabled'}>バッグ拡張 +10枠（${fmt(bagExpandCost(p.bagCap || BAG_CAP))}G）</button></div>` : ''}
+      ${cands.length ? `<div class="items">${cands.map(it => `<div class="swap-card">${itemCard(it, { showRec: false, actions: false })}${swapCmpHtml(it)}<div class="it-act"><button class="btn small primary" data-act="equip" data-id="${it.id}">この${isW ? '武器' : '防具'}に切り替える</button><button class="btn small ${it.locked ? 'on' : ''}" data-act="lock" data-id="${it.id}" aria-pressed="${!!it.locked}">${it.locked ? '🔒 ロック中' : 'ロック'}</button></div></div>`).join('')}</div>` : `<p class="empty">切り替えられる${isW ? '武器' : '防具'}はバッグにありません。</p>`}
+      ${other ? `<p class="sub" style="margin:10px 0 0">${isW ? '防具' : '武器'}が ${other}個 あります。上のボタンで切り替えて確認できます。</p>` : ''}</div>`;
+  return eqPanel + bagPanel;
+}
+
 function itemCard(it, o = {}) {
   const pw = itemPower(it), isW = it.slot === 'weapon';
   const gp = gearPower(it);
@@ -1280,20 +1324,7 @@ function renderStatus() {
       </div>
       ${renderCharDescBox(p.skin || 'ruby')}
     </div>`;
-  const gearPanels = `
-    <div class="panel"><h2>装備</h2>
-      <div class="items">
-        <div><p class="slot-t">手（武器）</p>${p.weapon ? itemCard(p.weapon) : '<p class="empty">装備なし</p>'}</div>
-        <div><p class="slot-t">体（防具）</p>${p.armor ? itemCard(p.armor) : '<p class="empty">装備なし</p>'}</div>
-      </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn small" data-act="autoEquipNow">⚔ 最強装備</button>
-        <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備（通常はOFF）：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
-      </div></div>
-    <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
-      <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>
-      ${(p.bagCap || BAG_CAP) < MAX_BAG_CAP ? `<div class="row" style="margin-bottom:10px"><button class="btn small" data-act="expandBag" ${p.gold >= bagExpandCost(p.bagCap || BAG_CAP) ? '' : 'disabled'}>バッグ拡張 +10枠（${fmt(bagExpandCost(p.bagCap || BAG_CAP))}G）</button></div>` : ''}
-      ${bag.length ? `<div class="items">${bag.map(it => itemCard(it, { actions: true, compare: true })).join('')}</div>` : '<p class="empty">バッグは空です。ダンジョンで装備を入手しましょう。</p>'}</div>
+  const gearPanels = gearSlotPanels(p) + `
     <div class="panel"><h2>薬</h2><p class="sub">ダンジョンの戦闘中にも使えます（探索画面のボタン）。</p>
       <div class="row">
         <button class="btn small" data-act="potion" data-k="hp" ${p.potions.hp > 0 ? '' : 'disabled'}>生命の薬 ×${p.potions.hp}（HP30%）</button>
