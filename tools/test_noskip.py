@@ -33,6 +33,10 @@ with sync_playwright() as pw:
         pg.evaluate('(s) => document.querySelector(s).click()', sel)
         pg.wait_for_timeout(500)
 
+    # 新規ゲームの最初にキャラクター選択モーダルが出るので、シリアを選んで確定する
+    click('[data-act="selectStartChar"][data-id="silia"]')
+    click('#btn-confirm-char')
+
     click('#nav-dungeon')
     check('step1 へ進む', pg.evaluate('() => G.tutorial.step') == 1, pg.evaluate('() => G.tutorial.step'))
     click('[data-act="go"][data-d="A"]')

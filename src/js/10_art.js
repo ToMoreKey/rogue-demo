@@ -8,15 +8,17 @@ const itemIcon = it => {
 // パッシブボーナス計算
 function passiveBonus(p) {
   const passives = (p && p.passiveSkills) || {};
-  let atkMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1;
+  let atkMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1, critAdd = 0, ctRed = 0;
   if (passives.sword15) atkMult *= 1.15;
   if (passives.warrior10) atkMult *= 1.30;
   if (passives.magic15) mpMult *= 1.20;
-  if (passives.mage10) mpCostMult *= 0.80;
+  if (passives.mage10) { mpCostMult *= 0.80; atkMult *= 1.15; }
   if (passives.life15) hpMult *= 1.20;
   if (passives.cleric10) healMult *= 1.50;
   if (passives.hero10) { atkMult *= 1.25; hpMult *= 1.25; mpMult *= 1.25; }
-  return { atkMult, hpMult, mpMult, mpCostMult, healMult };
+  if (passives.crit20) critAdd += 0.20;   // R1b: クロエ「急所狙い」
+  if (passives.swift10) ctRed += 1;       // R1b: クロエ「疾風」全スキルCT-1（最低1は呼び出し側で保証）
+  return { atkMult, hpMult, mpMult, mpCostMult, healMult, critAdd, ctRed };
 }
 // 極意ボーナス計算（極意を振ったときの増分のみ）
 function masteryBonus(p) {

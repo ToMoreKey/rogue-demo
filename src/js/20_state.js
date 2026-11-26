@@ -1,5 +1,6 @@
 
 /* ================= state ================= */
+let _tutorialState = null;
 const G = {
   p: null, view: 'town', run: null, last: null, modalOpen: false, noTimer: false, headless: false,
   opts: { speed: 1, autoSkill: true, autoEquip: true },
@@ -11,7 +12,14 @@ const G = {
   townView: 'plaza',  // 'plaza'|'inn'|'shop'|'smith'|'bank'
   statusTab: 'hero',  // 'hero'|'gear'|'skill'|'mastery'|'data' (memory only)
   helpTab: 'intro',   // 'intro'|'world'|'skill'|'status'|'endgame' (memory only)
-  tutorial: null  // { step: 0-6, done: false } or null
+  get tutorial() { return _tutorialState; },
+  set tutorial(v) {
+    _tutorialState = v;
+    if ((!v || v.done) && this._charSelectOpen) {
+      this._charSelectOpen = false;
+      if (typeof closeModal === 'function') closeModal();
+    }
+  }
 };
 
 function towerEff(run) {
@@ -139,9 +147,58 @@ function isDiffUnlocked(p, d, df) {
   if (!df.reqDiff) return true;
   return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
 }
+function makeDefaultChars() {
+  const out = {};
+  for (const cid of CHAR_IDS) {
+    const trees = getCharTrees(cid);
+    const sp = {};
+    for (const t of trees) sp[t.id] = 0;
+    out[cid] = { skillPts: sp, equippedSkills: [null, null, null] };
+  }
+  return out;
+}
+
+function syncActiveCharState(p) {
+  if (!p) return;
+  const cid = (p.skin && CHAR_TREES[p.skin]) ? p.skin : 'ruby';
+  p.skin = cid;
+  if (!p.chars || typeof p.chars !== 'object') p.chars = makeDefaultChars();
+  const def = makeDefaultChars();
+  for (const k of CHAR_IDS) {
+    if (!p.chars[k] || typeof p.chars[k] !== 'object') p.chars[k] = def[k];
+    if (!p.chars[k].skillPts || typeof p.chars[k].skillPts !== 'object') p.chars[k].skillPts = def[k].skillPts;
+    for (const t of getCharTrees(k)) {
+      if (typeof p.chars[k].skillPts[t.id] !== 'number') p.chars[k].skillPts[t.id] = 0;
+    }
+    if (!Array.isArray(p.chars[k].equippedSkills) || p.chars[k].equippedSkills.length !== 3) {
+      p.chars[k].equippedSkills = [null, null, null];
+    }
+  }
+  const active = p.chars[cid];
+  p.skillPts = active.skillPts;
+  p.equippedSkills = active.equippedSkills;
+  const skills = {}, passives = {};
+  for (const t of getCharTrees(cid)) {
+    const pts = Number(active.skillPts[t.id]) || 0;
+    for (const ms of t.milestones) {
+      if (pts >= ms.sp) {
+        if (ms.id && SK[ms.id]) skills[ms.id] = true;
+        if (ms.passive) passives[ms.passive] = true;
+      }
+    }
+  }
+  p.skills = skills;
+  p.passiveSkills = passives;
+  for (let i = 0; i < 3; i++) {
+    const sid = active.equippedSkills[i];
+    if (sid && !skills[sid]) active.equippedSkills[i] = null;
+  }
+}
+
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const chars = makeDefaultChars();
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, skin: 'ruby', chars, v9ResetNoticePending: false, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: chars.ruby.skillPts, passiveSkills: {}, equippedSkills: chars.ruby.equippedSkills, potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);

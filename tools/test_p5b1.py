@@ -184,20 +184,25 @@ with sync_playwright() as pw:
     evo3_res = pg.evaluate('''() => {
         const R = window.__rogue;
         R.setHeadless(true); R.noTimer(true);
-        G.p = R.newPlayer(); G.p.lv = 130; G.p.sp = 300;
+        G.p = R.newPlayer(); G.p.lv = 130; G.p.sp = 400;
+        R.ACTS.changeSkin({ id: 'stella' });
         R.ACTS.spAlloc({ tree: 'sword', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'magic', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'life', amount: 30 });
         R.ACTS.spAlloc({ tree: 'warrior', amount: 20 });
         R.ACTS.spAlloc({ tree: 'warrior', amount: 1 }); // 本編クリア前は20で止まる
         const blockedPre = G.p.skillPts.warrior === 20 && !G.p.skills.tenma;
         G.p.ending = true;
         R.ACTS.spAlloc({ tree: 'warrior', amount: 10 });
-        R.ACTS.spAlloc({ tree: 'mage', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'cleric', amount: 30 });
         R.ACTS.spAlloc({ tree: 'hero', amount: 30 });
-        const ids9 = ['tenma', 'kishin', 'zeroAbs', 'meteorNova', 'goddess', 'eternal', 'heroAdvent', 'skyStar', 'genesisRay'];
-        const learnedAll = ids9.every(id => !!G.p.skills[id]);
+        const sOk = ['tenma', 'kishin', 'heroAdvent', 'skyStar', 'swordGod'].every(id => !!G.p.skills[id]);
+        R.ACTS.changeSkin({ id: 'ruby' });
+        R.ACTS.spAlloc({ tree: 'magic', amount: 30 });
+        R.ACTS.spAlloc({ tree: 'mage', amount: 30 });
+        const rOk = ['zeroAbs', 'meteorNova'].every(id => !!G.p.skills[id]);
+        R.ACTS.changeSkin({ id: 'silia' });
+        R.ACTS.spAlloc({ tree: 'life', amount: 30 });
+        R.ACTS.spAlloc({ tree: 'cleric', amount: 30 });
+        const cOk = ['goddess', 'eternal'].every(id => !!G.p.skills[id]);
+        const learnedAll = sOk && rOk && cOk;
         // 5F祝福モーダル文言チェック (2-0)
         R.setHeadless(false);
         R.startTowerRun(); G.run.floor = 5; R.spawnEnemy(false, true);

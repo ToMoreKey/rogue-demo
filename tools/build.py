@@ -22,6 +22,7 @@ JS_ORDER = [
     'data/items.js',
     'assets/item_icons.js',
     'data/skills.js',
+    'data/char_trees.js',
     'data/dungeons.js',
     'data/tower.js',
     'data/abyss.js',
@@ -43,6 +44,7 @@ JS_ORDER = [
     'js/40_game.js',
     'js/50_acts.js',
     'js/60_render.js',
+    'js/61_fx_custom.js',
     'js/70_tutorial.js',
     'js/80_boot.js',
 ]

@@ -157,36 +157,41 @@ with sync_playwright() as pw:
     evo_res = pg.evaluate('''() => {
         const R = window.__rogue;
         G.p = R.newPlayer();
-        G.p.lv = 90; G.p.sp = 200;
-        // 基礎ツリーを20SPずつ振って第1段階だけ解放 (第2段階は未解放)
+        G.p.lv = 90; G.p.sp = 300;
+        // ステラで基礎ツリー(sword)を20SP、第2ツリー(warrior)を20SP(うち第2段階は未解放なので10で止まる)
+        R.ACTS.changeSkin({ id: 'stella' });
         R.ACTS.spAlloc({ tree: 'sword', amount: 20 });
-        R.ACTS.spAlloc({ tree: 'magic', amount: 20 });
-        R.ACTS.spAlloc({ tree: 'life', amount: 20 });
         R.ACTS.spAlloc({ tree: 'warrior', amount: 10 });
         R.ACTS.spAlloc({ tree: 'warrior', amount: 1 });  // 10で止まるべき
-        R.ACTS.spAlloc({ tree: 'hero', amount: 10 });
-        R.ACTS.spAlloc({ tree: 'hero', amount: 1 });     // 10で止まるべき
-        const blockedAt10 = G.p.skillPts.warrior === 10 && G.p.skillPts.hero === 10 && !G.p.skills.shura && !G.p.skills.heroAwaken;
-        // 基礎ツリーを30SPずつにして第2段階解放
+        const blockedAt10 = G.p.skillPts.warrior === 10 && !G.p.skills.shura;
+        // 基礎ツリーを30SPにして第2段階解放 -> warrior 20, hero 20
         R.ACTS.spAlloc({ tree: 'sword', amount: 10 });
-        R.ACTS.spAlloc({ tree: 'magic', amount: 10 });
-        R.ACTS.spAlloc({ tree: 'life', amount: 10 });
         R.ACTS.spAlloc({ tree: 'warrior', amount: 10 });
+        R.ACTS.spAlloc({ tree: 'hero', amount: 20 });
+        const stellaS2 = ['shura', 'hagun', 'heroAwaken', 'starSword'].every(id => !!G.p.skills[id])
+            && G.p.skillPts.warrior === 20 && G.p.skillPts.hero === 20;
+        // ルビィで magic 30 -> mage 20
+        R.ACTS.changeSkin({ id: 'ruby' });
+        R.ACTS.spAlloc({ tree: 'magic', amount: 30 });
         R.ACTS.spAlloc({ tree: 'mage', amount: 20 });
+        const rubyS2 = ['iceAge', 'cosmicNova'].every(id => !!G.p.skills[id]) && G.p.skillPts.mage === 20;
+        // シリアで life 30 -> cleric 20
+        R.ACTS.changeSkin({ id: 'silia' });
+        R.ACTS.spAlloc({ tree: 'life', amount: 30 });
         R.ACTS.spAlloc({ tree: 'cleric', amount: 20 });
-        R.ACTS.spAlloc({ tree: 'hero', amount: 10 });
-        const stage2Ids = ['shura', 'hagun', 'iceAge', 'cosmicNova', 'holyLight', 'requiem', 'heroAwaken', 'starSword'];
-        const learnedAll = stage2Ids.every(id => !!G.p.skills[id]);
-        const pts20 = ['warrior', 'mage', 'cleric', 'hero'].every(k => G.p.skillPts[k] === 20);
+        const siliaS2 = ['holyLight', 'requiem'].every(id => !!G.p.skills[id]) && G.p.skillPts.cleric === 20;
+        const learnedAll = stellaS2 && rubyS2 && siliaS2;
+        const pts20 = stellaS2 && rubyS2 && siliaS2;
         // 戦闘で発動確認
         G.p.mp = G.p.mmp = 999; G.p.hp = 100; G.p.mhp = 1000;
-        G.p.equippedSkills = ['shura', 'iceAge', 'holyLight'];
+        G.p.equippedSkills = ['holyLight', 'requiem', null];
         G.p.cleared.F = { high: true };
         R.startRun('G', 'novice');
         for (let i = 0; i < 10 && G.run; i++) R.tick();
         const fought1 = true;
         G.run = null;
-        G.p.equippedSkills = ['heroAwaken', 'requiem', 'starSword'];
+        R.ACTS.changeSkin({ id: 'stella' });
+        G.p.equippedSkills = ['shura', 'heroAwaken', 'starSword'];
         R.startRun('G', 'novice');
         for (let i = 0; i < 10 && G.run; i++) R.tick();
         G.run = null;

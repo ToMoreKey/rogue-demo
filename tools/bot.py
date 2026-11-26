@@ -6,33 +6,46 @@ from playwright.sync_api import sync_playwright
 import argparse, json, os
 
 BOT = r"""
-({seed, mode, blessMode})=>{
+({seed, mode, blessMode, charId})=>{
  const R=window.__rogue; let s=seed; R.setRng(()=>{s=(s*1664525+1013904223)%4294967296;return s/4294967296});
  R.setHeadless(true); R.noTimer(true);
- const G=window.G; G.tutorial=null; G.p=R.newPlayer();
+ const G=window.G; G.tutorial=null; G._charSelectOpen=false; G.p=R.newPlayer();
+ const cid=(charId&&R.CHAR_TREES&&R.CHAR_TREES[charId])?charId:'stella';
+ G.p.skin=cid; if(R.syncActiveCharState) R.syncActiveCharState(G.p);
  const cells=[];
  for(const d of R.DUNGEONS) d.rec.forEach((r,i)=>cells.push({d:d.id,df:R.DIFFS[i].id,rec:r,idx:i,cleared:false,fail:0,tried:false,firstClear:false}));
  cells.sort((a,b)=>a.rec-b.rec);
  let ticks=0,runs=0,defeats=0,retreats=0,floorsTraversed=0; const log=[]; const steps=[];
  const maxSmith=R.SMITH_MAX_STAR||5;
  const spPlan=()=>{const p=G.p;
-   const cap={sword:30,magic:30,life:30,warrior:20,mage:20,cleric:20,hero:20};
+   const trees=R.getCharTrees?R.getCharTrees(p.skin):R.SKILL_TREES;
+   const t0=trees[0]&&trees[0].id, t1=trees[1]&&trees[1].id, t2=trees[2]&&trees[2].id;
+   const cap={}; trees.forEach((t,i)=>{cap[t.id]=p.ending?30:(i===0?30:20);});
    const A=(t,n)=>{
-     const tree=R.SKILL_TREES&&R.SKILL_TREES.find(x=>x.id===t);
-     if(tree&&tree.unlockWhen&&!tree.unlockWhen(p)) return;
-     const mx=(tree&&tree.stage2When&&!tree.stage2When(p))?10:cap[t];
+     if(!t) return;
+     const tree=trees.find(x=>x.id===t);
+     if(!tree||(tree.unlockWhen&&!tree.unlockWhen(p))) return;
+     const mx=(tree.stage2When&&!tree.stage2When(p))?10:cap[t];
      n=Math.min(n,p.sp,mx-(p.skillPts[t]||0));
      if(n>0) R.ACTS.spAlloc({tree:t,amount:n});
    };
-   A('life',3); A('sword',20); A('life',20); A('magic',20);
-   A('hero',10); A('warrior',10); A('cleric',10); A('mage',10);
-   A('sword',10); A('life',10); A('magic',10);
-   A('hero',10); A('warrior',10); A('cleric',10); A('mage',10);
-   const order=['hagun','starSword','cosmicNova','skySlash','ultima','heroic','iceAge','lightningStorm','flameSlash','ult','multi','strike','meteor','blaze','thunder','fireball','berserk','blizzard'];
-   const heal=['requiem','holyLight','saintPrayer','fullheal','heal']; const slots=[null,null,null];
-   const h=heal.find(x=>p.skills[x]); if(h) slots[0]=h;
-   const atk=order.filter(x=>p.skills[x]).slice(0,2); atk.forEach((x,i)=>slots[i+1]=x);
+   A(t0,20); A(t1,20); A(t2,10);
+   A(t0,10); A(t1,10); A(t2,20);
+   const order=['genesisRay','swordGod','endMagic','nightSky','skyStar','skyMeteorite','heavenStars','thousandMask','meteorNova','tenma','nightParade','starSword','starDust','celestialLance','trumpCard','cosmicNova','hagun','thousandCuts','zeroAbs','divineWrath','ultima','skySlash','shadowPierce','heroic','arcaneMiracle','angelMiracle','grandHeist','iceAge','meteor','holyNova','blizzard','bladeDance','lightningStorm','ult','phantomSlash','flameSlash','judgment','blaze','thunder','rush','multi','doubleStab','strike','fireball','holyBolt','berserk'];
+   const heal=['eternal','goddess','requiem','holyLight','saintPrayer','resurrection','fullheal','highRegen','heal','regen','firstAid'];
+   const buff=['heroAdvent','heroAwaken','phantomAdvent','kishin','mirageStance','shura','swiftStance','warGod','frenzyEdge','holyBarrier','barrier','guard','shadowStep','magicshield'];
+   const slots=[null,null,null];
+   const h=heal.find(x=>p.skills[x])||buff.find(x=>p.skills[x]); if(h) slots[0]=h;
+   const atk=order.filter(x=>p.skills[x]&&x!==slots[0]).slice(0,2);
+   atk.forEach((x,i)=>slots[i+1]=x);
+   for(let i=0;i<3;i++){
+     if(!slots[i]){
+       const b=buff.find(x=>p.skills[x]&&!slots.includes(x))||heal.find(x=>p.skills[x]&&!slots.includes(x));
+       if(b) slots[i]=b;
+     }
+   }
    p.equippedSkills=slots;
+   if(p.chars&&p.chars[p.skin]) p.chars[p.skin].equippedSkills=slots;
  };
  const buyNeedStone=(stoneId)=>{
    if(!R.SHOP_ITEMS||!R.buyShopItem) return;
@@ -103,23 +116,25 @@ BOT = r"""
        let clears=0, totalTicks=0, trials=5;
        for(let tr=0; tr<trials; tr++){
          const p=G.p=R.newPlayer();
+         p.skin=cid; if(R.syncActiveCharState) R.syncActiveCharState(p);
          p.lv=bld==='std'?126:132; p.sp=bld==='std'?170:320; p.ending=true; p.gold=200000;
          for(const d of R.DUNGEONS){ p.cleared[d.id]={novice:true,mid:true,high:true,super:true,extreme:true}; }
          p.abyss={best:10,cleared:{1:true,2:true,3:true,4:true,5:true,6:true,7:true,8:true,9:true,10:true}};
          p.potions={hp:25,mp:25};
+         const trees=R.getCharTrees?R.getCharTrees(p.skin):[];
          if(bld==='std'){
            p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=3; p.weapon.roll=0.9; p.weapon.prop='flame'; p.weapon.props=['flame'];
            p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=3; p.armor.roll=0.9;
-           R.ACTS.spAlloc({tree:'sword',amount:30}); R.ACTS.spAlloc({tree:'magic',amount:30}); R.ACTS.spAlloc({tree:'life',amount:30});
-           R.ACTS.spAlloc({tree:'warrior',amount:20}); R.ACTS.spAlloc({tree:'mage',amount:20}); R.ACTS.spAlloc({tree:'cleric',amount:20}); R.ACTS.spAlloc({tree:'hero',amount:20});
-           p.equippedSkills=['requiem','hagun','starSword'];
+           if(trees[0]) R.ACTS.spAlloc({tree:trees[0].id,amount:30});
+           if(trees[1]) R.ACTS.spAlloc({tree:trees[1].id,amount:20});
+           if(trees[2]) R.ACTS.spAlloc({tree:trees[2].id,amount:20});
+           spPlan();
          }else{
            p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=4; p.weapon.roll=1.0; p.weapon.prop='flame'; p.weapon.props=['flame'];
            p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=4; p.armor.roll=1.0;
-           R.ACTS.spAlloc({tree:'sword',amount:30}); R.ACTS.spAlloc({tree:'magic',amount:30}); R.ACTS.spAlloc({tree:'life',amount:30});
-           R.ACTS.spAlloc({tree:'warrior',amount:30}); R.ACTS.spAlloc({tree:'mage',amount:30}); R.ACTS.spAlloc({tree:'cleric',amount:30}); R.ACTS.spAlloc({tree:'hero',amount:30});
+           for(const t of trees) R.ACTS.spAlloc({tree:t.id,amount:30});
            for(const m of R.MASTERY_LIST) for(let k=0;k<8;k++) R.ACTS.masteryUp({id:m.id});
-           p.equippedSkills=['goddess','heroAdvent','skyStar'];
+           spPlan();
          }
          p.hp=R.maxHp(p); p.mp=R.maxMp(p);
          let t=0;
@@ -204,7 +219,7 @@ BOT = r"""
      x4_min_game:Math.round(ticks*650/4/60000*10)/10, steps}, metrics());
  }
 
- let guard=0;
+ let guard=0; const dfl=[];
  while(cells.some(c=>!c.cleared)&&guard++<4000){
    town(); const p=G.p;
    const unlocked=R.isDiffUnlocked
@@ -218,10 +233,10 @@ BOT = r"""
    const wasTried=target.tried; target.tried=true;
    const L=doRun(target);
    if(L&&L.result==='clear'){ target.cleared=true; if(!wasTried) target.firstClear=true; }
-   else if(L&&L.result==='defeat'){ defeats++; target.fail++; }
+   else if(L&&L.result==='defeat'){ defeats++; target.fail++; dfl.push(target.d+target.df+'@Lv'+p.lv); }
    if(runs%10===0) log.push([runs,p.lv,ticks]);
  }
- return Object.assign({mode:'loop', done:!cells.some(c=>!c.cleared),runs,defeats,retreats,ticks,lv:G.p.lv,sp:G.p.sp,gold:G.p.gold,log:log.slice(-6),
+ return Object.assign({mode:'loop', char:cid, done:!cells.some(c=>!c.cleared),runs,defeats,retreats,ticks,lv:G.p.lv,sp:G.p.sp,gold:G.p.gold,log:log.slice(-6), defeatList:dfl.reduce((a,x)=>{a[x]=(a[x]||0)+1;return a;},{}),
    x4_min_game:Math.round(ticks*650/4/60000*10)/10, overhead_min:Math.round(runs*20/60*10)/10}, metrics());
 }
 """
@@ -229,6 +244,8 @@ BOT = r"""
 ap = argparse.ArgumentParser()
 ap.add_argument('--mode', choices=['loop', 'linear', 'tower', 'abyss'], default='loop')
 ap.add_argument('--bless', choices=['opt', 'rand'], default='opt')
+ap.add_argument('--char', choices=['stella', 'ruby', 'silia', 'chloe'], default='stella')
+ap.add_argument('--seeds', type=int, default=3, help='loop/tower/abyss のシード数（1..N）')
 ap.add_argument('html', nargs='?', default=os.path.join(os.path.dirname(__file__), '..', 'index.html'))
 args = ap.parse_args()
 HTML = os.path.abspath(args.html)
@@ -237,9 +254,9 @@ with sync_playwright() as p:
     b = p.chromium.launch(); pg = b.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.goto('file://' + HTML); pg.wait_for_timeout(400)
-    seeds = (1,) if args.mode == 'linear' else (1, 2, 3)
+    seeds = (1,) if args.mode == 'linear' else tuple(range(1, args.seeds + 1))
     for seed in seeds:
-        r = pg.evaluate(BOT, {'seed': seed, 'mode': args.mode, 'blessMode': args.bless})
+        r = pg.evaluate(BOT, {'seed': seed, 'mode': args.mode, 'blessMode': args.bless, 'charId': args.char})
         print(json.dumps(r, ensure_ascii=False))
     print(errs)
     b.close()

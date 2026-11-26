@@ -572,7 +572,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v43';
+const APP_VERSION = 'rogue-v49';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -653,9 +653,9 @@ const SK = {
   multi:  { id: 'multi',  name: '連続斬り', mp: 14, ct: 3, type: 'atk',  hits: 3, mult: 0.8, desc: '0.8倍の斬撃を3回放つ' },
   ult:    { id: 'ult',    name: '必殺剣',   mp: 26, ct: 5, type: 'atk',  hits: 1, mult: 4.0, desc: '4倍の渾身の一撃' },
   // 魔法枠スキル
-  fireball:  { id: 'fireball',  name: 'ファイアボール', mp: 12, ct: 3, type: 'atk',  hits: 1, mult: 1.8, desc: '炎の魔力で1.8倍のダメージ' },
-  magicshield: { id: 'magicshield', name: 'マジックシールド', mp: 10, ct: 5, type: 'buff', turns: 5, desc: '5ターン魔法防御力1.5倍' },
-  thunder:   { id: 'thunder',   name: 'サンダー',       mp: 18, ct: 3, type: 'atk',  hits: 2, mult: 1.2, desc: '雷撃を2回放つ（各1.2倍）' },
+  fireball:  { id: 'fireball',  name: 'ファイアボール', mp: 8, ct: 2, type: 'atk',  hits: 1, mult: 2.0, desc: '炎の魔力で2倍のダメージ' },
+  magicshield: { id: 'magicshield', name: 'マジックシールド', mp: 10, ct: 5, type: 'buff', turns: 5, desc: '5ターン防御力1.5倍' },
+  thunder:   { id: 'thunder',   name: 'サンダー',       mp: 14, ct: 3, type: 'atk',  hits: 2, mult: 1.2, desc: '雷撃を2回放つ（各1.2倍）' },
   meteor:    { id: 'meteor',    name: 'メテオ',          mp: 30, ct: 6, type: 'atk',  hits: 1, mult: 5.0, desc: '5倍の超高威力魔法攻撃' },
   // 生命枠スキル
   regen:     { id: 'regen',     name: 'リジェネ',       mp: 8,  ct: 4, type: 'heal', pct: 0.15, desc: '毎ターン最大HPの15%を回復（3ターン）', regen: 3 },
@@ -668,7 +668,7 @@ const SK = {
   // 進化枠（詠唱）スキル
   resurrection: { id: 'resurrection', name: 'リザレクション', mp: 40, ct: 8, type: 'heal', pct: 1.0, desc: '全回復＋次の致死ダメージを1で耐える', revive: true },
   // 進化枠（英雄）スキル
-  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
+  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, allMult: 2, desc: '全ステータス2倍で3回攻撃（各3倍）' },
   // 進化枠 第2段階（SP15〜20）スキル
   shura:      { id: 'shura',      name: '修羅の構え',     mp: 32, ct: 7, type: 'buff', turns: 4, shura: true,  desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
   hagun:      { id: 'hagun',      name: '破軍の剣',       mp: 60, ct: 8, type: 'atk',  hits: 1, mult: 12.0,  desc: '12倍の渾身の一撃' },
@@ -697,9 +697,42 @@ const SK = {
   eternal:        { id: 'eternal',        name: '永劫の祈り',           mp: 75, ct: 9, type: 'heal', pct: 1.0, regen: 5, regenPct: 0.35, barrier: 3, desc: 'HP全回復＋5ターン35%再生＋3回バリア' },
   heroAdvent:     { id: 'heroAdvent',     name: '勇者の光臨',           mp: 70, ct: 8, type: 'buff', turns: 6, advent: true, desc: '6ターン全ステータス3.5倍' },
   skyStar:        { id: 'skyStar',        name: '蒼穹星剣',             mp: 85, ct: 8, type: 'atk',  hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）' },
-  genesisRay:     { id: 'genesisRay',     name: '創世の光',             mp: 95, ct: 9, type: 'atk',  hits: 1, mult: 24.0, desc: '24倍の創世の一閃' }
+  genesisRay:     { id: 'genesisRay',     name: '創世の光',             mp: 95, ct: 9, type: 'atk',  hits: 1, mult: 24.0, desc: '24倍の創世の一閃' },
+  // R1a 追加スキル（非ヒーラー自己回復・クロエ初期スキル）
+  firstAid:       { id: 'firstAid',       name: '応急手当',             mp: 12, ct: 5, type: 'heal', pct: 0.20, desc: '最大HPの20%を回復する' },
+  doubleStab:     { id: 'doubleStab',     name: 'ダブルスタブ',         mp: 7,  ct: 2, type: 'atk',  hits: 2, mult: 1.1, desc: '1.1倍の素早い2回攻撃' },
+  // R1b 追加スキル（キャラ専用: クロエ15・ステラ1・ルビィ4・シリア7）
+  shadowStep: { id: 'shadowStep', name: '影走り', mp: 8, ct: 4, type: 'buff', turns: 3, gen: { turns: 3, defMult: 2 }, desc: '3ターン防御力2倍' },
+  rush: { id: 'rush', name: 'ラッシュ', mp: 15, ct: 3, type: 'atk', hits: 4, mult: 0.7, desc: '0.7倍の連撃を4回放つ' },
+  bladeDance: { id: 'bladeDance', name: '連刃乱舞', mp: 28, ct: 5, type: 'atk', hits: 6, mult: 0.7, desc: '0.7倍の連撃を6回放つ' },
+  phantomSlash: { id: 'phantomSlash', name: '幻影斬', mp: 20, ct: 4, type: 'atk', hits: 3, mult: 1.2, desc: '幻影の斬撃を3回放つ（各1.2倍）' },
+  swiftStance: { id: 'swiftStance', name: '疾風の構え', mp: 22, ct: 6, type: 'buff', turns: 4, gen: { turns: 4, atkMult: 1.8 }, desc: '4ターン攻撃力1.8倍' },
+  shadowPierce: { id: 'shadowPierce', name: '影縫い', mp: 40, ct: 7, type: 'atk', hits: 1, mult: 7.0, desc: '7倍の影縫いの一撃' },
+  frenzyEdge: { id: 'frenzyEdge', name: '狂乱の刃', mp: 20, ct: 6, type: 'buff', turns: 4, gen: { turns: 4, atkMult: 3, defMult: 0.5 }, desc: '4ターン攻撃力3倍・防御力半減' },
+  mirageStance: { id: 'mirageStance', name: '幻惑の構え', mp: 32, ct: 7, type: 'buff', turns: 4, gen: { turns: 4, atkMult: 4, takenMult: 1.2 }, desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
+  thousandCuts: { id: 'thousandCuts', name: '千刃', mp: 60, ct: 8, type: 'atk', hits: 8, mult: 1.5, desc: '1.5倍の千の刃を8回放つ' },
+  nightParade: { id: 'nightParade', name: '百鬼夜行', mp: 80, ct: 8, type: 'atk', hits: 12, mult: 1.5, desc: '1.5倍の百鬼夜行を12回放つ' },
+  phantomAdvent: { id: 'phantomAdvent', name: '怪盗降臨', mp: 65, ct: 8, type: 'buff', turns: 5, gen: { turns: 5, atkMult: 5, takenMult: 1.1 }, desc: '5ターン攻撃力5倍・被ダメ1.1倍' },
+  grandHeist: { id: 'grandHeist', name: '大怪盗の妙技', mp: 50, ct: 7, type: 'atk', hits: 6, mult: 1.5, desc: '1.5倍の妙技を6回放つ' },
+  trumpCard: { id: 'trumpCard', name: '切り札', mp: 70, ct: 9, type: 'atk', hits: 10, mult: 1.5, desc: '1.5倍の切り札を10回放つ' },
+  thousandMask: { id: 'thousandMask', name: '千変万化', mp: 85, ct: 8, type: 'atk', hits: 8, mult: 3.0, desc: '8回攻撃（各3倍）' },
+  nightSky: { id: 'nightSky', name: '夜天の大強盗', mp: 95, ct: 9, type: 'atk', hits: 12, mult: 2.0, desc: '12回攻撃（各2倍）' },
+  swordGod: { id: 'swordGod', name: '剣神の一閃', mp: 95, ct: 9, type: 'atk', hits: 1, mult: 24.0, desc: '24倍の剣神の一閃' },
+  arcaneMiracle: { id: 'arcaneMiracle', name: '大魔導の奇跡', mp: 50, ct: 7, type: 'atk', hits: 3, mult: 3.0, desc: '3回攻撃（各3倍）の大魔法' },
+  starDust: { id: 'starDust', name: '星屑の極意', mp: 70, ct: 9, type: 'atk', hits: 5, mult: 3.0, desc: '5回攻撃（各3倍）の星屑魔法' },
+  skyMeteorite: { id: 'skyMeteorite', name: '蒼穹の流星群', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の流星魔法' },
+  endMagic: { id: 'endMagic', name: '終焉の大魔法', mp: 95, ct: 9, type: 'atk', hits: 1, mult: 24.0, desc: '24倍の終焉の大魔法' },
+  holyBolt: { id: 'holyBolt', name: '聖光弾', mp: 10, ct: 3, type: 'atk', hits: 1, mult: 1.8, desc: '聖なる光弾で1.8倍のダメージ' },
+  judgment: { id: 'judgment', name: '聖裁', mp: 18, ct: 3, type: 'atk', hits: 2, mult: 1.5, desc: '聖なる裁きを2回放つ（各1.5倍）' },
+  holyNova: { id: 'holyNova', name: '聖なる爆光', mp: 30, ct: 5, type: 'atk', hits: 1, mult: 5.0, desc: '5倍の聖なる爆光' },
+  divineWrath: { id: 'divineWrath', name: '神罰', mp: 55, ct: 7, type: 'atk', hits: 1, mult: 9.0, desc: '9倍の神罰の一撃' },
+  angelMiracle: { id: 'angelMiracle', name: '天使の奇跡', mp: 50, ct: 7, type: 'atk', hits: 3, mult: 3.0, desc: '3回攻撃（各3倍）の聖なる光' },
+  celestialLance: { id: 'celestialLance', name: '聖槍の極意', mp: 70, ct: 9, type: 'atk', hits: 5, mult: 3.0, desc: '5回攻撃（各3倍）の聖槍' },
+  heavenStars: { id: 'heavenStars', name: '蒼穹の聖星', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の聖星' }
 };
-const SK_ORDER = ['strike', 'heal', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'tenma', 'kishin', 'blizzard', 'iceAge', 'cosmicNova', 'zeroAbs', 'meteorNova', 'resurrection', 'holyLight', 'requiem', 'goddess', 'eternal', 'heroic', 'heroAwaken', 'starSword', 'heroAdvent', 'skyStar', 'genesisRay'];
+const SK_ORDER = ['strike', 'doubleStab', 'heal', 'firstAid', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'tenma', 'kishin', 'blizzard', 'iceAge', 'cosmicNova', 'zeroAbs', 'meteorNova', 'resurrection', 'holyLight', 'requiem', 'goddess', 'eternal', 'heroic', 'heroAwaken', 'starSword', 'heroAdvent', 'skyStar', 'genesisRay',
+  // R1b 追加（キャラ専用）
+  'shadowStep', 'rush', 'bladeDance', 'phantomSlash', 'swiftStance', 'shadowPierce', 'frenzyEdge', 'mirageStance', 'thousandCuts', 'nightParade', 'phantomAdvent', 'grandHeist', 'trumpCard', 'thousandMask', 'nightSky', 'swordGod', 'arcaneMiracle', 'starDust', 'skyMeteorite', 'endMagic', 'holyBolt', 'judgment', 'holyNova', 'divineWrath', 'angelMiracle', 'celestialLance', 'heavenStars'];
 
 // ============ DQ8スタイル スキルツリー定義 ============
 const SKILL_TREES = [
@@ -731,8 +764,8 @@ const SKILL_TREES = [
     desc: '魔法を極める。高威力の魔法スキルを習得。',
     unlockWhen: () => true,
     milestones: [
-      { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で1.8倍のダメージ' },
-      { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン魔法防御力1.5倍' },
+      { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で2倍のダメージ' },
+      { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン防御力1.5倍' },
       { sp: 10, id: 'thunder',        name: 'サンダー',             desc: '雷撃を2回放つ（各1.2倍）' },
       { sp: 15, id: null,             name: 'MP最大値+20%',       desc: 'パッシブ：最大MPが20%上昇する', passive: 'magic15' },
       { sp: 20, id: 'meteor',         name: 'メテオ',               desc: '5倍の超高威力魔法攻撃' },
@@ -796,7 +829,7 @@ const SKILL_TREES = [
     stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'blizzard',   name: 'ブリザード',       desc: '4.5倍の氷結魔法で敵を凍らせる' },
-      { sp: 10, id: null,         name: 'MP消費-20%',       desc: 'パッシブ：全スキルのMP消費が20%減少', passive: 'mage10' },
+      { sp: 10, id: null,         name: 'MP消費-20%・攻撃+15%', desc: 'パッシブ：全スキルのMP消費が20%減少し、攻撃力が15%上昇する', passive: 'mage10' },
       { sp: 15, id: 'iceAge',     name: 'アイスエイジ',     desc: '6倍の氷結魔法で敵を凍らせる' },
       { sp: 20, id: 'cosmicNova', name: 'コズミックノヴァ', desc: '14倍の星辰爆発魔法' },
       { sp: 25, id: 'zeroAbs',    name: '絶対零度',         desc: '9倍の氷結魔法で敵を2ターン凍らせる' },
@@ -837,7 +870,7 @@ const SKILL_TREES = [
     stage3When: (p) => !!(p && p.ending),
     stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
-      { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
+      { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（各3倍）' },
       { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
       { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
       { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },
@@ -864,6 +897,356 @@ const MASTERY_LIST = [
   { id: 'm_gold',  name: '黄金の極意', desc: '獲得Gold +2.0% / ランク',   key: 'goldPct',  per: 0.020 }
 ];
 
+// ============ R1a: キャラごとのスキルツリー＆説明データ ============
+// 各キャラは 主ツリー(30SP)・第2ツリー(30SP, 主10で解放)・奥義ツリー(30SP, 主20かつ第2が20で解放) の3つを持つ。
+// R1b: 各キャラ専用の新規スキル・奥義・クロエ専用ツリーに本設計済み（数値は初期案。R1cでBOT調整）。
+
+const CHAR_IDS = ['stella', 'ruby', 'silia', 'chloe'];
+
+const CHAR_CLASS_META = {
+  stella: {
+    id: 'stella',
+    name: 'ステラ',
+    job: '剣士',
+    role: '物理アタッカー',
+    blurb: '攻撃力が自慢の物理アタッカー。自己強化で一撃を重くしていく。初めてでも扱いやすい。回復は少ないので、HPの管理に注意。',
+    strengths: '自己強化バフ・高倍率の単発/多段剣技、攻撃力パッシブ',
+    weakness: '回復が最小限（応急手当・薬・撤退の判断が大事）',
+    tutHint: '強撃を習得。敵を早く倒せるよ'
+  },
+  ruby: {
+    id: 'ruby',
+    name: 'ルビィ',
+    job: '魔法使い',
+    role: '魔法アタッカー',
+    blurb: '高威力の魔法で敵を一掃するアタッカー。MPを使い切る戦い方が得意。HPは低めなので、バリアや撤退の判断が大事。',
+    strengths: '高倍率魔法・多段/凍結魔法、MP最大値＆MP消費軽減パッシブ',
+    weakness: 'HPが低め（マジックシールドや撤退の判断が大事）',
+    tutHint: 'ファイアボールを習得。魔法で大ダメージ'
+  },
+  silia: {
+    id: 'silia',
+    name: 'シリア',
+    job: '聖職者',
+    role: '回復・耐久',
+    blurb: '回復とバリアで長く戦える耐久型。聖なる光で攻撃もできる。じっくり進めたい人向け。',
+    strengths: '高い回復量、リジェネ、ダメージ無効バリア、回復効果強化パッシブ',
+    weakness: '序盤〜中盤の火力は控えめ',
+    tutHint: 'ヒールを習得。戦闘中にHPを回復できるよ'
+  },
+  chloe: {
+    id: 'chloe',
+    name: 'クロエ',
+    job: '盗賊',
+    role: '手数・技巧型',
+    blurb: '手数とクリティカルで攻める技巧型。低コストの連続攻撃が得意。1発は軽いので、数で押そう。',
+    strengths: '低CT・低MPの素早い連続攻撃、手数で押す戦闘スタイル',
+    weakness: '1発あたりの倍率が低め',
+    tutHint: 'ダブルスタブで2回攻撃'
+  }
+};
+
+function getCharSkillPts(p, charId) {
+  const cid = charId || (p && p.skin) || 'ruby';
+  if (p && p.chars && p.chars[cid] && p.chars[cid].skillPts) return p.chars[cid].skillPts;
+  return (p && p.skillPts) || {};
+}
+
+const CHAR_TREES = {
+  // -------- ステラ（剣士）: 剣枠・戦士枠・英雄枠 --------
+  stella: [
+    {
+      id: 'sword',
+      name: '剣枠',
+      icon: '⚔️',
+      maxSp: 30,
+      color: '#e88b5a',
+      desc: '剣技を極める。攻撃特化スキルと応急手当を習得。',
+      unlockWhen: () => true,
+      milestones: [
+        { sp: 3,  id: 'strike',     name: '強撃',       desc: '2倍のダメージを与える' },
+        { sp: 6,  id: 'guard',      name: '鉄壁',       desc: '3回の被攻撃のあいだ防御力2倍' },
+        { sp: 10, id: 'multi',      name: '連続斬り',   desc: '0.8倍の斬撃を3回放つ' },
+        { sp: 12, id: 'firstAid',   name: '応急手当',   desc: '最大HPの20%を回復する' },
+        { sp: 15, id: null,         name: '攻撃力+15%', desc: 'パッシブ：攻撃力が15%上昇する', passive: 'sword15' },
+        { sp: 20, id: 'ult',        name: '必殺剣',     desc: '4倍の渾身の一撃' },
+        { sp: 23, id: 'flameSlash', name: '烈火斬',     desc: '炎の斬撃を2回放つ（各1.6倍）' },
+        { sp: 26, id: 'warGod',     name: '鬼神の構え', desc: '4ターン攻撃力1.8倍（防御は下がらない）' },
+        { sp: 30, id: 'skySlash',   name: '天翔斬',     desc: '7倍の秘剣の一撃' }
+      ]
+    },
+    {
+      id: 'warrior',
+      name: '戦士枠',
+      icon: '🗡️',
+      maxSp: 30,
+      color: '#e85a5a',
+      desc: '剣枠10以上で解放。超攻撃特化の戦士スキル。',
+      unlockWhen: (p) => (getCharSkillPts(p, 'stella').sword || 0) >= 10,
+      stage2When: (p) => (getCharSkillPts(p, 'stella').sword || 0) >= 30,
+      stage2Desc: '剣枠30で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'berserk', name: 'バーサーク', desc: '4ターン攻撃力3倍・防御力半減' },
+        { sp: 10, id: null,      name: '攻撃力+30%', desc: 'パッシブ：攻撃力がさらに30%上昇', passive: 'warrior10' },
+        { sp: 15, id: 'shura',   name: '修羅の構え', desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
+        { sp: 20, id: 'hagun',   name: '破軍の剣',   desc: '12倍の渾身の一撃' },
+        { sp: 25, id: 'tenma',   name: '天魔滅殺斬', desc: '18倍の極限の一撃' },
+        { sp: 30, id: 'kishin',  name: '鬼神降臨',   desc: '5ターン攻撃力5倍・被ダメ1.1倍' }
+      ]
+    },
+    {
+      id: 'hero',
+      name: '英雄枠',
+      icon: '👑',
+      maxSp: 30,
+      color: '#e8dc9b',
+      desc: '剣枠20かつ戦士枠20以上で解放。唯一無二の英雄スキル。',
+      unlockWhen: (p) => { const s = getCharSkillPts(p, 'stella'); return (s.sword || 0) >= 20 && (s.warrior || 0) >= 20; },
+      stage2When: (p) => { const s = getCharSkillPts(p, 'stella'); return (s.sword || 0) >= 30 && (s.warrior || 0) >= 20; },
+      stage2Desc: '剣枠30かつ戦士枠20で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（各3倍）' },
+        { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
+        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
+        { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },
+        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
+        { sp: 26, id: 'skyStar',    name: '蒼穹星剣',   desc: '6回攻撃（各4倍）' },
+        { sp: 30, id: 'swordGod',   name: '剣神の一閃', desc: '24倍の剣神の一閃' }
+      ]
+    }
+  ],
+
+  // -------- ルビィ（魔法使い）: 魔法枠・魔術師枠・大魔導枠 --------
+  ruby: [
+    {
+      id: 'magic',
+      name: '魔法枠',
+      icon: '✨',
+      maxSp: 30,
+      color: '#7a9ff5',
+      desc: '魔法を極める。高威力の魔法スキルと応急手当を習得。',
+      unlockWhen: () => true,
+      milestones: [
+        { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で2倍のダメージ' },
+        { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン防御力1.5倍' },
+        { sp: 10, id: 'thunder',        name: 'サンダー',             desc: '雷撃を2回放つ（各1.2倍）' },
+        { sp: 12, id: 'firstAid',       name: '応急手当',             desc: '最大HPの20%を回復する' },
+        { sp: 15, id: null,             name: 'MP最大値+20%',         desc: 'パッシブ：最大MPが20%上昇する', passive: 'magic15' },
+        { sp: 20, id: 'meteor',         name: 'メテオ',               desc: '5倍の超高威力魔法攻撃' },
+        { sp: 23, id: 'blaze',          name: 'ブレイズ',             desc: '業火で2.6倍のダメージ' },
+        { sp: 26, id: 'lightningStorm', name: 'ライトニングストーム', desc: '雷撃を4回放つ（各1.0倍）' },
+        { sp: 30, id: 'ultima',         name: 'アルテマ',             desc: '9倍の究極魔法攻撃' }
+      ]
+    },
+    {
+      id: 'mage',
+      name: '魔術師枠',
+      icon: '🔮',
+      maxSp: 30,
+      color: '#a07af5',
+      desc: '魔法枠10以上で解放。超強力な魔術師スキル。',
+      unlockWhen: (p) => (getCharSkillPts(p, 'ruby').magic || 0) >= 10,
+      stage2When: (p) => (getCharSkillPts(p, 'ruby').magic || 0) >= 30,
+      stage2Desc: '魔法枠30で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'blizzard',   name: 'ブリザード',       desc: '4.5倍の氷結魔法で敵を凍らせる' },
+        { sp: 10, id: null,         name: 'MP消費-20%・攻撃+15%', desc: 'パッシブ：全スキルのMP消費が20%減少し、攻撃力が15%上昇する', passive: 'mage10' },
+        { sp: 15, id: 'iceAge',     name: 'アイスエイジ',     desc: '6倍の氷結魔法で敵を凍らせる' },
+        { sp: 20, id: 'cosmicNova', name: 'コズミックノヴァ', desc: '14倍の星辰爆発魔法' },
+        { sp: 25, id: 'zeroAbs',    name: '絶対零度',         desc: '9倍の氷結魔法で敵を2ターン凍らせる' },
+        { sp: 30, id: 'meteorNova', name: 'メテオノヴァ',     desc: '22倍の究極星辰魔法' }
+      ]
+    },
+    {
+      id: 'hero',
+      name: '英雄枠',
+      icon: '👑',
+      maxSp: 30,
+      color: '#e8dc9b',
+      desc: '魔法枠20かつ魔術師枠20以上で解放。大魔導の奥義スキル。',
+      unlockWhen: (p) => { const s = getCharSkillPts(p, 'ruby'); return (s.magic || 0) >= 20 && (s.mage || 0) >= 20; },
+      stage2When: (p) => { const s = getCharSkillPts(p, 'ruby'); return (s.magic || 0) >= 30 && (s.mage || 0) >= 20; },
+      stage2Desc: '魔法枠30かつ魔術師枠20で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'arcaneMiracle', name: '大魔導の奇跡', desc: '3回攻撃（各3倍）の大魔法' },
+        { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
+        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
+        { sp: 20, id: 'starDust',   name: '星屑の極意', desc: '5回攻撃（各3倍）の星屑魔法' },
+        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
+        { sp: 26, id: 'skyMeteorite', name: '蒼穹の流星群', desc: '6回攻撃（各4倍）の流星魔法' },
+        { sp: 30, id: 'endMagic',   name: '終焉の大魔法', desc: '24倍の終焉の大魔法' }
+      ]
+    }
+  ],
+
+  // -------- シリア（聖職者）: 生命枠・詠唱枠・聖女枠 --------
+  silia: [
+    {
+      id: 'life',
+      name: '生命枠',
+      icon: '💚',
+      maxSp: 30,
+      color: '#58c98a',
+      desc: '生命力を極める。本格的な回復・バリアスキルを習得。',
+      unlockWhen: () => true,
+      milestones: [
+        { sp: 3,  id: 'heal',        name: 'ヒール',         desc: '最大HPの35%を回復する' },
+        { sp: 5,  id: 'holyBolt',    name: '聖光弾',         desc: '聖なる光弾で1.8倍のダメージ' },
+        { sp: 6,  id: 'regen',       name: 'リジェネ',       desc: '3ターン間毎ターン最大HPの15%回復' },
+        { sp: 10, id: 'barrier',     name: 'バリア',         desc: 'ダメージを3回無効化するバリアを張る' },
+        { sp: 13, id: 'judgment',    name: '聖裁',           desc: '聖なる裁きを2回放つ（各1.5倍）' },
+        { sp: 15, id: null,          name: 'HP最大値+20%',   desc: 'パッシブ：最大HPが20%上昇する', passive: 'life15' },
+        { sp: 20, id: 'fullheal',    name: 'フルヒール',     desc: '最大HPの70%を回復する' },
+        { sp: 23, id: 'highRegen',   name: 'ハイリジェネ',   desc: '3ターン間毎ターン最大HPの25%回復' },
+        { sp: 26, id: 'holyBarrier', name: 'ホーリーバリア', desc: 'ダメージを5回無効化するバリアを張る' },
+        { sp: 28, id: 'holyNova',    name: '聖なる爆光',     desc: '5倍の聖なる爆光' },
+        { sp: 30, id: 'saintPrayer', name: '聖女の祈り',     desc: '最大HPを全回復する' }
+      ]
+    },
+    {
+      id: 'cleric',
+      name: '詠唱枠',
+      icon: '🌿',
+      maxSp: 30,
+      color: '#5ac9a0',
+      desc: '生命枠10以上で解放。究極の回復術士スキル。',
+      unlockWhen: (p) => (getCharSkillPts(p, 'silia').life || 0) >= 10,
+      stage2When: (p) => (getCharSkillPts(p, 'silia').life || 0) >= 30,
+      stage2Desc: '生命枠30で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'resurrection', name: 'リザレクション', desc: '全回復＋次の致死ダメージを1で耐える' },
+        { sp: 10, id: null,           name: 'HP/MP回復+50%', desc: 'パッシブ：全回復系の効果が50%上昇', passive: 'cleric10' },
+        { sp: 15, id: 'holyLight',    name: 'ホーリーライト', desc: '最大HP全回復＋3ターン防御1.5倍' },
+        { sp: 20, id: 'requiem',      name: 'レクイエム',     desc: 'HP・MPを全回復する' },
+        { sp: 22, id: 'divineWrath',  name: '神罰',           desc: '9倍の神罰の一撃' },
+        { sp: 25, id: 'goddess',      name: '女神の奇跡',     desc: 'HP・MP全回復＋4ターン防御2倍' },
+        { sp: 30, id: 'eternal',      name: '永劫の祈り',     desc: 'HP全回復＋5ターン35%再生＋3回バリア' }
+      ]
+    },
+    {
+      id: 'hero',
+      name: '英雄枠',
+      icon: '👑',
+      maxSp: 30,
+      color: '#e8dc9b',
+      desc: '生命枠20かつ詠唱枠20以上で解放。聖女の奥義スキル。',
+      unlockWhen: (p) => { const s = getCharSkillPts(p, 'silia'); return (s.life || 0) >= 20 && (s.cleric || 0) >= 20; },
+      stage2When: (p) => { const s = getCharSkillPts(p, 'silia'); return (s.life || 0) >= 30 && (s.cleric || 0) >= 20; },
+      stage2Desc: '生命枠30かつ詠唱枠20で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'angelMiracle', name: '天使の奇跡', desc: '3回攻撃（各3倍）の聖なる光' },
+        { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
+        { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
+        { sp: 20, id: 'celestialLance', name: '聖槍の極意', desc: '5回攻撃（各3倍）の聖槍' },
+        { sp: 22, id: 'heroAdvent', name: '勇者の光臨', desc: '6ターン全ステータス3.5倍' },
+        { sp: 26, id: 'heavenStars', name: '蒼穹の聖星', desc: '6回攻撃（各4倍）の聖星' },
+        { sp: 30, id: 'genesisRay', name: '創世の光',   desc: '24倍の創世の一閃' }
+      ]
+    }
+  ],
+
+  // -------- クロエ（盗賊）: 盗技枠・怪盗枠・大怪盗枠（全て新規） --------
+  chloe: [
+    {
+      id: 'sword',
+      name: '盗技枠',
+      icon: '🗡️',
+      maxSp: 30,
+      color: '#57d5ee',
+      desc: '盗賊の技を極める。手数と連撃のスキルと応急手当を習得。',
+      unlockWhen: () => true,
+      milestones: [
+        { sp: 3,  id: 'doubleStab',   name: 'ダブルスタブ', desc: '1.1倍の素早い2回攻撃' },
+        { sp: 6,  id: 'shadowStep',   name: '影走り',       desc: '3ターン防御力2倍' },
+        { sp: 10, id: 'rush',         name: 'ラッシュ',     desc: '0.7倍の連撃を4回放つ' },
+        { sp: 12, id: 'firstAid',     name: '応急手当',     desc: '最大HPの20%を回復する' },
+        { sp: 15, id: null,           name: 'クリティカル率+20%', desc: 'パッシブ：クリティカル率が20%上昇する（急所狙い）', passive: 'crit20' },
+        { sp: 20, id: 'bladeDance',   name: '連刃乱舞',     desc: '0.7倍の連撃を6回放つ' },
+        { sp: 23, id: 'phantomSlash', name: '幻影斬',       desc: '幻影の斬撃を3回放つ（各1.2倍）' },
+        { sp: 26, id: 'swiftStance',  name: '疾風の構え',   desc: '4ターン攻撃力1.8倍' },
+        { sp: 30, id: 'shadowPierce', name: '影縫い',       desc: '7倍の影縫いの一撃' }
+      ]
+    },
+    {
+      id: 'warrior',
+      name: '怪盗枠',
+      icon: '🌙',
+      maxSp: 30,
+      color: '#b98af7',
+      desc: '盗技枠10以上で解放。怪盗の奥の手スキル。',
+      unlockWhen: (p) => (getCharSkillPts(p, 'chloe').sword || 0) >= 10,
+      stage2When: (p) => (getCharSkillPts(p, 'chloe').sword || 0) >= 30,
+      stage2Desc: '盗技枠30で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'frenzyEdge',    name: '狂乱の刃',   desc: '4ターン攻撃力3倍・防御力半減' },
+        { sp: 10, id: null,            name: '全スキルCT-1', desc: 'パッシブ：全スキルのCTが1短縮（最低1）（疾風）', passive: 'swift10' },
+        { sp: 15, id: 'mirageStance',  name: '幻惑の構え', desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
+        { sp: 20, id: 'thousandCuts',  name: '千刃',       desc: '1.5倍の千の刃を8回放つ' },
+        { sp: 25, id: 'nightParade',   name: '百鬼夜行',   desc: '1.5倍の百鬼夜行を12回放つ' },
+        { sp: 30, id: 'phantomAdvent', name: '怪盗降臨',   desc: '5ターン攻撃力5倍・被ダメ1.1倍' }
+      ]
+    },
+    {
+      id: 'hero',
+      name: '英雄枠',
+      icon: '👑',
+      maxSp: 30,
+      color: '#e8dc9b',
+      desc: '盗技枠20かつ怪盗枠20以上で解放。大怪盗の奥義スキル。',
+      unlockWhen: (p) => { const s = getCharSkillPts(p, 'chloe'); return (s.sword || 0) >= 20 && (s.warrior || 0) >= 20; },
+      stage2When: (p) => { const s = getCharSkillPts(p, 'chloe'); return (s.sword || 0) >= 30 && (s.warrior || 0) >= 20; },
+      stage2Desc: '盗技枠30かつ怪盗枠20で第2段階（SP11〜20）解放',
+      stage3When: (p) => !!(p && p.ending),
+      stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
+      milestones: [
+        { sp: 5,  id: 'grandHeist',   name: '大怪盗の妙技', desc: '1.5倍の妙技を6回放つ' },
+        { sp: 10, id: null,           name: '全能力+25%',   desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
+        { sp: 15, id: 'heroAwaken',   name: '英雄の覚醒',   desc: '5ターン全ステータス2.5倍' },
+        { sp: 20, id: 'trumpCard',    name: '切り札',       desc: '1.5倍の切り札を10回放つ' },
+        { sp: 22, id: 'heroAdvent',   name: '勇者の光臨',   desc: '6ターン全ステータス3.5倍' },
+        { sp: 26, id: 'thousandMask', name: '千変万化',     desc: '8回攻撃（各3倍）' },
+        { sp: 30, id: 'nightSky',     name: '夜天の大強盗', desc: '12回攻撃（各2倍）' }
+      ]
+    }
+  ]
+};
+
+function getCharTrees(charId) {
+  const cid = (charId && CHAR_TREES[charId]) ? charId : 'stella';
+  return CHAR_TREES[cid];
+}
+
+// チュートリアル（step 41 / step 5）で習得・装備する対象（現キャラの主ツリーの最初の3SPスキル）をデータから引く
+function getCharTutorialTarget(charId) {
+  const cid = (charId && CHAR_TREES[charId]) ? charId : 'ruby';
+  const mainTree = CHAR_TREES[cid][0];
+  const ms = mainTree.milestones.find(m => m.id && m.sp <= 3) || mainTree.milestones.find(m => m.id);
+  const sk = ms && SK[ms.id];
+  const meta = CHAR_CLASS_META[cid] || CHAR_CLASS_META.stella;
+  return {
+    charId: cid,
+    treeId: mainTree.id,
+    treeName: mainTree.name,
+    skillId: ms ? ms.id : 'strike',
+    skillName: sk ? sk.name : (ms ? ms.name : '強撃'),
+    spReq: ms ? ms.sp : 3,
+    hint: meta.tutHint || ''
+  };
+}
 
 const DIFFS = [
   { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 1, expMult: 1.60, reqDiff: null },
@@ -1562,15 +1945,17 @@ const itemIcon = it => {
 // パッシブボーナス計算
 function passiveBonus(p) {
   const passives = (p && p.passiveSkills) || {};
-  let atkMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1;
+  let atkMult = 1, hpMult = 1, mpMult = 1, mpCostMult = 1, healMult = 1, critAdd = 0, ctRed = 0;
   if (passives.sword15) atkMult *= 1.15;
   if (passives.warrior10) atkMult *= 1.30;
   if (passives.magic15) mpMult *= 1.20;
-  if (passives.mage10) mpCostMult *= 0.80;
+  if (passives.mage10) { mpCostMult *= 0.80; atkMult *= 1.15; }
   if (passives.life15) hpMult *= 1.20;
   if (passives.cleric10) healMult *= 1.50;
   if (passives.hero10) { atkMult *= 1.25; hpMult *= 1.25; mpMult *= 1.25; }
-  return { atkMult, hpMult, mpMult, mpCostMult, healMult };
+  if (passives.crit20) critAdd += 0.20;   // R1b: クロエ「急所狙い」
+  if (passives.swift10) ctRed += 1;       // R1b: クロエ「疾風」全スキルCT-1（最低1は呼び出し側で保証）
+  return { atkMult, hpMult, mpMult, mpCostMult, healMult, critAdd, ctRed };
 }
 // 極意ボーナス計算（極意を振ったときの増分のみ）
 function masteryBonus(p) {
@@ -1648,6 +2033,7 @@ function spriteSVG(shape, pal) {
 }
 
 /* ================= state ================= */
+let _tutorialState = null;
 const G = {
   p: null, view: 'town', run: null, last: null, modalOpen: false, noTimer: false, headless: false,
   opts: { speed: 1, autoSkill: true, autoEquip: true },
@@ -1659,7 +2045,14 @@ const G = {
   townView: 'plaza',  // 'plaza'|'inn'|'shop'|'smith'|'bank'
   statusTab: 'hero',  // 'hero'|'gear'|'skill'|'mastery'|'data' (memory only)
   helpTab: 'intro',   // 'intro'|'world'|'skill'|'status'|'endgame' (memory only)
-  tutorial: null  // { step: 0-6, done: false } or null
+  get tutorial() { return _tutorialState; },
+  set tutorial(v) {
+    _tutorialState = v;
+    if ((!v || v.done) && this._charSelectOpen) {
+      this._charSelectOpen = false;
+      if (typeof closeModal === 'function') closeModal();
+    }
+  }
 };
 
 function towerEff(run) {
@@ -1787,9 +2180,58 @@ function isDiffUnlocked(p, d, df) {
   if (!df.reqDiff) return true;
   return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
 }
+function makeDefaultChars() {
+  const out = {};
+  for (const cid of CHAR_IDS) {
+    const trees = getCharTrees(cid);
+    const sp = {};
+    for (const t of trees) sp[t.id] = 0;
+    out[cid] = { skillPts: sp, equippedSkills: [null, null, null] };
+  }
+  return out;
+}
+
+function syncActiveCharState(p) {
+  if (!p) return;
+  const cid = (p.skin && CHAR_TREES[p.skin]) ? p.skin : 'ruby';
+  p.skin = cid;
+  if (!p.chars || typeof p.chars !== 'object') p.chars = makeDefaultChars();
+  const def = makeDefaultChars();
+  for (const k of CHAR_IDS) {
+    if (!p.chars[k] || typeof p.chars[k] !== 'object') p.chars[k] = def[k];
+    if (!p.chars[k].skillPts || typeof p.chars[k].skillPts !== 'object') p.chars[k].skillPts = def[k].skillPts;
+    for (const t of getCharTrees(k)) {
+      if (typeof p.chars[k].skillPts[t.id] !== 'number') p.chars[k].skillPts[t.id] = 0;
+    }
+    if (!Array.isArray(p.chars[k].equippedSkills) || p.chars[k].equippedSkills.length !== 3) {
+      p.chars[k].equippedSkills = [null, null, null];
+    }
+  }
+  const active = p.chars[cid];
+  p.skillPts = active.skillPts;
+  p.equippedSkills = active.equippedSkills;
+  const skills = {}, passives = {};
+  for (const t of getCharTrees(cid)) {
+    const pts = Number(active.skillPts[t.id]) || 0;
+    for (const ms of t.milestones) {
+      if (pts >= ms.sp) {
+        if (ms.id && SK[ms.id]) skills[ms.id] = true;
+        if (ms.passive) passives[ms.passive] = true;
+      }
+    }
+  }
+  p.skills = skills;
+  p.passiveSkills = passives;
+  for (let i = 0; i < 3; i++) {
+    const sid = active.equippedSkills[i];
+    if (sid && !skills[sid]) active.equippedSkills[i] = null;
+  }
+}
+
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 }, passiveSkills: {}, equippedSkills: [null, null, null], potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const chars = makeDefaultChars();
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, skin: 'ruby', chars, v9ResetNoticePending: false, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: chars.ruby.skillPts, passiveSkills: {}, equippedSkills: chars.ruby.equippedSkills, potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
@@ -1855,7 +2297,7 @@ function checkAchievements(ev = null, silent = false) {
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 8;
+const SAVE_VERSION = 9;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -1948,6 +2390,28 @@ const migrations = {
     if (typeof p.unlockNoticeShown !== 'boolean') p.unlockNoticeShown = !!(p.ending || (p.cleared && p.cleared.O && p.cleared.O.extreme));
     if (typeof p.abyssNoticeShown !== 'boolean') p.abyssNoticeShown = isAbyssUnlocked(p).ok;
     return Object.assign({}, d, { v: 8, p });
+  },
+  // v8 → v9: キャラ別スキルツリー導入。旧 skillPts の消費SPをすべて p.sp に返却し、各キャラの空 chars を作成
+  8: d => {
+    const p = Object.assign({}, d.p);
+    let refund = 0;
+    if (p.skillPts && typeof p.skillPts === 'object') {
+      for (const v of Object.values(p.skillPts)) {
+        const n = Number(v);
+        if (isFinite(n) && n > 0) refund += Math.floor(n);
+      }
+    }
+    p.sp = Math.max(0, (Number(p.sp) || 0) + refund);
+    p.chars = makeDefaultChars();
+    const cid = (p.skin && CHAR_TREES[p.skin]) ? p.skin : 'ruby';
+    p.skin = cid;
+    p.skills = {};
+    p.passiveSkills = {};
+    p.skillPts = p.chars[cid].skillPts;
+    p.equippedSkills = p.chars[cid].equippedSkills;
+    const hadProgress = refund > 0 || (Number(p.lv) || 1) > 1 || (p.stats && (Number(p.stats.runs) || 0) > 0);
+    p.v9ResetNoticePending = hadProgress;
+    return Object.assign({}, d, { v: 9, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -2058,33 +2522,33 @@ function load() {
       p.achStats.blessings = num(s.achStats.blessings, 0);
       p.achStats.noDmgBoss = !!s.achStats.noDmgBoss;
     }
-    p.skills = {}; if (s.skills) for (const k of SK_ORDER) if (s.skills[k]) p.skills[k] = true;
-    p.skillPts = { sword: 0, magic: 0, life: 0, warrior: 0, mage: 0, cleric: 0, hero: 0 };
-    if (s.skillPts && typeof s.skillPts === 'object') {
-      for (const k of ['sword','magic','life','warrior','mage','cleric','hero']) {
-        const tree = SKILL_TREES.find(t => t.id === k);
-        p.skillPts[k] = num(s.skillPts[k], 0, 0, tree ? tree.maxSp : 30);
+    if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
+    p.chars = makeDefaultChars();
+    if (s.chars && typeof s.chars === 'object') {
+      for (const cid of CHAR_IDS) {
+        const sc = s.chars[cid];
+        if (!sc || typeof sc !== 'object') continue;
+        if (sc.skillPts && typeof sc.skillPts === 'object') {
+          for (const t of getCharTrees(cid)) {
+            p.chars[cid].skillPts[t.id] = num(sc.skillPts[t.id], 0, 0, t.maxSp || 30);
+          }
+        }
+        if (Array.isArray(sc.equippedSkills)) {
+          for (let i = 0; i < 3; i++) {
+            const sid = sc.equippedSkills[i];
+            if (sid && SK[sid]) p.chars[cid].equippedSkills[i] = sid;
+          }
+        }
       }
     }
-    p.passiveSkills = {};
-    if (s.passiveSkills && typeof s.passiveSkills === 'object') {
-      const validPassives = ['sword15','magic15','life15','warrior10','mage10','cleric10','hero10'];
-      for (const k of validPassives) if (s.passiveSkills[k]) p.passiveSkills[k] = true;
-    }
-    p.equippedSkills = [null, null, null];
-    if (Array.isArray(s.equippedSkills)) {
-      for (let i = 0; i < 3; i++) {
-        const id = s.equippedSkills[i];
-        if (id && SK[id]) p.equippedSkills[i] = id;
-      }
-    }
+    p.v9ResetNoticePending = !!s.v9ResetNoticePending;
+    syncActiveCharState(p);
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
     if (s.stones && typeof s.stones === 'object') {
       for (const st of STONES) p.stones[st.id] = num(s.stones[st.id], 0, 0, 999);
     }
     let id = 1; [p.weapon, p.armor, ...p.bag].forEach(it => { if (it) it.id = id++; }); p.nextId = id;
-    if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
     p.hp = clamp(num(s.hp, maxHp(p)), 1, maxHp(p)); p.mp = clamp(num(s.mp, maxMp(p)), 0, maxMp(p));
     G.p = p;
     if (migrated || !s.ach) checkAchievements(null, true);
@@ -2588,6 +3052,8 @@ async function maybeSendAnalytics() {
   if (IS_DEV_BUILD) return { sent: false, reason: 'dev' };
   if (!ANALYTICS_CFG.reportUrl || !ANALYTICS_CFG.entryStats) return { sent: false, reason: 'unconfigured' };
   if (isAnalyticsOptOut()) return { sent: false, reason: 'optout' };
+  // 自動テスト（Playwright等）が本番フォームへ送るのを防ぐ（実フォーム宛てのときのみ。テスト用ダミーURLは通す）
+  if (typeof navigator !== 'undefined' && navigator.webdriver && /(^|\/\/)docs\.google\.com\//.test(ANALYTICS_CFG.reportUrl)) return { sent: false, reason: 'automation' };
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { sent: false, reason: 'offline' };
   let last = 0;
   try { last = Number(localStorage.getItem(ANALYTICS_CFG.lastSentKey) || 0); } catch (e) {}
@@ -2931,12 +3397,20 @@ function tickSkillCt() {
     run.skillCt[k] = Math.max(0, (run.skillCt[k] || 0) - 1);
   }
 }
+// R1b: 汎用バフ（SK.gen）の倍率。kind: 'atk' | 'def' | 'taken'
+function genBuffMult(run, kind) {
+  const g = run && run.gen;
+  if (!g || !(g.turns > 0)) return 1;
+  if (kind === 'atk') return (g.atkMult || 1) * (g.allMult || 1);
+  if (kind === 'def') return (g.defMult || 1) * (g.allMult || 1);
+  return g.takenMult || 1;
+}
 function useSkillEffect(id) {
   const p = G.p, run = G.run, en = run.enemy;
   const s = SK[id], te = towerEff(run), psb = p.passiveSkills ? passiveBonus(p) : { healMult: 1 }, pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
   p.mp -= skillMpCost(p, s);
   // CTをセット
-  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
+  if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0) - (psb.ctRed || 0));
   if (s.type === 'heal') {
     const h = Math.max(1, Math.round(maxHp(p) * s.pct * te.healMult * psb.healMult * pb.healMult * (ae ? ae.healMult : 1))); const before = p.hp;
     p.hp = Math.min(maxHp(p), p.hp + h);
@@ -2948,9 +3422,19 @@ function useSkillEffect(id) {
     return true;
   }
   if (s.type === 'buff') {
-    if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
-    else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 魔法防御力が上がった。', 'l-good'); }
-    else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍になった！', 'l-good'); }
+    if (s.gen) {
+      run.gen = Object.assign({}, s.gen);
+      const parts = [];
+      const g = s.gen;
+      if (g.atkMult) parts.push(`攻撃力が${g.atkMult}倍`);
+      if (g.defMult) parts.push(`防御力が${g.defMult}倍`);
+      if (g.allMult) parts.push(`全ステータスが${g.allMult}倍`);
+      if (g.takenMult) parts.push(`被ダメージが${g.takenMult}倍`);
+      addLog(`${s.name}！ ${parts.join('・')}になった！`, 'l-good');
+    }
+    else if (id === 'guard') { run.guard = s.turns; addLog('鉄壁の構え！ 防御力が2倍になった。', 'l-good'); }
+    else if (id === 'magicshield') { run.magicShield = s.turns; addLog('マジックシールド！ 防御力が1.5倍になった。', 'l-good'); }
+    else if (id === 'berserk') { run.berserk = s.turns; addLog('バーサーク！ 攻撃力が3倍・防御力が半減した！', 'l-good'); }
     else if (id === 'warGod') { run.warGod = s.turns; addLog('鬼神の構え！ 攻撃力が1.8倍になった！', 'l-good'); }
     else if (s.shura) { run.shura = s.turns; addLog('修羅の構え！ 攻撃力が4倍になった！', 'l-good'); }
     else if (s.kishin) { run.kishin = s.turns; addLog('鬼神降臨！ 攻撃力が5倍になった！', 'l-good'); }
@@ -2975,25 +3459,27 @@ function playerAct() {
   // attack / atk系スキル
   const s = id === 'attack' ? { name: '攻撃', hits: 1, mult: 1 } : SK[id];
   const te = towerEff(run), ae = run.abyss ? abyssEff(run) : null;
+  const pcb = p.passiveSkills ? passiveBonus(p) : { critAdd: 0, ctRed: 0 };
   if (id !== 'attack') {
     p.mp -= skillMpCost(p, s);
-    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0));
+    if (s.ct) run.skillCt[id] = Math.max(1, s.ct - te.ctRed + (ae ? ae.ctAdd : 0) - (pcb.ctRed || 0));
   }
   if (hasProp(p.weapon, 'madness')) {
     const loss = Math.ceil(maxHp(p) * 0.1), before = p.hp;
     p.hp = Math.max(1, p.hp - loss);
     if (before - p.hp > 0) { addLog(`狂気の代償でHPが${before - p.hp}減った。`, 'l-dmg'); popDamage('player', `-${before - p.hp}`, 'bad'); }
   }
-  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
+  const pa = playerAtk(p) * (run.warGod > 0 ? 1.8 : 1) * (run.berserk > 0 ? 3 : 1) * (run.shura > 0 ? 4 : 1) * (run.kishin > 0 ? 5 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * (s.allMult || 1) * genBuffMult(run, 'atk');
   const pb = masteryBonus(p);
   if (run.warGod > 0) run.warGod--;
   if (run.awaken > 0) run.awaken--;
   if (run.advent > 0) run.advent--;
+  if (s.allMult) { run.heroDef = 1; addLog(`${s.name}！ 全ステータスが${s.allMult}倍になった！`, 'l-good'); }
   let dealt = 0, crits = 0, hits = 0;
   const bossMult = en.boss ? (1 + te.bossDmg) : 1;
   for (let i = 0; i < s.hits; i++) {
     if (en.hp <= 0) break;
-    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < (0.1 + pb.critAdd));
+    const crit = (te.firstCrit && en.firstHit) ? true : (rnd() < (0.1 + pb.critAdd + (pcb.critAdd || 0)));
     en.firstHit = false;
     const dmg = calcDmg(pa * s.mult * (crit ? 1.5 : 1) * te.dmgMult * pb.dmgMult * bossMult, en.def);
     en.hp = Math.max(0, en.hp - dmg); dealt += dmg; hits++; if (crit) crits++;
@@ -3025,10 +3511,14 @@ function enemyAct() {
     return;
   }
   const pb = masteryBonus(p), ae = run.abyss ? abyssEff(run) : null;
-  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1);
-  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
+  const def = playerDef(p) * (run.guard > 0 ? 2 : 1) * (run.defBuff > 0 ? (run.defBuffMult || 1.5) : 1) * (run.berserk > 0 ? 0.5 : 1) * (run.magicShield > 0 ? 1.5 : 1) * (run.heroDef > 0 ? 2 : 1) * (run.awaken > 0 ? 2.5 : 1) * (run.advent > 0 ? 3.5 : 1) * genBuffMult(run, 'def');
+  const dmg = Math.max(1, Math.round(calcDmg(en.atk, def) * (run.shura > 0 ? 1.2 : 1) * (run.kishin > 0 ? 1.1 : 1) * genBuffMult(run, 'taken') * (hasProp(p.armor, 'ward') ? 0.9 : 1) * te.takenMult * pb.takenMult * (ae ? ae.takenMult : 1)));
+  if (run.berserk > 0) run.berserk--;
+  if (run.magicShield > 0) run.magicShield--;
+  if (run.heroDef > 0) run.heroDef--;
   if (run.shura > 0) run.shura--;
   if (run.kishin > 0) run.kishin--;
+  if (run.gen && run.gen.turns > 0) { run.gen.turns--; if (run.gen.turns === 0) run.gen = null; }
   if (run.defBuff > 0) run.defBuff--;
   p.hp = Math.max(0, p.hp - dmg);
   if (run.enemy && run.enemy.boss && dmg > 0) run.bossHitTaken = true;
@@ -3700,7 +4190,8 @@ const ACTS = {
   spAlloc(d) {
     // d.tree: ツリーID, d.amount: 割り振るSP数
     const p = G.p;
-    const tree = SKILL_TREES.find(t => t.id === d.tree);
+    const trees = getCharTrees(p && p.skin);
+    const tree = trees.find(t => t.id === d.tree) || SKILL_TREES.find(t => t.id === d.tree);
     if (!tree) return;
     if (!tree.unlockWhen(p)) { toast('このスキル枠はまだ解放されていません'); return; }
     const amount = Number(d.amount) || 1;
@@ -3717,6 +4208,7 @@ const ACTS = {
     const prevPts = curPts;
     p.sp -= amount;
     p.skillPts[d.tree] = curPts + amount;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[d.tree] = p.skillPts[d.tree];
     // マイルストーンチェック：新たに到達したSP閾値のスキルを自動解放
     for (const ms of tree.milestones) {
       if (prevPts < ms.sp && p.skillPts[d.tree] >= ms.sp) {
@@ -3729,10 +4221,13 @@ const ACTS = {
         }
       }
     }
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
     save(); checkAchievements('sp'); renderHUD(); renderStatus();
-    // チュートリアル step 41: ヒールを取得したら step 5 へ
+    // チュートリアル step 41: 現キャラの初期スキルを取得したら step 5 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 41) {
-      if (G.p.skills['heal']) {
+      const tutTgt = getCharTutorialTarget(p.skin);
+      if (G.p.skills[tutTgt.skillId]) {
         setTimeout(() => tutStep(5), 400);
       }
     }
@@ -3748,7 +4243,8 @@ const ACTS = {
       return;
     }
     delete G[key];
-    const tree = SKILL_TREES.find(t => t.id === d.tree);
+    const trees = getCharTrees(p && p.skin);
+    const tree = trees.find(t => t.id === d.tree) || SKILL_TREES.find(t => t.id === d.tree);
     if (!tree) return;
     const cost = skillResetCost(p);
     if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
@@ -3757,17 +4253,21 @@ const ACTS = {
     // SPを返還
     p.sp += pts;
     p.skillPts[d.tree] = 0;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[d.tree] = 0;
     // このツリーのスキル・パッシブを削除
     for (const ms of tree.milestones) {
       if (ms.id) delete p.skills[ms.id];
       if (ms.passive) delete p.passiveSkills[ms.passive];
     }
     // 進化枠が解放条件を満たさなくなった場合、その枠もリセット
-    for (const evoTree of SKILL_TREES) {
+    const checkTrees = trees.some(t => t.id === d.tree) ? trees : SKILL_TREES;
+    for (const evoTree of checkTrees) {
+      if (evoTree.id === checkTrees[0].id) continue;
       if (!evoTree.unlockWhen(p) && (p.skillPts[evoTree.id] || 0) > 0) {
         const evoPts = p.skillPts[evoTree.id];
         p.sp += evoPts;
         p.skillPts[evoTree.id] = 0;
+        if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[evoTree.id] = 0;
         for (const ms of evoTree.milestones) {
           if (ms.id) delete p.skills[ms.id];
           if (ms.passive) delete p.passiveSkills[ms.passive];
@@ -3777,6 +4277,7 @@ const ACTS = {
         const excess = p.skillPts[evoTree.id] - 10;
         p.sp += excess;
         p.skillPts[evoTree.id] = 10;
+        if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[evoTree.id] = 10;
         for (const ms of evoTree.milestones) if (ms.sp > 10) {
           if (ms.id) delete p.skills[ms.id];
           if (ms.passive) delete p.passiveSkills[ms.passive];
@@ -3784,6 +4285,13 @@ const ACTS = {
         toast(`「${evoTree.name}」の第2段階が未解放となり10SPに戻りました`);
       }
     }
+    // 未習得となった装備スキルをスロットから外す
+    for (let i = 0; i < 3; i++) {
+      const sid = p.equippedSkills[i];
+      if (sid && !p.skills[sid]) p.equippedSkills[i] = null;
+    }
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
     save();
     toast(`「${tree.name}」のSPをリセットしました`);
     renderHUD(); renderStatus();
@@ -3796,13 +4304,17 @@ const ACTS = {
     const id = d.id;
     if (!p.skills[id]) return;
     // 既に別スロットに装備中なら外す
-    p.equippedSkills = p.equippedSkills.map(s => s === id ? null : s);
+    for (let i = 0; i < 3; i++) if (p.equippedSkills[i] === id) p.equippedSkills[i] = null;
     p.equippedSkills[slot] = id;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].equippedSkills = p.equippedSkills;
     save(); renderStatus();
     toast(`スロット${slot + 1}に「${SK[id].name}」をセットした`);
-    // チュートリアル step 5: ヒールをスロットに装備したら完了
-    if (G.tutorial && !G.tutorial.done && G.tutorial.step === 5 && id === 'heal') {
-      setTimeout(() => tutStep(6), 400);
+    // チュートリアル step 5: 現キャラの初期スキルをスロットに装備したら完了
+    if (G.tutorial && !G.tutorial.done && G.tutorial.step === 5) {
+      const tutTgt = getCharTutorialTarget(p.skin);
+      if (id === tutTgt.skillId) {
+        setTimeout(() => tutStep(6), 400);
+      }
     }
   },
   unequipSkill(d) {
@@ -3811,18 +4323,47 @@ const ACTS = {
     if (slot < 0 || slot > 2) return;
     const name = p.equippedSkills[slot] ? SK[p.equippedSkills[slot]]?.name : '';
     p.equippedSkills[slot] = null;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].equippedSkills = p.equippedSkills;
     save(); renderStatus();
     if (name) toast(`スロット${slot + 1}から「${name}」を外した`);
   },
-  goLearnSkill() { G.view = 'status'; renderAll(); setTimeout(() => { const el = document.querySelector('#view-status .panel:nth-child(4)'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80); },
+  goLearnSkill() { G.view = 'status'; G.statusTab = 'skill'; renderAll(); },
   changeSkin(d) {
-    const id = d.id;
+    if (G.run) { toast('ダンジョン攻略中はキャラを変更できません'); return; }
+    const id = d && d.id;
     if (!CHAR_SKINS.find(s => s.id === id)) return;
     G.p.skin = id;
-    $('#spr-player').innerHTML = getPlayerSVG();
-    save(); renderStatus();
+    syncActiveCharState(G.p);
+    G.p.hp = Math.min(maxHp(G.p), G.p.hp);
+    G.p.mp = Math.min(maxMp(G.p), G.p.mp);
+    const spEl = $('#spr-player');
+    if (spEl) spEl.innerHTML = getPlayerSVG();
+    save(); renderHUD(); renderStatus();
     const skin = CHAR_SKINS.find(s => s.id === id);
-    toast(`外見を「${skin.name}（${skin.job}）」に変更しました`);
+    toast(`キャラクターを「${skin.name}（${skin.job}）」に変更しました`);
+  },
+  selectStartChar(d) {
+    const id = d && d.id;
+    if (!CHAR_SKINS.find(s => s.id === id)) return;
+    G._charSelectPick = id;
+    openCharSelectModal(id);
+  },
+  confirmStartChar() {
+    const id = G._charSelectPick;
+    if (!id || !CHAR_SKINS.find(s => s.id === id)) return;
+    G.p.skin = id;
+    syncActiveCharState(G.p);
+    G.p.hp = maxHp(G.p);
+    G.p.mp = maxMp(G.p);
+    G._charSelectOpen = false;
+    closeModal();
+    save();
+    renderAll();
+    tutStartAfterCharSelect();
+  },
+  closeV9Notice() {
+    if (G.p) { G.p.v9ResetNoticePending = false; save(); }
+    closeModal();
   },
   autoEquipNow() { const n = equipBest(); save(); toast(n ? '装備を最適化しました' : 'これ以上強い装備はありません'); renderAll(); },
   autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; save(); renderStatus(); },
@@ -4148,6 +4689,9 @@ const ACTS = {
   dismissIdbRestore() {
     G._pendingIdbRestore = null;
     closeModal();
+    if (G.tutorial && !G.tutorial.done && G.tutorial.step === 0) {
+      openCharSelectModal(G._charSelectPick || null);
+    }
   },
   openBugReport() {
     openBugReportModal('', false);
@@ -4402,6 +4946,7 @@ function renderDungeonSelect() {
 const SKILL_FX_MAP = {
   // 斬撃（剣系 6種）
   strike:         { cat: 'slash', tier: 'T1', rank: 1, durMs: 360, nodes: 3,  span: 88,  sig: 'slash_t1_single_heavy',   color: 'gold' },
+  doubleStab:     { cat: 'slash', tier: 'T1', rank: 1, durMs: 380, nodes: 3,  span: 90,  sig: 'slash_t1_double_stab',    color: 'gold' },
   multi:          { cat: 'slash', tier: 'T1', rank: 1, durMs: 420, nodes: 3,  span: 92,  sig: 'slash_t1_triple_rapid',   color: 'gold' },
   flameSlash:     { cat: 'slash', tier: 'T2', rank: 2, durMs: 480, nodes: 5,  span: 102, sig: 'slash_t2_flame_arc',      color: 'fire' },
   ult:            { cat: 'slash', tier: 'T3', rank: 3, durMs: 560, nodes: 6,  span: 116, sig: 'slash_t3_golden_cross',   color: 'gold' },
@@ -4425,7 +4970,8 @@ const SKILL_FX_MAP = {
   meteorNova:     { cat: 'ult',   tier: 'U3', rank: 3, durMs: 980, nodes: 10, span: 196, sig: 'ult_u3_meteor_swarm',     style: 'fire' },
   skyStar:        { cat: 'ult',   tier: 'U4', rank: 4, durMs: 1080, nodes: 11, span: 210, sig: 'ult_u4_azure_starfall',  style: 'slash' },
   genesisRay:     { cat: 'ult',   tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_genesis_pillar',  style: 'holy' },
-  // 回復（10種）
+  // 回復（11種）
+  firstAid:       { cat: 'heal',  tier: 'H1', rank: 1, durMs: 360, nodes: 4,  span: 66,  sig: 'heal_h1_first_aid' },
   regen:          { cat: 'heal',  tier: 'H1', rank: 1, durMs: 380, nodes: 4,  span: 68,  sig: 'heal_h1_gentle_motes' },
   heal:           { cat: 'heal',  tier: 'H1', rank: 1, durMs: 420, nodes: 5,  span: 78,  sig: 'heal_h1_emerald_ring' },
   highRegen:      { cat: 'heal',  tier: 'H2', rank: 2, durMs: 480, nodes: 6,  span: 90,  sig: 'heal_h2_leaf_spiral' },
@@ -4436,6 +4982,29 @@ const SKILL_FX_MAP = {
   requiem:        { cat: 'heal',  tier: 'H4', rank: 4, durMs: 740, nodes: 9,  span: 134, sig: 'heal_h4_soul_butterflies' },
   goddess:        { cat: 'heal',  tier: 'H4', rank: 4, durMs: 780, nodes: 10, span: 144, sig: 'heal_h4_goddess_halo' },
   eternal:        { cat: 'heal',  tier: 'H5', rank: 5, durMs: 920, nodes: 12, span: 180, sig: 'heal_h5_eternal_helix' },
+  // R1b: キャラ専用スキル（R1b-1は共通の手続き型演出。個別演出はR1b-2）
+  rush: { cat: 'slash', tier: 'T1', rank: 1, durMs: 400, nodes: 3, span: 90, sig: 'slash_t1_rush', color: 'wind' },
+  phantomSlash: { cat: 'slash', tier: 'T2', rank: 2, durMs: 480, nodes: 5, span: 102, sig: 'slash_t2_phantomSlash', color: 'dark' },
+  shadowPierce: { cat: 'slash', tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_shadowPierce', color: 'dark' },
+  bladeDance: { cat: 'slash', tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_bladeDance', color: 'wind' },
+  grandHeist: { cat: 'slash', tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_grandHeist', color: 'gold' },
+  holyBolt: { cat: 'magic', tier: 'T1', rank: 1, durMs: 390, nodes: 4, span: 86, sig: 'magic_t1_holyBolt', elem: 'holy' },
+  judgment: { cat: 'magic', tier: 'T2', rank: 2, durMs: 480, nodes: 6, span: 100, sig: 'magic_t2_judgment', elem: 'holy' },
+  holyNova: { cat: 'magic', tier: 'T3', rank: 3, durMs: 600, nodes: 7, span: 118, sig: 'magic_t3_holyNova', elem: 'holy' },
+  arcaneMiracle: { cat: 'magic', tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_arcaneMiracle', elem: 'default' },
+  angelMiracle: { cat: 'magic', tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_angelMiracle', elem: 'holy' },
+  divineWrath: { cat: 'magic', tier: 'T5', rank: 5, durMs: 880, nodes: 11, span: 180, sig: 'magic_t5_divineWrath', elem: 'holy' },
+  thousandCuts: { cat: 'ult', tier: 'U1', rank: 1, durMs: 740, nodes: 7, span: 145, sig: 'ult_u1_thousandCuts', style: 'slash' },
+  starDust: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_starDust', style: 'dark' },
+  celestialLance: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_celestialLance', style: 'holy' },
+  trumpCard: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_trumpCard', style: 'slash' },
+  nightParade: { cat: 'ult', tier: 'U3', rank: 3, durMs: 960, nodes: 10, span: 190, sig: 'ult_u3_nightParade', style: 'slash' },
+  thousandMask: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_thousandMask', style: 'slash' },
+  skyMeteorite: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_skyMeteorite', style: 'fire' },
+  heavenStars: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_heavenStars', style: 'holy' },
+  nightSky: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1150, nodes: 12, span: 235, sig: 'ult_u4_nightSky', style: 'dark' },
+  swordGod: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_swordGod', style: 'slash' },
+  endMagic: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_endMagic', style: 'dark' },
   // 強化（バフ 10種：変更なし）
   guard:          { cat: 'buff',  tone: 'def' },
   magicshield:    { cat: 'buff',  tone: 'def' },
@@ -4446,7 +5015,12 @@ const SKILL_FX_MAP = {
   shura:          { cat: 'buff',  tone: 'atk' },
   kishin:         { cat: 'buff',  tone: 'atk' },
   heroAwaken:     { cat: 'buff',  tone: 'all' },
-  heroAdvent:     { cat: 'buff',  tone: 'all' }
+  heroAdvent:     { cat: 'buff',  tone: 'all' },
+  shadowStep: { cat: 'buff', tone: 'def' },
+  swiftStance: { cat: 'buff', tone: 'atk' },
+  frenzyEdge: { cat: 'buff', tone: 'atk' },
+  mirageStance: { cat: 'buff', tone: 'atk' },
+  phantomAdvent: { cat: 'buff', tone: 'atk' }
 };
 const FX_MAX_NODES = 12;
 const _battleFxCtx = { cleanupTimer: null, rageBurstTimer: null };
@@ -4535,11 +5109,12 @@ function syncBuffAura(target) {
     }
     const run = G.run;
     if (!run || !isFxEnabled()) return;
-    if ((run.awaken || 0) > 0 || (run.advent || 0) > 0) {
+    const gb = (run.gen && run.gen.turns > 0) ? run.gen : null;
+    if ((run.awaken || 0) > 0 || (run.advent || 0) > 0 || (gb && gb.allMult > 1)) {
       fp.classList.add('buff-aura-all');
-    } else if ((run.berserk || 0) > 0 || (run.warGod || 0) > 0 || (run.shura || 0) > 0 || (run.kishin || 0) > 0) {
+    } else if ((run.berserk || 0) > 0 || (run.warGod || 0) > 0 || (run.shura || 0) > 0 || (run.kishin || 0) > 0 || (gb && gb.atkMult > 1)) {
       fp.classList.add('buff-aura-atk');
-    } else if ((run.guard || 0) > 0 || (run.magicShield || 0) > 0 || (run.barrier || 0) > 0 || (run.defBuff || 0) > 0) {
+    } else if ((run.guard || 0) > 0 || (run.magicShield || 0) > 0 || (run.barrier || 0) > 0 || (run.defBuff || 0) > 0 || (gb && gb.defMult > 1)) {
       fp.classList.add('buff-aura-def');
     }
   } catch (e) {}
@@ -4630,6 +5205,12 @@ function playSkillFx(id, hitCount, target) {
       addNode('fx-slash fx-side-enemy sig-strike', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line heavy"/></svg>`, box(88, '--fx-rot:-22deg'));
       addNode('fx-magic-orb fx-side-enemy fx-elem-holy', '', '--dx:-26px;--dy:-18px');
       addNode('fx-magic-orb fx-side-enemy fx-elem-holy', '', '--dx:28px;--dy:16px');
+      hitEnemy('');
+    } else if (sig === 'slash_t1_double_stab') {
+      // ダブルスタブ (T1, 3 nodes, 90px): 素早い2連の突き閃光＋火花1個
+      addNode('fx-slash fx-side-enemy sig-doubleStab', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="8" y1="62" x2="92" y2="38" class="fx-slash-line wind"/></svg>`, box(90, '--fx-rot:-8deg;--fx-off:-6px'));
+      addNode('fx-slash fx-side-enemy sig-doubleStab', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="8" y1="38" x2="92" y2="62" class="fx-slash-line wind"/></svg>`, box(90, `--fx-rot:8deg;--fx-off:6px;animation-delay:${Math.round(dur * 0.25)}ms`));
+      addNode('fx-magic-orb fx-side-enemy fx-elem-ice', '', '--dx:26px;--dy:0px');
       hitEnemy('');
     } else if (sig === 'slash_t1_triple_rapid') {
       // 連続斬り (T1, 3 nodes, 92px): 角度の違う細い斬撃3本が時間差で連続
@@ -4859,6 +5440,12 @@ function playSkillFx(id, hitCount, target) {
         addNode('fx-ult-spark fx-side-enemy', '', `--dx:${dx}px;--dy:${dy}px`);
       }
       hitEnemy('big');
+    } else if (sig === 'heal_h1_first_aid') {
+      // 応急手当 (H1, 4 nodes, 66px): 小さな緑十字＋回復粒3個
+      const crossSvg = `<svg viewBox="0 0 32 32" class="fx-svg"><rect x="13" y="5" width="6" height="22" rx="1.5" fill="#98ffd0"/><rect x="5" y="13" width="22" height="6" rx="1.5" fill="#98ffd0"/></svg>`;
+      addNode('fx-a-pop fx-side-player sig-firstAid', crossSvg, box(44));
+      const xs = [-14, 0, 14];
+      for (let i = 0; i < 3; i++) addNode('fx-heal-mote fx-side-player', '', `--hx:${xs[i]}px;animation-delay:${i * 25}ms`);
     } else if (sig === 'heal_h1_gentle_motes') {
       // リジェネ (H1, 4 nodes, 68px): 小さな緑の光の粒4個がゆっくり上昇（控えめ）
       const xs = [-16, -5, 6, 17];
@@ -4949,6 +5536,43 @@ function playSkillFx(id, hitCount, target) {
         const rad = (i * 60) * Math.PI / 180;
         const dx = Math.round(Math.cos(rad) * 64), dy = Math.round(Math.sin(rad) * 64);
         addNode('fx-ult-spark fx-side-player', '', `--dx:${dx}px;--dy:${dy}px`);
+      }
+    } else if (FX_CUSTOM[id] && (cat === 'slash' || cat === 'magic' || cat === 'ult')) {
+      // R1b-2: キャラ専用スキルの個別演出（61_fx_custom.js）
+      FX_CUSTOM[id]({ id, add: addNode, box, dur, spec });
+      hitEnemy(cat === 'ult' || (spec.rank || 1) >= 4 ? 'big' : (spec.rank || 1) >= 2 ? 'sm' : '');
+    } else if (spec.proc && (cat === 'slash' || cat === 'magic' || cat === 'ult')) {
+      // R1b-1: 手続き型の共通演出（R1b-2で各スキルの個別演出に差し替える）。ノード数＝spec.nodes、DOMは sig-<id> クラスでスキルごとに異なる
+      const n = spec.nodes, rank = spec.rank || 1, sc = 'sig-' + id;
+      if (cat === 'slash') {
+        const lc = spec.color === 'fire' ? 'fire' : spec.color === 'wind' ? 'wind' : spec.color === 'dark' ? 'dark' : 'heavy';
+        for (let i = 0; i < n; i++) {
+          const rot = ((i * 47) % 80) - 40, off = ((i * 13) % 24) - 12, d = Math.round(dur * 0.5 / n * i);
+          addNode(`fx-slash fx-side-enemy ${sc}`, `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line ${lc}"/></svg>`, box(spec.span, `--fx-rot:${rot}deg;--fx-off:${off}px;animation-delay:${d}ms`));
+        }
+        hitEnemy(rank >= 3 ? 'big' : 'sm');
+      } else if (cat === 'magic') {
+        const el = spec.elem || 'default';
+        addNode(`fx-a-ring fx-side-enemy fx-elem-${el} ${sc}`, '', box(spec.span, 'border-radius:50%;border:3px solid #fff;box-shadow:0 0 18px currentColor'));
+        const r = Math.round(spec.span * 0.34);
+        for (let i = 0; i < n - 1; i++) {
+          const a = (i / Math.max(1, n - 1)) * Math.PI * 2;
+          addNode(`fx-magic-orb fx-side-enemy fx-elem-${el}`, '', `--dx:${Math.round(Math.cos(a) * r)}px;--dy:${Math.round(Math.sin(a) * r)}px`);
+        }
+        hitEnemy(rank >= 4 ? 'big' : 'sm');
+      } else {
+        const st = spec.style === 'slash' ? 'crimson' : (spec.style || 'dark');
+        addNode(`fx-ult-bg fx-ult-${st} ${sc}`, '');
+        const r = Math.round(spec.span * 0.36);
+        for (let i = 0; i < n - 1; i++) {
+          const a = (i / Math.max(1, n - 1)) * Math.PI * 2;
+          if (spec.style === 'slash' && i % 2 === 0) {
+            addNode('fx-slash fx-side-enemy', `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line crimson"/></svg>`, box(Math.round(spec.span * 0.6), `--fx-rot:${((i * 53) % 90) - 45}deg;--fx-off:${((i * 17) % 30) - 15}px;animation-delay:${Math.round(dur * 0.05 * i)}ms`));
+          } else {
+            addNode('fx-ult-spark fx-side-enemy', '', `--dx:${Math.round(Math.cos(a) * r)}px;--dy:${Math.round(Math.sin(a) * r)}px`);
+          }
+        }
+        hitEnemy('big');
       }
     } else if (cat === 'heal') {
       // 未登録healの汎用フォールバック
@@ -5185,14 +5809,16 @@ function renderSkillTrees(p) {
     </div>`;
   };
 
-  const baseTrees = SKILL_TREES.filter(t => ['sword','magic','life'].includes(t.id));
-  const evoTrees = SKILL_TREES.filter(t => !['sword','magic','life'].includes(t.id));
+  const charTrees = getCharTrees(p && p.skin);
+  const cMeta = CHAR_CLASS_META[(p && p.skin) || 'ruby'] || CHAR_CLASS_META.stella;
+  const baseTrees = [charTrees[0]];
+  const evoTrees = charTrees.slice(1);
   const unlockedEvo = evoTrees.filter(t => t.unlockWhen(p));
   const lockedEvo = evoTrees.filter(t => !t.unlockWhen(p));
 
   return `<div class="panel" id="skill-trees-panel">
-    <h2>スキル枠</h2>
-    <p class="sub">SPを枠に割り振るとスキルポイントに到達したとき自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
+    <h2>スキル枠（${esc(cMeta.name)}・${esc(cMeta.job)}）</h2>
+    <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
     <div class="st-grid">${baseTrees.map(treeCard).join('')}</div>
     ${unlockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（解放済み）──</p><div class="st-grid">${unlockedEvo.map(treeCard).join('')}</div></div>` : ''}
     ${lockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（未解放）──</p><div class="st-grid locked-trees">${lockedEvo.map(treeCard).join('')}</div></div>` : ''}
@@ -5254,6 +5880,16 @@ function renderSubTabs(tabs, curTab, actName, ariaLabel) {
   }).join('')}</div>`;
 }
 
+function renderCharDescBox(charId) {
+  const m = CHAR_CLASS_META[charId] || CHAR_CLASS_META.stella;
+  const tutTgt = getCharTutorialTarget(m.id);
+  return `<div class="rk-box" id="char-desc-box" style="margin-top:10px;text-align:left">
+    <div style="font-weight:700;color:var(--accent)">${esc(m.name)}（${esc(m.job)}）― ${esc(m.role)}</div>
+    <p style="margin:2px 0 4px;line-height:1.5">${esc(m.blurb)}</p>
+    <div class="sub" style="margin:0;font-size:12px">・<b>得意</b>：${esc(m.strengths)}<br>・<b>弱み</b>：${esc(m.weakness)}<br>・<b>初期スキル（3SP）</b>：${esc(tutTgt.skillName)}</div>
+  </div>`;
+}
+
 function renderStatus() {
   const p = G.p;
   const tab = ['hero', 'gear', 'skill', 'mastery', 'data'].includes(G.statusTab) ? G.statusTab : 'hero';
@@ -5305,15 +5941,17 @@ function renderStatus() {
             return `<button class="pill ${eq ? 'on' : ''}" data-act="equipStatusTitle" data-id="${tid}" title="${esc(tt.desc)}">${eq ? '✓ ' : ''}${esc(tt.name)}</button>`;
           }).join('')}</div>`}
     </div>
-    <div class="panel"><h2>外見変更</h2>
-      <p class="sub" style="margin:0 0 12px">主人公の外見を選択できます。</p>
+    <div class="panel"><h2>外見変更（キャラ変更）</h2>
+      <p class="sub" style="margin:0 0 12px">${G.run ? '⚠️ ダンジョン攻略中はキャラを変更できません。' : 'キャラを切り替えると、そのキャラのスキル・スロットに切り替わります（SPは共通）。'}</p>
       <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
-        ${CHAR_SKINS.map(sk => `<button class="skin-card ${(p.skin || 'ruby') === sk.id ? 'selected' : ''}" data-act="changeSkin" data-id="${sk.id}">
+        ${CHAR_SKINS.map(sk => `<button class="skin-card ${(p.skin || 'ruby') === sk.id ? 'selected' : ''}" data-act="changeSkin" data-id="${sk.id}" ${G.run ? 'disabled' : ''}>
           <div style="width:64px;height:64px;margin:0 auto 6px;overflow:hidden">${skinArt(sk, 'width:64px;height:64px')}</div>
           <div style="font-size:13px;font-weight:bold">${sk.name}</div>
           <div style="font-size:11px;color:var(--muted)">${sk.job}</div>
         </button>`).join('')}
-      </div></div>`;
+      </div>
+      ${renderCharDescBox(p.skin || 'ruby')}
+    </div>`;
   const gearPanels = `
     <div class="panel"><h2>装備</h2>
       <div class="items">
@@ -5994,7 +6632,46 @@ function openFxDebugModal() {
   renderFxDebugArena();
   renderFxDebugControls();
 }
+function openCharSelectModal(pickedId) {
+  G._charSelectOpen = true;
+  if (pickedId !== undefined) G._charSelectPick = pickedId;
+  const cur = G._charSelectPick || null;
+  const order = ['stella', 'ruby', 'silia', 'chloe'];
+  const cards = order.map(cid => {
+    const sk = CHAR_SKINS.find(x => x.id === cid) || CHAR_SKINS[0];
+    const sel = cur === cid;
+    return `<button class="skin-card ${sel ? 'selected' : ''}" data-act="selectStartChar" data-id="${sk.id}">
+      <div style="width:64px;height:64px;margin:0 auto 6px;overflow:hidden">${skinArt(sk, 'width:64px;height:64px')}</div>
+      <div style="font-size:13px;font-weight:bold">${esc(sk.name)}</div>
+      <div style="font-size:11px;color:var(--muted)">${esc(sk.job)}</div>
+    </button>`;
+  }).join('');
+  const descHtml = cur
+    ? renderCharDescBox(cur)
+    : '<div class="rk-box" id="char-desc-box" style="margin-top:10px;text-align:center;color:var(--muted)">上のカードを押すと、そのキャラクターの特徴が表示されます。</div>';
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">キャラクターを選ぼう</h2>
+    <p class="sub" style="margin:0">最初のキャラクターを選んでください。キャラは後から、ステータス画面でいつでも変えられます（ダンジョン攻略中を除く）。スキルはキャラごとに別々に育てます。</p>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px" id="char-select-grid">${cards}</div>
+    ${descHtml}
+    <div class="act" style="grid-template-columns:1fr">
+      <button class="btn primary" id="btn-confirm-char" data-act="confirmStartChar" ${cur ? '' : 'disabled'}>このキャラで始める</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function openV9ResetNoticeModal() {
+  if (!G.p || !G.p.v9ResetNoticePending) return;
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">スキルシステム変更のお知らせ</h2>
+    <p style="margin:6px 0;line-height:1.6">システムが変わりました。SPを全て返却したので、キャラごとに振り直してください。</p>
+    <p class="sub" style="margin:0">・現在の所持SP：<b style="color:var(--accent)">${fmt(G.p.sp)} SP</b>（全キャラ共通プール）<br>・ステータス画面の「スキル」タブで、キャラクターごとにスキル枠へ割り振れます。</p>
+    <div class="act" style="grid-template-columns:1fr">
+      <button class="btn primary" id="btn-close-v9-notice" data-act="closeV9Notice">確認して閉じる</button>
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
 function closeModal() {
+  if (G._charSelectOpen) return;
   if ($('#fxd-arena')) {
     _fxDbgState.raged = false;
     _fxDbgState.buff = 'none';
@@ -6184,6 +6861,10 @@ function renderHelp() {
 
 /* ================= render: all ================= */
 function renderAll() {
+  if ((!G.tutorial || G.tutorial.done) && G._charSelectOpen) {
+    G._charSelectOpen = false;
+    closeModal();
+  }
   const v = G.view;
   for (const id of ['town', 'dungeon', 'status', 'help']) {
     $('#view-' + id).hidden = id !== v;
@@ -6205,22 +6886,219 @@ function renderAll() {
   if (v === 'help') renderHelp();
 }
 
+// ===== R1b-2: キャラ専用スキル22個の個別エフェクト（Q3方式：スキルごとに固有モチーフ） =====
+// 各関数は spec.nodes ちょうどのノードを追加する（ティア単調性テストが要素数を使う）。バフ系は既存の強化リングのまま。
+const FX_CUSTOM = (() => {
+  const SW = (x1, y1, x2, y2, cls) => `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="fx-slash-line ${cls}"/></svg>`;
+  const SP = (path, cls) => `<svg viewBox="0 0 100 100" class="fx-svg"><path d="${path}" fill="none" class="fx-slash-line ${cls}"/></svg>`;
+  // c = { id, add, box, dur, spec, hit }
+  const slash = (c, svg, sz, rot, off, dl) => c.add(`fx-slash fx-side-enemy sig-${c.id}`, svg, c.box(sz, `--fx-rot:${rot}deg;--fx-off:${off}px;animation-delay:${Math.round(c.dur * dl)}ms`));
+  const orb = (c, el, dx, dy) => c.add(`fx-magic-orb fx-side-enemy fx-elem-${el}`, '', `--dx:${dx}px;--dy:${dy}px`);
+  const spark = (c, dx, dy, col) => c.add('fx-ult-spark fx-side-enemy', '', `--dx:${dx}px;--dy:${dy}px` + (col ? `;background:${col[0]};box-shadow:0 0 12px 3px ${col[1]}` : ''));
+  const ring = (c, sz, col, dl, bw) => c.add(`fx-a-ring fx-side-enemy`, '', c.box(sz, `border-radius:50%;border:${bw || 3}px solid ${col};box-shadow:0 0 14px ${col};animation-delay:${Math.round(c.dur * (dl || 0))}ms`));
+  const bg = (c, st) => c.add(`fx-ult-bg fx-ult-${st} sig-${c.id}`, '');
+  const pillar = (c, w, h, grad, glow, ox, dl) => c.add('fx-a-pillar fx-side-enemy', '', `width:${w}px;height:${h}px;--ox:${ox || 0}px;background:${grad};border-radius:${Math.round(w / 2)}px;filter:drop-shadow(0 0 12px ${glow});animation-delay:${Math.round(c.dur * (dl || 0))}ms`);
+  const drop = (c, svg, w, h, sx, sy, ex, ey, rot, dl) => c.add('fx-a-drop fx-side-enemy', svg, `width:${w}px;height:${h}px;--sx:${sx}px;--sy:${sy}px;--ex:${ex}px;--ey:${ey}px;--rot:${rot || 0}deg;animation-delay:${Math.round(c.dur * (dl || 0))}ms`);
+  const pop = (c, svg, w, h, ox, oy, rot, dl, side) => c.add(`fx-a-pop fx-side-${side || 'enemy'}`, svg, `width:${w}px;height:${h}px;--ox:${ox || 0}px;--oy:${oy || 0}px;--rot:${rot || 0}deg;animation-delay:${Math.round(c.dur * (dl || 0))}ms`);
+  const star = (col, glow) => `<svg viewBox="0 0 40 40" class="fx-svg"><polygon points="20,2 25,15 38,15 28,24 32,38 20,29 8,38 12,24 2,15 15,15" fill="${col}" filter="drop-shadow(0 0 6px ${glow})"/></svg>`;
+  const sword = (a, b) => `<svg viewBox="0 0 40 100" class="fx-svg"><polygon points="20,96 12,32 20,10 28,32" fill="${a}" stroke="${b}" stroke-width="2"/><rect x="6" y="28" width="28" height="5" rx="2" fill="${b}"/><rect x="17" y="6" width="6" height="22" fill="${b}"/></svg>`;
+  const lance = `<svg viewBox="0 0 30 120" class="fx-svg"><polygon points="15,118 8,30 15,2 22,30" fill="#fffef0" stroke="#ffe27a" stroke-width="2" filter="drop-shadow(0 0 8px #ffe27a)"/><rect x="11" y="26" width="8" height="6" fill="#ffd45a"/></svg>`;
+  const wing = (flip) => `<svg viewBox="0 0 80 100" class="fx-svg" style="${flip ? 'transform:scaleX(-1)' : ''}"><path d="M76,50 Q40,0 4,18 Q30,30 14,44 Q38,46 24,62 Q50,60 40,80 Q70,76 76,50 Z" fill="#fffef2" stroke="#ffe27a" stroke-width="2" filter="drop-shadow(0 0 10px #fff3b8)"/></svg>`;
+  const mask = `<svg viewBox="0 0 40 50" class="fx-svg"><path d="M4,8 Q20,0 36,8 Q38,34 20,48 Q2,34 4,8 Z" fill="#f4f0ff" stroke="#b56bff" stroke-width="2" filter="drop-shadow(0 0 6px #b56bff)"/><ellipse cx="13" cy="20" rx="4" ry="2.5" fill="#2a1a44"/><ellipse cx="27" cy="20" rx="4" ry="2.5" fill="#2a1a44"/><path d="M12,34 Q20,40 28,34" stroke="#2a1a44" stroke-width="2" fill="none"/></svg>`;
+  const card = `<svg viewBox="0 0 40 56" class="fx-svg"><rect x="3" y="3" width="34" height="50" rx="5" fill="#fffdf4" stroke="#e8c23a" stroke-width="2" filter="drop-shadow(0 0 6px #ffd45a)"/><path d="M20,36 L12,24 Q12,16 20,22 Q28,16 28,24 Z" fill="#e0334a"/></svg>`;
+  const coin = `<svg viewBox="0 0 30 30" class="fx-svg"><circle cx="15" cy="15" r="12" fill="#ffd45a" stroke="#c98a00" stroke-width="2" filter="drop-shadow(0 0 6px #ffbf3d)"/><circle cx="15" cy="15" r="7" fill="none" stroke="#fff2b0" stroke-width="2"/></svg>`;
+  const ember = (c, dx, dy) => orb(c, 'fire', dx, dy);
+  const FIRE = 'radial-gradient(circle at 35% 35%,#fff6c0,#ff7b2e 55%,#c82800)';
+
+  return {
+    // ---- クロエ（怪盗）----
+    rush: (c) => { // 疾走：横一直線の風の疾走線3本（残像）
+      for (let i = 0; i < 3; i++) slash(c, SW(0, 50, 100, 50, i ? 'thin' : 'wind'), 100, 0, (i - 1) * 16, 0.16 * i);
+    },
+    phantomSlash: (c) => { // 幻影斬：闇色の斬撃と、ずれて遅れる幻影
+      slash(c, SW(14, 84, 86, 16, 'dark'), c.spec.span, -26, -6, 0);
+      slash(c, SW(14, 84, 86, 16, 'thin'), c.spec.span, -26, 14, 0.18);
+      slash(c, SW(14, 16, 86, 84, 'dark'), c.spec.span, 26, 6, 0.3);
+      slash(c, SW(14, 16, 86, 84, 'thin'), c.spec.span, 26, -14, 0.46);
+      orb(c, 'dark', 0, -30);
+    },
+    shadowPierce: (c) => { // 影穿ち：一直線の黒い刺突と収束する影
+      c.add('fx-a-pop fx-side-enemy sig-shadowPierce', SW(0, 50, 100, 50, 'dark'), c.box(c.spec.span + 28, '--ox:-10px;--oy:0px'));
+      slash(c, SW(6, 20, 94, 50, 'thin'), c.spec.span, 0, 0, 0.1);
+      slash(c, SW(6, 80, 94, 50, 'thin'), c.spec.span, 0, 0, 0.18);
+      ring(c, 96, '#b56bff', 0.2, 2.5);
+      orb(c, 'dark', -44, -10); orb(c, 'dark', -44, 12);
+    },
+    bladeDance: (c) => { // 剣舞：回転する風の円弧4つ＋旋風リング
+      for (let i = 0; i < 4; i++) c.add('fx-a-spin fx-side-enemy sig-bladeDance', SP('M50,8 A42,42 0 0 1 92,50', 'wind'), c.box(c.spec.span, `--rot:${(i % 2 ? -1 : 1) * 200}deg;animation-delay:${Math.round(c.dur * 0.12 * i)}ms;transform-origin:50% 50%`));
+      ring(c, 120, '#8fe8c8', 0.1);
+      orb(c, 'ice', 0, -50);
+    },
+    grandHeist: (c) => { // 大強奪：金の斬撃と降り注ぐ金貨
+      slash(c, SW(10, 90, 90, 10, 'heavy'), c.spec.span, 0, 0, 0);
+      const xs = [-34, -12, 14, 36];
+      for (let i = 0; i < 4; i++) drop(c, coin, 30, 30, xs[i], -62, xs[i] * 0.6, 24, 0, 0.1 * i + 0.1);
+      ring(c, 120, '#ffd45a', 0.2);
+      spark(c, -50, -30); spark(c, 50, 24);
+    },
+    thousandCuts: (c) => { // 千の斬撃：赤い背景＋無数の細い斬撃が連打
+      bg(c, 'crimson');
+      for (let i = 0; i < 5; i++) slash(c, SW(8, 92, 92, 8, 'thin'), 150, ((i * 41) % 120) - 60, ((i * 23) % 40) - 20, 0.07 * i);
+      spark(c, 0, -40, ['#fff', '#ff3a55']);
+    },
+    trumpCard: (c) => { // 切り札：4枚のカードが扇状に降り注ぐ
+      bg(c, 'heal');
+      const xs = [-54, -18, 18, 54], rs = [-24, -8, 8, 24];
+      for (let i = 0; i < 4; i++) drop(c, card, 40, 56, xs[i], -80, xs[i] * 0.45, 4, rs[i], 0.12 * i);
+      ring(c, 130, '#e0334a', 0.5, 4);
+      spark(c, -56, -30); spark(c, 56, -30); spark(c, 0, 50);
+    },
+    nightParade: (c) => { // 夜行：影の行列が駆け抜け、月と斬撃
+      bg(c, 'dark');
+      const sil = `<svg viewBox="0 0 30 70" class="fx-svg"><ellipse cx="15" cy="12" rx="9" ry="10" fill="#1a0c2c"/><path d="M4,68 Q6,28 15,24 Q24,28 26,68 Z" fill="#1a0c2c" stroke="#b56bff" stroke-width="1.5"/></svg>`;
+      for (let i = 0; i < 5; i++) pop(c, sil, 34, 76, -78 + i * 38, (i % 2) * 8, 0, 0.1 * i);
+      slash(c, SW(6, 94, 94, 6, 'dark'), 170, -20, 0, 0.5);
+      slash(c, SW(6, 6, 94, 94, 'dark'), 170, 20, 0, 0.6);
+      slash(c, SW(0, 50, 100, 50, 'thin'), 190, 0, 0, 0.7);
+      ring(c, 110, '#e8dcff', 0.3, 4);
+    },
+    thousandMask: (c) => { // 千の仮面：仮面が円状に現れ、赤い斬撃で砕ける
+      bg(c, 'dark');
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; pop(c, mask, 40, 50, Math.round(Math.cos(a) * 64), Math.round(Math.sin(a) * 52), 0, 0.06 * i); }
+      slash(c, SW(8, 92, 92, 8, 'crimson'), 200, -30, 0, 0.45);
+      slash(c, SW(8, 8, 92, 92, 'crimson'), 200, 30, 0, 0.55);
+      ring(c, 190, '#b56bff', 0.4, 4);
+      spark(c, 0, 0, ['#fff', '#b56bff']);
+    },
+    nightSky: (c) => { // 夜空：月と流星群と交差する流れ星の斬撃
+      bg(c, 'dark');
+      c.add('fx-a-pop fx-side-enemy', `<svg viewBox="0 0 60 60" class="fx-svg"><circle cx="30" cy="30" r="22" fill="#fff6d0" filter="drop-shadow(0 0 14px #fff6d0)"/><circle cx="38" cy="26" r="20" fill="#120a24"/></svg>`, 'width:70px;height:70px;--ox:36px;--oy:-60px');
+      for (let i = 0; i < 6; i++) drop(c, star('#fff3b8', '#ffd45a'), 22, 22, -80 + i * 32, -90, -60 + i * 28, 30, 30, 0.08 * i);
+      slash(c, SW(6, 20, 94, 80, 'wind'), 230, 0, 0, 0.5);
+      slash(c, SW(94, 20, 6, 80, 'wind'), 230, 0, 0, 0.58);
+      ring(c, 200, '#b56bff', 0.45, 4);
+      spark(c, 0, -60); spark(c, 0, 60);
+    },
+    // ---- ステラ（剣）----
+    swordGod: (c) => { // 剣神の一閃：巨大な聖剣が天から落ち、無数の剣が降る
+      bg(c, 'crimson');
+      drop(c, sword('#fffbe0', '#ffd45a'), 84, 210, 0, -150, 0, 0, 0, 0.05);
+      const xs = [-80, -48, 48, 80, 0];
+      for (let i = 0; i < 5; i++) drop(c, sword('#fffbe0', '#ffd45a'), 30, 76, xs[i], -90, xs[i] * 0.7, 8, (i - 2) * 6, 0.25 + 0.06 * i);
+      ring(c, 150, '#fff3b8', 0.55, 4); ring(c, 210, '#ffd45a', 0.65, 3);
+      spark(c, -70, -34); spark(c, 70, -34); spark(c, 0, 66);
+    },
+    // ---- ルビィ（魔法）----
+    arcaneMiracle: (c) => { // 大魔導の奇跡：魔法陣が回転し、光柱が立ち上る
+      const circle = `<svg viewBox="0 0 140 140" class="fx-svg"><circle cx="70" cy="70" r="62" fill="none" stroke="#c9b8ff" stroke-width="3"/><polygon points="70,10 122,100 18,100" fill="none" stroke="#9b7aff" stroke-width="2.5"/><polygon points="70,130 18,40 122,40" fill="none" stroke="#9b7aff" stroke-width="2.5"/></svg>`;
+      c.add('fx-a-spin fx-side-enemy sig-arcaneMiracle', circle, c.box(c.spec.span, '--rot:240deg'));
+      pillar(c, 54, 150, 'linear-gradient(180deg,rgba(220,200,255,.1),rgba(170,130,255,.85),rgba(240,230,255,.2))', '#9b7aff', 0, 0.12);
+      ring(c, 150, '#c9b8ff', 0.2); ring(c, 100, '#fff', 0.3, 2);
+      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; orb(c, 'default', Math.round(Math.cos(a) * 52), Math.round(Math.sin(a) * 52)); }
+    },
+    starDust: (c) => { // 星屑：降り注ぐ星の粒
+      bg(c, 'dark');
+      for (let i = 0; i < 6; i++) drop(c, star('#e9dcff', '#b56bff'), 20, 20, -70 + i * 28, -96, -50 + i * 20, 20 + (i % 2) * 8, 0, 0.07 * i);
+      pop(c, star('#fff6d0', '#ffd45a'), 70, 70, 0, 0, 0, 0.45);
+      ring(c, 150, '#b56bff', 0.4);
+    },
+    skyMeteorite: (c) => { // 蒼穹の流星群：斜めに落ちる燃える隕石3つと衝突の輪
+      bg(c, 'fire');
+      const sx = [-110, -90, -70], sy = [-100, -110, -90], ex = [-18, 22, 0];
+      for (let i = 0; i < 3; i++) c.add('fx-a-drop fx-side-enemy', '', `width:${40 - i * 4}px;height:${40 - i * 4}px;border-radius:50%;background:${FIRE};box-shadow:0 0 18px 4px #ff6a1a;--sx:${sx[i]}px;--sy:${sy[i]}px;--ex:${ex[i]}px;--ey:${i * 10 - 10}px;animation-delay:${Math.round(c.dur * 0.14 * i)}ms`);
+      pillar(c, 60, 120, 'linear-gradient(180deg,rgba(255,200,80,.1),rgba(255,110,30,.85),rgba(255,230,160,.2))', '#ff4500', 0, 0.45);
+      ring(c, 140, '#ff9a2e', 0.4, 4); ring(c, 200, '#ff5a1a', 0.55, 3);
+      ember(c, -56, -34); ember(c, 58, -30); ember(c, -50, 40); ember(c, 52, 42);
+    },
+    endMagic: (c) => { // 終焉の大魔法：黒い球体が全てを吸い込み、収束後に爆ぜる
+      bg(c, 'dark');
+      c.add('fx-a-conv fx-side-enemy sig-endMagic', '', 'width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#000 35%,#6a2bd8 70%,transparent);--sx:0px;--sy:0px');
+      ring(c, 220, '#b56bff', 0.05, 3); ring(c, 160, '#7a3bd8', 0.2, 3);
+      const pts = [[-90, -40], [90, -40], [-70, 50], [70, 50]];
+      for (let i = 0; i < 4; i++) c.add('fx-a-conv fx-side-enemy', '', `width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 0 12px 3px #b56bff;--sx:${pts[i][0]}px;--sy:${pts[i][1]}px`);
+      ring(c, 250, '#fff', 0.6, 4);
+      spark(c, -80, 0); spark(c, 80, 0); spark(c, 0, -60);
+    },
+    // ---- シリア（聖）----
+    holyBolt: (c) => { // 聖光弾：細い光の筋が真上から敵を撃つ
+      pillar(c, 22, 100, 'linear-gradient(180deg,rgba(255,255,230,.1),rgba(255,248,180,.95),rgba(255,255,255,.2))', '#fff3b8', 0, 0);
+      ring(c, 70, '#fff3b8', 0.15, 2.5);
+      orb(c, 'holy', -26, -20); orb(c, 'holy', 26, 20);
+    },
+    judgment: (c) => { // 聖裁：光柱と、浮かぶ十字
+      pillar(c, 50, 120, 'linear-gradient(180deg,rgba(255,255,230,.1),rgba(255,240,150,.9),rgba(255,255,255,.2))', '#ffd45a', 0, 0);
+      pop(c, `<svg viewBox="0 0 60 80" class="fx-svg"><rect x="24" y="4" width="12" height="72" rx="3" fill="#fffef0" stroke="#ffe27a" stroke-width="2"/><rect x="6" y="22" width="48" height="12" rx="3" fill="#fffef0" stroke="#ffe27a" stroke-width="2"/></svg>`, 60, 80, 0, -6, 0, 0.1);
+      ring(c, 100, '#fff3b8', 0.25);
+      orb(c, 'holy', -34, -20); orb(c, 'holy', 34, -20); orb(c, 'holy', 0, 38);
+    },
+    holyNova: (c) => { // 聖なる爆光：三重の光輪が広がる
+      c.add('fx-a-pop fx-side-enemy sig-holyNova', '', c.box(64, 'border-radius:50%;background:radial-gradient(circle,#fff,rgba(255,240,170,.6) 55%,transparent 72%);--ox:0px;--oy:0px'));
+      ring(c, 70, '#fffef0', 0, 3); ring(c, 100, '#fff3b8', 0.1, 3); ring(c, 130, '#ffe27a', 0.2, 2.5);
+      orb(c, 'holy', -50, -30); orb(c, 'holy', 50, -30); orb(c, 'holy', 0, 56);
+    },
+    angelMiracle: (c) => { // 天使の奇跡：光輪と大きな翼、舞い落ちる羽根
+      pop(c, wing(true), 84, 104, -50, -4, 0, 0.05); pop(c, wing(false), 84, 104, 50, -4, 0, 0.05);
+      ring(c, 70, '#fff3b8', 0.1, 4);
+      pillar(c, 46, 140, 'linear-gradient(180deg,rgba(255,255,240,.1),rgba(255,248,190,.85),rgba(255,255,255,.2))', '#fff3b8', 0, 0.15);
+      for (let i = 0; i < 3; i++) drop(c, `<svg viewBox="0 0 20 40" class="fx-svg"><path d="M10,2 Q18,20 10,38 Q2,20 10,2 Z" fill="#fff" stroke="#ffe27a"/></svg>`, 12, 26, -40 + i * 40, -70, -50 + i * 50, 30, 20 - i * 20, 0.1 * i + 0.2);
+      orb(c, 'holy', -60, -34); orb(c, 'holy', 60, -34);
+    },
+    divineWrath: (c) => { // 神罰：三本の裁きの雷と神々しい閃光
+      bg(c, 'holy');
+      const bolt = `<svg viewBox="0 0 60 120" class="fx-svg"><polyline points="34,2 14,52 38,56 12,116" fill="none" stroke="#fffef0" stroke-width="6" stroke-linejoin="round" filter="drop-shadow(0 0 10px #ffd45a)"/></svg>`;
+      const xs = [-34, 0, 34];
+      for (let i = 0; i < 3; i++) pop(c, bolt, 60, 130, xs[i], -6, 0, 0.1 * i);
+      pop(c, `<svg viewBox="0 0 80 80" class="fx-svg"><polygon points="40,2 48,32 78,40 48,48 40,78 32,48 2,40 32,32" fill="#fffef0" filter="drop-shadow(0 0 12px #ffd45a)"/></svg>`, 110, 110, 0, 0, 45, 0.3);
+      ring(c, 150, '#ffd45a', 0.3, 4); ring(c, 190, '#fff3b8', 0.45, 3);
+      orb(c, 'holy', -60, -40); orb(c, 'holy', 60, -40); orb(c, 'holy', -60, 40); orb(c, 'holy', 60, 40);
+    },
+    celestialLance: (c) => { // 蒼穹の聖槍：巨大な聖槍が天から貫く
+      bg(c, 'holy');
+      drop(c, lance, 44, 220, 0, -170, 0, 0, 0, 0.05);
+      drop(c, lance, 26, 130, -52, -120, -42, 4, -8, 0.22); drop(c, lance, 26, 130, 52, -120, 42, 4, 8, 0.3);
+      ring(c, 160, '#ffe27a', 0.5, 4);
+      spark(c, -60, -30); spark(c, 60, -30); spark(c, -40, 50); spark(c, 40, 50);
+    },
+    heavenStars: (c) => { // 天の星々：聖なる星が一面に降る
+      bg(c, 'holy');
+      for (let i = 0; i < 7; i++) drop(c, star('#fffef0', '#ffd45a'), 26, 26, -90 + i * 30, -100, -80 + i * 26, 24 - (i % 3) * 14, 0, 0.07 * i);
+      ring(c, 200, '#ffe27a', 0.5, 4);
+      spark(c, -70, 0); spark(c, 70, 0);
+    },
+  };
+})();
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
 function tutInit() {
   // 初回のみ（localStorageに完了フラグがなければ）
-  try { if (localStorage.getItem(TUT_SAVE_KEY)) { tutHide(); return; } } catch (e) {}
+  try {
+    if (localStorage.getItem(TUT_SAVE_KEY)) {
+      tutHide();
+      if (G.p && G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+      return;
+    }
+  } catch (e) {}
   // 既存セーブで進行済みならチュートリアル済み扱いにして非表示にする
-  if (G.p && (G.p.lv > 1 || (G.p.stats && G.p.stats.runs > 0))) { tutDone(); return; }
+  if (G.p && (G.p.lv > 1 || (G.p.stats && G.p.stats.runs > 0))) {
+    tutDone();
+    if (G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+    return;
+  }
   G.tutorial = { step: 0, done: false };
-  // DOM描画完了後に即表示（遅延を最小化）
+  // 新規ゲームの最初にキャラクター選択モーダルを出す（選ぶまで閉じられない）
+  openCharSelectModal(null);
+}
+
+function tutStartAfterCharSelect() {
+  G.tutorial = { step: 0, done: false };
   requestAnimationFrame(() => requestAnimationFrame(() => tutStep(0)));
 }
 
 function tutDone() {
   G.tutorial = { step: 6, done: true };
   try { localStorage.setItem(TUT_SAVE_KEY, '1'); } catch (e) {}
+  if (G._charSelectOpen) { G._charSelectOpen = false; closeModal(); }
   tutHide();
 }
 
@@ -6242,16 +7120,37 @@ const TUT_MSGS = {
   6:  { title: 'チュートリアル完了！🎉', body: '装備したスキルは戦闘で自動発動されるよ。<br>詳しくは <b>ヘルプ</b> を見てね！', place: 'above' },
 };
 
+function getTutMsg(step) {
+  const tgt = getCharTutorialTarget(G.p && G.p.skin);
+  if (step === 41) {
+    return {
+      title: 'スキルを取得しよう',
+      body: `<b>${esc(tgt.treeName)}</b> の「+1 SP」ボタンを3回押して<b>${esc(tgt.skillName)}</b>を習得しよう。<br><span class="sub">${esc(tgt.hint)}</span>`,
+      place: 'below'
+    };
+  }
+  if (step === 5) {
+    return {
+      title: 'スキルを装備しよう',
+      body: `習得した <b>${esc(tgt.skillName)}</b> のS1〜S3ボタンを押してスロットにセットしよう。`,
+      place: 'below'
+    };
+  }
+  return TUT_MSGS[step] || null;
+}
+
 function tutAllowClick(step, b) {
   const act = b.dataset.act, v = b.dataset.v, tree = b.dataset.tree, id = b.dataset.id;
-  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore') return true;
+  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice') return true;
+  if (G._charSelectOpen) return act === 'selectStartChar' || act === 'confirmStartChar';
+  const tgt = getCharTutorialTarget(G.p && G.p.skin);
   switch (step) {
     case 0:  return act === 'nav' && v === 'dungeon';
     case 1:  return act === 'go' && b.dataset.d === 'A';
     case 3:  return act === 'retreat';
     case 4:  return act === 'nav' && v === 'status';
-    case 41: return (act === 'spAlloc' && tree === 'life') || (act === 'statusTab' && b.dataset.tab === 'skill');
-    case 5:  return (act === 'equipSkill' && id === 'heal') || (act === 'nav' && v === 'status') || (act === 'statusTab' && b.dataset.tab === 'skill');
+    case 41: return (act === 'spAlloc' && tree === tgt.treeId) || (act === 'statusTab' && b.dataset.tab === 'skill');
+    case 5:  return (act === 'equipSkill' && id === tgt.skillId) || (act === 'nav' && v === 'status') || (act === 'statusTab' && b.dataset.tab === 'skill');
     case 6:  return act === 'nav' && v === 'help';
     default: return false;
   }
@@ -6279,13 +7178,14 @@ function tutStep(step) {
 }
 
 function tutGetTarget(step) {
+  const tgt = getCharTutorialTarget(G.p && G.p.skin);
   switch (step) {
     case 0:  return document.getElementById('nav-dungeon');
     case 1:  return document.querySelector('[data-act="go"][data-d="A"]');
     case 3:  return document.querySelector('[data-act="retreat"]');
     case 4:  return document.getElementById('nav-status');
-    case 41: return document.querySelector('[data-act="spAlloc"][data-tree="life"][data-amount="1"]');
-    case 5:  return document.querySelector('[data-act="equipSkill"][data-id="heal"]:not([disabled])');
+    case 41: return document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-amount="1"]`);
+    case 5:  return document.querySelector(`[data-act="equipSkill"][data-id="${tgt.skillId}"]:not([disabled])`);
     case 6:  return document.getElementById('nav-help');
     default: return null;
   }
@@ -6359,10 +7259,10 @@ function renderTutorial() {
     renderStatus();
   }
 
-  // step 2: 戦闘中は何も表示しない（HP監視だけ）
-  if (step === 2) { tutHide(); return; }
+  // step 2: 戦闘中は何も表示しない（HP監視だけ）。キャラ選択モーダル表示中もオーバーレイは出さない
+  if (step === 2 || G._charSelectOpen) { tutHide(); return; }
 
-  const msg = TUT_MSGS[step];
+  const msg = getTutMsg(step);
   if (!msg) { tutHide(); return; }
 
   const el = tutGetTarget(step);
@@ -6453,7 +7353,8 @@ function boot() {
     idbReadSave().then(rec => {
       let nowHas = false;
       try { nowHas = !!localStorage.getItem(SAVE_KEY); } catch (e) {}
-      if (!nowHas && rec && typeof rec.raw === 'string' && !G.modalOpen) {
+      if (!nowHas && rec && typeof rec.raw === 'string' && (!G.modalOpen || G._charSelectOpen)) {
+        G._charSelectOpen = false;
         openIdbRestoreModal(rec);
       }
     });
@@ -6466,10 +7367,11 @@ window.G = G;
 window.__rogue = {
   migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
-  SKILL_TREES, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
+  SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
+  playerAct, enemyAct, useSkillEffect, genBuffMult,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
   noTimer(v) { G.noTimer = !!v; ensureLoop(); },

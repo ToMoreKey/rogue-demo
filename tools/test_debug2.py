@@ -65,12 +65,13 @@ with sync_playwright() as pw:
         R.finishRun('retreat');
 
         // SPリセットでパッシブ解除＆元に戻るか
+        R.ACTS.spAllocReset({ tree: 'mage' }); R.ACTS.spAllocReset({ tree: 'mage' });
+        const mpAfterReset = R.skillMpCost(p, R.SK.fireball);
+        R.ACTS.changeSkin({ id: 'stella' });
         R.ACTS.spAlloc({ tree: 'sword', amount: 20 });
         const atkWithSword15 = R.playerAtk(p);
         R.ACTS.spAllocReset({ tree: 'sword' }); R.ACTS.spAllocReset({ tree: 'sword' });
         const atkAfterReset = R.playerAtk(p);
-        R.ACTS.spAllocReset({ tree: 'mage' }); R.ACTS.spAllocReset({ tree: 'mage' });
-        const mpAfterReset = R.skillMpCost(p, R.SK.fireball);
 
         // passiveSkills 欠損耐性
         delete p.passiveSkills;
@@ -158,6 +159,7 @@ with sync_playwright() as pw:
         R.setHeadless(true); R.noTimer(true);
         let clears = 0, defeats = 0, lvEnd = 1;
         G.p = R.newPlayer();
+        R.ACTS.changeSkin({ id: 'silia' });
         R.ACTS.spAlloc({ tree: 'life', amount: 3 });
         G.p.equippedSkills = ['heal', null, null];
         for (let runIdx = 0; runIdx < 8; runIdx++) {

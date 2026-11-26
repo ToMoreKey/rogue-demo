@@ -136,12 +136,12 @@ with sync_playwright() as pw:
     hp_before = pg.evaluate('() => G.p.hp')
     pg.click('#view-status [data-act="potion"][data-k="hp"]')
     hp_after = pg.evaluate('() => G.p.hp')
-    # skill: SP割り振り & スキル装備
+    # skill: SP割り振り & スキル装備（target_skin は stella なので sword -> strike）
     pg.click('[data-act="statusTab"][data-tab="skill"]')
-    pg.click('[data-act="spAlloc"][data-tree="life"][data-amount="1"]')
-    pg.click('[data-act="spAlloc"][data-tree="life"][data-amount="1"]')
-    pg.click('[data-act="spAlloc"][data-tree="life"][data-amount="1"]')
-    pg.click('[data-act="equipSkill"][data-id="heal"][data-slot="0"]')
+    pg.click('[data-act="spAlloc"][data-tree="sword"][data-amount="1"]')
+    pg.click('[data-act="spAlloc"][data-tree="sword"][data-amount="1"]')
+    pg.click('[data-act="spAlloc"][data-tree="sword"][data-amount="1"]')
+    pg.click('[data-act="equipSkill"][data-id="strike"][data-slot="0"]')
     eq0 = pg.evaluate('() => G.p.equippedSkills[0]')
     # mastery: 極意強化 & 図鑑モーダル開閉後も mastery タブ保持
     pg.click('[data-act="statusTab"][data-tab="mastery"]')
@@ -159,7 +159,7 @@ with sync_playwright() as pw:
 
     check('基準3_各タブ主要ボタン動作とモーダル後のタブ保持',
           skin_now == target_skin and (ae_before != ae_after) and (hp_after > hp_before)
-          and eq0 == 'heal' and m_lv == 1 and tab_after_dex == 'mastery' and imp_open,
+          and eq0 == 'strike' and m_lv == 1 and tab_after_dex == 'mastery' and imp_open,
           (skin_now, target_skin, ae_before, ae_after, hp_before, hp_after, eq0, m_lv, tab_after_dex, imp_open))
 
     # 基準4: スクロールしてもタブバーがstickyで上端に残る & タブ切り替えで scrollTop が 0 に戻る

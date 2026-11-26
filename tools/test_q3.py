@@ -142,12 +142,12 @@ with sync_playwright() as pw:
             records
         };
     }''')
-    check('基準1_対象32スキルすべてが固有のsignatureと一意のDOM構造を持ち重複がない',
-          q3_res['targetCount'] == 32
-          and q3_res['uniqueSigCount'] == 32
-          and q3_res['uniqueDomCount'] == 32
+    check('基準1_対象スキルすべてが固有のsignatureと一意のDOM構造を持ち重複がない',
+          q3_res['targetCount'] >= 32
+          and q3_res['uniqueSigCount'] == q3_res['targetCount']
+          and q3_res['uniqueDomCount'] == q3_res['targetCount']
           and q3_res['allHasSig']
-          and q3_res['buffCount'] == 10
+          and q3_res['buffCount'] >= 10  # R1b: 汎用バフの新スキルが加わるため以上
           and q3_res['buffUnchanged'],
           (q3_res['targetCount'], q3_res['uniqueSigCount'], q3_res['uniqueDomCount']))
     check('基準2_同分類内でティア昇順に演出時間・要素数・範囲がすべて単調非減少かつ最上位が最も豪華',
@@ -246,8 +246,8 @@ with sync_playwright() as pw:
             uniquePlayedSigs: new Set(playedSigs).size
         };
     }''')
-    check('基準5_Q2エフェクト確認パネルで全32スキルがそれぞれの固有signatureで再生可能',
-          q2_panel_res['playedCount'] == 32 and q2_panel_res['uniquePlayedSigs'] == 32,
+    check('基準5_Q2エフェクト確認パネルで全対象スキルがそれぞれの固有signatureで再生可能',
+          q2_panel_res['playedCount'] >= 32 and q2_panel_res['uniquePlayedSigs'] == q2_panel_res['playedCount'],
           q2_panel_res)
 
     # 基準6: reduced-motion で激しい演出が出ない & 360/390/420px で崩れない

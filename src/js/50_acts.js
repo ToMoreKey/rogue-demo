@@ -97,7 +97,8 @@ const ACTS = {
   spAlloc(d) {
     // d.tree: ツリーID, d.amount: 割り振るSP数
     const p = G.p;
-    const tree = SKILL_TREES.find(t => t.id === d.tree);
+    const trees = getCharTrees(p && p.skin);
+    const tree = trees.find(t => t.id === d.tree) || SKILL_TREES.find(t => t.id === d.tree);
     if (!tree) return;
     if (!tree.unlockWhen(p)) { toast('このスキル枠はまだ解放されていません'); return; }
     const amount = Number(d.amount) || 1;
@@ -114,6 +115,7 @@ const ACTS = {
     const prevPts = curPts;
     p.sp -= amount;
     p.skillPts[d.tree] = curPts + amount;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[d.tree] = p.skillPts[d.tree];
     // マイルストーンチェック：新たに到達したSP閾値のスキルを自動解放
     for (const ms of tree.milestones) {
       if (prevPts < ms.sp && p.skillPts[d.tree] >= ms.sp) {
@@ -126,10 +128,13 @@ const ACTS = {
         }
       }
     }
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
     save(); checkAchievements('sp'); renderHUD(); renderStatus();
-    // チュートリアル step 41: ヒールを取得したら step 5 へ
+    // チュートリアル step 41: 現キャラの初期スキルを取得したら step 5 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 41) {
-      if (G.p.skills['heal']) {
+      const tutTgt = getCharTutorialTarget(p.skin);
+      if (G.p.skills[tutTgt.skillId]) {
         setTimeout(() => tutStep(5), 400);
       }
     }
@@ -145,7 +150,8 @@ const ACTS = {
       return;
     }
     delete G[key];
-    const tree = SKILL_TREES.find(t => t.id === d.tree);
+    const trees = getCharTrees(p && p.skin);
+    const tree = trees.find(t => t.id === d.tree) || SKILL_TREES.find(t => t.id === d.tree);
     if (!tree) return;
     const cost = skillResetCost(p);
     if (p.gold < cost) { toast(`リセットには ${fmt(cost)}G 必要です`); return; }
@@ -154,17 +160,21 @@ const ACTS = {
     // SPを返還
     p.sp += pts;
     p.skillPts[d.tree] = 0;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[d.tree] = 0;
     // このツリーのスキル・パッシブを削除
     for (const ms of tree.milestones) {
       if (ms.id) delete p.skills[ms.id];
       if (ms.passive) delete p.passiveSkills[ms.passive];
     }
     // 進化枠が解放条件を満たさなくなった場合、その枠もリセット
-    for (const evoTree of SKILL_TREES) {
+    const checkTrees = trees.some(t => t.id === d.tree) ? trees : SKILL_TREES;
+    for (const evoTree of checkTrees) {
+      if (evoTree.id === checkTrees[0].id) continue;
       if (!evoTree.unlockWhen(p) && (p.skillPts[evoTree.id] || 0) > 0) {
         const evoPts = p.skillPts[evoTree.id];
         p.sp += evoPts;
         p.skillPts[evoTree.id] = 0;
+        if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[evoTree.id] = 0;
         for (const ms of evoTree.milestones) {
           if (ms.id) delete p.skills[ms.id];
           if (ms.passive) delete p.passiveSkills[ms.passive];
@@ -174,6 +184,7 @@ const ACTS = {
         const excess = p.skillPts[evoTree.id] - 10;
         p.sp += excess;
         p.skillPts[evoTree.id] = 10;
+        if (p.chars && p.chars[p.skin]) p.chars[p.skin].skillPts[evoTree.id] = 10;
         for (const ms of evoTree.milestones) if (ms.sp > 10) {
           if (ms.id) delete p.skills[ms.id];
           if (ms.passive) delete p.passiveSkills[ms.passive];
@@ -181,6 +192,13 @@ const ACTS = {
         toast(`「${evoTree.name}」の第2段階が未解放となり10SPに戻りました`);
       }
     }
+    // 未習得となった装備スキルをスロットから外す
+    for (let i = 0; i < 3; i++) {
+      const sid = p.equippedSkills[i];
+      if (sid && !p.skills[sid]) p.equippedSkills[i] = null;
+    }
+    p.hp = Math.min(maxHp(p), p.hp);
+    p.mp = Math.min(maxMp(p), p.mp);
     save();
     toast(`「${tree.name}」のSPをリセットしました`);
     renderHUD(); renderStatus();
@@ -193,13 +211,17 @@ const ACTS = {
     const id = d.id;
     if (!p.skills[id]) return;
     // 既に別スロットに装備中なら外す
-    p.equippedSkills = p.equippedSkills.map(s => s === id ? null : s);
+    for (let i = 0; i < 3; i++) if (p.equippedSkills[i] === id) p.equippedSkills[i] = null;
     p.equippedSkills[slot] = id;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].equippedSkills = p.equippedSkills;
     save(); renderStatus();
     toast(`スロット${slot + 1}に「${SK[id].name}」をセットした`);
-    // チュートリアル step 5: ヒールをスロットに装備したら完了
-    if (G.tutorial && !G.tutorial.done && G.tutorial.step === 5 && id === 'heal') {
-      setTimeout(() => tutStep(6), 400);
+    // チュートリアル step 5: 現キャラの初期スキルをスロットに装備したら完了
+    if (G.tutorial && !G.tutorial.done && G.tutorial.step === 5) {
+      const tutTgt = getCharTutorialTarget(p.skin);
+      if (id === tutTgt.skillId) {
+        setTimeout(() => tutStep(6), 400);
+      }
     }
   },
   unequipSkill(d) {
@@ -208,18 +230,47 @@ const ACTS = {
     if (slot < 0 || slot > 2) return;
     const name = p.equippedSkills[slot] ? SK[p.equippedSkills[slot]]?.name : '';
     p.equippedSkills[slot] = null;
+    if (p.chars && p.chars[p.skin]) p.chars[p.skin].equippedSkills = p.equippedSkills;
     save(); renderStatus();
     if (name) toast(`スロット${slot + 1}から「${name}」を外した`);
   },
-  goLearnSkill() { G.view = 'status'; renderAll(); setTimeout(() => { const el = document.querySelector('#view-status .panel:nth-child(4)'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 80); },
+  goLearnSkill() { G.view = 'status'; G.statusTab = 'skill'; renderAll(); },
   changeSkin(d) {
-    const id = d.id;
+    if (G.run) { toast('ダンジョン攻略中はキャラを変更できません'); return; }
+    const id = d && d.id;
     if (!CHAR_SKINS.find(s => s.id === id)) return;
     G.p.skin = id;
-    $('#spr-player').innerHTML = getPlayerSVG();
-    save(); renderStatus();
+    syncActiveCharState(G.p);
+    G.p.hp = Math.min(maxHp(G.p), G.p.hp);
+    G.p.mp = Math.min(maxMp(G.p), G.p.mp);
+    const spEl = $('#spr-player');
+    if (spEl) spEl.innerHTML = getPlayerSVG();
+    save(); renderHUD(); renderStatus();
     const skin = CHAR_SKINS.find(s => s.id === id);
-    toast(`外見を「${skin.name}（${skin.job}）」に変更しました`);
+    toast(`キャラクターを「${skin.name}（${skin.job}）」に変更しました`);
+  },
+  selectStartChar(d) {
+    const id = d && d.id;
+    if (!CHAR_SKINS.find(s => s.id === id)) return;
+    G._charSelectPick = id;
+    openCharSelectModal(id);
+  },
+  confirmStartChar() {
+    const id = G._charSelectPick;
+    if (!id || !CHAR_SKINS.find(s => s.id === id)) return;
+    G.p.skin = id;
+    syncActiveCharState(G.p);
+    G.p.hp = maxHp(G.p);
+    G.p.mp = maxMp(G.p);
+    G._charSelectOpen = false;
+    closeModal();
+    save();
+    renderAll();
+    tutStartAfterCharSelect();
+  },
+  closeV9Notice() {
+    if (G.p) { G.p.v9ResetNoticePending = false; save(); }
+    closeModal();
   },
   autoEquipNow() { const n = equipBest(); save(); toast(n ? '装備を最適化しました' : 'これ以上強い装備はありません'); renderAll(); },
   autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; save(); renderStatus(); },
@@ -545,6 +596,9 @@ const ACTS = {
   dismissIdbRestore() {
     G._pendingIdbRestore = null;
     closeModal();
+    if (G.tutorial && !G.tutorial.done && G.tutorial.step === 0) {
+      openCharSelectModal(G._charSelectPick || null);
+    }
   },
   openBugReport() {
     openBugReportModal('', false);

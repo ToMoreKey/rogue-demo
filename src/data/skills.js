@@ -5,9 +5,9 @@ const SK = {
   multi:  { id: 'multi',  name: '連続斬り', mp: 14, ct: 3, type: 'atk',  hits: 3, mult: 0.8, desc: '0.8倍の斬撃を3回放つ' },
   ult:    { id: 'ult',    name: '必殺剣',   mp: 26, ct: 5, type: 'atk',  hits: 1, mult: 4.0, desc: '4倍の渾身の一撃' },
   // 魔法枠スキル
-  fireball:  { id: 'fireball',  name: 'ファイアボール', mp: 12, ct: 3, type: 'atk',  hits: 1, mult: 1.8, desc: '炎の魔力で1.8倍のダメージ' },
-  magicshield: { id: 'magicshield', name: 'マジックシールド', mp: 10, ct: 5, type: 'buff', turns: 5, desc: '5ターン魔法防御力1.5倍' },
-  thunder:   { id: 'thunder',   name: 'サンダー',       mp: 18, ct: 3, type: 'atk',  hits: 2, mult: 1.2, desc: '雷撃を2回放つ（各1.2倍）' },
+  fireball:  { id: 'fireball',  name: 'ファイアボール', mp: 8, ct: 2, type: 'atk',  hits: 1, mult: 2.0, desc: '炎の魔力で2倍のダメージ' },
+  magicshield: { id: 'magicshield', name: 'マジックシールド', mp: 10, ct: 5, type: 'buff', turns: 5, desc: '5ターン防御力1.5倍' },
+  thunder:   { id: 'thunder',   name: 'サンダー',       mp: 14, ct: 3, type: 'atk',  hits: 2, mult: 1.2, desc: '雷撃を2回放つ（各1.2倍）' },
   meteor:    { id: 'meteor',    name: 'メテオ',          mp: 30, ct: 6, type: 'atk',  hits: 1, mult: 5.0, desc: '5倍の超高威力魔法攻撃' },
   // 生命枠スキル
   regen:     { id: 'regen',     name: 'リジェネ',       mp: 8,  ct: 4, type: 'heal', pct: 0.15, desc: '毎ターン最大HPの15%を回復（3ターン）', regen: 3 },
@@ -20,7 +20,7 @@ const SK = {
   // 進化枠（詠唱）スキル
   resurrection: { id: 'resurrection', name: 'リザレクション', mp: 40, ct: 8, type: 'heal', pct: 1.0, desc: '全回復＋次の致死ダメージを1で耐える', revive: true },
   // 進化枠（英雄）スキル
-  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
+  heroic:    { id: 'heroic',    name: '英雄の奇跡',     mp: 50, ct: 7, type: 'atk',  hits: 3, mult: 3.0, allMult: 2, desc: '全ステータス2倍で3回攻撃（各3倍）' },
   // 進化枠 第2段階（SP15〜20）スキル
   shura:      { id: 'shura',      name: '修羅の構え',     mp: 32, ct: 7, type: 'buff', turns: 4, shura: true,  desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
   hagun:      { id: 'hagun',      name: '破軍の剣',       mp: 60, ct: 8, type: 'atk',  hits: 1, mult: 12.0,  desc: '12倍の渾身の一撃' },
@@ -49,9 +49,42 @@ const SK = {
   eternal:        { id: 'eternal',        name: '永劫の祈り',           mp: 75, ct: 9, type: 'heal', pct: 1.0, regen: 5, regenPct: 0.35, barrier: 3, desc: 'HP全回復＋5ターン35%再生＋3回バリア' },
   heroAdvent:     { id: 'heroAdvent',     name: '勇者の光臨',           mp: 70, ct: 8, type: 'buff', turns: 6, advent: true, desc: '6ターン全ステータス3.5倍' },
   skyStar:        { id: 'skyStar',        name: '蒼穹星剣',             mp: 85, ct: 8, type: 'atk',  hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）' },
-  genesisRay:     { id: 'genesisRay',     name: '創世の光',             mp: 95, ct: 9, type: 'atk',  hits: 1, mult: 24.0, desc: '24倍の創世の一閃' }
+  genesisRay:     { id: 'genesisRay',     name: '創世の光',             mp: 95, ct: 9, type: 'atk',  hits: 1, mult: 24.0, desc: '24倍の創世の一閃' },
+  // R1a 追加スキル（非ヒーラー自己回復・クロエ初期スキル）
+  firstAid:       { id: 'firstAid',       name: '応急手当',             mp: 12, ct: 5, type: 'heal', pct: 0.20, desc: '最大HPの20%を回復する' },
+  doubleStab:     { id: 'doubleStab',     name: 'ダブルスタブ',         mp: 7,  ct: 2, type: 'atk',  hits: 2, mult: 1.1, desc: '1.1倍の素早い2回攻撃' },
+  // R1b 追加スキル（キャラ専用: クロエ15・ステラ1・ルビィ4・シリア7）
+  shadowStep: { id: 'shadowStep', name: '影走り', mp: 8, ct: 4, type: 'buff', turns: 3, gen: { turns: 3, defMult: 2 }, desc: '3ターン防御力2倍' },
+  rush: { id: 'rush', name: 'ラッシュ', mp: 15, ct: 3, type: 'atk', hits: 4, mult: 0.7, desc: '0.7倍の連撃を4回放つ' },
+  bladeDance: { id: 'bladeDance', name: '連刃乱舞', mp: 28, ct: 5, type: 'atk', hits: 6, mult: 0.7, desc: '0.7倍の連撃を6回放つ' },
+  phantomSlash: { id: 'phantomSlash', name: '幻影斬', mp: 20, ct: 4, type: 'atk', hits: 3, mult: 1.2, desc: '幻影の斬撃を3回放つ（各1.2倍）' },
+  swiftStance: { id: 'swiftStance', name: '疾風の構え', mp: 22, ct: 6, type: 'buff', turns: 4, gen: { turns: 4, atkMult: 1.8 }, desc: '4ターン攻撃力1.8倍' },
+  shadowPierce: { id: 'shadowPierce', name: '影縫い', mp: 40, ct: 7, type: 'atk', hits: 1, mult: 7.0, desc: '7倍の影縫いの一撃' },
+  frenzyEdge: { id: 'frenzyEdge', name: '狂乱の刃', mp: 20, ct: 6, type: 'buff', turns: 4, gen: { turns: 4, atkMult: 3, defMult: 0.5 }, desc: '4ターン攻撃力3倍・防御力半減' },
+  mirageStance: { id: 'mirageStance', name: '幻惑の構え', mp: 32, ct: 7, type: 'buff', turns: 4, gen: { turns: 4, atkMult: 4, takenMult: 1.2 }, desc: '4ターン攻撃力4倍・被ダメ1.2倍' },
+  thousandCuts: { id: 'thousandCuts', name: '千刃', mp: 60, ct: 8, type: 'atk', hits: 8, mult: 1.5, desc: '1.5倍の千の刃を8回放つ' },
+  nightParade: { id: 'nightParade', name: '百鬼夜行', mp: 80, ct: 8, type: 'atk', hits: 12, mult: 1.5, desc: '1.5倍の百鬼夜行を12回放つ' },
+  phantomAdvent: { id: 'phantomAdvent', name: '怪盗降臨', mp: 65, ct: 8, type: 'buff', turns: 5, gen: { turns: 5, atkMult: 5, takenMult: 1.1 }, desc: '5ターン攻撃力5倍・被ダメ1.1倍' },
+  grandHeist: { id: 'grandHeist', name: '大怪盗の妙技', mp: 50, ct: 7, type: 'atk', hits: 6, mult: 1.5, desc: '1.5倍の妙技を6回放つ' },
+  trumpCard: { id: 'trumpCard', name: '切り札', mp: 70, ct: 9, type: 'atk', hits: 10, mult: 1.5, desc: '1.5倍の切り札を10回放つ' },
+  thousandMask: { id: 'thousandMask', name: '千変万化', mp: 85, ct: 8, type: 'atk', hits: 8, mult: 3.0, desc: '8回攻撃（各3倍）' },
+  nightSky: { id: 'nightSky', name: '夜天の大強盗', mp: 95, ct: 9, type: 'atk', hits: 12, mult: 2.0, desc: '12回攻撃（各2倍）' },
+  swordGod: { id: 'swordGod', name: '剣神の一閃', mp: 95, ct: 9, type: 'atk', hits: 1, mult: 24.0, desc: '24倍の剣神の一閃' },
+  arcaneMiracle: { id: 'arcaneMiracle', name: '大魔導の奇跡', mp: 50, ct: 7, type: 'atk', hits: 3, mult: 3.0, desc: '3回攻撃（各3倍）の大魔法' },
+  starDust: { id: 'starDust', name: '星屑の極意', mp: 70, ct: 9, type: 'atk', hits: 5, mult: 3.0, desc: '5回攻撃（各3倍）の星屑魔法' },
+  skyMeteorite: { id: 'skyMeteorite', name: '蒼穹の流星群', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の流星魔法' },
+  endMagic: { id: 'endMagic', name: '終焉の大魔法', mp: 95, ct: 9, type: 'atk', hits: 1, mult: 24.0, desc: '24倍の終焉の大魔法' },
+  holyBolt: { id: 'holyBolt', name: '聖光弾', mp: 10, ct: 3, type: 'atk', hits: 1, mult: 1.8, desc: '聖なる光弾で1.8倍のダメージ' },
+  judgment: { id: 'judgment', name: '聖裁', mp: 18, ct: 3, type: 'atk', hits: 2, mult: 1.5, desc: '聖なる裁きを2回放つ（各1.5倍）' },
+  holyNova: { id: 'holyNova', name: '聖なる爆光', mp: 30, ct: 5, type: 'atk', hits: 1, mult: 5.0, desc: '5倍の聖なる爆光' },
+  divineWrath: { id: 'divineWrath', name: '神罰', mp: 55, ct: 7, type: 'atk', hits: 1, mult: 9.0, desc: '9倍の神罰の一撃' },
+  angelMiracle: { id: 'angelMiracle', name: '天使の奇跡', mp: 50, ct: 7, type: 'atk', hits: 3, mult: 3.0, desc: '3回攻撃（各3倍）の聖なる光' },
+  celestialLance: { id: 'celestialLance', name: '聖槍の極意', mp: 70, ct: 9, type: 'atk', hits: 5, mult: 3.0, desc: '5回攻撃（各3倍）の聖槍' },
+  heavenStars: { id: 'heavenStars', name: '蒼穹の聖星', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の聖星' }
 };
-const SK_ORDER = ['strike', 'heal', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'tenma', 'kishin', 'blizzard', 'iceAge', 'cosmicNova', 'zeroAbs', 'meteorNova', 'resurrection', 'holyLight', 'requiem', 'goddess', 'eternal', 'heroic', 'heroAwaken', 'starSword', 'heroAdvent', 'skyStar', 'genesisRay'];
+const SK_ORDER = ['strike', 'doubleStab', 'heal', 'firstAid', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'tenma', 'kishin', 'blizzard', 'iceAge', 'cosmicNova', 'zeroAbs', 'meteorNova', 'resurrection', 'holyLight', 'requiem', 'goddess', 'eternal', 'heroic', 'heroAwaken', 'starSword', 'heroAdvent', 'skyStar', 'genesisRay',
+  // R1b 追加（キャラ専用）
+  'shadowStep', 'rush', 'bladeDance', 'phantomSlash', 'swiftStance', 'shadowPierce', 'frenzyEdge', 'mirageStance', 'thousandCuts', 'nightParade', 'phantomAdvent', 'grandHeist', 'trumpCard', 'thousandMask', 'nightSky', 'swordGod', 'arcaneMiracle', 'starDust', 'skyMeteorite', 'endMagic', 'holyBolt', 'judgment', 'holyNova', 'divineWrath', 'angelMiracle', 'celestialLance', 'heavenStars'];
 
 // ============ DQ8スタイル スキルツリー定義 ============
 const SKILL_TREES = [
@@ -83,8 +116,8 @@ const SKILL_TREES = [
     desc: '魔法を極める。高威力の魔法スキルを習得。',
     unlockWhen: () => true,
     milestones: [
-      { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で1.8倍のダメージ' },
-      { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン魔法防御力1.5倍' },
+      { sp: 3,  id: 'fireball',       name: 'ファイアボール',       desc: '炎の魔力で2倍のダメージ' },
+      { sp: 6,  id: 'magicshield',    name: 'マジックシールド',     desc: '5ターン防御力1.5倍' },
       { sp: 10, id: 'thunder',        name: 'サンダー',             desc: '雷撃を2回放つ（各1.2倍）' },
       { sp: 15, id: null,             name: 'MP最大値+20%',       desc: 'パッシブ：最大MPが20%上昇する', passive: 'magic15' },
       { sp: 20, id: 'meteor',         name: 'メテオ',               desc: '5倍の超高威力魔法攻撃' },
@@ -148,7 +181,7 @@ const SKILL_TREES = [
     stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
       { sp: 5,  id: 'blizzard',   name: 'ブリザード',       desc: '4.5倍の氷結魔法で敵を凍らせる' },
-      { sp: 10, id: null,         name: 'MP消費-20%',       desc: 'パッシブ：全スキルのMP消費が20%減少', passive: 'mage10' },
+      { sp: 10, id: null,         name: 'MP消費-20%・攻撃+15%', desc: 'パッシブ：全スキルのMP消費が20%減少し、攻撃力が15%上昇する', passive: 'mage10' },
       { sp: 15, id: 'iceAge',     name: 'アイスエイジ',     desc: '6倍の氷結魔法で敵を凍らせる' },
       { sp: 20, id: 'cosmicNova', name: 'コズミックノヴァ', desc: '14倍の星辰爆発魔法' },
       { sp: 25, id: 'zeroAbs',    name: '絶対零度',         desc: '9倍の氷結魔法で敵を2ターン凍らせる' },
@@ -189,7 +222,7 @@ const SKILL_TREES = [
     stage3When: (p) => !!(p && p.ending),
     stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
     milestones: [
-      { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（英雄のみ）' },
+      { sp: 5,  id: 'heroic',     name: '英雄の奇跡', desc: '全ステータス2倍で3回攻撃（各3倍）' },
       { sp: 10, id: null,         name: '全能力+25%', desc: 'パッシブ：攻撃・最大HP・最大MPが25%上昇', passive: 'hero10' },
       { sp: 15, id: 'heroAwaken', name: '英雄の覚醒', desc: '5ターン全ステータス2.5倍' },
       { sp: 20, id: 'starSword',  name: '星剣の極意', desc: '5回攻撃（各3倍）' },

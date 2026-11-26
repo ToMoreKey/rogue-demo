@@ -3,17 +3,33 @@ const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
 function tutInit() {
   // 初回のみ（localStorageに完了フラグがなければ）
-  try { if (localStorage.getItem(TUT_SAVE_KEY)) { tutHide(); return; } } catch (e) {}
+  try {
+    if (localStorage.getItem(TUT_SAVE_KEY)) {
+      tutHide();
+      if (G.p && G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+      return;
+    }
+  } catch (e) {}
   // 既存セーブで進行済みならチュートリアル済み扱いにして非表示にする
-  if (G.p && (G.p.lv > 1 || (G.p.stats && G.p.stats.runs > 0))) { tutDone(); return; }
+  if (G.p && (G.p.lv > 1 || (G.p.stats && G.p.stats.runs > 0))) {
+    tutDone();
+    if (G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+    return;
+  }
   G.tutorial = { step: 0, done: false };
-  // DOM描画完了後に即表示（遅延を最小化）
+  // 新規ゲームの最初にキャラクター選択モーダルを出す（選ぶまで閉じられない）
+  openCharSelectModal(null);
+}
+
+function tutStartAfterCharSelect() {
+  G.tutorial = { step: 0, done: false };
   requestAnimationFrame(() => requestAnimationFrame(() => tutStep(0)));
 }
 
 function tutDone() {
   G.tutorial = { step: 6, done: true };
   try { localStorage.setItem(TUT_SAVE_KEY, '1'); } catch (e) {}
+  if (G._charSelectOpen) { G._charSelectOpen = false; closeModal(); }
   tutHide();
 }
 
@@ -35,16 +51,37 @@ const TUT_MSGS = {
   6:  { title: 'チュートリアル完了！🎉', body: '装備したスキルは戦闘で自動発動されるよ。<br>詳しくは <b>ヘルプ</b> を見てね！', place: 'above' },
 };
 
+function getTutMsg(step) {
+  const tgt = getCharTutorialTarget(G.p && G.p.skin);
+  if (step === 41) {
+    return {
+      title: 'スキルを取得しよう',
+      body: `<b>${esc(tgt.treeName)}</b> の「+1 SP」ボタンを3回押して<b>${esc(tgt.skillName)}</b>を習得しよう。<br><span class="sub">${esc(tgt.hint)}</span>`,
+      place: 'below'
+    };
+  }
+  if (step === 5) {
+    return {
+      title: 'スキルを装備しよう',
+      body: `習得した <b>${esc(tgt.skillName)}</b> のS1〜S3ボタンを押してスロットにセットしよう。`,
+      place: 'below'
+    };
+  }
+  return TUT_MSGS[step] || null;
+}
+
 function tutAllowClick(step, b) {
   const act = b.dataset.act, v = b.dataset.v, tree = b.dataset.tree, id = b.dataset.id;
-  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore') return true;
+  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice') return true;
+  if (G._charSelectOpen) return act === 'selectStartChar' || act === 'confirmStartChar';
+  const tgt = getCharTutorialTarget(G.p && G.p.skin);
   switch (step) {
     case 0:  return act === 'nav' && v === 'dungeon';
     case 1:  return act === 'go' && b.dataset.d === 'A';
     case 3:  return act === 'retreat';
     case 4:  return act === 'nav' && v === 'status';
-    case 41: return (act === 'spAlloc' && tree === 'life') || (act === 'statusTab' && b.dataset.tab === 'skill');
-    case 5:  return (act === 'equipSkill' && id === 'heal') || (act === 'nav' && v === 'status') || (act === 'statusTab' && b.dataset.tab === 'skill');
+    case 41: return (act === 'spAlloc' && tree === tgt.treeId) || (act === 'statusTab' && b.dataset.tab === 'skill');
+    case 5:  return (act === 'equipSkill' && id === tgt.skillId) || (act === 'nav' && v === 'status') || (act === 'statusTab' && b.dataset.tab === 'skill');
     case 6:  return act === 'nav' && v === 'help';
     default: return false;
   }
@@ -72,13 +109,14 @@ function tutStep(step) {
 }
 
 function tutGetTarget(step) {
+  const tgt = getCharTutorialTarget(G.p && G.p.skin);
   switch (step) {
     case 0:  return document.getElementById('nav-dungeon');
     case 1:  return document.querySelector('[data-act="go"][data-d="A"]');
     case 3:  return document.querySelector('[data-act="retreat"]');
     case 4:  return document.getElementById('nav-status');
-    case 41: return document.querySelector('[data-act="spAlloc"][data-tree="life"][data-amount="1"]');
-    case 5:  return document.querySelector('[data-act="equipSkill"][data-id="heal"]:not([disabled])');
+    case 41: return document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-amount="1"]`);
+    case 5:  return document.querySelector(`[data-act="equipSkill"][data-id="${tgt.skillId}"]:not([disabled])`);
     case 6:  return document.getElementById('nav-help');
     default: return null;
   }
@@ -152,10 +190,10 @@ function renderTutorial() {
     renderStatus();
   }
 
-  // step 2: 戦闘中は何も表示しない（HP監視だけ）
-  if (step === 2) { tutHide(); return; }
+  // step 2: 戦闘中は何も表示しない（HP監視だけ）。キャラ選択モーダル表示中もオーバーレイは出さない
+  if (step === 2 || G._charSelectOpen) { tutHide(); return; }
 
-  const msg = TUT_MSGS[step];
+  const msg = getTutMsg(step);
   if (!msg) { tutHide(); return; }
 
   const el = tutGetTarget(step);
