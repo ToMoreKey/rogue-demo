@@ -170,6 +170,16 @@ with sync_playwright() as pw:
     check('基準8a_拾った装備は自動装備されずバッグに入る', r8['rs'] == ['bag', 'bag'] and r8['keptWeapon'] and r8['inBag'], r8)
     check('基準8b_「最強装備」ボタンでその時いちばん強い装備になる', '最強装備' in r8['label'] and r8['best'] and r8['oldInBag'], r8)
 
+    # 基準9: 施設内で「街」タブを押すと広場に戻る
+    r9 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); G.view = 'town'; G.townView = 'smith'; R.renderAll();
+        document.getElementById('nav-town').click();
+        const back = G.townView, plaza = !!document.querySelector('#view-town .plaza-grid');
+        document.getElementById('nav-town').click();
+        return { back, plaza, still: G.view };
+    }''')
+    check('基準9_施設内で街タブを押すと広場に戻る（広場では何も起きない）', r9['back'] == 'plaza' and r9['plaza'] and r9['still'] == 'town', r9)
+
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()
 

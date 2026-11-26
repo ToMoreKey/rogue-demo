@@ -2,6 +2,8 @@ const ACTS = {
   nav(d) {
     const v = d.v;
     if (v === 'town' && G.run) { toast('探索中は街に戻れません。先に撤退してください'); return; }
+    // 街タブを街の中で押したら、施設から広場に戻る
+    if (v === 'town' && G.view === 'town' && G.townView && G.townView !== 'plaza') { G.townView = 'plaza'; G._npc = null; G._npcEvt = null; renderTown(); return; }
     // チュートリアル step 0: ダンジョンタブを押したら step 1 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 0 && v === 'dungeon') {
       G.view = v; renderAll(); ensureLoop();
