@@ -34,3 +34,9 @@
 - **英雄の奇跡**: `allMult: 2`。発動した攻撃は攻撃力2倍（各3倍×2倍=6倍相当）、防御力2倍は次の敵の攻撃1回まで（`run.heroDef`）。
 - BOT基準は不変（BOTはバーサーク・英雄の奇跡をほぼ使わず、4キャラのループ結果は変更前と同一）。`test_r1b.py` に基準6a/6bを追加。
 - 狂乱の刃（クロエ）との差: バーサークは4ターン・攻3倍・防0.5倍で、狂乱の刃と同等の位置づけに揃った。
+
+## R1b-2: 個別エフェクト（Claudeが実装）
+- 新規 `src/js/61_fx_custom.js`（`FX_CUSTOM`）。ビルド順は `60_render.js` の直後。`playSkillFx` は `FX_CUSTOM[id]` があればそちらを優先（`proc` の共通演出は不使用に）。
+- 対象22スキル（攻撃・魔法・必殺。バフ系5つは従来の強化リングのまま）。ノード数・時間・範囲は従来の `SKILL_FX_MAP` のまま（Q3のティア単調性テストが通る）。
+- モチーフ: 疾走線(rush)／幻影の残像(phantomSlash)／黒い刺突(shadowPierce)／回転する風の円弧(bladeDance)／降る金貨(grandHeist)／無数の斬撃(thousandCuts)／降るカード(trumpCard)／影の行列(nightParade)／仮面(thousandMask)／月と流星(nightSky)／巨大聖剣と剣の雨(swordGod)／魔法陣と光柱(arcaneMiracle)／星屑(starDust)／燃える隕石(skyMeteorite)／黒球の吸引(endMagic)／光の筋(holyBolt)／十字と光柱(judgment)／三重光輪(holyNova)／翼と羽根(angelMiracle)／三本の裁きの雷(divineWrath)／聖槍(celestialLance)／星々(heavenStars)。
+- 確認: Q2のエフェクト確認パネルで全スキル再生可。スクリーンショットで形状の違いを目視確認。sw `rogue-v47`。

@@ -254,28 +254,28 @@ const SKILL_FX_MAP = {
   goddess:        { cat: 'heal',  tier: 'H4', rank: 4, durMs: 780, nodes: 10, span: 144, sig: 'heal_h4_goddess_halo' },
   eternal:        { cat: 'heal',  tier: 'H5', rank: 5, durMs: 920, nodes: 12, span: 180, sig: 'heal_h5_eternal_helix' },
   // R1b: キャラ専用スキル（R1b-1は共通の手続き型演出。個別演出はR1b-2）
-  rush: { cat: 'slash', tier: 'T1', rank: 1, durMs: 400, nodes: 3, span: 90, sig: 'slash_t1_rush', color: 'wind', proc: true },
-  phantomSlash: { cat: 'slash', tier: 'T2', rank: 2, durMs: 480, nodes: 5, span: 102, sig: 'slash_t2_phantomSlash', color: 'dark', proc: true },
-  shadowPierce: { cat: 'slash', tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_shadowPierce', color: 'dark', proc: true },
-  bladeDance: { cat: 'slash', tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_bladeDance', color: 'wind', proc: true },
-  grandHeist: { cat: 'slash', tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_grandHeist', color: 'gold', proc: true },
-  holyBolt: { cat: 'magic', tier: 'T1', rank: 1, durMs: 390, nodes: 4, span: 86, sig: 'magic_t1_holyBolt', elem: 'holy', proc: true },
-  judgment: { cat: 'magic', tier: 'T2', rank: 2, durMs: 480, nodes: 6, span: 100, sig: 'magic_t2_judgment', elem: 'holy', proc: true },
-  holyNova: { cat: 'magic', tier: 'T3', rank: 3, durMs: 600, nodes: 7, span: 118, sig: 'magic_t3_holyNova', elem: 'holy', proc: true },
-  arcaneMiracle: { cat: 'magic', tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_arcaneMiracle', elem: 'default', proc: true },
-  angelMiracle: { cat: 'magic', tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_angelMiracle', elem: 'holy', proc: true },
-  divineWrath: { cat: 'magic', tier: 'T5', rank: 5, durMs: 880, nodes: 11, span: 180, sig: 'magic_t5_divineWrath', elem: 'holy', proc: true },
-  thousandCuts: { cat: 'ult', tier: 'U1', rank: 1, durMs: 740, nodes: 7, span: 145, sig: 'ult_u1_thousandCuts', style: 'slash', proc: true },
-  starDust: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_starDust', style: 'dark', proc: true },
-  celestialLance: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_celestialLance', style: 'holy', proc: true },
-  trumpCard: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_trumpCard', style: 'slash', proc: true },
-  nightParade: { cat: 'ult', tier: 'U3', rank: 3, durMs: 960, nodes: 10, span: 190, sig: 'ult_u3_nightParade', style: 'slash', proc: true },
-  thousandMask: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_thousandMask', style: 'slash', proc: true },
-  skyMeteorite: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_skyMeteorite', style: 'fire', proc: true },
-  heavenStars: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_heavenStars', style: 'holy', proc: true },
-  nightSky: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1150, nodes: 12, span: 235, sig: 'ult_u4_nightSky', style: 'dark', proc: true },
-  swordGod: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_swordGod', style: 'slash', proc: true },
-  endMagic: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_endMagic', style: 'dark', proc: true },
+  rush: { cat: 'slash', tier: 'T1', rank: 1, durMs: 400, nodes: 3, span: 90, sig: 'slash_t1_rush', color: 'wind' },
+  phantomSlash: { cat: 'slash', tier: 'T2', rank: 2, durMs: 480, nodes: 5, span: 102, sig: 'slash_t2_phantomSlash', color: 'dark' },
+  shadowPierce: { cat: 'slash', tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_shadowPierce', color: 'dark' },
+  bladeDance: { cat: 'slash', tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_bladeDance', color: 'wind' },
+  grandHeist: { cat: 'slash', tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_grandHeist', color: 'gold' },
+  holyBolt: { cat: 'magic', tier: 'T1', rank: 1, durMs: 390, nodes: 4, span: 86, sig: 'magic_t1_holyBolt', elem: 'holy' },
+  judgment: { cat: 'magic', tier: 'T2', rank: 2, durMs: 480, nodes: 6, span: 100, sig: 'magic_t2_judgment', elem: 'holy' },
+  holyNova: { cat: 'magic', tier: 'T3', rank: 3, durMs: 600, nodes: 7, span: 118, sig: 'magic_t3_holyNova', elem: 'holy' },
+  arcaneMiracle: { cat: 'magic', tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_arcaneMiracle', elem: 'default' },
+  angelMiracle: { cat: 'magic', tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_angelMiracle', elem: 'holy' },
+  divineWrath: { cat: 'magic', tier: 'T5', rank: 5, durMs: 880, nodes: 11, span: 180, sig: 'magic_t5_divineWrath', elem: 'holy' },
+  thousandCuts: { cat: 'ult', tier: 'U1', rank: 1, durMs: 740, nodes: 7, span: 145, sig: 'ult_u1_thousandCuts', style: 'slash' },
+  starDust: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_starDust', style: 'dark' },
+  celestialLance: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_celestialLance', style: 'holy' },
+  trumpCard: { cat: 'ult', tier: 'U2', rank: 2, durMs: 850, nodes: 9, span: 166, sig: 'ult_u2_trumpCard', style: 'slash' },
+  nightParade: { cat: 'ult', tier: 'U3', rank: 3, durMs: 960, nodes: 10, span: 190, sig: 'ult_u3_nightParade', style: 'slash' },
+  thousandMask: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_thousandMask', style: 'slash' },
+  skyMeteorite: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_skyMeteorite', style: 'fire' },
+  heavenStars: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1100, nodes: 11, span: 215, sig: 'ult_u4_heavenStars', style: 'holy' },
+  nightSky: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1150, nodes: 12, span: 235, sig: 'ult_u4_nightSky', style: 'dark' },
+  swordGod: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_swordGod', style: 'slash' },
+  endMagic: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_endMagic', style: 'dark' },
   // 強化（バフ 10種：変更なし）
   guard:          { cat: 'buff',  tone: 'def' },
   magicshield:    { cat: 'buff',  tone: 'def' },
@@ -808,6 +808,10 @@ function playSkillFx(id, hitCount, target) {
         const dx = Math.round(Math.cos(rad) * 64), dy = Math.round(Math.sin(rad) * 64);
         addNode('fx-ult-spark fx-side-player', '', `--dx:${dx}px;--dy:${dy}px`);
       }
+    } else if (FX_CUSTOM[id] && (cat === 'slash' || cat === 'magic' || cat === 'ult')) {
+      // R1b-2: キャラ専用スキルの個別演出（61_fx_custom.js）
+      FX_CUSTOM[id]({ id, add: addNode, box, dur, spec });
+      hitEnemy(cat === 'ult' || (spec.rank || 1) >= 4 ? 'big' : (spec.rank || 1) >= 2 ? 'sm' : '');
     } else if (spec.proc && (cat === 'slash' || cat === 'magic' || cat === 'ult')) {
       // R1b-1: 手続き型の共通演出（R1b-2で各スキルの個別演出に差し替える）。ノード数＝spec.nodes、DOMは sig-<id> クラスでスキルごとに異なる
       const n = spec.nodes, rank = spec.rank || 1, sc = 'sig-' + id;
