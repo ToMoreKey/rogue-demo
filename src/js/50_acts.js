@@ -284,6 +284,14 @@ const ACTS = {
     closeModal();
   },
   autoEquipNow() { const n = equipBest(); save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
+  mEquipBest() {
+    // 結果画面から「最強装備」：バッグ含めて最強に切り替え、スクロール位置は維持
+    const sh = $('#m-sheet'), st = sh ? sh.scrollTop : 0;
+    G._pwArm = Date.now();
+    const n = equipBest(); save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll();
+    openModal();
+    const sh2 = $('#m-sheet'); if (sh2) sh2.scrollTop = st;
+  },
   autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; G.opts.autoEquipV2 = true; save(); renderStatus(); },
   fxToggle() { G.opts.fx = G.opts.fx === false; if (!G.opts.fx && typeof clearAllBattleFx === 'function') clearAllBattleFx(); save(); renderStatus(); if (G.run) renderBattle(); },
   reset() {

@@ -1835,20 +1835,29 @@ function dropCompareHtml(it, snap) {
     <div class="cmp-v">${verdict}　${dsign(diff)}${pct != null ? `（${pct >= 0 ? '+' : '−'}${Math.abs(pct)}%）` : ''}${equipped ? '　✔ 装備中' : ''}</div></div>`;
 }
 function dropCardHtml(it, snap) {
-  const inBag = G.p.bag.some(x => x.id === it.id);
-  const eq = G.p[it.slot] && G.p[it.slot].id === it.id;
-  const btn = !eq && inBag ? `<div class="it-act"><button class="btn small" data-act="mEquip" data-id="${it.id}">この装備に変更</button></div>` : '';
+  const p = G.p, isW = it.slot === 'weapon', nm = isW ? '武器' : '防具';
+  const inBag = p.bag.some(x => x.id === it.id);
+  const eq = p[it.slot] && p[it.slot].id === it.id;
+  if (!eq && inBag) {
+    // まだ装備していない：装備タブと同じ「今→後」の比較と、すぐ押せる切り替えボタン
+    return `<div class="swap-card">${itemCard(it, { sell: true, showRec: false, statDelta: swapStatDelta(it) })}${swapCmpHtml(it)}<div class="it-act"><button class="btn small primary" data-act="mEquip" data-id="${it.id}">この${nm}に切り替える</button></div></div>`;
+  }
+  // 装備済み（自動装備ONなど）：出撃前との比較と、元の装備に戻すボタン
+  const prev = snap && snap[it.slot], back = eq && prev && p.bag.find(x => x.id === prev.id);
+  const btn = back ? `<div class="it-act"><button class="btn small" data-act="mEquip" data-id="${back.id}">元の${nm}（${esc(prev.name)}）に戻す</button></div>` : '';
   return itemCard(it, { sell: true, showRec: false }).replace(/<\/div>\s*$/, dropCompareHtml(it, snap) + btn + '</div>');
 }
 function dropsHtml(l) {
   const snap = l.snap, p = G.p;
   const rank = it => { const eq = p[it.slot] && p[it.slot].id === it.id; const ref = eq ? (snap && snap[it.slot]) : gearSnap(p[it.slot]); return gearScore(it) - (ref ? ref.score : 0); };
   const items = [...l.items].sort((a, b) => rank(b) - rank(a) || b.rarity - a.rarity || b.star - a.star);
-  return items.length ? `<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
+  const better = items.some(it => p.bag.some(x => x.id === it.id) && rank(it) > 0);
+  const head = better ? `<div class="drops-best"><button class="btn small primary" data-act="mEquipBest">⚔ 最強装備にする</button><span class="sub">今より強い装備があります</span></div>` : '';
+  return items.length ? `${head}<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
 }
 // 出撃前→現在の「強くなった」表示（Lv・各ステータス・戦力・装備）
 function growthHtml(l) {
-  const a = l.snap, b = l.after;
+  const a = l.snap, b = l.after && statSnap(G.p); // 結果画面で装備を切り替えたら、上の「戦闘力 A → B」も追従する
   if (!a || !b) return '';
   const dPow = b.power - a.power;
   const rows = [['Lv', a.lv, b.lv], ['攻撃力', a.atk, b.atk], ['防御力', a.def, b.def], ['最大HP', a.hp, b.hp], ['最大MP', a.mp, b.mp]];

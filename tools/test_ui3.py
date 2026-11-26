@@ -84,8 +84,8 @@ with sync_playwright() as pw:
         p.bag.push(strong, weak, same);
         G.last = { snap, after: snap, result: 'clear', d: R.DUNGEONS[0], df: R.DIFFS[0], floors: 5, floor: 5, cleared: 5, gold: 0, clearGold: 0, lost: 0, sp: 0, items: [strong, weak, same], potions: { hp: 0, mp: 0 }, lvFrom: 30, lvTo: 30, kills: 1, part1End: false, ending: false, tower: null, abyss: null };
         R.openModal();
-        const cmps = Array.from(document.querySelectorAll('#m-sheet .cmp')).map(e => e.className.replace('cmp', '').trim());
-        const verdicts = Array.from(document.querySelectorAll('#m-sheet .cmp-v')).map(e => e.textContent.replace(/\\s+/g, ' '));
+        const cmps = Array.from(document.querySelectorAll('#m-sheet .cmp, #m-sheet .swp')).map(e => Array.from(e.classList).filter(c => c !== 'cmp' && c !== 'swp').join(' '));
+        const verdicts = Array.from(document.querySelectorAll('#m-sheet .cmp-v, #m-sheet .swp-v')).map(e => e.textContent.replace(/\\s+/g, ' '));
         const order = Array.from(document.querySelectorAll('#m-sheet .drops .item .it-name')).length;
         const btns = document.querySelectorAll('#m-sheet [data-act="mEquip"]').length;
         const growth = !!document.querySelector('#m-sheet .growth');
@@ -226,6 +226,27 @@ with sync_playwright() as pw:
     check('基準12b_候補ごとに切り替え前後の比較（強くなる/弱くなる）が出る', r12['up'] == 1 and r12['down'] == 1, r12)
     check('基準12d_攻撃力/防御力の横に現在からの増減（▲/▼）が出て、比較表には差分を書かない', len(r12['dl']) == 2 and r12['dl'][0].startswith('▲') and r12['dl'][1].startswith('▼') and r12['tblDelta'] == 0, r12)
     check('基準12c_切り替えで装備が変わり、装備中カードが強化演出になる', r12['afterArmor'] and r12['stronger'] and r12['fx'], r12)
+
+    # 基準13: リザルトから装備を切り替え・最強装備・元に戻す
+    r13 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); const p = G.p; p.lv = 20; G.autoSellRarity = -1; G.opts.autoEquip = false;
+        const mk = (slot, star, roll) => { const it = R.genItem(R.DIFFS[1], false, slot, star); it.star = star; it.roll = roll; it.rarity = 1; it.props = []; it.prop = null; return it; };
+        const w0 = mk('weapon', 2, .5); p.weapon = w0; p.armor = mk('armor', 2, .5); p.bag = [];
+        const ws = mk('weapon', 5, .9), as = mk('armor', 5, .9); p.bag = [ws, as];
+        const snap = R.statSnap(p);
+        G.last = { result: 'clear', d: R.DUNGEONS[0], df: R.DIFFS[1], floors: 5, floor: 5, cleared: true, gold: 0, clearGold: 0, lost: 0, sp: 0, items: [ws, as], potions: { hp: 0, mp: 0 }, lvFrom: 20, lvTo: 20, snap, after: R.statSnap(p), kills: 0, part1End: false, ending: false, tower: null, abyss: null };
+        const html = R.dropsHtml(G.last);
+        const host = document.createElement('div'); host.id = 'tmp-drops'; host.innerHTML = html; document.body.appendChild(host);
+        const out = { equipBtns: host.querySelectorAll('[data-act="mEquip"]').length, best: host.querySelectorAll('[data-act="mEquipBest"]').length, dl: host.querySelectorAll('.it-dl.up').length };
+        host.remove();
+        R.ACTS.mEquipBest(); out.bothEquipped = p.weapon === ws && p.armor === as;
+        const html2 = R.dropsHtml(G.last); const h2 = document.createElement('div'); h2.innerHTML = html2;
+        out.backBtn = [...h2.querySelectorAll('[data-act="mEquip"]')].some(b => Number(b.dataset.id) === w0.id);
+        R.ACTS.mEquip({ id: String(w0.id) }); out.reverted = p.weapon === w0;
+        return out;
+    }''')
+    check('基準13a_リザルトの未装備ドロップに切り替えボタン・増減・最強装備ボタンが出る', r13['equipBtns'] == 2 and r13['best'] == 1 and r13['dl'] == 2, r13)
+    check('基準13b_最強装備で一括切り替え、元の装備に戻すボタンで戻せる', r13['bothEquipped'] and r13['backBtn'] and r13['reverted'], r13)
 
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()
