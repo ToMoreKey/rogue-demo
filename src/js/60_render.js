@@ -162,6 +162,7 @@ function renderFacility(fac) {
     <div class="facility-back-bar">
       <button class="btn small" data-act="townBack">← 広場に戻る</button>
     </div>
+    ${npcHtml(fac)}
     <div class="panel">${content}</div>`;
 }
 

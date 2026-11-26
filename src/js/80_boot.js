@@ -26,6 +26,8 @@ function boot() {
     e.stopPropagation();
     const fn = ACTS[b.dataset.act];
     if (POWER_ACTS[b.dataset.act]) G._pwArm = Date.now();
+    if (b.dataset.act === 'townEnter' || b.dataset.act === 'townBack') { G._npc = null; G._npcEvt = null; }
+    else if (NPC_ACTS[b.dataset.act]) { G._npc = null; G._npcEvt = b.dataset.act; }
     if (fn) fn(b.dataset, b);
   }, true); // capture: true
   document.addEventListener('keydown', e => {

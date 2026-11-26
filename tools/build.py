@@ -27,6 +27,7 @@ JS_ORDER = [
     'data/tower.js',
     'data/abyss.js',
     'data/ranking.js',
+    'data/npcs.js',
     'data/bugreport.js',
     'data/analytics.js',
     'data/dex.js',
@@ -46,6 +47,7 @@ JS_ORDER = [
     'js/60_render.js',
     'js/61_fx_custom.js',
     'js/62_scenes.js',
+    'js/63_npcs.js',
     'js/70_tutorial.js',
     'js/80_boot.js',
 ]

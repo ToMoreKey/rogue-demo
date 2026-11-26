@@ -133,6 +133,25 @@ with sync_playwright() as pw:
     check('基準6b_ステータス5タブすべてにバナー背景がある', all(v['has'] and v['bg'] for v in r6['status'].values()), r6)
     check('基準6c_横スクロールが発生しない', r6['hscroll'], r6)
 
+    # 基準7: 施設NPC
+    r7 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); const out = {};
+        for (const f of ['inn','shop','smith','bank']) {
+            G.view = 'town'; G._npc = null; G._npcEvt = null; G.townView = f; R.renderAll();
+            const el = document.querySelector('#view-town .npc');
+            out[f] = { has: !!el, svg: !!(el && el.querySelector('svg')), line: el ? el.querySelector('p').textContent : '' };
+        }
+        // 再描画しても台詞が変わらない
+        const l1 = document.querySelector('#view-town .npc p').textContent; R.renderAll();
+        out.stable = l1 === document.querySelector('#view-town .npc p').textContent;
+        // 操作後の反応
+        G.townView = 'bank'; G.p.gold = 500; G._npc = null; G._npcEvt = 'dep'; R.renderAll();
+        out.react = ['確かにお預かりしました。','お預け入れ、承りました。'].some(t => document.querySelector('#view-town .npc p').textContent.includes(t));
+        return out;
+    }''')
+    check('基準7a_4施設すべてにNPCの立ち絵とセリフがある', all(r7[f]['has'] and r7[f]['svg'] and len(r7[f]['line']) > 4 for f in ['inn','shop','smith','bank']), r7)
+    check('基準7b_再描画でセリフが変わらない・操作後は反応セリフになる', r7['stable'] and r7['react'], r7)
+
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()
 
