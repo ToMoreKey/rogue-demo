@@ -167,6 +167,7 @@ with sync_playwright() as pw:
     # バーサーク（攻撃3倍・防御半減・4ターン）と英雄の奇跡（全ステータス2倍）の実効果
     r6 = pg.evaluate('''() => {
         const R = window.__rogue; R.setHeadless(true); R.noTimer(true);
+        R.setRng(() => 0.99);  // 会心なし・決定的にする
         const setup = () => {
             G.run = null; G.p = R.newPlayer(); const p = G.p; p.lv = 60; p.skills.heroic = true; p.skills.berserk = true;
             R.startRun('A', 'novice'); R.nextFloor && R.nextFloor();

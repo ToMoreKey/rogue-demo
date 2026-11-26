@@ -254,7 +254,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .pip.boss{width:14px}
 .speed{display:flex;gap:4px}
 .speed .btn{min-height:32px;padding:3px 10px;font-size:13px}
-.arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
+.arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(rgba(6,8,12,.18),rgba(6,8,12,.5)),var(--scene,none) center/cover no-repeat,linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
 .arena.rage-active{box-shadow:inset 0 0 28px rgba(235,45,75,.38);border-color:#9e3348}
 .arena.rage-burst::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(255,60,80,.55),rgba(180,20,50,.35) 70%);pointer-events:none;z-index:5;animation:rageFlash .32s ease-out forwards}
 .fname.rage-name{color:#ff6b8b;text-shadow:0 0 8px rgba(255,60,100,.65);font-weight:700}
@@ -462,6 +462,46 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 /* 画面の高さが低い端末では、戦闘画面を少し詰めて、撤退ボタンが下のタブに隠れないようにする */
 @media (max-height:700px){.arena{padding:8px 10px;margin-bottom:6px}.fighter .spr{width:min(100%,60px)}.hud{gap:6px;padding:2px 0 6px}.controls .row{margin-bottom:6px}.skill-row{margin-bottom:6px}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr,.fighter.rage-aura .spr,.fighter.rage-burst .spr,.fighter.fx-hit-white .spr,.fighter.fx-shake-sm .spr,.fighter.fx-shake-big .spr,.arena.rage-burst::after{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
+
+/* ===== UI-3: ダンジョン背景・カード・戦利品比較・戦力表示 ===== */
+.dg-sec{display:flex;align-items:baseline;gap:10px;margin:22px 2px 2px;font-size:13px;font-weight:700;letter-spacing:.18em;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:6px}
+.dg-sec:first-child,.hint-btn+.dg-sec{margin-top:6px}
+.dg-sec small{font-weight:400;letter-spacing:.08em;color:var(--muted)}
+.dcard.dc-card{padding:0;overflow:hidden;border-top:3px solid var(--ac,var(--line));margin-bottom:6px}
+.dc-banner{position:relative;display:flex;align-items:center;gap:12px;min-height:84px;padding:10px 14px;background:linear-gradient(90deg,rgba(6,8,12,.72),rgba(6,8,12,.18) 70%),var(--scene,none) center/cover no-repeat;border-bottom:1px solid rgba(255,255,255,.08)}
+.dc-banner .dc-spr{width:56px;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.dc-title{display:flex;align-items:center;gap:10px;min-width:0}
+.dc-letter{flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:6px;background:var(--ac,#888);color:#10151a;font-weight:800;font-size:17px;box-shadow:0 0 10px rgba(0,0,0,.5)}
+.dc-title h2{margin:0;font-size:17px;text-shadow:0 1px 6px rgba(0,0,0,.85)}
+.dc-sub{display:block;font-size:11px;color:rgba(255,255,255,.75);text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.dc-body{padding:12px 14px 14px}
+.dc-blurb{margin:0 0 10px;font-size:13px;color:var(--muted)}
+.dcard.is-locked .dc-banner{filter:grayscale(.85) brightness(.7)}
+.dcard.is-locked .dc-body{opacity:.78}
+/* 戦力チップ */
+.pw{margin-left:10px;font-size:11px;color:var(--muted);position:relative;padding:1px 6px;border:1px solid var(--line);border-radius:10px}
+.pw b{color:var(--fg);font-weight:600}
+.pw.pw-up{animation:pwUp 1.4s ease-out}.pw.pw-down{animation:pwDown 1.2s ease-out}
+.pw-float{position:absolute;right:0;top:-2px;font-weight:700;white-space:nowrap;animation:pwFloat 1.5s ease-out forwards;pointer-events:none}
+.pw-float.up{color:#7dffa8;text-shadow:0 0 8px rgba(80,255,150,.7)}.pw-float.down{color:#ff8a8a}
+@keyframes pwUp{0%{box-shadow:0 0 0 rgba(80,255,150,0)}25%{box-shadow:0 0 14px rgba(80,255,150,.85);border-color:#7dffa8}100%{box-shadow:0 0 0 rgba(80,255,150,0)}}
+@keyframes pwDown{25%{border-color:#ff8a8a}}
+@keyframes pwFloat{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-22px)}}
+/* 戦利品の比較 */
+.cmp{margin:8px 0 2px;padding:7px 9px;border-radius:5px;background:rgba(255,255,255,.04);border-left:3px solid var(--line);font-size:12px}
+.cmp.up{border-left-color:#5fe08a;background:rgba(80,230,140,.08)}.cmp.down{border-left-color:#e07a7a;background:rgba(230,100,100,.06)}
+.cmp-r{display:flex;gap:8px;align-items:baseline}.cmp-l{flex:none;width:2.6em;color:var(--muted)}.cmp-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-v{margin-top:4px;font-weight:700}.cmp.up .cmp-v{color:#7dffa8}.cmp.down .cmp-v{color:#ff9a9a}.cmp.same .cmp-v{color:var(--muted)}
+/* 出撃前→現在の成長表示 */
+.growth{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.03)}
+.growth.is-up{border-color:#4fbf7a;background:linear-gradient(135deg,rgba(80,230,140,.1),rgba(255,255,255,.02))}
+.gr-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:13px}.gr-head b{font-size:16px}
+.gr-d{font-weight:700;font-size:13px}.gr-d.up{color:#7dffa8}.gr-d.down{color:#ff9a9a}.gr-d.same{color:var(--muted)}
+.gr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin:8px 0 4px}
+.gr-c{padding:5px 7px;border-radius:4px;background:rgba(255,255,255,.04);font-size:12px}.gr-c small{display:block;color:var(--muted)}.gr-c em{font-style:normal;color:#7dffa8;margin-left:6px;font-weight:700}
+.gr-c.up b{color:#7dffa8}
+.gr-gear{display:flex;gap:8px;font-size:12px;margin-top:4px}.gr-gl{flex:none;width:2.6em;color:var(--muted)}.gr-gn{flex:1;min-width:0}.gr-gn small{color:var(--muted);margin-left:4px}
+@media (prefers-reduced-motion:reduce){.pw.pw-up,.pw.pw-down,.pw-float{animation:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -475,7 +515,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
       </div>
     </div>
     <div class="gauges">
-      <div class="g wide"><div class="g-label"><span>LV <span id="h-lv">1</span></span><span id="h-exp">0/0</span></div><div class="gauge exp"><i id="h-expbar"></i></div></div>
+      <div class="g wide"><div class="g-label"><span>LV <span id="h-lv">1</span><span class="pw" id="h-pw" title="総合戦力（攻撃＋防御＋HP/8＋MP/20）">戦力 <b id="h-pwv">0</b></span></span><span id="h-exp">0/0</span></div><div class="gauge exp"><i id="h-expbar"></i></div></div>
       <div class="g"><div class="g-label"><span>HP</span><span id="h-hp">0/0</span></div><div class="gauge hp" id="h-hpg"><i id="h-hpbar"></i></div></div>
       <div class="g"><div class="g-label"><span>MP</span><span id="h-mp">0/0</span></div><div class="gauge mp"><i id="h-mpbar"></i></div></div>
     </div>
@@ -572,7 +612,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v50';
+const APP_VERSION = 'rogue-v51';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2165,6 +2205,10 @@ const bestGearItem = (p, slot) => {
 const skillMpCost = (p, s) => (!s || !s.mp) ? 0 : Math.max(1, Math.round(s.mp * (p && p.passiveSkills ? passiveBonus(p).mpCostMult : 1)));
 const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.passiveSkills ? passiveBonus(p).atkMult : 1) * (p.mastery ? masteryBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
 const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? masteryBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
+// 総合戦力（UI表示用）: 攻撃力＋防御力＋最大HP/8＋最大MP/20。装備・Lv・スキル・極意の強化が一目でわかる指標（戦闘計算には使わない）
+const playerPower = p => Math.round(playerAtk(p) + playerDef(p) + maxHp(p) / 8 + maxMp(p) / 20);
+const gearSnap = it => it ? { id: it.id, name: itemName(it), pw: gearPower(it), score: gearScore(it) } : null;
+const statSnap = p => ({ lv: p.lv, atk: playerAtk(p), def: playerDef(p), hp: maxHp(p), mp: maxMp(p), power: playerPower(p), weapon: gearSnap(p.weapon), armor: gearSnap(p.armor) });
 
 function mkItem(p, o) {
   const ps = Array.isArray(o.props) ? [...new Set(o.props)] : (o.prop ? [o.prop] : []);
@@ -3164,6 +3208,7 @@ function startRun(dId, dfId) {
     gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: G.p.lv, skKey: '',
     skillCt: {}  // スキルクールタイム管理 { skillId: remaining_turns }
   };
+  G.run.snap = statSnap(G.p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
   addLog(`ダンジョン${d.id}「${d.name}」（${df.name}・全${df.floors}階層）に突入した！`, 'l-sys');
@@ -3209,6 +3254,7 @@ function startTowerRun() {
     skillCt: {},
     tower: { blessings: [], reviveUsed: false, pendingChoice: null }
   };
+  G.run.snap = statSnap(G.p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
   addLog('無限回廊「天蓋の塔」に突入した！', 'l-sys');
@@ -3228,6 +3274,7 @@ function startAbyssRun(lv) {
     skillCt: {},
     abyss: { lv: n, dfA, mythicDrops: [] }
   };
+  G.run.snap = statSnap(G.p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
   addLog(`深淵（難度${n}・全${ABYSS_CFG.floors}階層）に突入した！（有効な呪い: ${n}個）`, 'l-sys');
@@ -3771,7 +3818,7 @@ function finishRun(result) {
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending, tower: towerRes,
+    lvFrom: run.startLv, lvTo: p.lv, snap: run.snap || null, after: statSnap(p), kills: run.kills, part1End, ending, tower: towerRes,
     abyss: run.abyss ? { lv: run.abyss.lv, coins: result === 'clear' ? run.abyss.dfA.coins : 0, mythicDrops: run.abyss.mythicDrops } : null
   };
   G.run = null;
@@ -4182,6 +4229,14 @@ const ACTS = {
     p.bag = p.bag.filter(x => x !== it);
     if (p[it.slot]) p.bag.push(p[it.slot]);
     p[it.slot] = it; save(); renderAll();
+  },
+  mEquip(d) {
+    // 結果画面から装備を変更し、比較表示を更新する（スクロール位置は維持）
+    const sh = $('#m-sheet'), st = sh ? sh.scrollTop : 0;
+    G._pwArm = Date.now();
+    ACTS.equip(d);
+    openModal();
+    const sh2 = $('#m-sheet'); if (sh2) sh2.scrollTop = st;
   },
   lock(d) { const it = G.p.bag.find(x => x.id === Number(d.id)); if (it) { it.locked = !it.locked; save(); renderStatus(); } },
   learn(d) {
@@ -4728,8 +4783,22 @@ const ACTS = {
 };
 
 /* ================= render: HUD ================= */
+// 戦力が変わる操作（装備・鍛冶・スキル・極意）。操作直後のHUD更新で「戦力 A → B ▲」を表示する
+const POWER_ACTS = { equip: 1, equipBest: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
+function showPowerChange(a, b) {
+  const d = b - a, el = $('#h-pw');
+  if (!el || d === 0) return;
+  el.classList.remove('pw-up', 'pw-down'); void el.offsetWidth; el.classList.add(d > 0 ? 'pw-up' : 'pw-down');
+  const fl = document.createElement('span'); fl.className = 'pw-float ' + (d > 0 ? 'up' : 'down');
+  fl.textContent = (d > 0 ? '▲ +' : '▼ −') + fmt(Math.abs(d));
+  el.appendChild(fl); setTimeout(() => fl.remove(), 1600);
+  toast(`戦力 ${fmt(a)} → ${fmt(b)}（${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}）${d > 0 ? '▲ 強くなった！' : '▼'}`);
+}
 function renderHUD() {
   const p = G.p, mh = maxHp(p), mm = maxMp(p), need = expNeed(p.lv);
+  { const pw = playerPower(p); const pe = $('#h-pwv'); if (pe) pe.textContent = fmt(pw);
+    if (G._pwPrev != null && pw !== G._pwPrev && G._pwArm && Date.now() - G._pwArm < 900 && !G.run && !G.headless) showPowerChange(G._pwPrev, pw);
+    G._pwPrev = pw; }
   $('#h-lv').textContent = p.lv;
   $('#h-exp').textContent = p.lv >= LV_CAP ? 'MAX' : `${fmt(p.exp)} / ${fmt(need)}`;
   $('#h-expbar').style.width = (p.lv >= LV_CAP ? 100 : clamp(p.exp / need * 100, 0, 100)) + '%';
@@ -4879,6 +4948,12 @@ function renderFacility(fac) {
 }
 
 /* ================= render: dungeon select ================= */
+function dgSection(label, sub) { return `<h3 class="dg-sec"><span>${label}</span><small>${sub}</small></h3>`; }
+function dgBanner(id, letter, title, subtitle, spr) {
+  return `<div class="dc-banner" style="--scene:${sceneUri(id)};--ac:${SCENE_ACCENT[id] || '#9fb'}">
+    ${spr ? `<div class="dc-spr">${spr}</div>` : ''}
+    <div class="dc-title"><span class="dc-letter">${letter}</span><div><h2>${title}</h2><span class="dc-sub">${subtitle}</span></div></div></div>`;
+}
 function renderDungeonSelect() {
   const p0 = G.p;
   const learnable = SK_ORDER.filter(id => !p0.skills[id] && p0.sp >= SK[id].sp);
@@ -4893,9 +4968,11 @@ function renderDungeonSelect() {
     const rec = d.rec[DIFFS.indexOf(sel)];
     const clearedMap = (p0.cleared && p0.cleared[d.id]) || {};
     const unlockReqDf = d.unlock ? (diffOf(d.unlock.df)?.name || d.unlock.df) : '';
-    return `<article class="panel dcard" style="--a1:${d.a1}${dgUnlocked ? '' : ';opacity:.72'}">
-      <div class="dc-top"><div class="dc-spr">${enemyArt(d.mobs[0], d.id)}</div>
-        <div><h2>ダンジョン${d.id}　${esc(d.name)}</h2><p class="sub" style="margin:0">${dgUnlocked ? esc(d.blurb) : `🔒 未解放（${d.unlock.d}の${unlockReqDf}クリアで解放）`}</p></div></div>
+    const secHead = d.id === 'A' ? dgSection('前編', '魔王城への道') : d.id === 'J' ? dgSection('後編', '真の黒幕との戦い') : '';
+    return secHead + `<article class="panel dcard dc-card${dgUnlocked ? '' : ' is-locked'}" style="--a1:${d.a1};--ac:${SCENE_ACCENT[d.id]}">
+      ${dgBanner(d.id, d.id, esc(d.name), `ダンジョン${d.id}${dgUnlocked && (p0.cleared && p0.cleared[d.id] && DIFFS.every(df => p0.cleared[d.id][df.id])) ? '　✓全難易度踏破' : ''}`, enemyArt(d.mobs[0], d.id))}
+      <div class="dc-body">
+      <p class="sub dc-blurb">${dgUnlocked ? esc(d.blurb) : `🔒 未解放（${d.unlock.d}の${unlockReqDf}クリアで解放）`}</p>
       <div class="seg" role="group" aria-label="難易度">${DIFFS.map(df => {
         const ok = isDiffUnlocked(p0, d, df);
         const done = !!clearedMap[df.id];
@@ -4904,12 +4981,13 @@ function renderDungeonSelect() {
       <p class="dc-info">${dgUnlocked
         ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>`
         : `解放条件：ダンジョン${d.unlock.d}（${unlockReqDf}）をクリア`}</p>
-      <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></article>`;
-  }).join('') + (() => {
+      <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></div></article>`;
+  }).join('') + dgSection('エンドコンテンツ', '塔・深淵') + (() => {
     const twUnlocked = !!(p0 && p0.ending);
     const tw = (p0 && p0.tower) || { best: 0, coins: 0 };
-    return `<article class="dcard${twUnlocked ? '' : ' locked'}" style="--a1:#1a1433;--a2:#0c091a">
-      <div class="dc-head"><span class="dc-id">塔</span><h3>${twUnlocked ? '' : '🔒 '}天蓋の塔</h3></div>
+    return `<article class="panel dcard dc-card${twUnlocked ? '' : ' is-locked'}" style="--a1:#1a1433;--a2:#0c091a;--ac:${SCENE_ACCENT.T}">
+      ${dgBanner('T', '塔', `${twUnlocked ? '' : '🔒 '}天蓋の塔`, 'エンドレス回廊', '')}
+      <div class="dc-body">
       <p class="dc-blurb">階層は無限。10階ごとのボスを倒して祝福を選び、限界に挑むエンドレス回廊。</p>
       <p class="dc-info">${twUnlocked
         ? `最高到達階 <b>${tw.best || 0}F</b>　所持コイン <b>🪙 ${fmt(tw.coins || 0)}枚</b>`
@@ -4918,7 +4996,7 @@ function renderDungeonSelect() {
         <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
         ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
         <button class="btn" data-act="towerRanking">🏆 ランキング</button>
-      </div></article>`;
+      </div></div></article>`;
   })() + (() => {
     const abSt = isAbyssUnlocked(p0);
     const abLv = clamp(G.abyssLv || 1, 1, 10);
@@ -4931,14 +5009,15 @@ function renderDungeonSelect() {
       return `<button class="pill ${abLv === lv ? 'on' : ''}${cl ? ' clr' : ''}" data-act="abyssSel" data-lv="${lv}" ${ok ? '' : 'disabled'}>${ok ? lv : '🔒' + lv}</button>`;
     }).join('');
     const curses = ABYSS_CURSES.slice(0, abLv).map(c => `<span class="badge">${esc(c.name)}</span>`).join(' ');
-    return `<article class="dcard${abSt.ok ? '' : ' locked'}" style="--a1:#15081e;--a2:#07020c">
-      <div class="dc-head"><span class="dc-id">深</span><h3>${abSt.ok ? '' : '🔒 '}深淵ダンジョン</h3></div>
+    return `<article class="panel dcard dc-card${abSt.ok ? '' : ' is-locked'}" style="--a1:#15081e;--a2:#07020c;--ac:${SCENE_ACCENT.Y}">
+      ${dgBanner('Y', '深', `${abSt.ok ? '' : '🔒 '}深淵ダンジョン`, '全50階固定', '')}
+      <div class="dc-body">
       <p class="dc-blurb">全50階固定。難度ごとに呪いが累積し、最奥の深淵の主から★9神話装備が狙えるエンドダンジョン。</p>
       ${abSt.ok ? `<div class="diffs">${pills}</div>
         <p class="dc-info">難度 <b>${abLv}</b>（最高クリア: <b>${best || 'なし'}</b>）　報酬: <b>${fmt(abDiff.clearGold)}G ＋ 🪙${abDiff.coins}枚</b><br>有効な呪い（${abLv}個）: ${curses}</p>
         <button class="btn primary wide" data-act="goAbyss" ${abOk ? '' : 'disabled'}>${abOk ? `難度${abLv}に挑戦` : '🔒 未解放'}</button>`
         : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
-    </article>`;
+    </div></article>`;
   })();
 }
 
@@ -5609,6 +5688,7 @@ function renderBattle() {
   const run = G.run, p = G.p;
   if (!run) return;
   $('#arena').style.setProperty('--a1', run.d.a1); $('#arena').style.setProperty('--a2', run.d.a2);
+  $('#arena').style.setProperty('--scene', sceneUri(run.tower ? 'T' : run.abyss ? 'Y' : run.d.id));
   const enNow = run.enemy;
   const isRaged = !!(enNow && enNow.raged && enNow.hp > 0);
   const fxOn = isFxEnabled();
@@ -6454,6 +6534,52 @@ function openUnlockNoticeModal() {
   $('#modal').hidden = false; G.modalOpen = true;
 }
 
+const dsign = n => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmt(Math.abs(n));
+// 戦利品を「現在（自動装備された場合は出撃前）」の装備と比較する。強い▲／弱い▼／同等＝
+function dropCompareHtml(it, snap) {
+  const p = G.p, isW = it.slot === 'weapon', label = isW ? '攻撃力' : '防御力';
+  const equipped = !!(p[it.slot] && p[it.slot].id === it.id);
+  const ref = equipped ? (snap && snap[it.slot]) : gearSnap(p[it.slot]);
+  const g1 = gearPower(it), s1 = gearScore(it), g0 = ref ? ref.pw : 0, s0 = ref ? ref.score : 0;
+  const diff = g1 - g0, pct = g0 > 0 ? Math.round(diff / g0 * 100) : null;
+  const k = s1 > s0 ? 'up' : s1 < s0 ? 'down' : 'same';
+  const verdict = k === 'up' ? '▲ 強い' : k === 'down' ? '▼ 弱い' : '＝ 同等';
+  return `<div class="cmp ${k}">
+    <div class="cmp-r"><span class="cmp-l">${equipped ? '出撃前' : '現在'}</span><span class="cmp-n">${ref ? esc(ref.name) : 'なし'}</span><b>${label} +${fmt(g0)}</b></div>
+    <div class="cmp-r"><span class="cmp-l">これ</span><span class="cmp-n">${esc(itemName(it))}</span><b>${label} +${fmt(g1)}</b></div>
+    <div class="cmp-v">${verdict}　${dsign(diff)}${pct != null ? `（${pct >= 0 ? '+' : '−'}${Math.abs(pct)}%）` : ''}${equipped ? '　✔ 装備中' : ''}</div></div>`;
+}
+function dropCardHtml(it, snap) {
+  const inBag = G.p.bag.some(x => x.id === it.id);
+  const eq = G.p[it.slot] && G.p[it.slot].id === it.id;
+  const btn = !eq && inBag ? `<div class="it-act"><button class="btn small" data-act="mEquip" data-id="${it.id}">この装備に変更</button></div>` : '';
+  return itemCard(it, { sell: true, showRec: false }).replace(/<\/div>\s*$/, dropCompareHtml(it, snap) + btn + '</div>');
+}
+function dropsHtml(l) {
+  const snap = l.snap, p = G.p;
+  const rank = it => { const eq = p[it.slot] && p[it.slot].id === it.id; const ref = eq ? (snap && snap[it.slot]) : gearSnap(p[it.slot]); return gearScore(it) - (ref ? ref.score : 0); };
+  const items = [...l.items].sort((a, b) => rank(b) - rank(a) || b.rarity - a.rarity || b.star - a.star);
+  return items.length ? `<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
+}
+// 出撃前→現在の「強くなった」表示（Lv・各ステータス・戦力・装備）
+function growthHtml(l) {
+  const a = l.snap, b = l.after;
+  if (!a || !b) return '';
+  const dPow = b.power - a.power;
+  const rows = [['Lv', a.lv, b.lv], ['攻撃力', a.atk, b.atk], ['防御力', a.def, b.def], ['最大HP', a.hp, b.hp], ['最大MP', a.mp, b.mp]];
+  const gear = (slot, label) => {
+    const x = a[slot], y = b[slot];
+    if (!x && !y) return '';
+    const same = x && y && x.id === y.id;
+    return `<div class="gr-gear"><span class="gr-gl">${label}</span>${same ? `<span class="gr-gn">${esc(y.name)}　+${fmt(y.pw)}<small>（変更なし）</small></span>` : `<span class="gr-gn">${x ? esc(x.name) + ' +' + fmt(x.pw) : 'なし'} → <b>${y ? esc(y.name) + ' +' + fmt(y.pw) : 'なし'}</b><span class="gr-d ${(y ? y.pw : 0) >= (x ? x.pw : 0) ? 'up' : 'down'}">${dsign((y ? y.pw : 0) - (x ? x.pw : 0))}</span></span>`}</div>`;
+  };
+  return `<div class="growth ${dPow > 0 ? 'is-up' : ''}">
+    <div class="gr-head"><span>総合戦力</span><b>${fmt(a.power)} → ${fmt(b.power)}</b><span class="gr-d ${dPow > 0 ? 'up' : dPow < 0 ? 'down' : 'same'}">${dPow > 0 ? '▲ ' : dPow < 0 ? '▼ ' : ''}${dsign(dPow)}</span></div>
+    <div class="gr-grid">${rows.map(([n, x, y]) => `<div class="gr-c ${y > x ? 'up' : ''}"><small>${n}</small><span>${fmt(x)}${y !== x ? ` → <b>${fmt(y)}</b>` : ''}</span>${y !== x ? `<em>${dsign(y - x)}</em>` : ''}</div>`).join('')}</div>
+    ${gear('weapon', '武器')}${gear('armor', '防具')}
+    ${dPow <= 0 ? '<p class="sub" style="margin:6px 0 0">戦力の変化なし。装備の更新やSPの割り振りで強化しよう。</p>' : ''}
+  </div>`;
+}
 function openModal() {
   const l = G.last; if (!l) return;
   const p = G.p;
@@ -6473,8 +6599,9 @@ function openModal() {
       </div>
       ${tw.newTitles.length ? `<p class="l-good" style="margin:6px 0">称号獲得：${tw.newTitles.map(esc).join(' / ')}</p>` : ''}
       ${bs.length ? `<div style="margin:6px 0"><p class="slot-t">取得した祝福</p><div style="display:flex;flex-wrap:wrap;gap:4px">${bs.map(b => `<span class="badge">${esc(b.name)}</span>`).join('')}</div></div>` : ''}
+      ${growthHtml(l)}
       <div><p class="slot-t">獲得した装備（${items.length}個）</p>
-        ${items.length ? `<div class="drops">${items.map(it => itemCard(it, { sell: true })).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>'}</div>
+        ${dropsHtml(l)}</div>
       <div class="act"><button class="btn primary" data-act="mRetry" id="m-retry">再挑戦</button><button class="btn" data-act="mTown">街へ戻る</button></div>`;
     $('#modal').hidden = false; G.modalOpen = true;
     setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
@@ -6524,8 +6651,9 @@ function openModal() {
       <div><small>レベル</small><b>${l.lvTo > l.lvFrom ? `Lv${l.lvFrom} → Lv${l.lvTo}` : `Lv${l.lvTo}（変化なし）`}</b></div>
       <div><small>薬</small><b>${l.potions.hp + l.potions.mp ? `生命+${l.potions.hp} 魔力+${l.potions.mp}` : 'なし'}</b></div>
     </div>
+    ${growthHtml(l)}
     <div><p class="slot-t">獲得した装備（${items.length}個）</p>
-      ${items.length ? `<div class="drops">${items.map(it => itemCard(it, { sell: true })).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>'}</div>
+      ${dropsHtml(l)}</div>
     <div class="act"><button class="btn primary" data-act="mRetry" id="m-retry">再挑戦</button><button class="btn" data-act="mTown">街へ戻る</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
   setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
@@ -7104,6 +7232,77 @@ const FX_BUFF = (() => {
     heroAdvent: (c) => { pillar(c, 70, 140, grad('rgba(255,235,150,', 'rgba(255,225,110,.9)'), '#ffd45a', 0); rise(c, sword, 32, 92, 0, 40, 0, -20, 0.08); ring(c, 100, '#fff3b8', 0.05, 3); ring(c, 140, '#ffd45a', 0.18, 3); ring(c, 180, '#fff3b8', 0.3, 2.5); pop(c, star('#fff6d0'), 56, 56, 0, -4, 0, 0.2); for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283; orb(c, '#ffd45a', Math.round(Math.cos(a) * 64), Math.round(Math.sin(a) * 64)); } },
   };
 })();
+// ===== UI-3: ダンジョン別の背景シーン（インラインSVG。戦闘アリーナとダンジョンカードで共用） =====
+// viewBox 400x160、横長に cover で使う。文字の可読性のため、暗めの階調で描く。
+const SCENES = (() => {
+  const W = 400, H = 160;
+  const g = (id, a, b, x2, y2) => `<linearGradient id="${id}" x1="0" y1="0" x2="${x2 || 0}" y2="${y2 || 1}"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`;
+  const rg = (id, c, o) => `<radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity="${o || 0.9}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
+  // なだらかな稜線
+  const ridge = (col, y, amp, n, ph) => { let d = `M0,${H} L0,${y}`; for (let i = 0; i <= n; i++) { const x = Math.round(i * W / n); d += ` L${x},${Math.round(y - amp * Math.abs(Math.sin(i * 1.7 + (ph || 0))))}`; } return `<path d="${d} L${W},${H} Z" fill="${col}"/>`; };
+  // ぎざぎざの岩・結晶
+  const spikes = (col, y, h, n, ph) => { let d = `M0,${H} L0,${y}`; for (let i = 0; i < n; i++) { const x0 = i * W / n, hh = h * (0.5 + 0.5 * Math.abs(Math.sin(i * 2.3 + (ph || 0)))); d += ` L${Math.round(x0 + W / n * 0.5)},${Math.round(y - hh)} L${Math.round(x0 + W / n)},${y}`; } return `<path d="${d} L${W},${H} Z" fill="${col}"/>`; };
+  const dots = (col, n, ymin, ymax, r, op, ph) => Array.from({ length: n }, (_, i) => `<circle cx="${Math.round(((i * 97 + (ph || 0) * 31) % 400))}" cy="${Math.round(ymin + ((i * 53 + (ph || 0) * 17) % 100) / 100 * (ymax - ymin))}" r="${r}" fill="${col}" opacity="${op}"/>`).join('');
+  const rect = (x, y, w, h, c, o) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"${o ? ` opacity="${o}"` : ''}/>`;
+  const wrap = (defs, body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice"><defs>${defs}</defs>${body}</svg>`;
+  const S = {};
+  S.A = wrap(g('s', '#22362c', '#0d1612') + rg('l', '#7cffb0', .5), // 地下墓地
+    rect(0, 0, W, H, 'url(#s)') + [30, 130, 250, 350].map(x => rect(x, 0, 18, 120, '#17231d') + `<path d="M${x - 14},120 Q${x + 9},70 ${x + 32},120 Z" fill="#17231d"/>`).join('') +
+    `<ellipse cx="200" cy="130" rx="190" ry="40" fill="url(#l)" opacity=".4"/>` + ridge('#0a110d', 138, 6, 20) +
+    [60, 170, 290, 370].map((x, i) => `<path d="M${x},148 L${x},${118 - i % 2 * 8} Q${x + 11},${106 - i % 2 * 8} ${x + 22},${118 - i % 2 * 8} L${x + 22},148 Z" fill="#101a15"/>`).join('') + dots('#9dffc4', 14, 40, 130, 1.6, .7));
+  S.B = wrap(g('s', '#3a1510', '#120605') + rg('l', '#ff6a1a', .85), // 火山窟
+    rect(0, 0, W, H, 'url(#s)') + `<ellipse cx="200" cy="165" rx="260" ry="70" fill="url(#l)"/>` + spikes('#1a0b08', 118, 60, 12, 1) + spikes('#0b0403', 142, 40, 9, 4) +
+    `<path d="M0,152 Q100,140 200,152 T400,150 L400,160 L0,160Z" fill="#ff7a22" opacity=".85"/>` + dots('#ffb060', 22, 20, 140, 1.6, .75));
+  S.C = wrap(g('s', '#1b3a5c', '#0a1626') + rg('l', '#8ee8ff', .55), // 氷晶窟
+    rect(0, 0, W, H, 'url(#s)') + `<ellipse cx="200" cy="150" rx="220" ry="60" fill="url(#l)" opacity=".6"/>` +
+    [[40, 150, 28, 90], [110, 150, 22, 62], [210, 150, 34, 104], [300, 150, 26, 74], [370, 150, 24, 96]].map(([x, y, w, h]) => `<polygon points="${x - w},${y} ${x - w / 3},${y - h} ${x + w / 3},${y - h + 12} ${x + w},${y}" fill="#7fd8f5" opacity=".55"/><polygon points="${x - w / 3},${y - h} ${x},${y} ${x + w / 3},${y - h + 12}" fill="#e6fbff" opacity=".55"/>`).join('') + ridge('#0a1828', 146, 4, 18) + dots('#fff', 18, 10, 120, 1.3, .8));
+  S.D = wrap(g('s', '#1f4a2a', '#0a1a10') + rg('l', '#e8ffb0', .55), // 古代樹の森
+    rect(0, 0, W, H, 'url(#s)') + `<polygon points="150,0 230,0 330,160 120,160" fill="url(#l)" opacity=".35"/>` +
+    [20, 105, 255, 345].map((x, i) => rect(x, 0, 30 + i % 2 * 10, H, '#0f2616') + `<circle cx="${x + 15}" cy="14" r="${38 + i * 3}" fill="#17381f"/>`).join('') + ridge('#081209', 146, 6, 16) + dots('#d8ff7a', 18, 50, 140, 1.8, .85, 2));
+  S.E = wrap(g('s', '#6a4a22', '#241608') + rg('l', '#ffd27a', .8), // 砂塵の遺跡
+    rect(0, 0, W, H, 'url(#s)') + `<circle cx="300" cy="46" r="30" fill="url(#l)"/><circle cx="300" cy="46" r="12" fill="#fff0c0"/>` + ridge('#3d2a12', 112, 18, 6, 1) +
+    [70, 160, 250].map((x, i) => rect(x, 70 - i % 2 * 12, 16, 70 + i % 2 * 12, '#2b1d0c') + rect(x - 5, 66 - i % 2 * 12, 26, 7, '#2b1d0c')).join('') + `<polygon points="320,140 360,84 400,140" fill="#2b1d0c"/>` + ridge('#190f05', 142, 8, 8, 3) + dots('#ffd9a0', 20, 30, 140, 1.2, .35));
+  S.F = wrap(g('s', '#0d5060', '#041a24') + rg('l', '#9ef2ff', .5), // 水没神殿
+    rect(0, 0, W, H, 'url(#s)') + `<polygon points="90,0 130,0 190,160 60,160" fill="url(#l)" opacity=".28"/><polygon points="280,0 310,0 360,160 260,160" fill="url(#l)" opacity=".22"/>` +
+    [40, 130, 220, 310, 380].map((x, i) => rect(x, 40 + i % 2 * 14, 20, 120, '#06303a') + rect(x - 5, 36 + i % 2 * 14, 30, 8, '#06303a')).join('') + `<path d="M0,40 Q50,30 100,40 T200,40 T300,40 T400,40" fill="none" stroke="#9ef2ff" stroke-width="2" opacity=".45"/>` + ridge('#03141b', 148, 5, 14) + dots('#c8fbff', 24, 20, 150, 2, .5, 1));
+  S.G = wrap(g('s', '#2c2b66', '#0f0e2a') + rg('l', '#fff3a0', .85), // 空中庭園
+    rect(0, 0, W, H, 'url(#s)') + `<polyline points="320,0 300,50 322,54 298,100" fill="none" stroke="#fff3a0" stroke-width="3" filter="none"/><ellipse cx="300" cy="60" rx="60" ry="40" fill="url(#l)" opacity=".3"/>` +
+    `<ellipse cx="80" cy="120" rx="110" ry="18" fill="#403f86" opacity=".7"/><ellipse cx="320" cy="132" rx="130" ry="20" fill="#34336f" opacity=".8"/>` + [[70, 96], [160, 88], [250, 100]].map(([x, y]) => `<polygon points="${x - 36},${y} ${x + 36},${y} ${x + 18},${y + 22} ${x - 18},${y + 22}" fill="#1b1a40"/><rect x="${x - 6}" y="${y - 24}" width="12" height="24" fill="#1b1a40"/>`).join('') + dots('#c9c4ff', 16, 6, 70, 1.2, .7));
+  S.H = wrap(g('s', '#363e44', '#12161a') + rg('l', '#ffb347', .6), // 地下都市
+    rect(0, 0, W, H, 'url(#s)') + [[60, 50, 38], [170, 90, 28], [300, 56, 44], [370, 110, 22]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#1d2328" stroke-width="${r / 3}" stroke-dasharray="${r / 2} ${r / 3}"/><circle cx="${x}" cy="${y}" r="${r / 3}" fill="#1d2328"/>`).join('') +
+    rect(0, 120, W, 8, '#0c0f12') + rect(0, 20, W, 6, '#0c0f12') + [40, 190, 340].map(x => `<circle cx="${x}" cy="${130}" r="40" fill="url(#l)" opacity=".5"/><circle cx="${x}" cy="130" r="4" fill="#ffd89a"/>`).join('') + ridge('#0a0c0e', 148, 5, 12) + `<rect x="0" y="100" width="400" height="30" fill="#7fffa0" opacity=".08"/>`);
+  S.I = wrap(g('s', '#4a0e1c', '#13040a') + rg('l', '#ff4a5e', .7), // 魔王城
+    rect(0, 0, W, H, 'url(#s)') + `<circle cx="300" cy="50" r="50" fill="url(#l)" opacity=".5"/><circle cx="300" cy="50" r="26" fill="#ff7a86"/>` +
+    `<path d="M40,160 L40,86 L58,70 L76,86 L76,60 L94,40 L112,60 L112,100 L150,100 L150,76 L168,54 L186,76 L186,100 L230,100 L230,70 L246,50 L262,70 L262,110 L310,110 L310,90 L326,72 L342,90 L342,160 Z" fill="#0c0206"/>` + [[100, 60], [250, 80]].map(([x, y]) => `<rect x="${x}" y="${y}" width="5" height="9" fill="#ffb347"/>`).join('') + dots('#1a0508', 5, 20, 80, 5, .9));
+  S.J = wrap(g('s', '#2a3f4a', '#0c1519') + rg('l', '#b9ff9a', .5), // 幻霧の湿原
+    rect(0, 0, W, H, 'url(#s)') + `<rect x="0" y="86" width="400" height="26" fill="#9fc8b8" opacity=".14"/><rect x="0" y="116" width="400" height="22" fill="#9fc8b8" opacity=".12"/>` +
+    [30, 120, 280, 360].map((x, i) => `<path d="M${x},148 Q${x - 4},110 ${x + 2},${70 - i * 6} M${x + 2},${100 - i * 4} L${x + 24},${88 - i * 4} M${x},120 L${x - 20},108" stroke="#0f1a1d" stroke-width="4" fill="none"/>`).join('') + ridge('#0a1214', 146, 5, 30, 2) + [[90, 100], [200, 82], [310, 110]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="16" fill="url(#l)"/><circle cx="${x}" cy="${y}" r="3" fill="#eaffd8"/>`).join(''));
+  S.K = wrap(g('s', '#1d2056', '#080a22') + rg('l', '#ff8be8', .6), // 水晶の大鉱脈
+    rect(0, 0, W, H, 'url(#s)') + [[60, 150, 26, 100, '#5ad8ff'], [140, 150, 20, 70, '#ff8be8'], [230, 150, 32, 118, '#9a8bff'], [320, 150, 24, 84, '#5ad8ff'], [380, 150, 18, 60, '#ff8be8']].map(([x, y, w, h, c]) => `<polygon points="${x - w},${y} ${x - w / 3},${y - h} ${x + w / 3},${y - h + 10} ${x + w},${y}" fill="${c}" opacity=".6"/><polygon points="${x - w / 3},${y - h} ${x},${y} ${x + w / 3},${y - h + 10}" fill="#fff" opacity=".35"/>`).join('') + `<ellipse cx="200" cy="150" rx="200" ry="40" fill="url(#l)" opacity=".4"/>` + ridge('#070820', 150, 4, 16) + dots('#fff', 18, 10, 110, 1.4, .8, 3));
+  S.L = wrap(g('s', '#2d1846', '#0e0618') + rg('l', '#ffb35a', .6), // 亡者の大聖堂
+    rect(0, 0, W, H, 'url(#s)') + [40, 150, 250, 350].map((x, i) => `<path d="M${x - 24},150 L${x - 24},60 Q${x},12 ${x + 24},60 L${x + 24},150 Z" fill="#150a24"/><path d="M${x - 12},140 L${x - 12},66 Q${x},38 ${x + 12},66 L${x + 12},140 Z" fill="${['#b56bff', '#ff8be8', '#7fb6ff', '#ffb35a'][i]}" opacity=".35"/>`).join('') + rect(0, 140, W, 20, '#0a0412') + [[96, 138], [200, 138], [306, 138]].map(([x, y]) => `<rect x="${x}" y="${y - 12}" width="4" height="12" fill="#e8dcff"/><circle cx="${x + 2}" cy="${y - 16}" r="7" fill="url(#l)"/>`).join(''));
+  S.M = wrap(g('s', '#0d1f4a', '#040916') + rg('l', '#cfe4ff', .6), // 天文台
+    rect(0, 0, W, H, 'url(#s)') + dots('#fff', 40, 4, 110, 1.1, .85, 5) + `<path d="M40,28 L120,50" stroke="#fff" stroke-width="2" opacity=".9"/><path d="M110,160 L110,110 Q200,40 290,110 L290,160 Z" fill="#0a1022"/><path d="M196,64 L204,64 L212,112 L188,112 Z" fill="#101a3a"/><line x1="230" y1="96" x2="330" y2="40" stroke="#1a2650" stroke-width="7"/>` + ridge('#050a18', 150, 4, 14) + `<circle cx="340" cy="30" r="14" fill="url(#l)"/>`);
+  S.N = wrap(g('s', '#5a3a2a', '#1b100a') + rg('l', '#ffcf9a', .5), // 竜骨の渓谷
+    rect(0, 0, W, H, 'url(#s)') + `<circle cx="320" cy="44" r="22" fill="url(#l)"/>` + spikes('#2a1810', 60, 50, 6, 2) + `<path d="M120,150 Q160,30 260,60" stroke="#e8d8c0" stroke-width="7" fill="none" opacity=".7"/><path d="M140,150 Q180,50 270,78" stroke="#e8d8c0" stroke-width="6" fill="none" opacity=".6"/><path d="M160,150 Q200,70 280,96" stroke="#e8d8c0" stroke-width="5" fill="none" opacity=".5"/>` + ridge('#120906', 146, 8, 10, 1) + `<ellipse cx="70" cy="132" rx="22" ry="14" fill="#e8d8c0" opacity=".6"/><circle cx="62" cy="130" r="4" fill="#120906"/>`);
+  S.O = wrap(g('s', '#120a2e', '#030108') + rg('l', '#b56bff', .8), // 虚空の神殿
+    rect(0, 0, W, H, 'url(#s)') + dots('#fff', 34, 4, 150, 1.1, .7, 7) + `<circle cx="200" cy="74" r="58" fill="url(#l)"/><circle cx="200" cy="74" r="30" fill="#05020c" stroke="#d6a8ff" stroke-width="2.5"/>` + [[60, 40, 30], [330, 100, 26], [90, 120, 22], [310, 36, 18]].map(([x, y, w]) => `<polygon points="${x - w},${y + 10} ${x},${y - 12} ${x + w},${y + 10} ${x + w * .6},${y + 20} ${x - w * .6},${y + 20}" fill="#1c0f3c" stroke="#8a5fe0" stroke-width="1"/>`).join(''));
+  S.T = wrap(g('s', '#2a2060', '#0b0820') + rg('l', '#c8b8ff', .5), // 天蓋の塔
+    rect(0, 0, W, H, 'url(#s)') + dots('#e8e0ff', 22, 4, 110, 1.1, .7, 4) + `<ellipse cx="200" cy="140" rx="220" ry="30" fill="#4a3f9a" opacity=".5"/><path d="M178,160 L184,28 L196,6 L204,6 L216,28 L222,160 Z" fill="#0b0820"/><rect x="170" y="70" width="60" height="6" fill="#0b0820"/><rect x="166" y="112" width="68" height="7" fill="#0b0820"/><rect x="198" y="40" width="4" height="8" fill="#ffd45a"/>` + `<ellipse cx="200" cy="150" rx="260" ry="26" fill="#6a5cc8" opacity=".35"/>`);
+  S.Y = wrap(g('s', '#240a38', '#06020c') + rg('l', '#ff4ad8', .6), // 深淵
+    rect(0, 0, W, H, 'url(#s)') + `<ellipse cx="200" cy="80" rx="150" ry="62" fill="url(#l)" opacity=".5"/><path d="M60,80 Q200,10 340,80 Q200,150 60,80 Z" fill="#0a0212" stroke="#ff4ad8" stroke-width="2"/><circle cx="200" cy="80" r="26" fill="#ff4ad8" opacity=".8"/><ellipse cx="200" cy="80" rx="7" ry="22" fill="#06020c"/>` + dots('#d6a8ff', 16, 10, 150, 1.2, .5, 9));
+  return S;
+})();
+const _sceneCache = {};
+function sceneUri(id) {
+  const k = String(id || 'A');
+  if (_sceneCache[k]) return _sceneCache[k];
+  const svg = SCENES[k] || SCENES.A;
+  // style属性（二重引用符）内でも使えるよう、URLは単一引用符で囲み、SVG内の ' は %27 にする
+  return (_sceneCache[k] = "url('data:image/svg+xml;utf8," + encodeURIComponent(svg).replace(/'/g, '%27') + "')");
+}
+
+const SCENE_ACCENT = { A: '#4fd18a', B: '#ff7a3a', C: '#6fd8ff', D: '#8be05a', E: '#e0b050', F: '#3fc8d8', G: '#a89cff', H: '#9aa8b0', I: '#ff4a5e', J: '#7fc9a8', K: '#c08bff', L: '#b56bff', M: '#7fb6ff', N: '#d0a070', O: '#b56bff', T: '#9a8cff', Y: '#ff4ad8' };
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
@@ -7368,6 +7567,7 @@ function boot() {
     // ACT を実行してバブリングもキャンセル（二重実行防止）
     e.stopPropagation();
     const fn = ACTS[b.dataset.act];
+    if (POWER_ACTS[b.dataset.act]) G._pwArm = Date.now();
     if (fn) fn(b.dataset, b);
   }, true); // capture: true
   document.addEventListener('keydown', e => {
@@ -7408,7 +7608,7 @@ window.__rogue = {
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
-  playerAct, enemyAct, useSkillEffect, genBuffMult,
+  playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
   noTimer(v) { G.noTimer = !!v; ensureLoop(); },

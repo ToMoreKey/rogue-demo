@@ -240,7 +240,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .pip.boss{width:14px}
 .speed{display:flex;gap:4px}
 .speed .btn{min-height:32px;padding:3px 10px;font-size:13px}
-.arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
+.arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(rgba(6,8,12,.18),rgba(6,8,12,.5)),var(--scene,none) center/cover no-repeat,linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
 .arena.rage-active{box-shadow:inset 0 0 28px rgba(235,45,75,.38);border-color:#9e3348}
 .arena.rage-burst::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(255,60,80,.55),rgba(180,20,50,.35) 70%);pointer-events:none;z-index:5;animation:rageFlash .32s ease-out forwards}
 .fname.rage-name{color:#ff6b8b;text-shadow:0 0 8px rgba(255,60,100,.65);font-weight:700}
@@ -448,3 +448,43 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 /* 画面の高さが低い端末では、戦闘画面を少し詰めて、撤退ボタンが下のタブに隠れないようにする */
 @media (max-height:700px){.arena{padding:8px 10px;margin-bottom:6px}.fighter .spr{width:min(100%,60px)}.hud{gap:6px;padding:2px 0 6px}.controls .row{margin-bottom:6px}.skill-row{margin-bottom:6px}}
 @media (prefers-reduced-motion:reduce){.fighter .spr svg,.fighter .spr img,.fighter.atk .spr,.fighter.rage-aura .spr,.fighter.rage-burst .spr,.fighter.fx-hit-white .spr,.fighter.fx-shake-sm .spr,.fighter.fx-shake-big .spr,.arena.rage-burst::after{animation:none!important}.pop{animation-duration:.01s!important}.gauge i{transition:none}}
+
+/* ===== UI-3: ダンジョン背景・カード・戦利品比較・戦力表示 ===== */
+.dg-sec{display:flex;align-items:baseline;gap:10px;margin:22px 2px 2px;font-size:13px;font-weight:700;letter-spacing:.18em;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:6px}
+.dg-sec:first-child,.hint-btn+.dg-sec{margin-top:6px}
+.dg-sec small{font-weight:400;letter-spacing:.08em;color:var(--muted)}
+.dcard.dc-card{padding:0;overflow:hidden;border-top:3px solid var(--ac,var(--line));margin-bottom:6px}
+.dc-banner{position:relative;display:flex;align-items:center;gap:12px;min-height:84px;padding:10px 14px;background:linear-gradient(90deg,rgba(6,8,12,.72),rgba(6,8,12,.18) 70%),var(--scene,none) center/cover no-repeat;border-bottom:1px solid rgba(255,255,255,.08)}
+.dc-banner .dc-spr{width:56px;flex:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.dc-title{display:flex;align-items:center;gap:10px;min-width:0}
+.dc-letter{flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:6px;background:var(--ac,#888);color:#10151a;font-weight:800;font-size:17px;box-shadow:0 0 10px rgba(0,0,0,.5)}
+.dc-title h2{margin:0;font-size:17px;text-shadow:0 1px 6px rgba(0,0,0,.85)}
+.dc-sub{display:block;font-size:11px;color:rgba(255,255,255,.75);text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.dc-body{padding:12px 14px 14px}
+.dc-blurb{margin:0 0 10px;font-size:13px;color:var(--muted)}
+.dcard.is-locked .dc-banner{filter:grayscale(.85) brightness(.7)}
+.dcard.is-locked .dc-body{opacity:.78}
+/* 戦力チップ */
+.pw{margin-left:10px;font-size:11px;color:var(--muted);position:relative;padding:1px 6px;border:1px solid var(--line);border-radius:10px}
+.pw b{color:var(--fg);font-weight:600}
+.pw.pw-up{animation:pwUp 1.4s ease-out}.pw.pw-down{animation:pwDown 1.2s ease-out}
+.pw-float{position:absolute;right:0;top:-2px;font-weight:700;white-space:nowrap;animation:pwFloat 1.5s ease-out forwards;pointer-events:none}
+.pw-float.up{color:#7dffa8;text-shadow:0 0 8px rgba(80,255,150,.7)}.pw-float.down{color:#ff8a8a}
+@keyframes pwUp{0%{box-shadow:0 0 0 rgba(80,255,150,0)}25%{box-shadow:0 0 14px rgba(80,255,150,.85);border-color:#7dffa8}100%{box-shadow:0 0 0 rgba(80,255,150,0)}}
+@keyframes pwDown{25%{border-color:#ff8a8a}}
+@keyframes pwFloat{0%{opacity:0;transform:translateY(8px)}20%{opacity:1}100%{opacity:0;transform:translateY(-22px)}}
+/* 戦利品の比較 */
+.cmp{margin:8px 0 2px;padding:7px 9px;border-radius:5px;background:rgba(255,255,255,.04);border-left:3px solid var(--line);font-size:12px}
+.cmp.up{border-left-color:#5fe08a;background:rgba(80,230,140,.08)}.cmp.down{border-left-color:#e07a7a;background:rgba(230,100,100,.06)}
+.cmp-r{display:flex;gap:8px;align-items:baseline}.cmp-l{flex:none;width:2.6em;color:var(--muted)}.cmp-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-v{margin-top:4px;font-weight:700}.cmp.up .cmp-v{color:#7dffa8}.cmp.down .cmp-v{color:#ff9a9a}.cmp.same .cmp-v{color:var(--muted)}
+/* 出撃前→現在の成長表示 */
+.growth{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:rgba(255,255,255,.03)}
+.growth.is-up{border-color:#4fbf7a;background:linear-gradient(135deg,rgba(80,230,140,.1),rgba(255,255,255,.02))}
+.gr-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:13px}.gr-head b{font-size:16px}
+.gr-d{font-weight:700;font-size:13px}.gr-d.up{color:#7dffa8}.gr-d.down{color:#ff9a9a}.gr-d.same{color:var(--muted)}
+.gr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin:8px 0 4px}
+.gr-c{padding:5px 7px;border-radius:4px;background:rgba(255,255,255,.04);font-size:12px}.gr-c small{display:block;color:var(--muted)}.gr-c em{font-style:normal;color:#7dffa8;margin-left:6px;font-weight:700}
+.gr-c.up b{color:#7dffa8}
+.gr-gear{display:flex;gap:8px;font-size:12px;margin-top:4px}.gr-gl{flex:none;width:2.6em;color:var(--muted)}.gr-gn{flex:1;min-width:0}.gr-gn small{color:var(--muted);margin-left:4px}
+@media (prefers-reduced-motion:reduce){.pw.pw-up,.pw.pw-down,.pw-float{animation:none}}

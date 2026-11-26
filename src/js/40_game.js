@@ -89,6 +89,7 @@ function startRun(dId, dfId) {
     gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: G.p.lv, skKey: '',
     skillCt: {}  // スキルクールタイム管理 { skillId: remaining_turns }
   };
+  G.run.snap = statSnap(G.p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
   addLog(`ダンジョン${d.id}「${d.name}」（${df.name}・全${df.floors}階層）に突入した！`, 'l-sys');
@@ -134,6 +135,7 @@ function startTowerRun() {
     skillCt: {},
     tower: { blessings: [], reviveUsed: false, pendingChoice: null }
   };
+  G.run.snap = statSnap(G.p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
   addLog('無限回廊「天蓋の塔」に突入した！', 'l-sys');
@@ -153,6 +155,7 @@ function startAbyssRun(lv) {
     skillCt: {},
     abyss: { lv: n, dfA, mythicDrops: [] }
   };
+  G.run.snap = statSnap(G.p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
   addLog(`深淵（難度${n}・全${ABYSS_CFG.floors}階層）に突入した！（有効な呪い: ${n}個）`, 'l-sys');
@@ -696,7 +699,7 @@ function finishRun(result) {
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, kills: run.kills, part1End, ending, tower: towerRes,
+    lvFrom: run.startLv, lvTo: p.lv, snap: run.snap || null, after: statSnap(p), kills: run.kills, part1End, ending, tower: towerRes,
     abyss: run.abyss ? { lv: run.abyss.lv, coins: result === 'clear' ? run.abyss.dfA.coins : 0, mythicDrops: run.abyss.mythicDrops } : null
   };
   G.run = null;

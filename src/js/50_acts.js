@@ -90,6 +90,14 @@ const ACTS = {
     if (p[it.slot]) p.bag.push(p[it.slot]);
     p[it.slot] = it; save(); renderAll();
   },
+  mEquip(d) {
+    // 結果画面から装備を変更し、比較表示を更新する（スクロール位置は維持）
+    const sh = $('#m-sheet'), st = sh ? sh.scrollTop : 0;
+    G._pwArm = Date.now();
+    ACTS.equip(d);
+    openModal();
+    const sh2 = $('#m-sheet'); if (sh2) sh2.scrollTop = st;
+  },
   lock(d) { const it = G.p.bag.find(x => x.id === Number(d.id)); if (it) { it.locked = !it.locked; save(); renderStatus(); } },
   learn(d) {
     // 旧互換: data-act="learn" は廃止、spAlloc経由に統合

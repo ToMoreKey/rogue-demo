@@ -1,6 +1,20 @@
 /* ================= render: HUD ================= */
+// 戦力が変わる操作（装備・鍛冶・スキル・極意）。操作直後のHUD更新で「戦力 A → B ▲」を表示する
+const POWER_ACTS = { equip: 1, equipBest: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
+function showPowerChange(a, b) {
+  const d = b - a, el = $('#h-pw');
+  if (!el || d === 0) return;
+  el.classList.remove('pw-up', 'pw-down'); void el.offsetWidth; el.classList.add(d > 0 ? 'pw-up' : 'pw-down');
+  const fl = document.createElement('span'); fl.className = 'pw-float ' + (d > 0 ? 'up' : 'down');
+  fl.textContent = (d > 0 ? '▲ +' : '▼ −') + fmt(Math.abs(d));
+  el.appendChild(fl); setTimeout(() => fl.remove(), 1600);
+  toast(`戦力 ${fmt(a)} → ${fmt(b)}（${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}）${d > 0 ? '▲ 強くなった！' : '▼'}`);
+}
 function renderHUD() {
   const p = G.p, mh = maxHp(p), mm = maxMp(p), need = expNeed(p.lv);
+  { const pw = playerPower(p); const pe = $('#h-pwv'); if (pe) pe.textContent = fmt(pw);
+    if (G._pwPrev != null && pw !== G._pwPrev && G._pwArm && Date.now() - G._pwArm < 900 && !G.run && !G.headless) showPowerChange(G._pwPrev, pw);
+    G._pwPrev = pw; }
   $('#h-lv').textContent = p.lv;
   $('#h-exp').textContent = p.lv >= LV_CAP ? 'MAX' : `${fmt(p.exp)} / ${fmt(need)}`;
   $('#h-expbar').style.width = (p.lv >= LV_CAP ? 100 : clamp(p.exp / need * 100, 0, 100)) + '%';
@@ -150,6 +164,12 @@ function renderFacility(fac) {
 }
 
 /* ================= render: dungeon select ================= */
+function dgSection(label, sub) { return `<h3 class="dg-sec"><span>${label}</span><small>${sub}</small></h3>`; }
+function dgBanner(id, letter, title, subtitle, spr) {
+  return `<div class="dc-banner" style="--scene:${sceneUri(id)};--ac:${SCENE_ACCENT[id] || '#9fb'}">
+    ${spr ? `<div class="dc-spr">${spr}</div>` : ''}
+    <div class="dc-title"><span class="dc-letter">${letter}</span><div><h2>${title}</h2><span class="dc-sub">${subtitle}</span></div></div></div>`;
+}
 function renderDungeonSelect() {
   const p0 = G.p;
   const learnable = SK_ORDER.filter(id => !p0.skills[id] && p0.sp >= SK[id].sp);
@@ -164,9 +184,11 @@ function renderDungeonSelect() {
     const rec = d.rec[DIFFS.indexOf(sel)];
     const clearedMap = (p0.cleared && p0.cleared[d.id]) || {};
     const unlockReqDf = d.unlock ? (diffOf(d.unlock.df)?.name || d.unlock.df) : '';
-    return `<article class="panel dcard" style="--a1:${d.a1}${dgUnlocked ? '' : ';opacity:.72'}">
-      <div class="dc-top"><div class="dc-spr">${enemyArt(d.mobs[0], d.id)}</div>
-        <div><h2>ダンジョン${d.id}　${esc(d.name)}</h2><p class="sub" style="margin:0">${dgUnlocked ? esc(d.blurb) : `🔒 未解放（${d.unlock.d}の${unlockReqDf}クリアで解放）`}</p></div></div>
+    const secHead = d.id === 'A' ? dgSection('前編', '魔王城への道') : d.id === 'J' ? dgSection('後編', '真の黒幕との戦い') : '';
+    return secHead + `<article class="panel dcard dc-card${dgUnlocked ? '' : ' is-locked'}" style="--a1:${d.a1};--ac:${SCENE_ACCENT[d.id]}">
+      ${dgBanner(d.id, d.id, esc(d.name), `ダンジョン${d.id}${dgUnlocked && (p0.cleared && p0.cleared[d.id] && DIFFS.every(df => p0.cleared[d.id][df.id])) ? '　✓全難易度踏破' : ''}`, enemyArt(d.mobs[0], d.id))}
+      <div class="dc-body">
+      <p class="sub dc-blurb">${dgUnlocked ? esc(d.blurb) : `🔒 未解放（${d.unlock.d}の${unlockReqDf}クリアで解放）`}</p>
       <div class="seg" role="group" aria-label="難易度">${DIFFS.map(df => {
         const ok = isDiffUnlocked(p0, d, df);
         const done = !!clearedMap[df.id];
@@ -175,12 +197,13 @@ function renderDungeonSelect() {
       <p class="dc-info">${dgUnlocked
         ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>`
         : `解放条件：ダンジョン${d.unlock.d}（${unlockReqDf}）をクリア`}</p>
-      <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></article>`;
-  }).join('') + (() => {
+      <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></div></article>`;
+  }).join('') + dgSection('エンドコンテンツ', '塔・深淵') + (() => {
     const twUnlocked = !!(p0 && p0.ending);
     const tw = (p0 && p0.tower) || { best: 0, coins: 0 };
-    return `<article class="dcard${twUnlocked ? '' : ' locked'}" style="--a1:#1a1433;--a2:#0c091a">
-      <div class="dc-head"><span class="dc-id">塔</span><h3>${twUnlocked ? '' : '🔒 '}天蓋の塔</h3></div>
+    return `<article class="panel dcard dc-card${twUnlocked ? '' : ' is-locked'}" style="--a1:#1a1433;--a2:#0c091a;--ac:${SCENE_ACCENT.T}">
+      ${dgBanner('T', '塔', `${twUnlocked ? '' : '🔒 '}天蓋の塔`, 'エンドレス回廊', '')}
+      <div class="dc-body">
       <p class="dc-blurb">階層は無限。10階ごとのボスを倒して祝福を選び、限界に挑むエンドレス回廊。</p>
       <p class="dc-info">${twUnlocked
         ? `最高到達階 <b>${tw.best || 0}F</b>　所持コイン <b>🪙 ${fmt(tw.coins || 0)}枚</b>`
@@ -189,7 +212,7 @@ function renderDungeonSelect() {
         <button class="btn primary" style="flex:1;min-width:120px" data-act="goTower" ${twUnlocked ? '' : 'disabled'}>${twUnlocked ? '挑戦する' : '🔒 未解放'}</button>
         ${twUnlocked ? '<button class="btn" data-act="towerShop">🪙 交換所</button>' : ''}
         <button class="btn" data-act="towerRanking">🏆 ランキング</button>
-      </div></article>`;
+      </div></div></article>`;
   })() + (() => {
     const abSt = isAbyssUnlocked(p0);
     const abLv = clamp(G.abyssLv || 1, 1, 10);
@@ -202,14 +225,15 @@ function renderDungeonSelect() {
       return `<button class="pill ${abLv === lv ? 'on' : ''}${cl ? ' clr' : ''}" data-act="abyssSel" data-lv="${lv}" ${ok ? '' : 'disabled'}>${ok ? lv : '🔒' + lv}</button>`;
     }).join('');
     const curses = ABYSS_CURSES.slice(0, abLv).map(c => `<span class="badge">${esc(c.name)}</span>`).join(' ');
-    return `<article class="dcard${abSt.ok ? '' : ' locked'}" style="--a1:#15081e;--a2:#07020c">
-      <div class="dc-head"><span class="dc-id">深</span><h3>${abSt.ok ? '' : '🔒 '}深淵ダンジョン</h3></div>
+    return `<article class="panel dcard dc-card${abSt.ok ? '' : ' is-locked'}" style="--a1:#15081e;--a2:#07020c;--ac:${SCENE_ACCENT.Y}">
+      ${dgBanner('Y', '深', `${abSt.ok ? '' : '🔒 '}深淵ダンジョン`, '全50階固定', '')}
+      <div class="dc-body">
       <p class="dc-blurb">全50階固定。難度ごとに呪いが累積し、最奥の深淵の主から★9神話装備が狙えるエンドダンジョン。</p>
       ${abSt.ok ? `<div class="diffs">${pills}</div>
         <p class="dc-info">難度 <b>${abLv}</b>（最高クリア: <b>${best || 'なし'}</b>）　報酬: <b>${fmt(abDiff.clearGold)}G ＋ 🪙${abDiff.coins}枚</b><br>有効な呪い（${abLv}個）: ${curses}</p>
         <button class="btn primary wide" data-act="goAbyss" ${abOk ? '' : 'disabled'}>${abOk ? `難度${abLv}に挑戦` : '🔒 未解放'}</button>`
         : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
-    </article>`;
+    </div></article>`;
   })();
 }
 
@@ -880,6 +904,7 @@ function renderBattle() {
   const run = G.run, p = G.p;
   if (!run) return;
   $('#arena').style.setProperty('--a1', run.d.a1); $('#arena').style.setProperty('--a2', run.d.a2);
+  $('#arena').style.setProperty('--scene', sceneUri(run.tower ? 'T' : run.abyss ? 'Y' : run.d.id));
   const enNow = run.enemy;
   const isRaged = !!(enNow && enNow.raged && enNow.hp > 0);
   const fxOn = isFxEnabled();
@@ -1725,6 +1750,52 @@ function openUnlockNoticeModal() {
   $('#modal').hidden = false; G.modalOpen = true;
 }
 
+const dsign = n => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmt(Math.abs(n));
+// 戦利品を「現在（自動装備された場合は出撃前）」の装備と比較する。強い▲／弱い▼／同等＝
+function dropCompareHtml(it, snap) {
+  const p = G.p, isW = it.slot === 'weapon', label = isW ? '攻撃力' : '防御力';
+  const equipped = !!(p[it.slot] && p[it.slot].id === it.id);
+  const ref = equipped ? (snap && snap[it.slot]) : gearSnap(p[it.slot]);
+  const g1 = gearPower(it), s1 = gearScore(it), g0 = ref ? ref.pw : 0, s0 = ref ? ref.score : 0;
+  const diff = g1 - g0, pct = g0 > 0 ? Math.round(diff / g0 * 100) : null;
+  const k = s1 > s0 ? 'up' : s1 < s0 ? 'down' : 'same';
+  const verdict = k === 'up' ? '▲ 強い' : k === 'down' ? '▼ 弱い' : '＝ 同等';
+  return `<div class="cmp ${k}">
+    <div class="cmp-r"><span class="cmp-l">${equipped ? '出撃前' : '現在'}</span><span class="cmp-n">${ref ? esc(ref.name) : 'なし'}</span><b>${label} +${fmt(g0)}</b></div>
+    <div class="cmp-r"><span class="cmp-l">これ</span><span class="cmp-n">${esc(itemName(it))}</span><b>${label} +${fmt(g1)}</b></div>
+    <div class="cmp-v">${verdict}　${dsign(diff)}${pct != null ? `（${pct >= 0 ? '+' : '−'}${Math.abs(pct)}%）` : ''}${equipped ? '　✔ 装備中' : ''}</div></div>`;
+}
+function dropCardHtml(it, snap) {
+  const inBag = G.p.bag.some(x => x.id === it.id);
+  const eq = G.p[it.slot] && G.p[it.slot].id === it.id;
+  const btn = !eq && inBag ? `<div class="it-act"><button class="btn small" data-act="mEquip" data-id="${it.id}">この装備に変更</button></div>` : '';
+  return itemCard(it, { sell: true, showRec: false }).replace(/<\/div>\s*$/, dropCompareHtml(it, snap) + btn + '</div>');
+}
+function dropsHtml(l) {
+  const snap = l.snap, p = G.p;
+  const rank = it => { const eq = p[it.slot] && p[it.slot].id === it.id; const ref = eq ? (snap && snap[it.slot]) : gearSnap(p[it.slot]); return gearScore(it) - (ref ? ref.score : 0); };
+  const items = [...l.items].sort((a, b) => rank(b) - rank(a) || b.rarity - a.rarity || b.star - a.star);
+  return items.length ? `<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
+}
+// 出撃前→現在の「強くなった」表示（Lv・各ステータス・戦力・装備）
+function growthHtml(l) {
+  const a = l.snap, b = l.after;
+  if (!a || !b) return '';
+  const dPow = b.power - a.power;
+  const rows = [['Lv', a.lv, b.lv], ['攻撃力', a.atk, b.atk], ['防御力', a.def, b.def], ['最大HP', a.hp, b.hp], ['最大MP', a.mp, b.mp]];
+  const gear = (slot, label) => {
+    const x = a[slot], y = b[slot];
+    if (!x && !y) return '';
+    const same = x && y && x.id === y.id;
+    return `<div class="gr-gear"><span class="gr-gl">${label}</span>${same ? `<span class="gr-gn">${esc(y.name)}　+${fmt(y.pw)}<small>（変更なし）</small></span>` : `<span class="gr-gn">${x ? esc(x.name) + ' +' + fmt(x.pw) : 'なし'} → <b>${y ? esc(y.name) + ' +' + fmt(y.pw) : 'なし'}</b><span class="gr-d ${(y ? y.pw : 0) >= (x ? x.pw : 0) ? 'up' : 'down'}">${dsign((y ? y.pw : 0) - (x ? x.pw : 0))}</span></span>`}</div>`;
+  };
+  return `<div class="growth ${dPow > 0 ? 'is-up' : ''}">
+    <div class="gr-head"><span>総合戦力</span><b>${fmt(a.power)} → ${fmt(b.power)}</b><span class="gr-d ${dPow > 0 ? 'up' : dPow < 0 ? 'down' : 'same'}">${dPow > 0 ? '▲ ' : dPow < 0 ? '▼ ' : ''}${dsign(dPow)}</span></div>
+    <div class="gr-grid">${rows.map(([n, x, y]) => `<div class="gr-c ${y > x ? 'up' : ''}"><small>${n}</small><span>${fmt(x)}${y !== x ? ` → <b>${fmt(y)}</b>` : ''}</span>${y !== x ? `<em>${dsign(y - x)}</em>` : ''}</div>`).join('')}</div>
+    ${gear('weapon', '武器')}${gear('armor', '防具')}
+    ${dPow <= 0 ? '<p class="sub" style="margin:6px 0 0">戦力の変化なし。装備の更新やSPの割り振りで強化しよう。</p>' : ''}
+  </div>`;
+}
 function openModal() {
   const l = G.last; if (!l) return;
   const p = G.p;
@@ -1744,8 +1815,9 @@ function openModal() {
       </div>
       ${tw.newTitles.length ? `<p class="l-good" style="margin:6px 0">称号獲得：${tw.newTitles.map(esc).join(' / ')}</p>` : ''}
       ${bs.length ? `<div style="margin:6px 0"><p class="slot-t">取得した祝福</p><div style="display:flex;flex-wrap:wrap;gap:4px">${bs.map(b => `<span class="badge">${esc(b.name)}</span>`).join('')}</div></div>` : ''}
+      ${growthHtml(l)}
       <div><p class="slot-t">獲得した装備（${items.length}個）</p>
-        ${items.length ? `<div class="drops">${items.map(it => itemCard(it, { sell: true })).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>'}</div>
+        ${dropsHtml(l)}</div>
       <div class="act"><button class="btn primary" data-act="mRetry" id="m-retry">再挑戦</button><button class="btn" data-act="mTown">街へ戻る</button></div>`;
     $('#modal').hidden = false; G.modalOpen = true;
     setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);
@@ -1795,8 +1867,9 @@ function openModal() {
       <div><small>レベル</small><b>${l.lvTo > l.lvFrom ? `Lv${l.lvFrom} → Lv${l.lvTo}` : `Lv${l.lvTo}（変化なし）`}</b></div>
       <div><small>薬</small><b>${l.potions.hp + l.potions.mp ? `生命+${l.potions.hp} 魔力+${l.potions.mp}` : 'なし'}</b></div>
     </div>
+    ${growthHtml(l)}
     <div><p class="slot-t">獲得した装備（${items.length}個）</p>
-      ${items.length ? `<div class="drops">${items.map(it => itemCard(it, { sell: true })).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>'}</div>
+      ${dropsHtml(l)}</div>
     <div class="act"><button class="btn primary" data-act="mRetry" id="m-retry">再挑戦</button><button class="btn" data-act="mTown">街へ戻る</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
   setTimeout(() => { const b = $('#m-retry'); if (b) b.focus(); }, 0);

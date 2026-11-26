@@ -25,6 +25,7 @@ function boot() {
     // ACT を実行してバブリングもキャンセル（二重実行防止）
     e.stopPropagation();
     const fn = ACTS[b.dataset.act];
+    if (POWER_ACTS[b.dataset.act]) G._pwArm = Date.now();
     if (fn) fn(b.dataset, b);
   }, true); // capture: true
   document.addEventListener('keydown', e => {
@@ -65,7 +66,7 @@ window.__rogue = {
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
-  playerAct, enemyAct, useSkillEffect, genBuffMult,
+  playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,
   setHeadless(v) { G.headless = !!v; },
   setRng(f) { rng = f || Math.random; },
   noTimer(v) { G.noTimer = !!v; ensureLoop(); },

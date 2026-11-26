@@ -132,6 +132,10 @@ const bestGearItem = (p, slot) => {
 const skillMpCost = (p, s) => (!s || !s.mp) ? 0 : Math.max(1, Math.round(s.mp * (p && p.passiveSkills ? passiveBonus(p).mpCostMult : 1)));
 const playerAtk = p => Math.round((baseAtk(p) + weaponAtk(p.weapon)) * (p.passiveSkills ? passiveBonus(p).atkMult : 1) * (p.mastery ? masteryBonus(p).atkMult : 1) * (G.run && G.run.tower ? towerEff(G.run).atkMult : 1));
 const playerDef = p => Math.round((baseDef(p) + armorDef(p.armor)) * (p.mastery ? masteryBonus(p).defMult : 1) * (G.run && G.run.tower ? towerEff(G.run).defMult : 1));
+// 総合戦力（UI表示用）: 攻撃力＋防御力＋最大HP/8＋最大MP/20。装備・Lv・スキル・極意の強化が一目でわかる指標（戦闘計算には使わない）
+const playerPower = p => Math.round(playerAtk(p) + playerDef(p) + maxHp(p) / 8 + maxMp(p) / 20);
+const gearSnap = it => it ? { id: it.id, name: itemName(it), pw: gearPower(it), score: gearScore(it) } : null;
+const statSnap = p => ({ lv: p.lv, atk: playerAtk(p), def: playerDef(p), hp: maxHp(p), mp: maxMp(p), power: playerPower(p), weapon: gearSnap(p.weapon), armor: gearSnap(p.armor) });
 
 function mkItem(p, o) {
   const ps = Array.isArray(o.props) ? [...new Set(o.props)] : (o.prop ? [o.prop] : []);

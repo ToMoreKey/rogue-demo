@@ -45,6 +45,7 @@ JS_ORDER = [
     'js/50_acts.js',
     'js/60_render.js',
     'js/61_fx_custom.js',
+    'js/62_scenes.js',
     'js/70_tutorial.js',
     'js/80_boot.js',
 ]
