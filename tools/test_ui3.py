@@ -246,6 +246,16 @@ with sync_playwright() as pw:
         return out;
     }''')
     check('基準13a_リザルトの未装備ドロップに切り替えボタン・増減・最強装備ボタンが出る', r13['equipBtns'] == 2 and r13['best'] == 1 and r13['dl'] == 2, r13)
+    r14 = pg.evaluate('''() => {
+        const R = window.__rogue; const p = G.p; G.opts.autoEquip = false; p.lv = 20;
+        const mk = (slot, star, roll) => { const it = R.genItem(R.DIFFS[1], false, slot, star); it.star = star; it.roll = roll; it.rarity = 1; it.props = []; it.prop = null; return it; };
+        p.weapon = mk('weapon', 5, 1); p.armor = mk('armor', 5, 1); const a = mk('armor', 1, .3), b = mk('weapon', 1, .3), c = mk('armor', 2, .4); p.bag = [a, b, c];
+        G.last = { result: 'clear', d: R.DUNGEONS[0], df: R.DIFFS[1], floors: 5, floor: 5, cleared: true, gold: 0, clearGold: 0, lost: 0, sp: 0, items: [a, b, c], potions: { hp: 0, mp: 0 }, lvFrom: 20, lvTo: 20, snap: R.statSnap(p), after: R.statSnap(p), kills: 0, part1End: false, ending: false, tower: null, abyss: null };
+        R.openModal(); const dr = document.querySelector('#m-sheet .drops');
+        const btns = [...document.querySelectorAll('#m-sheet [data-act="mEquip"]')];
+        return { btns: btns.length, innerScroll: dr.scrollHeight > dr.clientHeight + 1, ov: getComputedStyle(dr).overflowY, mh: getComputedStyle(dr).maxHeight };
+    }''')
+    check('基準14_弱い装備でも切り替えボタンが隠れない（ドロップ欄に内側スクロールがない）', r14['btns'] == 3 and not r14['innerScroll'] and r14['mh'] == 'none', r14)
     check('基準13b_最強装備で一括切り替え、元の装備に戻すボタンで戻せる', r13['bothEquipped'] and r13['backBtn'] and r13['reverted'], r13)
 
     check('ページエラーなし', len(errors) == 0, errors)

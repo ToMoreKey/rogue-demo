@@ -410,7 +410,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .res small{display:block;color:var(--muted);font-size:12px}
 .res b{font-family:var(--font-display);font-weight:400;font-size:18px;font-variant-numeric:tabular-nums}
 .res .neg{color:var(--bad);font-size:12px}
-.drops{display:grid;gap:6px;max-height:240px;overflow:auto;padding-right:2px}
+.drops{display:grid;gap:10px}
 .drops .item{padding:6px 9px;gap:2px}
 .sheet .act{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 /* 下端のボタン（閉じる等）は、内容が長くても常に見える位置に留める（スマホで見えなくなるのを防ぐ） */
@@ -715,7 +715,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v61';
+const APP_VERSION = 'rogue-v62';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
