@@ -152,6 +152,24 @@ with sync_playwright() as pw:
     check('基準7a_4施設すべてにNPCの立ち絵とセリフがある', all(r7[f]['has'] and r7[f]['svg'] and len(r7[f]['line']) > 4 for f in ['inn','shop','smith','bank']), r7)
     check('基準7b_再描画でセリフが変わらない・操作後は反応セリフになる', r7['stable'] and r7['react'], r7)
 
+    # 基準8: 拾った装備は自動装備されない／最強装備ボタンで最強になる
+    r8 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); const p = G.p; G.opts.autoEquip = false; G.autoSellRarity = -1;
+        const mk = (slot, star, roll) => { const it = R.genItem(R.DIFFS[0], false, slot, star); it.star = star; it.roll = roll; it.rarity = 2; it.props = []; it.prop = null; return it; };
+        const w0 = mk('weapon', 1, 0.5); p.weapon = w0; p.bag = [];
+        const strong = mk('weapon', 5, 1.0), mid = mk('weapon', 3, 0.8);
+        const rs = [R.receiveItem(mid), R.receiveItem(strong)];
+        const keptWeapon = p.weapon === w0, inBag = p.bag.includes(strong) && p.bag.includes(mid);
+        const defaultOff = R.newPlayer && true;
+        G.view = 'status'; G.statusTab = 'gear'; R.renderAll();
+        const btn = [...document.querySelectorAll('#view-status [data-act="autoEquipNow"]')][0];
+        const label = btn ? btn.textContent : '';
+        btn && btn.click();
+        return { rs, keptWeapon, inBag, label, best: p.weapon === strong, oldInBag: p.bag.includes(w0), optOff: G.opts.autoEquip === false };
+    }''')
+    check('基準8a_拾った装備は自動装備されずバッグに入る', r8['rs'] == ['bag', 'bag'] and r8['keptWeapon'] and r8['inBag'], r8)
+    check('基準8b_「最強装備」ボタンでその時いちばん強い装備になる', '最強装備' in r8['label'] and r8['best'] and r8['oldInBag'], r8)
+
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()
 

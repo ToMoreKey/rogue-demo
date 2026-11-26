@@ -68,8 +68,11 @@ with sync_playwright() as pw:
     check('v1 p.stones kept (+stone_time,+stone_core,+stone_genesis)',
           sp.get('stones', {}).get('stone_time') == 0 and sp.get('stones', {}).get('stone_core') == 0 and sp.get('stones', {}).get('stone_genesis') == 0 and all(sp['stones'].get(sk) == v for sk, v in op['stones'].items()),
           (sp.get('stones'), op.get('stones')))
-    for k in ['opts', 'shopSel', 'autoSellRarity']:
+    for k in ['shopSel', 'autoSellRarity']:
         check('v1 %s kept' % k, stored.get(k) == v1.get(k), (stored.get(k), v1.get(k)))
+    # opts: 旧版は自動装備が既定ONだったため、V2移行で手動装備(OFF)になる。他の値は維持
+    so, vo = stored.get('opts') or {}, v1.get('opts') or {}
+    check('v1 opts kept (autoEquipは手動装備へ移行)', so.get('speed') == vo.get('speed') and so.get('autoSkill') == vo.get('autoSkill') and so.get('autoEquip') is False, (so, vo))
     check('v1 sel kept (+D/E/F)',
           all(stored['sel'].get(dk) == dv for dk, dv in v1['sel'].items())
           and all(stored['sel'].get(dk) == 'novice' for dk in ['D', 'E', 'F']),

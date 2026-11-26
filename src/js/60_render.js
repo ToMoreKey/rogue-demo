@@ -1,6 +1,6 @@
 /* ================= render: HUD ================= */
 // 戦力が変わる操作（装備・鍛冶・スキル・極意）。操作直後のHUD更新で「戦力 A → B ▲」を表示する
-const POWER_ACTS = { equip: 1, equipBest: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
+const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
 function showPowerChange(a, b) {
   const d = b - a, el = $('#h-pw');
   if (!el || d === 0) return;
@@ -1259,8 +1259,8 @@ function renderStatus() {
         <div><p class="slot-t">体（防具）</p>${p.armor ? itemCard(p.armor) : '<p class="empty">装備なし</p>'}</div>
       </div>
       <div class="row" style="margin-top:10px">
-        <button class="btn small" data-act="autoEquipNow">おまかせ装備</button>
-        <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
+        <button class="btn small" data-act="autoEquipNow">⚔ 最強装備</button>
+        <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備（通常はOFF）：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
       </div></div>
     <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
       <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>

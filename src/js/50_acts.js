@@ -280,8 +280,8 @@ const ACTS = {
     if (G.p) { G.p.v9ResetNoticePending = false; save(); }
     closeModal();
   },
-  autoEquipNow() { const n = equipBest(); save(); toast(n ? '装備を最適化しました' : 'これ以上強い装備はありません'); renderAll(); },
-  autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; save(); renderStatus(); },
+  autoEquipNow() { const n = equipBest(); save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
+  autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; G.opts.autoEquipV2 = true; save(); renderStatus(); },
   fxToggle() { G.opts.fx = G.opts.fx === false; if (!G.opts.fx && typeof clearAllBattleFx === 'function') clearAllBattleFx(); save(); renderStatus(); if (G.run) renderBattle(); },
   reset() {
     if (G.run) { toast('探索中は初期化できません'); return; }

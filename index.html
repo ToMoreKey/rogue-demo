@@ -652,7 +652,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v54';
+const APP_VERSION = 'rogue-v55';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2161,7 +2161,7 @@ function spriteSVG(shape, pal) {
 let _tutorialState = null;
 const G = {
   p: null, view: 'town', run: null, last: null, modalOpen: false, noTimer: false, headless: false,
-  opts: { speed: 1, autoSkill: true, autoEquip: true },
+  opts: { speed: 1, autoSkill: true, autoEquip: false },
   sel: Object.fromEntries(DUNGEONS.map(d => [d.id, DIFFS[0].id])),
   shopSel: [true, true, true, false],
   autoSellRarity: 2,   // -1=売却しない 0=コモン以下 1=アンコモン以下 2=レア以下 3=全て
@@ -2682,7 +2682,7 @@ function load() {
     G.p = p;
     if (migrated || !s.ach) checkAchievements(null, true);
     if (p.ending && p.pendingAchCoins > 0) flushPendingAchCoins(p, true);
-    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquip = d.opts.autoEquip !== false; if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; }
+    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquipV2 = d.opts.autoEquipV2 === true; G.opts.autoEquip = d.opts.autoEquipV2 === true && d.opts.autoEquip === true; /* 旧版は既定ONだったため、V2以前の保存値は手動装備(OFF)に移行 */ if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; }
     if (d.sel) for (const dg of DUNGEONS) {
       const df = diffOf(d.sel[dg.id]);
       if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;
@@ -4505,8 +4505,8 @@ const ACTS = {
     if (G.p) { G.p.v9ResetNoticePending = false; save(); }
     closeModal();
   },
-  autoEquipNow() { const n = equipBest(); save(); toast(n ? '装備を最適化しました' : 'これ以上強い装備はありません'); renderAll(); },
-  autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; save(); renderStatus(); },
+  autoEquipNow() { const n = equipBest(); save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
+  autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; G.opts.autoEquipV2 = true; save(); renderStatus(); },
   fxToggle() { G.opts.fx = G.opts.fx === false; if (!G.opts.fx && typeof clearAllBattleFx === 'function') clearAllBattleFx(); save(); renderStatus(); if (G.run) renderBattle(); },
   reset() {
     if (G.run) { toast('探索中は初期化できません'); return; }
@@ -4869,7 +4869,7 @@ const ACTS = {
 
 /* ================= render: HUD ================= */
 // 戦力が変わる操作（装備・鍛冶・スキル・極意）。操作直後のHUD更新で「戦力 A → B ▲」を表示する
-const POWER_ACTS = { equip: 1, equipBest: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
+const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
 function showPowerChange(a, b) {
   const d = b - a, el = $('#h-pw');
   if (!el || d === 0) return;
@@ -6128,8 +6128,8 @@ function renderStatus() {
         <div><p class="slot-t">体（防具）</p>${p.armor ? itemCard(p.armor) : '<p class="empty">装備なし</p>'}</div>
       </div>
       <div class="row" style="margin-top:10px">
-        <button class="btn small" data-act="autoEquipNow">おまかせ装備</button>
-        <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
+        <button class="btn small" data-act="autoEquipNow">⚔ 最強装備</button>
+        <button class="btn small ${G.opts.autoEquip ? 'on' : ''}" data-act="autoEquipToggle" aria-pressed="${G.opts.autoEquip}">拾った装備を自動で装備（通常はOFF）：${G.opts.autoEquip ? 'ON' : 'OFF'}</button>
       </div></div>
     <div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
       <p class="sub" style="margin:0 0 10px">各アイテムの「ロック」ボタンを押すと売却・自動売却から除外できます。</p>

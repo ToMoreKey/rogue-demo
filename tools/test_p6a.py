@@ -63,6 +63,7 @@ with sync_playwright() as pw:
         // 装備記録: ★5ドロップ + ★6強化 + ★8交換神話 + ★9ドロップ神話
         G.p.stones.stone_hi = 5;
         const w5 = R.genItem(R.DIFFS[2], false, 'weapon', 5, 5);
+        G.opts.autoEquip = true;
         R.receiveItem(w5);
         R.smithUpgrade(w5.id);
         R.ACTS.buyTowerShop({ id: 'mythic_w8' });

@@ -214,6 +214,7 @@ with sync_playwright() as pw:
         const nm = R.itemName(mItem);
         const sv = R.sellValue(mItem);
         // 装備
+        G.opts.autoEquip = true; // 自動装備ONのときの挙動を検証
         G.autoSellRarity = 3; // レジェンドまで自動売却設定でも神話(4)は売却されない
         G.p.bag = [];
         const out = R.receiveItem(mItem);

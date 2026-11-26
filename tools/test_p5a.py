@@ -158,7 +158,7 @@ with sync_playwright() as pw:
         R.ACTS.buyTowerShop({ id: 'mythic_w8' });
         const blockedPoor = G.p.weapon.rarity !== 4 && G.p.tower.coins === 300;
         // 600コインで購入・装備
-        G.p.tower.coins = 800;
+        G.p.tower.coins = 800; G.opts.autoEquip = true;
         R.ACTS.buyTowerShop({ id: 'mythic_w8' });
         const boughtW = G.p.weapon && G.p.weapon.rarity === 4 && G.p.weapon.star === 8;
         const pw = R.gearPower(G.p.weapon);

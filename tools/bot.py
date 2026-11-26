@@ -9,7 +9,7 @@ BOT = r"""
 ({seed, mode, blessMode, charId})=>{
  const R=window.__rogue; let s=seed; R.setRng(()=>{s=(s*1664525+1013904223)%4294967296;return s/4294967296});
  R.setHeadless(true); R.noTimer(true);
- const G=window.G; G.tutorial=null; G._charSelectOpen=false; G.p=R.newPlayer();
+ const G=window.G; G.tutorial=null; G.opts.autoEquip=true; /* BOTは常に最強装備に切替える理想的プレイヤーとして動かす */ G._charSelectOpen=false; G.p=R.newPlayer();
  const cid=(charId&&R.CHAR_TREES&&R.CHAR_TREES[charId])?charId:'stella';
  G.p.skin=cid; if(R.syncActiveCharState) R.syncActiveCharState(G.p);
  const cells=[];
