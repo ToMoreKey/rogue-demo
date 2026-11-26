@@ -2215,6 +2215,7 @@ function renderAll() {
     closeModal();
   }
   const v = G.view;
+  document.body.dataset.view = v || 'town';
   for (const id of ['town', 'dungeon', 'status', 'help']) {
     $('#view-' + id).hidden = id !== v;
     const nb = $('#nav-' + id); if (nb) nb.classList.toggle('on', id === v);
