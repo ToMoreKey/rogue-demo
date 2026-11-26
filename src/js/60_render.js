@@ -465,10 +465,11 @@ function playSkillFx(id, hitCount, target) {
                     : ('fx-cat-' + cat);
       addNode(`fx-fade-only ${side} ${toneCls}`, '');
     } else if (cat === 'buff') {
-      // 強化（バフ）の演出は変えない
+      // 強化（バフ）: 既存の2重リング＋スキル固有モチーフ（FX_BUFF）。常時オーラ(syncBuffAura)は従来どおり
       const tone = spec.tone || 'all';
       addNode(`fx-buff-ring fx-side-player fx-tone-${tone}`, '');
       addNode(`fx-buff-ring fx-buff-ring2 fx-side-player fx-tone-${tone}`, '');
+      if (FX_BUFF[id]) FX_BUFF[id]({ id, add: addNode, box, dur, spec });
       if (t.isDebug) { _fxDbgState.buff = tone; renderFxDebugControls(); }
       syncBuffAura(t);
     } else if (sig === 'slash_t1_single_heavy') {

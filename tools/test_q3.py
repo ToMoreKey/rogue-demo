@@ -99,10 +99,16 @@ with sync_playwright() as pw:
         }
 
         // バフ10種が変わっていないことも確認
+        const buffSigs = [];
         const buffChecks = buffIds.map(id => {
             R.playSkillFx(id, 1);
-            return layer.children.length === 2;
+            // 既存の2重リングを残したうえで、スキル固有モチーフ（計2〜12ノード）を重ねる。DOM構造はスキルごとに異なる
+            const n = layer.children.length;
+            const rings = layer.querySelectorAll('.fx-buff-ring').length;
+            buffSigs.push(Array.from(layer.children).map(e => e.className.replace(/fx-item|fx-reduced/g, '').trim() + '|' + e.getAttribute('style')).join(';'));
+            return rings === 2 && n >= 3 && n <= 12;
         });
+        const buffUniqueDom = new Set(buffSigs).size === buffSigs.length;
 
         // 同分類内のティア順序チェック: rank_a < rank_b なら dur_a <= dur_b, nodes_a <= nodes_b, span_a <= span_b
         // かつ最上位ランクは最下位ランクより dur, nodes, span すべて厳密に大きい（>）
@@ -138,7 +144,7 @@ with sync_playwright() as pw:
             allDurWithinCap: Object.values(records).every(r => r.dur >= 150 && r.dur <= 1200),
             tierOrderViolations,
             topStrictlyGreater,
-            buffUnchanged: buffChecks.every(Boolean),
+            buffUnchanged: buffChecks.every(Boolean) && buffUniqueDom,
             records
         };
     }''')

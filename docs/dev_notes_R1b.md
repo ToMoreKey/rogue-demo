@@ -40,3 +40,7 @@
 - 対象22スキル（攻撃・魔法・必殺。バフ系5つは従来の強化リングのまま）。ノード数・時間・範囲は従来の `SKILL_FX_MAP` のまま（Q3のティア単調性テストが通る）。
 - モチーフ: 疾走線(rush)／幻影の残像(phantomSlash)／黒い刺突(shadowPierce)／回転する風の円弧(bladeDance)／降る金貨(grandHeist)／無数の斬撃(thousandCuts)／降るカード(trumpCard)／影の行列(nightParade)／仮面(thousandMask)／月と流星(nightSky)／巨大聖剣と剣の雨(swordGod)／魔法陣と光柱(arcaneMiracle)／星屑(starDust)／燃える隕石(skyMeteorite)／黒球の吸引(endMagic)／光の筋(holyBolt)／十字と光柱(judgment)／三重光輪(holyNova)／翼と羽根(angelMiracle)／三本の裁きの雷(divineWrath)／聖槍(celestialLance)／星々(heavenStars)。
 - 確認: Q2のエフェクト確認パネルで全スキル再生可。スクリーンショットで形状の違いを目視確認。sw `rogue-v47`。
+
+## クオリティアップ: バフ系15スキルの個別演出
+- `FX_BUFF`（`61_fx_custom.js`）。既存の2重リング＋常時オーラ（`syncBuffAura`）は維持し、スキル固有モチーフ（盾・魔法陣・結界・十字・残像・風の筋・炎・剣・斬撃・幻影・修羅の8方向斬・鬼の角・星・幽霊・光の柱と聖剣）を重ねる。ノード数は3〜12。
+- `test_q3` のバフ判定を「リング2つ＋計3〜12ノード、スキルごとにDOMが異なる」に更新（`buffUnchanged`）。

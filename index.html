@@ -572,7 +572,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v49';
+const APP_VERSION = 'rogue-v50';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -5194,10 +5194,11 @@ function playSkillFx(id, hitCount, target) {
                     : ('fx-cat-' + cat);
       addNode(`fx-fade-only ${side} ${toneCls}`, '');
     } else if (cat === 'buff') {
-      // 強化（バフ）の演出は変えない
+      // 強化（バフ）: 既存の2重リング＋スキル固有モチーフ（FX_BUFF）。常時オーラ(syncBuffAura)は従来どおり
       const tone = spec.tone || 'all';
       addNode(`fx-buff-ring fx-side-player fx-tone-${tone}`, '');
       addNode(`fx-buff-ring fx-buff-ring2 fx-side-player fx-tone-${tone}`, '');
+      if (FX_BUFF[id]) FX_BUFF[id]({ id, add: addNode, box, dur, spec });
       if (t.isDebug) { _fxDbgState.buff = tone; renderFxDebugControls(); }
       syncBuffAura(t);
     } else if (sig === 'slash_t1_single_heavy') {
@@ -7065,6 +7066,42 @@ const FX_CUSTOM = (() => {
       ring(c, 200, '#ffe27a', 0.5, 4);
       spark(c, -70, 0); spark(c, 70, 0);
     },
+  };
+})();
+
+// ===== 強化（バフ）系15スキルの個別演出：既存の2重リングに、スキル固有モチーフ(1〜10ノード)を重ねる（自分側） =====
+const FX_BUFF = (() => {
+  const P = 'fx-side-player';
+  const pop = (c, svg, w, h, ox, oy, rot, dl, extra) => c.add(`fx-a-pop ${P} sig-${c.id}`, svg, `width:${w}px;height:${h}px;--ox:${ox || 0}px;--oy:${oy || 0}px;--rot:${rot || 0}deg;animation-delay:${Math.round(c.dur * (dl || 0))}ms;${extra || ''}`);
+  const rise = (c, svg, w, h, sx, sy, ex, ey, dl, extra) => c.add(`fx-a-rise ${P}`, svg, `width:${w}px;height:${h}px;--sx:${sx}px;--sy:${sy}px;--ex:${ex}px;--ey:${ey}px;animation-delay:${Math.round(c.dur * (dl || 0))}ms;${extra || ''}`);
+  const ring = (c, sz, col, dl, bw) => c.add(`fx-a-ring ${P}`, '', c.box(sz, `border-radius:50%;border:${bw || 2.5}px solid ${col};box-shadow:0 0 12px ${col};animation-delay:${Math.round(c.dur * (dl || 0))}ms`));
+  const orb = (c, col, dx, dy) => c.add(`fx-ult-spark ${P}`, '', `--dx:${dx}px;--dy:${dy}px;background:#fff;box-shadow:0 0 12px 3px ${col}`);
+  const line = (c, cls, rot, off, dl, sz) => c.add(`fx-slash ${P}`, `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="6" y1="50" x2="94" y2="50" class="fx-slash-line ${cls}"/></svg>`, c.box(sz || 84, `--fx-rot:${rot}deg;--fx-off:${off}px;animation-delay:${Math.round(c.dur * (dl || 0))}ms`));
+  const pillar = (c, w, h, grad, glow, dl) => c.add(`fx-a-pillar ${P}`, '', `width:${w}px;height:${h}px;background:${grad};border-radius:${Math.round(w / 2)}px;filter:drop-shadow(0 0 12px ${glow});animation-delay:${Math.round(c.dur * (dl || 0))}ms`);
+  const grad = (a, b) => `linear-gradient(180deg,${a}0),${b},${a}.15)`;
+  const shield = (f, s) => `<svg viewBox="0 0 60 70" class="fx-svg"><path d="M30,3 L56,13 Q56,48 30,67 Q4,48 4,13 Z" fill="${f}" stroke="${s}" stroke-width="3" filter="drop-shadow(0 0 8px ${s})"/></svg>`;
+  const star = (col) => `<svg viewBox="0 0 40 40" class="fx-svg"><polygon points="20,2 25,15 38,15 28,24 32,38 20,29 8,38 12,24 2,15 15,15" fill="${col}" filter="drop-shadow(0 0 6px ${col})"/></svg>`;
+  const flame = (a, b) => `<svg viewBox="0 0 40 60" class="fx-svg"><path d="M20,2 Q36,26 30,46 Q20,58 10,46 Q4,26 20,2 Z" fill="${a}" filter="drop-shadow(0 0 8px ${a})"/><path d="M20,24 Q27,36 24,46 Q20,52 16,46 Q13,36 20,24 Z" fill="${b}"/></svg>`;
+  const sil = (col) => `<svg viewBox="0 0 30 70" class="fx-svg"><ellipse cx="15" cy="12" rx="9" ry="10" fill="${col}"/><path d="M4,68 Q6,28 15,24 Q24,28 26,68 Z" fill="${col}"/></svg>`;
+  const horn = `<svg viewBox="0 0 80 40" class="fx-svg"><path d="M6,36 Q4,12 16,2 Q14,20 24,30 Z" fill="#ff3a3a" stroke="#ffd0d0" stroke-width="1.5"/><path d="M74,36 Q76,12 64,2 Q66,20 56,30 Z" fill="#ff3a3a" stroke="#ffd0d0" stroke-width="1.5"/></svg>`;
+  const sword = `<svg viewBox="0 0 40 100" class="fx-svg"><polygon points="20,96 12,32 20,10 28,32" fill="#fffbe0" stroke="#ffd45a" stroke-width="2"/><rect x="6" y="28" width="28" height="5" rx="2" fill="#ffd45a"/></svg>`;
+  const rune = `<svg viewBox="0 0 100 100" class="fx-svg"><circle cx="50" cy="50" r="44" fill="none" stroke="#8fd0ff" stroke-width="3" stroke-dasharray="10 6"/><polygon points="50,12 84,70 16,70" fill="none" stroke="#bfe6ff" stroke-width="2.5"/></svg>`;
+  return {
+    guard: (c) => { pop(c, shield('rgba(120,180,255,.55)', '#8fc4ff'), 52, 62, 0, 0, 0, 0.05); },
+    magicshield: (c) => { c.add(`fx-a-spin ${P} sig-magicshield`, rune, c.box(92, '--rot:160deg')); for (let i = 0; i < 3; i++) { const a = i / 3 * 6.283; orb(c, '#8fd0ff', Math.round(Math.cos(a) * 40), Math.round(Math.sin(a) * 40)); } },
+    barrier: (c) => { pop(c, `<svg viewBox="0 0 100 100" class="fx-svg"><circle cx="50" cy="50" r="46" fill="rgba(140,200,255,.25)" stroke="#bfe6ff" stroke-width="3"/><path d="M50,4 L88,26 L88,74 L50,96 L12,74 L12,26 Z" fill="none" stroke="#e8f6ff" stroke-width="2"/></svg>`, 100, 100, 0, 0, 0, 0); for (let i = 0; i < 4; i++) { const a = i / 4 * 6.283 + 0.78; orb(c, '#bfe6ff', Math.round(Math.cos(a) * 52), Math.round(Math.sin(a) * 52)); } },
+    holyBarrier: (c) => { pop(c, `<svg viewBox="0 0 100 100" class="fx-svg"><circle cx="50" cy="50" r="46" fill="rgba(255,244,190,.28)" stroke="#fff3b8" stroke-width="3.5"/></svg>`, 104, 104, 0, 0, 0, 0); pop(c, `<svg viewBox="0 0 40 56" class="fx-svg"><rect x="16" y="2" width="8" height="52" rx="2" fill="#fffef0" stroke="#ffe27a"/><rect x="4" y="16" width="32" height="8" rx="2" fill="#fffef0" stroke="#ffe27a"/></svg>`, 38, 54, 0, 0, 0, 0.1); ring(c, 118, '#fff3b8', 0.15, 3); orb(c, '#ffe27a', -48, -30); orb(c, '#ffe27a', 48, -30); orb(c, '#ffe27a', 0, 54); },
+    shadowStep: (c) => { for (let i = 0; i < 3; i++) pop(c, sil('rgba(80,40,140,.55)'), 30, 70, -34 + i * 17, 0, 0, 0.08 * i); orb(c, '#b56bff', -40, 20); },
+    swiftStance: (c) => { line(c, 'wind', 0, -10, 0, 96); line(c, 'wind', 0, 6, 0.1, 96); line(c, 'thin', 0, 20, 0.2, 96); orb(c, '#8fe8c8', -46, 0); orb(c, '#8fe8c8', 46, 0); },
+    berserk: (c) => { for (let i = 0; i < 3; i++) rise(c, flame('#ff4a2a', '#ffd060'), 28, 42, -22 + i * 22, 22, -22 + i * 22, -34, 0.07 * i); orb(c, '#ff4a2a', -34, -26); orb(c, '#ff4a2a', 34, -26); },
+    warGod: (c) => { rise(c, sword, 24, 70, 0, 30, 0, -14, 0.05); ring(c, 96, '#ff6a3a', 0.1, 3); orb(c, '#ffd45a', -36, -30); orb(c, '#ffd45a', 36, -30); },
+    frenzyEdge: (c) => { for (let i = 0; i < 3; i++) c.add(`fx-slash ${P} sig-frenzyEdge`, `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="12" y1="88" x2="88" y2="12" class="fx-slash-line crimson"/></svg>`, c.box(80, `--fx-rot:${-50 + i * 50}deg;--fx-off:${-12 + i * 12}px;animation-delay:${Math.round(c.dur * 0.1 * i)}ms`)); orb(c, '#ff3a55', -40, -20); orb(c, '#ff3a55', 40, 20); },
+    mirageStance: (c) => { for (let i = 0; i < 3; i++) pop(c, sil('rgba(190,120,255,.5)'), 28, 66, -30 + i * 30, (i % 2) * 6 - 3, 0, 0.06 * i); ring(c, 100, '#c9a0ff', 0.2); },
+    shura: (c) => { for (let i = 0; i < 4; i++) c.add(`fx-slash ${P} sig-shura`, `<svg viewBox="0 0 100 100" class="fx-svg"><line x1="10" y1="50" x2="90" y2="50" class="fx-slash-line crimson"/></svg>`, c.box(92, `--fx-rot:${i * 45}deg;--fx-off:0px;animation-delay:${Math.round(c.dur * 0.05 * i)}ms`)); ring(c, 104, '#ff3a3a', 0.1, 3); rise(c, flame('#ff3a3a', '#ffd060'), 26, 40, -24, 20, -24, -34, 0.1); rise(c, flame('#ff3a3a', '#ffd060'), 26, 40, 24, 20, 24, -34, 0.15); },
+    kishin: (c) => { pop(c, horn, 70, 36, 0, -34, 0, 0.05); pillar(c, 54, 110, grad('rgba(255,60,60,', 'rgba(255,90,60,.8)'), '#ff3a3a', 0.05); ring(c, 110, '#ff3a3a', 0.15, 3); orb(c, '#ff6a3a', -40, -30); orb(c, '#ff6a3a', 40, -30); orb(c, '#ffd060', 0, 50); },
+    heroAwaken: (c) => { pillar(c, 52, 120, grad('rgba(255,225,120,', 'rgba(255,215,90,.85)'), '#ffd45a', 0); for (let i = 0; i < 3; i++) rise(c, star('#fff3b8'), 20, 20, -26 + i * 26, 30, -26 + i * 26, -40, 0.1 * i); ring(c, 112, '#ffd45a', 0.15, 3); orb(c, '#fff3b8', -40, 24); orb(c, '#fff3b8', 40, 24); },
+    phantomAdvent: (c) => { pillar(c, 58, 120, grad('rgba(150,80,230,', 'rgba(170,100,255,.8)'), '#b56bff', 0); for (let i = 0; i < 4; i++) pop(c, sil('rgba(60,20,110,.6)'), 26, 62, -45 + i * 30, (i % 2) * 8, 0, 0.07 * i); ring(c, 120, '#b56bff', 0.2, 3); orb(c, '#e8dcff', -46, -30); orb(c, '#e8dcff', 46, -30); },
+    heroAdvent: (c) => { pillar(c, 70, 140, grad('rgba(255,235,150,', 'rgba(255,225,110,.9)'), '#ffd45a', 0); rise(c, sword, 32, 92, 0, 40, 0, -20, 0.08); ring(c, 100, '#fff3b8', 0.05, 3); ring(c, 140, '#ffd45a', 0.18, 3); ring(c, 180, '#fff3b8', 0.3, 2.5); pop(c, star('#fff6d0'), 56, 56, 0, -4, 0, 0.2); for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283; orb(c, '#ffd45a', Math.round(Math.cos(a) * 64), Math.round(Math.sin(a) * 64)); } },
   };
 })();
 /* ================= tutorial ================= */
