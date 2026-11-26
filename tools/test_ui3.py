@@ -215,6 +215,7 @@ with sync_playwright() as pw:
         G.view = 'status'; G.statusTab = 'gear'; G.gearSlot = 'weapon'; R.renderAll();
         const q = s => document.querySelectorAll('#view-status ' + s);
         const out = { btns: q('.gs-btn').length, onW: q('.gs-btn.on')[0].textContent.includes('武器'), wCards: q('.swap-card').length, up: q('.swp.up').length, down: q('.swp.down').length, firstIsStrong: q('.swap-card')[0].textContent.includes(R.itemName(wS)) };
+        out.dl = [...q('.swap-card .it-stat .it-dl')].map(e => e.textContent); out.tblDelta = q('.swp em').length;
         q('.gs-btn')[1].click();
         out.aCards = document.querySelectorAll('#view-status .swap-card').length; out.onA = document.querySelector('#view-status .gs-btn.on').textContent.includes('防具');
         const btn = document.querySelector('#view-status [data-act="equip"]'); const before = R.playerPower(p); btn.click();
@@ -223,6 +224,7 @@ with sync_playwright() as pw:
     }''')
     check('基準12a_武器/防具ボタンで種類ごとに候補が切り替わる（強い順）', r12['btns'] == 2 and r12['onW'] and r12['wCards'] == 2 and r12['firstIsStrong'] and r12['aCards'] == 1 and r12['onA'], r12)
     check('基準12b_候補ごとに切り替え前後の比較（強くなる/弱くなる）が出る', r12['up'] == 1 and r12['down'] == 1, r12)
+    check('基準12d_攻撃力/防御力の横に現在からの増減（▲/▼）が出て、比較表には差分を書かない', len(r12['dl']) == 2 and r12['dl'][0].startswith('▲') and r12['dl'][1].startswith('▼') and r12['tblDelta'] == 0, r12)
     check('基準12c_切り替えで装備が変わり、装備中カードが強化演出になる', r12['afterArmor'] and r12['stronger'] and r12['fx'], r12)
 
     check('ページエラーなし', len(errors) == 0, errors)

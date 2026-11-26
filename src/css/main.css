@@ -584,3 +584,6 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .swp-v{font-weight:800;margin-top:2px}.swp.up .swp-v{color:#7dffa8}.swp.down .swp-v{color:#ff9a9a}.swp.same .swp-v{color:var(--muted)}
 .swap-card .it-act{padding:8px 10px;border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px}
 @media (prefers-reduced-motion:reduce){.cur-eq.swap-up,.cur-eq.swap-down{animation:none}}
+
+.it-dl{margin-left:8px;font-weight:800;font-size:14px;padding:0 6px;border-radius:6px}
+.it-dl.up{color:#7dffa8;background:rgba(80,230,140,.14)}.it-dl.down{color:#ff9a9a;background:rgba(230,100,100,.14)}

@@ -1035,19 +1035,24 @@ function hitFlash(who) {
 
 /* ================= render: status ================= */
 // 装備タブ用：切り替え前→後の比較カード（攻撃/防御・戦闘力の変化を並べて見せる）
+function statDeltaHtml(d) {
+  if (!d) return '';
+  return `<span class="it-dl ${d > 0 ? 'up' : 'down'}">${d > 0 ? '▲+' : '▼−'}${fmt(Math.abs(d))}</span>`;
+}
 function swapPower(it) {
   const p = G.p, old = p[it.slot]; p[it.slot] = it;
   try { return { pw: playerPower(p), atk: playerAtk(p), def: playerDef(p) }; } finally { p[it.slot] = old; }
 }
+function swapStatDelta(it) { const p = G.p, a = swapPower(it), isW = it.slot === 'weapon'; return (isW ? a.atk - playerAtk(p) : a.def - playerDef(p)); }
 function swapCmpHtml(it) {
   const p = G.p, cur = p[it.slot], isW = it.slot === 'weapon', lab = isW ? '攻撃力' : '防御力';
   const b0 = { pw: playerPower(p), v: isW ? playerAtk(p) : playerDef(p) }, a = swapPower(it), v1 = isW ? a.atk : a.def;
-  const dv = v1 - b0.v, dp = a.pw - b0.pw, k = dp > 0 ? 'up' : dp < 0 ? 'down' : 'same';
+  const dp = a.pw - b0.pw, k = dp > 0 ? 'up' : dp < 0 ? 'down' : 'same';
   const ar = dp > 0 ? '▲' : dp < 0 ? '▼' : '＝';
   return `<div class="swp ${k}">
     <div class="swp-h"><span>${lab}</span><span>戦闘力</span></div>
     <div class="swp-row"><span class="swp-l">今</span><span class="swp-c">${cur ? esc(itemName(cur)) : 'なし'}</span><b>${fmt(b0.v)}</b><b>${fmt(b0.pw)}</b></div>
-    <div class="swp-row to"><span class="swp-l">後</span><span class="swp-c">${esc(itemName(it))}</span><b>${fmt(v1)}<em>${dv ? (dv > 0 ? ' ▲' : ' ▼') + fmt(Math.abs(dv)) : ''}</em></b><b>${fmt(a.pw)}<em>${dp ? (dp > 0 ? ' ▲' : ' ▼') + fmt(Math.abs(dp)) : ''}</em></b></div>
+    <div class="swp-row to"><span class="swp-l">後</span><span class="swp-c">${esc(itemName(it))}</span><b>${fmt(v1)}</b><b>${fmt(a.pw)}</b></div>
     <div class="swp-v">${ar} ${dp > 0 ? '強くなる' : dp < 0 ? '弱くなる' : '変化なし'}${dp ? `（戦闘力 ${dp > 0 ? '+' : '−'}${fmt(Math.abs(dp))}）` : ''}</div></div>`;
 }
 function gearSlotPanels(p) {
@@ -1073,7 +1078,7 @@ function gearSlotPanels(p) {
   const bagPanel = `<div class="panel"><h2>バッグ <span class="sub" style="font-size:13px">${p.bag.length} / ${p.bagCap || BAG_CAP}</span></h2>
       <p class="sub" style="margin:0 0 10px">「${isW ? '武器' : '防具'}」の切り替え候補です（強い順）。ロックすると売却・自動売却から除外できます。</p>
       ${(p.bagCap || BAG_CAP) < MAX_BAG_CAP ? `<div class="row" style="margin-bottom:10px"><button class="btn small" data-act="expandBag" ${p.gold >= bagExpandCost(p.bagCap || BAG_CAP) ? '' : 'disabled'}>バッグ拡張 +10枠（${fmt(bagExpandCost(p.bagCap || BAG_CAP))}G）</button></div>` : ''}
-      ${cands.length ? `<div class="items">${cands.map(it => `<div class="swap-card">${itemCard(it, { showRec: false, actions: false })}${swapCmpHtml(it)}<div class="it-act"><button class="btn small primary" data-act="equip" data-id="${it.id}">この${isW ? '武器' : '防具'}に切り替える</button><button class="btn small ${it.locked ? 'on' : ''}" data-act="lock" data-id="${it.id}" aria-pressed="${!!it.locked}">${it.locked ? '🔒 ロック中' : 'ロック'}</button></div></div>`).join('')}</div>` : `<p class="empty">切り替えられる${isW ? '武器' : '防具'}はバッグにありません。</p>`}
+      ${cands.length ? `<div class="items">${cands.map(it => `<div class="swap-card">${itemCard(it, { showRec: false, actions: false, statDelta: swapStatDelta(it) })}${swapCmpHtml(it)}<div class="it-act"><button class="btn small primary" data-act="equip" data-id="${it.id}">この${isW ? '武器' : '防具'}に切り替える</button><button class="btn small ${it.locked ? 'on' : ''}" data-act="lock" data-id="${it.id}" aria-pressed="${!!it.locked}">${it.locked ? '🔒 ロック中' : 'ロック'}</button></div></div>`).join('')}</div>` : `<p class="empty">切り替えられる${isW ? '武器' : '防具'}はバッグにありません。</p>`}
       ${other ? `<p class="sub" style="margin:10px 0 0">${isW ? '防具' : '武器'}が ${other}個 あります。上のボタンで切り替えて確認できます。</p>` : ''}</div>`;
   return eqPanel + bagPanel;
 }
@@ -1086,7 +1091,7 @@ function itemCard(it, o = {}) {
   const ps = itemProps(it);
   return `<div class="item r${it.rarity}">
     <div class="it-h"><span class="it-id">${itemIcon(it)}<span class="it-name">${esc(itemName(it))}</span></span><span class="it-star">${'★'.repeat(it.star)}</span></div>
-    <div class="it-stat">${isW ? '攻撃力' : '防御力'} +${pw}${gp !== pw ? `<span class="it-desc">（実効 +${gp}）</span>` : ''}　<span class="it-desc">戦力 ${fmt(gp)}</span></div>
+    <div class="it-stat">${isW ? '攻撃力' : '防御力'} +${pw}${o.statDelta ? statDeltaHtml(o.statDelta) : ''}${gp !== pw ? `<span class="it-desc">（実効 +${gp}）</span>` : ''}　<span class="it-desc">戦力 ${fmt(gp)}</span></div>
     <div class="it-meta"><span class="rc">${RARITY[it.rarity].name}</span><span>品質 ${Math.round(it.roll * 100)}%</span>${o.sell === false ? '' : `<span>売値 ${fmt(sellValue(it))}G</span>`}${isRec ? '<span class="badge rec">おすすめ</span>' : ''}${better ? '<span class="badge up">今の装備より強い</span>' : ''}</div>
     ${ps.length ? `<div>${ps.map(k => { const pm = propMeta(it.slot, k); return pm ? `<div><span class="badge ${k}">${pm.name}</span> <span class="it-desc">${pm.desc}</span></div>` : ''; }).join('')}${ps.includes('madness') ? '<div class="it-desc">※自動装備の対象外（手動で装備）</div>' : ''}</div>` : ''}
     ${o.actions ? `<div class="it-act"><button class="btn small" data-act="equip" data-id="${it.id}">装備する</button><button class="btn small ${it.locked ? 'on' : ''}" data-act="lock" data-id="${it.id}" aria-pressed="${it.locked}">${it.locked ? 'ロック中' : 'ロック'}</button></div>` : ''}
