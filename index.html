@@ -572,7 +572,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v47';
+const APP_VERSION = 'rogue-v48';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -3052,6 +3052,8 @@ async function maybeSendAnalytics() {
   if (IS_DEV_BUILD) return { sent: false, reason: 'dev' };
   if (!ANALYTICS_CFG.reportUrl || !ANALYTICS_CFG.entryStats) return { sent: false, reason: 'unconfigured' };
   if (isAnalyticsOptOut()) return { sent: false, reason: 'optout' };
+  // 自動テスト（Playwright等）が本番フォームへ送るのを防ぐ（実フォーム宛てのときのみ。テスト用ダミーURLは通す）
+  if (typeof navigator !== 'undefined' && navigator.webdriver && /(^|\/\/)docs\.google\.com\//.test(ANALYTICS_CFG.reportUrl)) return { sent: false, reason: 'automation' };
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { sent: false, reason: 'offline' };
   let last = 0;
   try { last = Number(localStorage.getItem(ANALYTICS_CFG.lastSentKey) || 0); } catch (e) {}

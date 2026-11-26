@@ -21,3 +21,8 @@
 - フォームURL（formResponse）: `https://docs.google.com/forms/d/e/1FAIpQLSfQa7ARhtacX4mo8JLnMsfOr8CSjnRgCHWjXkqkm8ipZU8jzA/formResponse`
 - entry ID（記録）: `entry.1234051955`
 - 反映: P10 の Gemini 実装完了後に、私が `src/data/analytics.js` の `reportUrl` / `entryStats` へ入れる（Geminiは空のまま出荷）。
+
+## E. 2026-11 調査メモ（同一ユーザーの重複送信疑いについて）
+- フォーム回答シート（200行）を確認。**ユニークID 199 / 200行**、同一IDの重複はほぼなし。ほぼ全行が `launch=1, new=1, hours=0.0` で、v41〜v44の開発作業時間帯（11/25 8:30・9:04・13:23）に数十行ずつ連続して入っていた＝**自動テスト（Playwright/BOT）が本番ページを開き、実フォームへ送信していた汚染**。実ユーザーらしい行は11/26の2行程度。
+- 対策: `maybeSendAnalytics` は `navigator.webdriver` かつ送信先が `docs.google.com` のとき送信しない（`reason: 'automation'`）。`test_p10` 基準1b。
+- 集計時は、汚染行（〜11/25）を除くか、シートから削除してから `tools/make_stats.py` を使う。

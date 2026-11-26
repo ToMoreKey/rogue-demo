@@ -87,6 +87,8 @@ async function maybeSendAnalytics() {
   if (IS_DEV_BUILD) return { sent: false, reason: 'dev' };
   if (!ANALYTICS_CFG.reportUrl || !ANALYTICS_CFG.entryStats) return { sent: false, reason: 'unconfigured' };
   if (isAnalyticsOptOut()) return { sent: false, reason: 'optout' };
+  // 自動テスト（Playwright等）が本番フォームへ送るのを防ぐ（実フォーム宛てのときのみ。テスト用ダミーURLは通す）
+  if (typeof navigator !== 'undefined' && navigator.webdriver && /(^|\/\/)docs\.google\.com\//.test(ANALYTICS_CFG.reportUrl)) return { sent: false, reason: 'automation' };
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return { sent: false, reason: 'offline' };
   let last = 0;
   try { last = Number(localStorage.getItem(ANALYTICS_CFG.lastSentKey) || 0); } catch (e) {}

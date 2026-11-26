@@ -63,6 +63,10 @@ with sync_playwright() as pw:
     unconf_res = pg.evaluate('async () => await window.__rogue.maybeSendAnalytics()')
     check('基準1_URL未設定時は通信しない', (not unconf_res['sent']) and unconf_res.get('reason') == 'unconfigured' and len(intercepted) == 0, unconf_res)
 
+    # 基準1b: 自動テスト（webdriver）から本番フォーム(docs.google.com)宛てには送らない（実データ汚染の防止）
+    auto_res = pg.evaluate("""async () => { const R = window.__rogue; R.ANALYTICS_CFG.reportUrl = 'https://docs.google.com/forms/d/e/TEST/formResponse'; R.ANALYTICS_CFG.entryStats = 'entry.1'; localStorage.removeItem(R.ANALYTICS_CFG.lastSentKey); const r = await R.maybeSendAnalytics(); R.ANALYTICS_CFG.reportUrl = ''; R.ANALYTICS_CFG.entryStats = ''; return { r, wd: navigator.webdriver }; }""")
+    check('基準1b_自動テストから本番フォームへは送らない', auto_res['wd'] and (not auto_res['r']['sent']) and auto_res['r'].get('reason') == 'automation', auto_res)
+
     pd = ctx.new_page()
     pd.on('pageerror', lambda e: errors.append(str(e)))
     pd.route('https://example.invalid/statsResponse*', handle_route)
