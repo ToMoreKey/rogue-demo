@@ -721,6 +721,18 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 @keyframes achb{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ach-banner{animation:none}}
 .goal-card.mini{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px}.goal-card.mini span{font-weight:700;font-size:14px}
+/* ボス登場演出（WARNING×3 → ゴゴゴ → せり上がり） */
+.warn-flash{position:absolute;inset:0;z-index:5;pointer-events:none;background:rgba(220,0,0,.42);animation:warnflash .65s ease-out forwards}
+.warn-txt{position:absolute;left:0;right:0;top:34%;z-index:7;text-align:center;pointer-events:none;font-family:var(--font-display);font-size:30px;font-weight:900;letter-spacing:.12em;color:#ff4040;text-shadow:0 0 12px #f00,0 2px 0 #000;padding:6px 0;background:linear-gradient(90deg,transparent,rgba(0,0,0,.75),transparent);animation:warntxt .65s steps(1,end) forwards}
+@keyframes warnflash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+@keyframes warntxt{0%{opacity:0}10%,45%{opacity:1}55%{opacity:.25}70%{opacity:1}100%{opacity:0}}
+.goro-txt{position:absolute;left:0;right:0;top:20%;z-index:7;text-align:center;pointer-events:none;font-family:var(--font-display);font-size:28px;font-weight:900;color:#d8c9a8;text-shadow:0 0 10px #000,0 3px 0 #000;animation:goro .09s linear infinite alternate}
+@keyframes goro{from{transform:translate(-2px,1px) rotate(-.6deg)}to{transform:translate(2px,-1px) rotate(.6deg)}}
+.arena.rumble{animation:rumble .07s linear infinite alternate}
+@keyframes rumble{from{transform:translate(-2px,1px)}to{transform:translate(2px,-1px)}}
+#f-enemy.boss-hide{opacity:0}
+#f-enemy.boss-rise{animation:bossrise 1.05s ease-out both}
+@keyframes bossrise{0%{opacity:0;transform:translateY(40px) scale(.55);filter:brightness(0)}60%{opacity:1;filter:brightness(.5)}100%{opacity:1;transform:none;filter:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -831,7 +843,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v79';
+const APP_VERSION = 'rogue-v80';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -3671,6 +3683,8 @@ const Sound = (() => {
     heal:     () => { tone(N.C5, 0.12, 'sine', 0.4); tone(N.E5, 0.12, 'sine', 0.4, 0, 0.08); tone(N.G5, 0.2, 'sine', 0.4, 0, 0.16); },
     buff:     () => { tone(N.G4, 0.1, 'triangle', 0.4, N.C5); tone(N.C5, 0.18, 'triangle', 0.4, N.G5, 0.08); },
     kill:     () => { tone(420, 0.2, 'square', 0.35, 90); noise(0.15, 0.3, 500, 0.02); },
+    warn:     () => { tone(880, 0.26, 'square', 0.4, 700); tone(660, 0.26, 'square', 0.4, 520, 0.28); },
+    rumble:   () => { tone(58, 1.1, 'sawtooth', 0.55, 36); noise(1.0, 0.35, 60); },
     bossKill: () => { tone(300, 0.5, 'sawtooth', 0.5, 50); noise(0.45, 0.5, 300); [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, 0.25, 'triangle', 0.4, 0, 0.35 + i * 0.1)); },
     levelup:  () => [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, 0.18, 'triangle', 0.45, 0, i * 0.09)),
     drop0:    () => tone(N.E5, 0.1, 'sine', 0.35),
@@ -4097,7 +4111,7 @@ function spawnEnemy(boss, miniboss = false) {
   };
   run.phase = 'battle';
   Sound.setScene(run.tower ? 'tower' : (boss ? 'boss' : 'dungeon'));
-  if (boss) bossBanner(name);
+  if (boss) { const ms = bossBanner(name); run.introUntil = ms ? Date.now() + ms : 0; }
   if (boss) run.bossHitTaken = false;
   recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
@@ -4588,6 +4602,7 @@ function finishRun(result) {
 let loopTimer = null;
 function tick() {
   const run = G.run; if (!run) return;
+  if (run.introUntil && Date.now() < run.introUntil) return; // ボス登場演出中は戦闘を止める
   try {
     if (run.phase === 'next') nextFloor();
     else if (run.phase === 'pause') run.phase = 'next';
@@ -6708,12 +6723,24 @@ function battleImpact(kind) {
   clearTimeout(a._sk); a._sk = setTimeout(() => a.classList.remove('shake-b', 'shake-s'), 260);
   if (kind === 'big') { a.classList.remove('crit-flash'); void a.offsetWidth; a.classList.add('crit-flash'); clearTimeout(a._cf); a._cf = setTimeout(() => a.classList.remove('crit-flash'), 260); }
 }
+/* ボス登場演出: WARNING×3 → ゴゴゴゴ（揺れ＋ボスせり上がり）→ 名前バナー。戻り値＝戦闘開始までの待ち(ms)。演出OFF/headless/動きを減らす設定は 0 */
+const BOSS_INTRO_MS = 3300;
 function bossBanner(name) {
-  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
-  const a = $('#arena'); if (!a) return;
-  a.querySelectorAll('.boss-banner').forEach(n => n.remove());
-  const b = document.createElement('div'); b.className = 'boss-banner'; b.textContent = '⚠ ' + name; a.appendChild(b);
-  setTimeout(() => b.remove(), 1100);
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return 0;
+  const a = $('#arena'); if (!a) return 0;
+  (a._bt || []).forEach(clearTimeout); a._bt = [];
+  a.querySelectorAll('.boss-banner,.warn-txt,.warn-flash,.goro-txt').forEach(n => n.remove());
+  const fe = $('#f-enemy'); if (fe) { fe.classList.remove('boss-rise'); fe.classList.add('boss-hide'); }
+  const at = (ms, fn) => a._bt.push(setTimeout(fn, ms));
+  const add = (cls, text) => { const n = document.createElement('div'); n.className = cls; if (text) n.textContent = text; a.appendChild(n); return n; };
+  [0, 750, 1500].forEach(ms => at(ms, () => { Sound.play('warn'); add('warn-flash'); add('warn-txt', '⚠ WARNING ⚠'); at(ms + 650, () => a.querySelectorAll('.warn-txt,.warn-flash').forEach(n => n.remove())); }));
+  at(2250, () => {
+    Sound.play('rumble'); a.classList.add('rumble'); add('goro-txt', 'ゴゴゴゴゴゴ…');
+    const f = $('#f-enemy'); if (f) { f.classList.remove('boss-hide'); f.classList.add('boss-rise'); }
+    at(1050, () => { a.classList.remove('rumble'); a.querySelectorAll('.goro-txt').forEach(n => n.remove()); const f2 = $('#f-enemy'); if (f2) f2.classList.remove('boss-rise'); });
+  });
+  at(BOSS_INTRO_MS, () => { const bn = add('boss-banner', '⚠ ' + name); setTimeout(() => bn.remove(), 1100); });
+  return BOSS_INTRO_MS;
 }
 function levelBand(lv) {
   if (G.headless || !isFxEnabled() || isReducedMotion()) return;

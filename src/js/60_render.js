@@ -1058,12 +1058,24 @@ function battleImpact(kind) {
   clearTimeout(a._sk); a._sk = setTimeout(() => a.classList.remove('shake-b', 'shake-s'), 260);
   if (kind === 'big') { a.classList.remove('crit-flash'); void a.offsetWidth; a.classList.add('crit-flash'); clearTimeout(a._cf); a._cf = setTimeout(() => a.classList.remove('crit-flash'), 260); }
 }
+/* ボス登場演出: WARNING×3 → ゴゴゴゴ（揺れ＋ボスせり上がり）→ 名前バナー。戻り値＝戦闘開始までの待ち(ms)。演出OFF/headless/動きを減らす設定は 0 */
+const BOSS_INTRO_MS = 3300;
 function bossBanner(name) {
-  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
-  const a = $('#arena'); if (!a) return;
-  a.querySelectorAll('.boss-banner').forEach(n => n.remove());
-  const b = document.createElement('div'); b.className = 'boss-banner'; b.textContent = '⚠ ' + name; a.appendChild(b);
-  setTimeout(() => b.remove(), 1100);
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return 0;
+  const a = $('#arena'); if (!a) return 0;
+  (a._bt || []).forEach(clearTimeout); a._bt = [];
+  a.querySelectorAll('.boss-banner,.warn-txt,.warn-flash,.goro-txt').forEach(n => n.remove());
+  const fe = $('#f-enemy'); if (fe) { fe.classList.remove('boss-rise'); fe.classList.add('boss-hide'); }
+  const at = (ms, fn) => a._bt.push(setTimeout(fn, ms));
+  const add = (cls, text) => { const n = document.createElement('div'); n.className = cls; if (text) n.textContent = text; a.appendChild(n); return n; };
+  [0, 750, 1500].forEach(ms => at(ms, () => { Sound.play('warn'); add('warn-flash'); add('warn-txt', '⚠ WARNING ⚠'); at(ms + 650, () => a.querySelectorAll('.warn-txt,.warn-flash').forEach(n => n.remove())); }));
+  at(2250, () => {
+    Sound.play('rumble'); a.classList.add('rumble'); add('goro-txt', 'ゴゴゴゴゴゴ…');
+    const f = $('#f-enemy'); if (f) { f.classList.remove('boss-hide'); f.classList.add('boss-rise'); }
+    at(1050, () => { a.classList.remove('rumble'); a.querySelectorAll('.goro-txt').forEach(n => n.remove()); const f2 = $('#f-enemy'); if (f2) f2.classList.remove('boss-rise'); });
+  });
+  at(BOSS_INTRO_MS, () => { const bn = add('boss-banner', '⚠ ' + name); setTimeout(() => bn.remove(), 1100); });
+  return BOSS_INTRO_MS;
 }
 function levelBand(lv) {
   if (G.headless || !isFxEnabled() || isReducedMotion()) return;

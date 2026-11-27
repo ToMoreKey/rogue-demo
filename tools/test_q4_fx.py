@@ -27,9 +27,16 @@ with sync_playwright() as pw:
     check('被弾で小さな揺れ', ev("() => document.getElementById('arena').classList.contains('shake-s')"))
     # 撃破・ボスバナー・レベルアップ
     ev("() => { __rogue.killFx(false); }"); check('撃破演出(die)', ev("() => document.getElementById('f-enemy').classList.contains('die')"))
-    ev("() => { __rogue.bossBanner('テスト'); }"); check('ボスバナー', pg.locator('.boss-banner').count() == 1)
+    ev("() => { window.__ms = __rogue.bossBanner('テスト'); }"); check('ボス登場: 待ち時間を返す', ev("() => window.__ms") == 3300)
+    check('登場直後はボスが隠れ WARNING が出る', pg.locator('#f-enemy.boss-hide').count() == 1 and pg.locator('.warn-txt').count() == 1)
+    pg.wait_for_timeout(2500)
+    check('WARNING後にゴゴゴ・せり上がり・揺れ', pg.locator('.goro-txt').count() == 1 and pg.locator('#f-enemy.boss-rise').count() == 1 and ev("() => document.getElementById('arena').classList.contains('rumble')"))
+    pg.wait_for_selector('.boss-banner', timeout=3000)
+    check('名前バナー', pg.locator('.boss-banner').count() == 1)
     ev("() => { __rogue.levelBand(31); }"); check('レベルアップ帯', pg.locator('.lv-band').count() == 1)
-    ev("() => { __rogue.bossBanner('A'); __rogue.bossBanner('B'); }"); check('バナーは重複しない(ノード上限)', pg.locator('.boss-banner').count() == 1)
+    ev("() => { __rogue.bossBanner('A'); __rogue.bossBanner('B'); }"); pg.wait_for_selector('.boss-banner', timeout=5000); check('バナーは重複しない(ノード上限)', pg.locator('.boss-banner').count() == 1, pg.locator('.boss-banner').count())
+    ev("() => { G.run.introUntil = Date.now() + 5000; }"); __t = ev("() => { const h = G.run.enemy.hp; __rogue.tick(); return h === G.run.enemy.hp; }")
+    check('演出中は tick で戦闘が進まない', __t)
     # 低HP
     ev("() => { G.p.hp = Math.floor(__rogue.maxHp(G.p) * 0.2); __rogue.lowHpWarn(); }")
     check('HP25%以下で低HP警告', ev("() => document.body.classList.contains('lowhp')"))

@@ -51,6 +51,8 @@ const Sound = (() => {
     heal:     () => { tone(N.C5, 0.12, 'sine', 0.4); tone(N.E5, 0.12, 'sine', 0.4, 0, 0.08); tone(N.G5, 0.2, 'sine', 0.4, 0, 0.16); },
     buff:     () => { tone(N.G4, 0.1, 'triangle', 0.4, N.C5); tone(N.C5, 0.18, 'triangle', 0.4, N.G5, 0.08); },
     kill:     () => { tone(420, 0.2, 'square', 0.35, 90); noise(0.15, 0.3, 500, 0.02); },
+    warn:     () => { tone(880, 0.26, 'square', 0.4, 700); tone(660, 0.26, 'square', 0.4, 520, 0.28); },
+    rumble:   () => { tone(58, 1.1, 'sawtooth', 0.55, 36); noise(1.0, 0.35, 60); },
     bossKill: () => { tone(300, 0.5, 'sawtooth', 0.5, 50); noise(0.45, 0.5, 300); [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, 0.25, 'triangle', 0.4, 0, 0.35 + i * 0.1)); },
     levelup:  () => [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, 0.18, 'triangle', 0.45, 0, i * 0.09)),
     drop0:    () => tone(N.E5, 0.1, 'sine', 0.35),
