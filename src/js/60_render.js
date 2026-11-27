@@ -222,7 +222,7 @@ function renderDungeonSelect() {
   const learnable = SK_ORDER.filter(id => !p0.skills[id] && p0.sp >= SK[id].sp);
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
   const goal = dgNextGoal(p0);
-  const goalCard = goal ? `<div class="panel dg-goal"><b>🎯 次の目標</b><span>ダンジョン${goal.d.id}「${esc(goal.d.name)}」${esc(goal.df.name)}をクリア</span><small>目安戦闘力 ${fmt(refPower(goal.d, DIFFS.indexOf(goal.df)))}／あなた ${fmt(playerPower(p0))}</small></div>` : '';
+  const goalCard = goal ? `<div class="panel dg-goal"><b>🎯 次の目標</b><span>ダンジョン${goal.d.id}「${esc(goal.d.name)}」${esc(goal.df.name)}をクリア</span><small>目安戦闘力 ${fmt(refPower(goal.d, DIFFS.indexOf(goal.df)))}／あなた ${fmt(playerPower(p0))}　推奨Lv${goal.d.rec[DIFFS.indexOf(goal.df)]}／あなた Lv${p0.lv}</small></div>` : '';
   $('#dg-list').innerHTML = hint + goalCard + DUNGEONS.map(d => {
     const dgUnlocked = isDungeonUnlocked(p0, d);
     let sel = diffOf(G.sel[d.id]) || DIFFS[0];
@@ -244,7 +244,7 @@ function renderDungeonSelect() {
         return `<button class="seg-b ${ok && df.id === sel.id ? 'on' : ''}" aria-pressed="${ok && df.id === sel.id}" data-act="diff" data-d="${d.id}" data-df="${df.id}" ${ok ? '' : 'disabled'}>${ok ? (done ? '✓' : '') + df.name : '🔒' + df.name}<small>${ok ? `${df.floors}階` : '未解放'}</small></button>`;
       }).join('')}</div>
       <p class="dc-info">${dgUnlocked
-        ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>${(() => { const ri = DIFFS.findIndex(x => x.id === sel.id), rf = refPower(d, ri), v = powerVerdict(playerPower(p0), rf); return `<br><span class="dc-pw v-${v.k}">目安戦闘力 <b>${fmt(rf)}</b>　あなた <b>${fmt(playerPower(p0))}</b>　<em>${v.label}</em></span>`; })()}`
+        ? `全 <b>${sel.floors}階層</b>　ドロップ <b>★${lo}〜★${hi}${d.bossMaxStar && d.bossMaxStar > hi ? `（ボス★${d.bossMaxStar}）` : ''}</b>　推奨 <b>Lv${rec}</b>〜<br>踏破報酬 <b>${fmt(Math.round(sel.clearGold * DUNGEON_REWARD[d.id]))}G</b> ＋ <b>SP${sel.clearSp}</b>${(() => { const ri = DIFFS.findIndex(x => x.id === sel.id), rf = refPower(d, ri), v = powerVerdict(playerPower(p0), rf, p0.lv, rec); return `<br><span class="dc-pw v-${v.k}">目安戦闘力 <b>${fmt(rf)}</b>　あなた <b>${fmt(playerPower(p0))}</b>　<em>${v.label}</em>${v.lvLow ? `<br>推奨Lv${rec}／あなた Lv${p0.lv}（Lv不足）` : ''}</span>`; })()}`
         : `解放条件：ダンジョン${d.unlock.d}（${unlockReqDf}）をクリア`}</p>
       <button class="btn primary wide" data-act="go" data-d="${d.id}" ${dgUnlocked ? '' : 'disabled'}>${dgUnlocked ? '挑戦する' : '🔒 未解放'}</button></div></article>`;
   }).join('') + dgSection('エンドコンテンツ', '塔・深淵') + (() => {
@@ -1415,13 +1415,13 @@ function renderStatus() {
     const tot = Math.max(1, at + df + hp + mp), seg = (v, c, n) => `<i style="width:${(v / tot * 100).toFixed(1)}%;background:${c}" title="${n} ${fmt(v)}"></i>`;
     // 挑戦可能で未踏破のうち、いちばん手強いものの目安
     let tgt = null; for (const dd of DUNGEONS) DIFFS.forEach((dfx, i) => { if (isDiffUnlocked(p, dd, dfx) && !(p.cleared && p.cleared[dd.id] && p.cleared[dd.id][dfx.id])) { if (!tgt || refPower(dd, i) > refPower(tgt.d, tgt.i)) tgt = { d: dd, i }; } });
-    const tv = tgt ? powerVerdict(pw, refPower(tgt.d, tgt.i)) : null;
+    const tv = tgt ? powerVerdict(pw, refPower(tgt.d, tgt.i), p.lv, tgt.d.rec[tgt.i]) : null;
     return `<div class="panel pwpanel" style="--rc:${rk.color}"><h2>戦闘力</h2>
       <div class="pwp-top"><div class="pwp-num" id="pwp-num">${fmt(pw)}</div><div class="pwp-rank"><span class="pwp-badge">${rk.name}</span><small>${rk.next ? `次のランク「${rk.next.name}」まで あと ${fmt(Math.max(0, rk.next.min - pw))}` : '最高ランクです'}</small></div></div>
       <div class="pwp-bar"><i style="width:${(rk.pct * 100).toFixed(1)}%"></i></div>
       <div class="pwp-mix">${seg(at, '#ff8a6a', '攻撃力')}${seg(df, '#6aa6ff', '防御力')}${seg(hp, '#58c98a', 'HP/8')}${seg(mp, '#b48cff', 'MP/20')}</div>
       <div class="pwp-leg"><span><u style="background:#ff8a6a"></u>攻撃 ${fmt(at)}</span><span><u style="background:#6aa6ff"></u>防御 ${fmt(df)}</span><span><u style="background:#58c98a"></u>HP ${fmt(hp)}</span><span><u style="background:#b48cff"></u>MP ${fmt(mp)}</span></div>
-      ${tv ? `<p class="pwp-tg v-${tv.k}">次の挑戦先「ダンジョン${tgt.d.id}・${DIFFS[tgt.i].name}」の目安は <b>${fmt(refPower(tgt.d, tgt.i))}</b>　→　<em>${tv.label}</em></p>` : ''}
+      ${tv ? `<p class="pwp-tg v-${tv.k}">次の挑戦先「ダンジョン${tgt.d.id}・${DIFFS[tgt.i].name}」の目安は <b>${fmt(refPower(tgt.d, tgt.i))}</b>（推奨Lv${tgt.d.rec[tgt.i]}／あなた Lv${p.lv}）　→　<em>${tv.label}</em>${tv.lvLow ? '（Lv不足）' : ''}</p>` : ''}
       <p class="sub" style="margin:6px 0 0;font-size:11px">戦闘力＝攻撃力＋防御力＋最大HP÷8＋最大MP÷20。Lv・装備・スキル・極意すべての強化が反映されます（目安は標準的な装備での値）。</p></div>`;
   })();
   const heroPanels = `

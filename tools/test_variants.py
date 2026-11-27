@@ -95,6 +95,8 @@ with sync_playwright() as pw:
     pg.evaluate('() => { document.getElementById("nav-status").click(); document.querySelector("[data-act=statusTab][data-tab=data]").click(); }')
     pd.evaluate('() => { G.tutorial = { done: true }; document.getElementById("nav-status").click(); document.querySelector("[data-act=statusTab][data-tab=data]").click(); }')
     pg.wait_for_timeout(300); pd.wait_for_timeout(300)
+    check('テスト版: 全ダンジョン・全難易度に入れる', pd.evaluate('() => { G.view = "dungeon"; window.__rogue.renderAll(); return !document.querySelector("#view-dungeon .b-lock") && document.querySelectorAll("#view-dungeon .dc-badge").length > 0; }'))
+    check('本番: 未解放のダンジョンは入れない（制限が残る）', pg.evaluate('() => { G.view = "dungeon"; window.__rogue.renderAll(); return !!document.querySelector("#view-dungeon .b-lock"); }'))
     check('画面: 本番に「全装備を入手」ボタンが無い', pg.evaluate('() => !document.querySelector("[data-act=debugAllGear]")'))
     check('画面: テスト版には「全装備を入手」ボタンがある', pd.evaluate('() => !!document.querySelector("[data-act=debugAllGear]")'))
     check('本番: 直接呼んでも全装備は入らない', pg.evaluate('() => { const n = G.p.bag.length; window.__rogue.ACTS.debugAllGear(); return G.p.bag.length === n; }'))

@@ -190,13 +190,15 @@ with sync_playwright() as pw:
         const refs = R.DUNGEONS.map(d => R.DIFFS.map((df, i) => R.refPower(d, i)));
         const mono = refs.every(row => row.every((v, i) => i === 0 || v > row[i - 1]));
         const vd = [R.powerVerdict(200, 100).k, R.powerVerdict(100, 100).k, R.powerVerdict(70, 100).k, R.powerVerdict(30, 100).k];
+        const lvv = [R.powerVerdict(200, 100, 30, 30).k, R.powerVerdict(200, 100, 25, 30).k, R.powerVerdict(200, 100, 20, 30).k, R.powerVerdict(200, 100, 1, 30).k, R.powerVerdict(200, 100, 1, 30).lvLow, R.powerVerdict(200, 100, 30, 30).lvLow];
         G.view = 'dungeon'; R.renderAll();
         const dcPw = document.querySelectorAll('#view-dungeon .dc-pw').length;
         G.headless = false; 
-        return { pw, rank: rk.name, panel: !!panel, numOk: numTxt == String(pw), r0: r0.name, rHi: rHi.name, hiPct: rHi.pct, mono, vd, dcPw };
+        return { pw, rank: rk.name, panel: !!panel, numOk: numTxt == String(pw), r0: r0.name, rHi: rHi.name, hiPct: rHi.pct, mono, vd, lvv, dcPw };
     }''')
     check('基準10a_ステータスに戦闘力パネル（数値・ランク）が出る', r10['panel'] and r10['numOk'] and r10['r0'] == '見習い' and r10['rHi'] == '神話' and r10['hiPct'] == 1, r10)
     check('基準10b_目安戦闘力が難易度で単調増加し、判定が余裕→危険の順', r10['mono'] and r10['vd'] == ['easy', 'ok', 'warn', 'bad'], r10)
+    check('基準10b2_装備が強くてもLvが足りなければ「余裕」にならない', r10['lvv'] == ['easy', 'ok', 'warn', 'bad', True, False], r10['lvv'])
     check('基準10c_ダンジョンカードに目安と判定が出る', r10['dcPw'] >= 3, r10)
     r11 = pg.evaluate('''() => {
         window.__rogue.powerAfterimage(100, 160); const up = document.getElementById('pw-ghosts');
