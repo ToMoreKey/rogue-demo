@@ -1175,6 +1175,17 @@ function renderSkillTrees(p) {
     const canAddAll = !isFull && spLeft >= 1;
     const remaining = Math.min(spLeft, cap - cur);
 
+    const nextMs = tree.milestones.find(m => cur < m.sp);
+    let nextHtml = '';
+    if (nextMs && nextMs.sp <= cap) {
+      const base = playerPower(p), keep = pts[tree.id];
+      let dp = 0;
+      try { pts[tree.id] = nextMs.sp; syncActiveCharState(p); dp = playerPower(p) - base; } finally { pts[tree.id] = keep; syncActiveCharState(p); }
+      nextHtml = `<div class="st-next">次の習得：<b>SP${nextMs.sp}</b>「${esc(nextMs.name)}」（あと${nextMs.sp - cur}SP）${dp > 0 ? `<span class="pw-up-chip">戦闘力 ▲+${fmt(dp)}</span>` : ''}</div>`;
+    } else if (nextMs) {
+      nextHtml = `<div class="st-next">次の習得：「${esc(nextMs.name)}」は上限の解放が必要です</div>`;
+    } else nextHtml = '<div class="st-next done">✔ このツリーは全て習得済み</div>';
+
     return `<div class="skill-tree" style="--tc:${tree.color}">
       <div class="st-header">
         <span class="st-icon">${tree.icon}</span>
@@ -1187,6 +1198,7 @@ function renderSkillTrees(p) {
       <div class="st-bar-wrap">
         <div class="st-bar" style="width:${pct}%"></div>
       </div>
+      ${nextHtml}
       <div class="ms-list">${msHtml}</div>
       <div class="st-actions">
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="1" ${canAdd1 ? '' : 'disabled'}>+1 SP</button>
@@ -1244,6 +1256,7 @@ function renderSkillSlots(p) {
       <div class="sk-slot-name">${s.name}</div>
       <div class="sk-slot-mp">MP ${skillMpCost(p, s)}</div>
       <div class="sk-slot-ct">CT ${s.ct}T</div>
+      <div class="sk-slot-desc">${esc(s.desc)}</div>
       <button class="btn small" style="font-size:10px;padding:2px 6px;margin-top:4px" data-act="unequipSkill" data-slot="${i}">外す</button>
     </div>`;
   }).join('');
