@@ -690,6 +690,7 @@ function finishRun(result) {
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared[run.d.id][run.df.id] = true;
     queueStory(p, run.d.id, run.df.id, firstClear);
+    if (firstClear && FIRST_CLEAR_DROPS[run.df.id]) addDrops(FIRST_CLEAR_DROPS[run.df.id], '初踏破');
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {
     p.hp = maxHp(p);  // 街帰還: HP全回復
@@ -812,6 +813,7 @@ function checkGoals(silent) {
   const p = G.p; if (!p) return;
   if (!G._goalDone) { G._goalDone = {}; silent = true; }
   for (const { g, ok } of goalState(p)) {
+    if (ok && !(p.goalDrops && p.goalDrops[g.id])) { p.goalDrops = p.goalDrops || {}; p.goalDrops[g.id] = true; addDrops(2, '目標達成'); }
     if (ok && !G._goalDone[g.id]) {
       G._goalDone[g.id] = true;
       if (!silent) G._goalJoy = goalState(p).every(x => x.ok) ? 'surprise' : 'joy'; // ルルが次に広場で見せる表情

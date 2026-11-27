@@ -68,7 +68,8 @@ function auraClass(p) {
 }
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う
-  const fr = skinFrames(sk), au = auraClass(G.p);
+  const fr = skinFrames(sk), au = auraClass(G.p), tn = (typeof cosTint === 'function') ? cosTint(G.p) : '';
+  if (tn) extraStyle = '--cos-tint:' + tn + ';' + (extraStyle || '');
   if (fr.img) return `<img class="sprite sprite-img${au}" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
   return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }

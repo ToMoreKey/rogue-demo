@@ -229,12 +229,12 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dc-top{display:flex;gap:12px;align-items:center;margin-bottom:10px}
 .dc-spr{width:56px;flex:none}
 .sprite{display:block;width:100%;height:auto;image-rendering:pixelated}
-.sprite-img{image-rendering:auto;object-fit:contain}
+.sprite-img{image-rendering:auto;object-fit:contain;filter:var(--cos-tint,none)}
 .sprite-img.flip{scale:-1 1} /* アニメーションのtransformと干渉しないよう scale プロパティで反転 */
-.aura-6{filter:drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px rgba(255,212,90,.55))}
-.aura-7{filter:drop-shadow(0 0 6px #6de7ff) drop-shadow(0 0 12px rgba(109,231,255,.6))}
-.aura-8{filter:drop-shadow(0 0 7px #c56bff) drop-shadow(0 0 14px rgba(197,107,255,.65))}
-.aura-9{filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 12px #ff82e8) drop-shadow(0 0 18px rgba(110,245,255,.7))}
+.aura-6{filter:var(--cos-tint,) drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px rgba(255,212,90,.55))}
+.aura-7{filter:var(--cos-tint,) drop-shadow(0 0 6px #6de7ff) drop-shadow(0 0 12px rgba(109,231,255,.6))}
+.aura-8{filter:var(--cos-tint,) drop-shadow(0 0 7px #c56bff) drop-shadow(0 0 14px rgba(197,107,255,.65))}
+.aura-9{filter:var(--cos-tint,) drop-shadow(0 0 6px #fff) drop-shadow(0 0 12px #ff82e8) drop-shadow(0 0 18px rgba(110,245,255,.7))}
 .skin-card{background:var(--ink);border:2px solid var(--line);border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center;transition:border-color .15s;color:var(--fg)}
 .skin-card:hover{border-color:var(--accent)}
 .skin-card.selected{border-color:var(--accent);background:var(--accent)18}
@@ -415,7 +415,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .drops .item{padding:6px 9px;gap:2px}
 .sheet .act{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 /* 下端のボタン（閉じる等）は、内容が長くても常に見える位置に留める（スマホで見えなくなるのを防ぐ） */
-.sheet>.act:last-child{position:sticky;bottom:0;z-index:2;background:var(--panel);padding:8px 0 2px}
+.sheet>.act:last-child,.sheet>.dxf>.act:last-child{position:sticky;bottom:0;z-index:2;background:var(--panel);padding:8px 0 2px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:60;background:#0a1016;border:1px solid var(--accent);color:var(--fg);padding:8px 14px;border-radius:4px;font-size:13px;max-width:calc(100vw - 32px);text-align:center}
 .rk-wrap{overflow-x:auto;max-height:260px;border:1px solid var(--line);border-radius:4px;background:var(--ink)}
 .rk-table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
@@ -834,6 +834,54 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .tut-text b{display:inline;margin:0;font-family:inherit;color:#ffd77a}
 @keyframes tutlulu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.tut-bubble.lulu{animation:none}}
+/* ================= ガチャ「福音のくじ」・おまけ装備・ログインボーナス ================= */
+.cos-stage{position:relative}
+.cos-stage>.sprite-img,.cos-stage>svg,#spr-player>.sprite-img,#spr-player>svg{position:relative;z-index:1}
+#spr-player{position:relative;overflow:visible}
+.cos-ov{position:absolute;inset:0;pointer-events:none;z-index:0}
+.cos-ov>*{position:absolute}
+.cos-back{inset:0;z-index:0}
+.cos-wing{position:absolute;top:18%;width:calc(52% * var(--ws,1));height:auto;opacity:.95;transform-origin:50% 60%;animation:cosflap 2.4s ease-in-out infinite}
+.cos-wing.l{right:48%}
+.cos-wing.r{left:48%;scale:-1 1}
+.cos-wing.glow{filter:drop-shadow(0 0 6px var(--wc))}
+@keyframes cosflap{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(5deg)}}
+.cos-halo{left:28%;top:-9%;width:44%;height:11%;border:3px solid var(--hc);border-radius:50%;box-shadow:0 0 8px var(--hc),inset 0 0 6px var(--hc);z-index:2;animation:coshalo 2.6s ease-in-out infinite}
+@keyframes coshalo{0%,100%{transform:translateY(0)}50%{transform:translateY(-4%)}}
+.cos-bell{left:10%;right:10%;top:-4%;bottom:6%;display:grid;place-items:center;z-index:0;animation:cosglow 3s ease-in-out infinite}
+.cos-bell::before{content:'';position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--bc) 55%,transparent),transparent 68%)}
+.cos-bell svg{position:relative;width:78%;height:auto;opacity:.9;filter:drop-shadow(0 0 8px var(--bc))}
+.cos-bell.big{left:-18%;right:-18%;top:-16%;bottom:2%}
+@keyframes cosglow{0%,100%{opacity:.85}50%{opacity:1}}
+.cos-ring{left:6%;right:6%;bottom:-3%;height:16%;border:2px solid var(--fc);border-radius:50%;box-shadow:0 0 8px var(--fc),inset 0 0 8px color-mix(in srgb,var(--fc) 60%,transparent);animation:cosring 2.4s ease-in-out infinite}
+@keyframes cosring{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.06);opacity:1}}
+.cos-circle{left:-4%;right:-4%;bottom:-5%;height:22%;border:2px dashed var(--fc);border-radius:50%;box-shadow:0 0 10px var(--fc);animation:cosspin 8s linear infinite}
+.cos-circle::after{content:'';position:absolute;inset:18%;border:2px solid var(--fc);border-radius:50%;box-shadow:0 0 6px var(--fc)}
+@keyframes cosspin{to{rotate:360deg}}
+.cos-glow{inset:-8%;border-radius:50%;background:radial-gradient(circle,transparent 38%,color-mix(in srgb,var(--gc) 45%,transparent) 66%,transparent 74%);animation:cosglow 2.2s ease-in-out infinite;z-index:0}
+.cos-glow.rainbow{background:conic-gradient(from 0deg,rgba(255,106,122,.5),rgba(255,226,122,.5),rgba(139,224,90,.5),rgba(106,192,255,.5),rgba(180,140,255,.5),rgba(255,106,122,.5));-webkit-mask:radial-gradient(circle,transparent 40%,#000 62%,transparent 75%);mask:radial-gradient(circle,transparent 40%,#000 62%,transparent 75%);animation:cosspin 6s linear infinite}
+.cos-dots{inset:0;z-index:2;overflow:visible}
+.cos-dots b{position:absolute;left:var(--x);bottom:6%;width:4px;height:4px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c);opacity:0;animation:cosdot var(--d) ease-out var(--w) infinite}
+@keyframes cosdot{0%{opacity:0;transform:translateY(0)}20%{opacity:.95}100%{opacity:0;transform:translateY(-120px)}}
+@media (prefers-reduced-motion:reduce){.cos-wing,.cos-halo,.cos-bell,.cos-ring,.cos-circle,.cos-glow,.cos-dots b{animation:none}.cos-dots b{opacity:.7}}
+.gc-top{display:flex;align-items:center;gap:14px;margin:6px 0 10px}
+.gc-stage{position:relative;flex:none;width:130px;height:130px;display:grid;place-items:center;border-radius:12px;background:radial-gradient(circle at 50% 70%,rgba(255,212,90,.18),rgba(0,0,0,.25))}
+.gc-bal .gc-drops{font-size:22px;font-weight:900}.gc-bal .gc-drops small{font-size:12px;font-weight:400}
+.gc-det{margin:10px 0 0}.gc-det summary{cursor:pointer;font-weight:700}
+.gc-rates{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gc-rates th,.gc-rates td{padding:4px 6px;border-bottom:1px solid #2b3245;text-align:left}
+.gc-slot{margin:6px 0}.gc-slot b{display:block;font-size:12px;color:var(--muted,#9aa3bd);margin-bottom:3px}
+.gc-opts{display:flex;flex-wrap:wrap;gap:6px}
+.gc-resl{display:grid;gap:6px;max-height:54vh;overflow:auto;margin:6px 0}
+.gc-res{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid;border-radius:8px;background:rgba(255,255,255,.04)}
+.gc-res b{flex:none;width:34px}.gc-res span{flex:1;min-width:0}.gc-res small{opacity:.7}.gc-res em{flex:none;color:#ffd45a;font-style:normal;font-weight:900;font-size:12px}
+.gc-res.r3{background:linear-gradient(90deg,rgba(255,212,90,.18),rgba(255,255,255,.04))}.gc-res.r2{background:linear-gradient(90deg,rgba(180,140,255,.16),rgba(255,255,255,.04))}
+.lg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.lg-cell{position:relative;display:flex;flex-direction:column;align-items:center;padding:8px 2px;border:1px solid #2b3245;border-radius:8px;background:rgba(255,255,255,.03)}
+.lg-cell small{font-size:10px;opacity:.7}.lg-cell b{font-size:15px}.lg-cell.got{opacity:.5}.lg-cell.got span{position:absolute;right:4px;top:2px;color:#58c98a;font-weight:900}
+.lg-cell.today{border-color:#e9b43c;background:rgba(233,180,60,.14);box-shadow:0 0 10px rgba(233,180,60,.4)}
+.lg-cell:last-child{grid-column:span 1}
+.dxf{display:contents}
+.sheet.dxon{border:2px solid var(--dxb);background:var(--dxbg),var(--panel);box-shadow:0 0 18px var(--dxg),inset 0 0 22px var(--dxg)}
 </style>
 
 <div id="app" class="wrap">
@@ -944,7 +992,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v102';
+const APP_VERSION = 'rogue-v103';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -1856,6 +1904,83 @@ const TOWER_TITLES = [
   { id: 'a_gold1m',  name: '黄金王',         desc: '実績「黄金王」で獲得' },
   { id: 'a_nodmg',   name: '完全なる勝利',   desc: '実績「完全なる勝利」で獲得' }
 ];
+/* ================= 鐘のしずく・ガチャ「福音のくじ」データ =================
+   景品は見た目のみ（ゲーム性に影響しない）。提供割合は画面にも表示する。 */
+const GACHA_CFG = {
+  costSingle: 3, costTen: 30,
+  rates: [60, 28, 10, 2],         // N / R / SR / SSR (%)
+  pity: 50,                        // SSRが出ないまま引いた回数がこの値に達すると次はSSR確定
+  refund: [1, 1, 2, 3]             // ダブり時に還元されるしずく
+};
+const GACHA_RARITY = [
+  { k: 'N',   name: 'N',   color: '#9aa7b4' },
+  { k: 'R',   name: 'R',   color: '#5ad0e0' },
+  { k: 'SR',  name: 'SR',  color: '#b48cff' },
+  { k: 'SSR', name: 'SSR', color: '#ffd45a' }
+];
+const COS_SLOTS = [
+  { k: 'tint',  name: '染め' },
+  { k: 'back',  name: '背中' },
+  { k: 'floor', name: '足元' },
+  { k: 'aura',  name: 'オーラ' }
+];
+// おまけ装備。fx: tint=CSSフィルター / その他=オーバーレイの種類と色
+const COSMETICS = [
+  // N: 染め
+  { id: 'c_tint_red',   rar: 0, slot: 'tint', name: '紅蓮の染め',   fx: 'hue-rotate(-40deg) saturate(1.35)' },
+  { id: 'c_tint_sea',   rar: 0, slot: 'tint', name: '深海の染め',   fx: 'hue-rotate(170deg) saturate(1.2)' },
+  { id: 'c_tint_leaf',  rar: 0, slot: 'tint', name: '若葉の染め',   fx: 'hue-rotate(80deg) saturate(1.2)' },
+  { id: 'c_tint_vio',   rar: 0, slot: 'tint', name: '菫の染め',     fx: 'hue-rotate(250deg) saturate(1.1)' },
+  { id: 'c_tint_pink',  rar: 0, slot: 'tint', name: '桃色の染め',   fx: 'hue-rotate(320deg) saturate(1.5) brightness(1.05)' },
+  { id: 'c_tint_mono',  rar: 0, slot: 'tint', name: '月影のモノクロ', fx: 'grayscale(1) contrast(1.1)' },
+  { id: 'c_tint_sepia', rar: 0, slot: 'tint', name: '古書のセピア', fx: 'sepia(.85) saturate(1.2)' },
+  // R
+  { id: 'c_floor_light', rar: 1, slot: 'floor', name: '光の輪',       fx: 'ring', col: '#fff2b0' },
+  { id: 'c_floor_petal', rar: 1, slot: 'floor', name: '花の輪',       fx: 'ring', col: '#ffb3d1' },
+  { id: 'c_floor_star',  rar: 1, slot: 'floor', name: '星の輪',       fx: 'ring', col: '#9fd4ff' },
+  { id: 'c_back_wing',   rar: 1, slot: 'back',  name: '小さな白い羽', fx: 'wing', col: '#ffffff', size: 0.7 },
+  { id: 'c_back_halo',   rar: 1, slot: 'back',  name: '天使の光輪',   fx: 'halo', col: '#ffe27a' },
+  { id: 'c_aura_fly',    rar: 1, slot: 'aura',  name: '蛍の光',       fx: 'dots', col: '#d8ff8a' },
+  // SR
+  { id: 'c_back_angel',  rar: 2, slot: 'back',  name: '天使の翼',     fx: 'wing', col: '#fff6d8', size: 1 },
+  { id: 'c_back_devil',  rar: 2, slot: 'back',  name: '悪魔の翼',     fx: 'wing', col: '#6a2a5a', size: 1, bat: 1 },
+  { id: 'c_back_bell',   rar: 2, slot: 'back',  name: '鐘の光背',     fx: 'bell', col: '#ffd45a' },
+  { id: 'c_floor_circle_r', rar: 2, slot: 'floor', name: '紅の魔法陣', fx: 'circle', col: '#ff6a7a' },
+  { id: 'c_floor_circle_b', rar: 2, slot: 'floor', name: '蒼の魔法陣', fx: 'circle', col: '#6ac0ff' },
+  { id: 'c_aura_fire',   rar: 2, slot: 'aura',  name: '炎のオーラ',   fx: 'glow', col: '#ff7a3a', dots: '#ffb36a' },
+  { id: 'c_aura_ice',    rar: 2, slot: 'aura',  name: '氷のきらめき', fx: 'glow', col: '#7fd8ff', dots: '#e6f8ff' },
+  // SSR
+  { id: 'c_aura_rainbow', rar: 3, slot: 'aura', name: '七色のオーラ', fx: 'rainbow' },
+  { id: 'c_aura_stardust', rar: 3, slot: 'aura', name: '星屑の嵐',    fx: 'glow', col: '#ffe27a', dots: '#ffffff', many: 1 },
+  { id: 'c_back_star',   rar: 3, slot: 'back',  name: '星屑の翼',     fx: 'wing', col: '#9fe8ff', size: 1.15, glow: 1 },
+  { id: 'c_back_gospel', rar: 3, slot: 'back',  name: '福音の大鐘',   fx: 'bell', col: '#ffe27a', big: 1 }
+];
+// ガチャ称号（既存の称号一覧に合流する）
+const GACHA_TITLES = [
+  { id: 'g_t1', rar: 0, name: 'しずくの拾い人' }, { id: 'g_t2', rar: 0, name: '鐘守の見習い' }, { id: 'g_t3', rar: 0, name: '里の常連' },
+  { id: 'g_t4', rar: 1, name: '福音のくじ運' }, { id: 'g_t5', rar: 1, name: '鐘の音に導かれし者' },
+  { id: 'g_t6', rar: 2, name: '百年目の冒険者' }, { id: 'g_t7', rar: 2, name: '星降る夜の旅人' },
+  { id: 'g_t8', rar: 3, name: '終焉に抗う鐘' }
+].map(t => ({ id: t.id, rar: t.rar, name: t.name, desc: 'ガチャ「福音のくじ」で獲得', gacha: true }));
+// 図鑑の飾り枠（図鑑・実績画面の枠）
+const DEX_FRAMES = [
+  { id: 'f_wood',  rar: 0, name: '木目の額縁',   bd: '#8a5a2a', bg: 'rgba(138,90,42,.12)', glow: 'rgba(138,90,42,.35)' },
+  { id: 'f_leaf',  rar: 1, name: '若葉の額縁',   bd: '#58c98a', bg: 'rgba(88,201,138,.10)', glow: 'rgba(88,201,138,.45)' },
+  { id: 'f_sea',   rar: 1, name: '深海の額縁',   bd: '#4aa8e0', bg: 'rgba(74,168,224,.10)', glow: 'rgba(74,168,224,.45)' },
+  { id: 'f_royal', rar: 2, name: '王家の金縁',   bd: '#e9b43c', bg: 'rgba(233,180,60,.12)', glow: 'rgba(233,180,60,.6)' },
+  { id: 'f_sakura', rar: 3, name: '福音の花吹雪', bd: '#ffa3c9', bg: 'rgba(255,163,201,.12)', glow: 'rgba(255,163,201,.7)' }
+];
+// 称号をチュートリアル等の既存の一覧に合流（装備・表示は既存の称号UIがそのまま使える）
+GACHA_TITLES.forEach(t => TOWER_TITLES.push(t));
+// 抽選プール（景品を混ぜる＝闇鍋）
+const GACHA_POOL = [[], [], [], []];
+COSMETICS.forEach(c => GACHA_POOL[c.rar].push({ type: 'cos', id: c.id, name: c.name }));
+GACHA_TITLES.forEach(t => GACHA_POOL[t.rar].push({ type: 'title', id: t.id, name: t.name }));
+DEX_FRAMES.forEach(f => GACHA_POOL[f.rar].push({ type: 'frame', id: f.id, name: f.name }));
+// ログインボーナス（7日周期）
+const LOGIN_REWARDS = [2, 2, 3, 2, 3, 3, 8];
+// 初踏破でもらえるしずく（難易度ごと）
+const FIRST_CLEAR_DROPS = { novice: 1, mid: 2, high: 3 };
 /* ================= 深淵ダンジョンデータ ================= */
 const ABYSS_CURSES = [
   { lv: 1,  id: 'healHalf',  name: '回復半減',     desc: '回復量 -50%（薬・回復スキル・泉）' },
@@ -2676,7 +2801,8 @@ function auraClass(p) {
 }
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う
-  const fr = skinFrames(sk), au = auraClass(G.p);
+  const fr = skinFrames(sk), au = auraClass(G.p), tn = (typeof cosTint === 'function') ? cosTint(G.p) : '';
+  if (tn) extraStyle = '--cos-tint:' + tn + ';' + (extraStyle || '');
   if (fr.img) return `<img class="sprite sprite-img${au}" src="${fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
   return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
@@ -3040,6 +3166,7 @@ function checkAchievements(ev = null, silent = false) {
       }
     }
     unlocked.push(a);
+    try { rewardDropsAch(a); } catch (e) {}
     if (!silent && !G.headless) {
       const tObj = a.titleId && TOWER_TITLES.find(t => t.id === a.titleId);
       const tail = p.ending ? `🪙+${a.coins}` : `🪙+${a.coins}(クリア後付与)`;
@@ -3339,6 +3466,14 @@ function load() {
     if ((Number(s.lv) || 1) > 1 || (s.stats && Number(s.stats.runs) > 0)) p.hints.guide = true;   // 進行済みのセーブはルルの初回紹介を済ませた扱い
     p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
     p.story = { seen: {} }; if (s.story && s.story.seen && typeof s.story.seen === 'object') for (const k of Object.keys(STORY)) if (s.story.seen[k]) p.story.seen[k] = true;
+    p.gacha = { drops: num(s.gacha && s.gacha.drops, 0, 0, 999999), pity: num(s.gacha && s.gacha.pity, 0, 0, 999), total: num(s.gacha && s.gacha.total, 0, 0, 999999), owned: {}, eq: {}, frame: null };
+    if (s.gacha && typeof s.gacha === 'object') {
+      if (s.gacha.owned && typeof s.gacha.owned === 'object') for (const k of Object.keys(s.gacha.owned)) { const n = Math.floor(Number(s.gacha.owned[k])); if (n > 0 && /^(cos|title|frame):/.test(k)) p.gacha.owned[k] = Math.min(n, 9999); }
+      if (s.gacha.eq && typeof s.gacha.eq === 'object') for (const sl of COS_SLOTS) { const c = cosById(s.gacha.eq[sl.k]); p.gacha.eq[sl.k] = c && c.slot === sl.k && p.gacha.owned['cos:' + c.id] ? c.id : null; }
+      p.gacha.frame = DEX_FRAMES.some(f => f.id === s.gacha.frame) && p.gacha.owned['frame:' + s.gacha.frame] ? s.gacha.frame : null;
+    }
+    p.login = { last: typeof (s.login && s.login.last) === 'string' ? s.login.last.slice(0, 10) : '', claims: num(s.login && s.login.claims, 0, 0, 99999) };
+    p.goalDrops = {}; if (s.goalDrops && typeof s.goalDrops === 'object') for (const k of Object.keys(s.goalDrops)) if (s.goalDrops[k]) p.goalDrops[String(k).slice(0, 30)] = true;
     p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
@@ -4878,6 +5013,7 @@ function finishRun(result) {
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared[run.d.id][run.df.id] = true;
     queueStory(p, run.d.id, run.df.id, firstClear);
+    if (firstClear && FIRST_CLEAR_DROPS[run.df.id]) addDrops(FIRST_CLEAR_DROPS[run.df.id], '初踏破');
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {
     p.hp = maxHp(p);  // 街帰還: HP全回復
@@ -5000,6 +5136,7 @@ function checkGoals(silent) {
   const p = G.p; if (!p) return;
   if (!G._goalDone) { G._goalDone = {}; silent = true; }
   for (const { g, ok } of goalState(p)) {
+    if (ok && !(p.goalDrops && p.goalDrops[g.id])) { p.goalDrops = p.goalDrops || {}; p.goalDrops[g.id] = true; addDrops(2, '目標達成'); }
     if (ok && !G._goalDone[g.id]) {
       G._goalDone[g.id] = true;
       if (!silent) G._goalJoy = goalState(p).every(x => x.ok) ? 'surprise' : 'joy'; // ルルが次に広場で見せる表情
@@ -5674,6 +5811,10 @@ const ACTS = {
   buyBuildBook() { buyBuildBook(); },
   npcTalk(d) { npcTalk(d.f); },
   openCredits() { showCredits(); },
+  gachaPull(d) { const res = gachaPull(Number(d.n) === 10 ? 10 : 1); if (res) { renderTown(); renderHUD && renderHUD(); openGachaResult(res); } },
+  gachaEquip(d) { const g = ensureGacha(G.p); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) g.eq[d.slot] = null; else if (g.owned['cos:' + d.id] && cosById(d.id) && cosById(d.id).slot === d.slot) g.eq[d.slot] = d.id; save(); renderTown(); },
+  gachaFrame(d) { const g = ensureGacha(G.p); if (!d.id) g.frame = null; else if (g.owned['frame:' + d.id]) g.frame = d.id; save(); renderTown(); },
+  loginClaim() { loginClaim(); },
   openStoryList() { openStoryList(); },
   storyPlay(d) { closeModal(); playStory(d.id); },
   hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
@@ -6054,6 +6195,7 @@ function renderPlaza() {
     { v: 'shop',  icon: '💰', name: '売却専門ショップ',       desc: 'アイテム売却・自動売却設定' },
     { v: 'smith', icon: '🔨', name: '鍛冶屋「鉄の大地」',     desc: '武器・防具の強化' },
     { v: 'bank',  icon: '🏦', name: '福音銀行',               desc: 'ゴールドの預け入れ・引き出し' },
+    { v: 'gacha', icon: '🔔', name: '福音のくじ',             desc: '鐘のしずくで回す・着せ替え' },
   ];
 
   $('#view-town').innerHTML = `
@@ -6080,7 +6222,9 @@ function renderFacility(fac) {
   const p = G.p;
   let content = '';
 
-  if (fac === 'inn') {
+  if (fac === 'gacha') {
+    content = renderGachaFacility(p);
+  } else if (fac === 'inn') {
     content = `
       <h2>宿屋「満月亭」</h2>
       <p class="sub">MPを無料で全回復します。</p>
@@ -6988,8 +7132,8 @@ function renderBattle() {
     $('#b-ename').textContent = '探索中…'; $('#b-ehp').style.width = '0%'; $('#b-ehpn').textContent = '';
     $('#spr-enemy').innerHTML = ''; lastEnemyShape = '';
   }
-  { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1);
-    if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG(); box.dataset.k = k; } }
+  { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1) + ':' + cosKey(G.p);
+    if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG() + cosOverlayHtml(); box.dataset.k = k; } }
   const stTxt = run.guard > 0 ? `鉄壁 あと${run.guard}回` : (run.queued ? `予約：${SK[run.queued].name}` : '');
   $('#b-status').innerHTML = run.tower
     ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
@@ -7417,7 +7561,7 @@ function renderStatus() {
     ${powerPanel}
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
-        <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
+        <div class="pt-img cos-stage">${skinArt(pSkin, 'width:96px;height:96px')}${cosOverlayHtml(p)}</div>
         <div class="pt-info">
           <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span>${(() => { const tid = p.tower && p.tower.title; const tt = tid && TOWER_TITLES.find(x => x.id === tid); return tt ? ` <span class="badge">${esc(tt.name)}</span>` : ''; })()}</div>
           <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(tierName(pSkin, pTier))}</div>
@@ -7950,7 +8094,9 @@ function openDexModal(tab = 'enemies') {
       </div>`;
   }
 
-  $('#m-sheet').innerHTML = `
+  { const fr = DEX_FRAMES.find(f => p && p.gacha && f.id === p.gacha.frame);
+    G._dexFrame = fr ? `--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}` : ''; }
+  $('#m-sheet').innerHTML = `<div class="dxf">
     <h2 class="win" id="m-title">📖 図鑑・実績</h2>
     ${dexBar(allDone, allTotal, '全体のコンプ率')}
     <div class="dex-tabs">
@@ -7959,7 +8105,8 @@ function openDexModal(tab = 'enemies') {
       <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）${Object.keys(fresh.a || {}).length && G.dexTab !== 'ach' ? '<i class="st-dot"></i>' : ''}</button>
     </div>
     ${body}
-    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div></div>`;
+  { const fr = DEX_FRAMES.find(f => p && p.gacha && f.id === p.gacha.frame), sh = $('#m-sheet'); sh.classList.toggle('dxon', !!fr); if (fr) { sh.style.setProperty('--dxb', fr.bd); sh.style.setProperty('--dxg', fr.glow); sh.style.setProperty('--dxbg', fr.bg); } }
   $('#modal').hidden = false; G.modalOpen = true;
   // 見た時点でNEWを消す（このタブ分）。ステータスのドットも更新
   if (p && p.dexNew) { const k = G.dexTab === 'enemies' ? 'e' : G.dexTab === 'items' ? 'i' : 'a'; if (Object.keys(p.dexNew[k] || {}).length) { p.dexNew[k] = {}; save(); if (G.view === 'status') renderStatus(); } }
@@ -8287,6 +8434,7 @@ function startRunGuarded(dId, dfId) {
 }
 function closeModal() {
   if (G._charSelectOpen) return;
+  { const sh = $('#m-sheet'); if (sh) { sh.classList.remove('dxon'); sh.removeAttribute('data-dx'); sh.style.removeProperty('--dxb'); sh.style.removeProperty('--dxg'); sh.style.removeProperty('--dxbg'); } }
   if ($('#fxd-arena')) {
     _fxDbgState.raged = false;
     _fxDbgState.buff = 'none';
@@ -9006,7 +9154,7 @@ function showTitle() {
     G._titleUp = false;
     Sound.play('bell');
     el.classList.add('out');
-    setTimeout(() => { el.remove(); try { renderAll(); } catch (e) {} }, isReducedMotion() ? 0 : 450);
+    setTimeout(() => { el.remove(); try { renderAll(); } catch (e) {} setTimeout(() => { try { loginBonusPrompt(); } catch (e) {} }, 500); }, isReducedMotion() ? 0 : 450);
   };
   el.addEventListener('click', e => { if (e.target.closest('#ttl-credit')) { e.stopPropagation(); showCredits(); return; } close(); });
   el.addEventListener('keydown', e => { if (e.target.id === 'ttl-credit') return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); close(); } });
@@ -9138,6 +9286,159 @@ function openStoryList() {
   $('#m-sheet').innerHTML = `<h2 id="m-title">物語を見返す</h2><p class="sub" style="margin:0 0 6px">各ダンジョンの上級をクリアすると解放されます。</p><div style="max-height:56vh;overflow:auto">${rows}</div><div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
 }
+/* ================= 鐘のしずく・ガチャ「福音のくじ」・ログインボーナス ================= */
+function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function ensureGacha(p) {
+  if (!p.gacha || typeof p.gacha !== 'object') p.gacha = {};
+  const g = p.gacha;
+  g.drops = Math.max(0, Math.floor(Number(g.drops) || 0)); g.pity = Math.max(0, Math.floor(Number(g.pity) || 0)); g.total = Math.max(0, Math.floor(Number(g.total) || 0));
+  if (!g.owned || typeof g.owned !== 'object') g.owned = {};
+  if (!g.eq || typeof g.eq !== 'object') g.eq = {};
+  for (const s of COS_SLOTS) if (typeof g.eq[s.k] !== 'string') g.eq[s.k] = null;
+  if (typeof g.frame !== 'string') g.frame = null;
+  if (!p.login || typeof p.login !== 'object') p.login = { last: '', claims: 0 };
+  p.login.claims = Math.max(0, Math.floor(Number(p.login.claims) || 0)); if (typeof p.login.last !== 'string') p.login.last = '';
+  return g;
+}
+function addDrops(n, why) {
+  const p = G.p; if (!p || !(n > 0)) return;
+  ensureGacha(p).drops += n;
+  if (!G.headless) setTimeout(() => toast(`💧 鐘のしずく +${n}${why ? '（' + why + '）' : ''}`), 1800);
+}
+// 実績・初踏破・目標達成の報酬（初回のみ呼ばれる）
+function rewardDropsAch(a) { addDrops(Math.max(2, Math.round((a.coins || 0) / 3)), '実績'); }
+function cosById(id) { return COSMETICS.find(c => c.id === id) || null; }
+
+// ---------- 抽選 ----------
+function gachaRollRarity(forceMin) {
+  const g = ensureGacha(G.p);
+  if (g.pity + 1 >= GACHA_CFG.pity) return 3;
+  let r = rng() * 100, k = 0;
+  for (; k < 3; k++) { r -= GACHA_CFG.rates[k]; if (r < 0) break; }
+  return Math.max(k, forceMin || 0);
+}
+function gachaPick(rar) { const pool = GACHA_POOL[rar]; return pool[Math.floor(rng() * pool.length) % pool.length]; }
+function gachaPull(n) {
+  const p = G.p; if (!p || G.run) return null;
+  const g = ensureGacha(p), cost = n === 10 ? GACHA_CFG.costTen : GACHA_CFG.costSingle;
+  if (g.drops < cost) { toast('鐘のしずくが足りません'); return null; }
+  g.drops -= cost;
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const rar = gachaRollRarity(n === 10 && i === 9 ? 2 : 0), it = gachaPick(rar);
+    g.total++; g.pity = rar === 3 ? 0 : g.pity + 1;
+    const key = it.type + ':' + it.id, had = !!g.owned[key];
+    g.owned[key] = (g.owned[key] || 0) + 1;
+    let refund = 0;
+    if (had) { refund = GACHA_CFG.refund[rar]; g.drops += refund; }
+    else if (it.type === 'title') { p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }; p.tower.titles = p.tower.titles || []; if (!p.tower.titles.includes(it.id)) p.tower.titles.push(it.id); }
+    out.push({ rar, it, isNew: !had, refund });
+  }
+  try { save(); } catch (e) {}
+  return out;
+}
+
+// ---------- 見た目への反映 ----------
+function cosTint(p) { const c = p && p.gacha && p.gacha.eq && cosById(p.gacha.eq.tint); return c ? c.fx : ''; }
+const WING_PATH = 'M50 34 C 34 2, 6 4, 0 26 C 10 22, 16 28, 13 38 C 23 33, 29 40, 25 50 C 37 44, 43 51, 50 42 Z';
+const BAT_PATH = 'M50 34 L12 4 L20 22 L2 30 L16 38 L8 54 L30 44 L40 58 Z';
+const BELL_PATH = 'M50 6 C 44 6 42 10 42 14 C 30 18 26 30 26 44 L 18 56 L 82 56 L 74 44 C 74 30 70 18 58 14 C 58 10 56 6 50 6 Z M 42 60 A 8 8 0 0 0 58 60 Z';
+function cosOverlayHtml(p) {
+  p = p || G.p; if (!p || !p.gacha) return '';
+  const eq = p.gacha.eq || {}, parts = [];
+  const back = cosById(eq.back), floor = cosById(eq.floor), aura = cosById(eq.aura);
+  if (back) {
+    const col = back.col;
+    if (back.fx === 'wing') {
+      const sz = back.size || 1, path = back.bat ? BAT_PATH : WING_PATH;
+      const w = (side) => `<svg class="cos-wing ${side}${back.glow ? ' glow' : ''}" viewBox="0 0 100 62" style="--wc:${col};--ws:${sz}"><path d="${path}" fill="${col}" stroke="rgba(20,20,40,.55)" stroke-width="1.6"/></svg>`;
+      parts.push(`<div class="cos-back">${w('l')}${w('r')}</div>`);
+    } else if (back.fx === 'halo') parts.push(`<i class="cos-halo" style="--hc:${col}"></i>`);
+    else if (back.fx === 'bell') parts.push(`<div class="cos-bell${back.big ? ' big' : ''}" style="--bc:${col}"><svg viewBox="0 0 100 70"><path d="${BELL_PATH}" fill="${col}" opacity=".85" stroke="rgba(60,30,0,.5)" stroke-width="1.5"/></svg></div>`);
+  }
+  if (floor) {
+    if (floor.fx === 'ring') parts.push(`<i class="cos-ring" style="--fc:${floor.col}"></i>`);
+    else if (floor.fx === 'circle') parts.push(`<i class="cos-circle" style="--fc:${floor.col}"></i>`);
+  }
+  if (aura) {
+    const n = aura.many ? 16 : 9, cols = aura.fx === 'rainbow' ? ['#ff6a7a', '#ffb347', '#ffe27a', '#8be05a', '#6ac0ff', '#b48cff'] : [aura.dots || aura.col];
+    if (aura.fx === 'glow') parts.push(`<i class="cos-glow" style="--gc:${aura.col}"></i>`);
+    if (aura.fx === 'rainbow') parts.push('<i class="cos-glow rainbow"></i>');
+    let dots = ''; for (let i = 0; i < n; i++) dots += `<b style="--x:${(8 + (i * 83) % 84)}%;--d:${(1.8 + (i * 7) % 5 / 2).toFixed(2)}s;--w:${(-(i * 0.43)).toFixed(2)}s;--c:${cols[i % cols.length]}"></b>`;
+    parts.push(`<div class="cos-dots">${dots}</div>`);
+  }
+  return parts.length ? `<div class="cos-ov" aria-hidden="true">${parts.join('')}</div>` : '';
+}
+function cosKey(p) { const g = p && p.gacha; return g && g.eq ? COS_SLOTS.map(s => g.eq[s.k] || '').join('|') : ''; }
+// 立ち絵 + おまけ装備の見た目（街・ステータス用）
+function heroWithCos(sk, style) { return `<div class="cos-stage">${skinArt(sk, style)}${cosOverlayHtml()}</div>`; }
+
+// ---------- 画面 ----------
+function gachaRatesHtml() {
+  const r = GACHA_CFG.rates;
+  const rows = GACHA_RARITY.map((q, i) => `<tr><td style="color:${q.color};font-weight:700">${q.name}</td><td>${r[i]}%</td><td>${GACHA_POOL[i].length}種</td><td>ダブり → しずく${GACHA_CFG.refund[i]}</td></tr>`).join('');
+  return `<table class="gc-rates"><tr><th>ランク</th><th>提供割合</th><th>景品数</th><th>ダブり</th></tr>${rows}</table>
+    <p class="sub" style="margin:6px 0 0">・10連の最後の1枠はSR以上が確定。<br>・SSRが出ないまま${GACHA_CFG.pity}回引くと、次の1回はSSR確定（天井）。<br>・景品はすべて見た目だけで、強さには影響しません。「鐘のしずく」はゲーム内で入手でき、お金では買えません。</p>`;
+}
+function renderGachaFacility(p) {
+  const g = ensureGacha(p), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby')), left = GACHA_CFG.pity - g.pity;
+  const owned = type => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).map(k => k.slice(type.length + 1));
+  const slotRow = s => {
+    const mine = COSMETICS.filter(c => c.slot === s.k && g.owned['cos:' + c.id]);
+    return `<div class="gc-slot"><b>${s.name}</b><div class="gc-opts"><button class="pill ${!g.eq[s.k] ? 'on' : ''}" data-act="gachaEquip" data-slot="${s.k}" data-id="">なし</button>${mine.map(c => `<button class="pill ${g.eq[s.k] === c.id ? 'on' : ''}" style="border-color:${GACHA_RARITY[c.rar].color}" data-act="gachaEquip" data-slot="${s.k}" data-id="${c.id}">${esc(c.name)}</button>`).join('')}${mine.length ? '' : '<span class="sub">未入手</span>'}</div></div>`;
+  };
+  const frames = DEX_FRAMES.filter(f => g.owned['frame:' + f.id]);
+  const cnt = (type, list) => owned(type).length + '/' + list.length;
+  return `
+    <h2>福音のくじ</h2>
+    <p class="sub" style="margin:0 0 8px">鐘のしずくで回せる、見た目だけのくじ引き。称号・図鑑の飾り・おまけ装備が出ます。</p>
+    <div class="gc-top"><div class="gc-stage">${heroWithCos(sk, 'width:110px;height:110px')}</div>
+      <div class="gc-bal"><div class="gc-drops">💧 <b>${fmt(g.drops)}</b><small> 鐘のしずく</small></div>
+        <small class="sub">天井まであと ${left} 回／累計 ${g.total} 回</small></div></div>
+    <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="1" ${g.drops >= GACHA_CFG.costSingle ? '' : 'disabled'}>1回（💧${GACHA_CFG.costSingle}）</button>
+      <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="10" ${g.drops >= GACHA_CFG.costTen ? '' : 'disabled'}>10連（💧${GACHA_CFG.costTen}）</button></div>
+    <details class="gc-det" open><summary>提供割合・天井</summary>${gachaRatesHtml()}</details>
+    <p class="sub" style="margin:10px 0 4px"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／デイリーダンジョン</p>
+    <div class="panel" style="margin-top:10px"><h2 style="margin:0 0 6px">おまけ装備（${cnt('cos', COSMETICS)}）</h2>${COS_SLOTS.map(slotRow).join('')}</div>
+    <div class="panel" style="margin-top:10px"><h2 style="margin:0 0 6px">図鑑の飾り（${cnt('frame', DEX_FRAMES)}）</h2>
+      <div class="gc-opts"><button class="pill ${!g.frame ? 'on' : ''}" data-act="gachaFrame" data-id="">なし</button>${frames.map(f => `<button class="pill ${g.frame === f.id ? 'on' : ''}" style="border-color:${GACHA_RARITY[f.rar].color}" data-act="gachaFrame" data-id="${f.id}">${esc(f.name)}</button>`).join('')}${frames.length ? '' : '<span class="sub">未入手</span>'}</div></div>
+    <p class="sub" style="margin:10px 0 0">称号（${cnt('title', GACHA_TITLES)}）は、ステータス＞称号の一覧から付け替えられます。</p>`;
+}
+function openGachaResult(res) {
+  const rows = res.map(r => {
+    const q = GACHA_RARITY[r.rar], tp = r.it.type === 'cos' ? 'おまけ装備' : r.it.type === 'title' ? '称号' : '図鑑の飾り';
+    return `<div class="gc-res r${r.rar}" style="border-color:${q.color}"><b style="color:${q.color}">${q.name}</b><span>${esc(r.it.name)}<small> ${tp}</small></span>${r.isNew ? '<em>NEW</em>' : `<small class="sub">ダブり +💧${r.refund}</small>`}</div>`;
+  }).join('');
+  $('#m-sheet').innerHTML = `<h2 class="win" id="m-title">🔔 くじの結果</h2><div class="gc-resl">${rows}</div><p class="sub" style="margin:6px 0">残り 💧${fmt(ensureGacha(G.p).drops)}</p><div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+
+// ---------- ログインボーナス ----------
+function loginClaimed(p) { return ensureGacha(p) && p.login.last === todayStr(); }
+function loginBonusSkip() {
+  if (G.headless) return true;
+  if (/[?&]login=1\b/.test(location.search)) return false;
+  try { if (navigator.webdriver) return true; } catch (e) {}
+  return false;
+}
+function loginBonusPrompt() {
+  const p = G.p; if (!p || loginBonusSkip() || (G.tutorial && !G.tutorial.done) || G._titleUp || G._storyUp || G.run) return;
+  if (loginClaimed(p) || G.modalOpen) return;
+  const day = p.login.claims % 7;
+  const cells = LOGIN_REWARDS.map((n, i) => `<div class="lg-cell${i < day ? ' got' : i === day ? ' today' : ''}"><small>${i + 1}日目</small><b>💧${n}</b>${i < day ? '<span>✓</span>' : ''}</div>`).join('');
+  $('#m-sheet').innerHTML = `<h2 class="win" id="m-title">ログインボーナス</h2><p class="sub" style="margin:0 0 8px">毎日起動すると鐘のしずくがもらえます（休んでも途中から続けられます）。</p><div class="lg-grid">${cells}</div><p style="margin:10px 0 0">今日は <b>💧${LOGIN_REWARDS[day]}</b> をプレゼント！</p><div class="act"><button class="btn primary" data-act="loginClaim" id="m-login">受け取る</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  setTimeout(() => { const b = $('#m-login'); if (b) b.focus(); }, 0);
+}
+function loginClaim() {
+  const p = G.p; if (!p || loginClaimed(p)) { closeModal(); return; }
+  const n = LOGIN_REWARDS[p.login.claims % 7];
+  p.login.last = todayStr(); p.login.claims++; ensureGacha(p).drops += n;
+  try { save(); } catch (e) {}
+  closeModal(); toast(`💧 鐘のしずく +${n} を受け取りました`);
+  if (G.view === 'town') renderTown();
+}
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
@@ -9176,6 +9477,7 @@ function tutDone() {
   try { localStorage.setItem(TUT_SAVE_KEY, '1'); } catch (e) {}
   if (G._charSelectOpen) { G._charSelectOpen = false; closeModal(); }
   tutHide();
+  setTimeout(() => { try { loginBonusPrompt(); } catch (e) {} }, 1500);
 }
 
 // step 0: ダンジョンタブを押す
@@ -9451,7 +9753,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  startRunGuarded, dangerOf, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  startRunGuarded, dangerOf, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
@@ -9465,6 +9767,7 @@ window.__rogue = {
 };
 boot();
 showTitle();
+if (!document.getElementById('title-screen')) setTimeout(() => { try { loginBonusPrompt(); } catch (e) {} }, 800);   // タイトルを出さない起動でもログインボーナスを出す
 // 「Now Loading...」を外す（タイトルが出ている時はタイトルが覆ってから／出さない時は即）
 { const bl = document.getElementById('boot-loading'); if (bl) { bl.classList.add('done'); setTimeout(() => { try { bl.remove(); } catch (e) {} }, 450); } }
 })();

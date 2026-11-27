@@ -289,6 +289,14 @@ function load() {
     if ((Number(s.lv) || 1) > 1 || (s.stats && Number(s.stats.runs) > 0)) p.hints.guide = true;   // 進行済みのセーブはルルの初回紹介を済ませた扱い
     p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
     p.story = { seen: {} }; if (s.story && s.story.seen && typeof s.story.seen === 'object') for (const k of Object.keys(STORY)) if (s.story.seen[k]) p.story.seen[k] = true;
+    p.gacha = { drops: num(s.gacha && s.gacha.drops, 0, 0, 999999), pity: num(s.gacha && s.gacha.pity, 0, 0, 999), total: num(s.gacha && s.gacha.total, 0, 0, 999999), owned: {}, eq: {}, frame: null };
+    if (s.gacha && typeof s.gacha === 'object') {
+      if (s.gacha.owned && typeof s.gacha.owned === 'object') for (const k of Object.keys(s.gacha.owned)) { const n = Math.floor(Number(s.gacha.owned[k])); if (n > 0 && /^(cos|title|frame):/.test(k)) p.gacha.owned[k] = Math.min(n, 9999); }
+      if (s.gacha.eq && typeof s.gacha.eq === 'object') for (const sl of COS_SLOTS) { const c = cosById(s.gacha.eq[sl.k]); p.gacha.eq[sl.k] = c && c.slot === sl.k && p.gacha.owned['cos:' + c.id] ? c.id : null; }
+      p.gacha.frame = DEX_FRAMES.some(f => f.id === s.gacha.frame) && p.gacha.owned['frame:' + s.gacha.frame] ? s.gacha.frame : null;
+    }
+    p.login = { last: typeof (s.login && s.login.last) === 'string' ? s.login.last.slice(0, 10) : '', claims: num(s.login && s.login.claims, 0, 0, 99999) };
+    p.goalDrops = {}; if (s.goalDrops && typeof s.goalDrops === 'object') for (const k of Object.keys(s.goalDrops)) if (s.goalDrops[k]) p.goalDrops[String(k).slice(0, 30)] = true;
     p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };

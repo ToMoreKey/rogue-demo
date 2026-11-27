@@ -91,7 +91,7 @@ with sync_playwright() as pw:
     before = pg.evaluate('k=>localStorage.getItem(k)', KEY)
     pg.reload(); pg.wait_for_timeout(300)
     after = pg.evaluate('k=>localStorage.getItem(k)', KEY)
-    check('v3 save is stable across reload', before == after)
+    check('v3 save is stable across reload', json.loads(before) == json.loads(after))
     pg.evaluate('()=>{G.p.gold+=100; window.__rogue.save();}')
     s3 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
     check('later saves are v9', s3['v'] == 10 and s3['p']['gold'] == op['gold'] + 100)

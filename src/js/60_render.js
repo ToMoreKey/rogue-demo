@@ -66,6 +66,7 @@ function renderPlaza() {
     { v: 'shop',  icon: '💰', name: '売却専門ショップ',       desc: 'アイテム売却・自動売却設定' },
     { v: 'smith', icon: '🔨', name: '鍛冶屋「鉄の大地」',     desc: '武器・防具の強化' },
     { v: 'bank',  icon: '🏦', name: '福音銀行',               desc: 'ゴールドの預け入れ・引き出し' },
+    { v: 'gacha', icon: '🔔', name: '福音のくじ',             desc: '鐘のしずくで回す・着せ替え' },
   ];
 
   $('#view-town').innerHTML = `
@@ -92,7 +93,9 @@ function renderFacility(fac) {
   const p = G.p;
   let content = '';
 
-  if (fac === 'inn') {
+  if (fac === 'gacha') {
+    content = renderGachaFacility(p);
+  } else if (fac === 'inn') {
     content = `
       <h2>宿屋「満月亭」</h2>
       <p class="sub">MPを無料で全回復します。</p>
@@ -1000,8 +1003,8 @@ function renderBattle() {
     $('#b-ename').textContent = '探索中…'; $('#b-ehp').style.width = '0%'; $('#b-ehpn').textContent = '';
     $('#spr-enemy').innerHTML = ''; lastEnemyShape = '';
   }
-  { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1);
-    if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG(); box.dataset.k = k; } }
+  { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1) + ':' + cosKey(G.p);
+    if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG() + cosOverlayHtml(); box.dataset.k = k; } }
   const stTxt = run.guard > 0 ? `鉄壁 あと${run.guard}回` : (run.queued ? `予約：${SK[run.queued].name}` : '');
   $('#b-status').innerHTML = run.tower
     ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
@@ -1429,7 +1432,7 @@ function renderStatus() {
     ${powerPanel}
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
-        <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
+        <div class="pt-img cos-stage">${skinArt(pSkin, 'width:96px;height:96px')}${cosOverlayHtml(p)}</div>
         <div class="pt-info">
           <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span>${(() => { const tid = p.tower && p.tower.title; const tt = tid && TOWER_TITLES.find(x => x.id === tid); return tt ? ` <span class="badge">${esc(tt.name)}</span>` : ''; })()}</div>
           <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(tierName(pSkin, pTier))}</div>
@@ -1962,7 +1965,9 @@ function openDexModal(tab = 'enemies') {
       </div>`;
   }
 
-  $('#m-sheet').innerHTML = `
+  { const fr = DEX_FRAMES.find(f => p && p.gacha && f.id === p.gacha.frame);
+    G._dexFrame = fr ? `--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}` : ''; }
+  $('#m-sheet').innerHTML = `<div class="dxf">
     <h2 class="win" id="m-title">📖 図鑑・実績</h2>
     ${dexBar(allDone, allTotal, '全体のコンプ率')}
     <div class="dex-tabs">
@@ -1971,7 +1976,8 @@ function openDexModal(tab = 'enemies') {
       <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）${Object.keys(fresh.a || {}).length && G.dexTab !== 'ach' ? '<i class="st-dot"></i>' : ''}</button>
     </div>
     ${body}
-    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div></div>`;
+  { const fr = DEX_FRAMES.find(f => p && p.gacha && f.id === p.gacha.frame), sh = $('#m-sheet'); sh.classList.toggle('dxon', !!fr); if (fr) { sh.style.setProperty('--dxb', fr.bd); sh.style.setProperty('--dxg', fr.glow); sh.style.setProperty('--dxbg', fr.bg); } }
   $('#modal').hidden = false; G.modalOpen = true;
   // 見た時点でNEWを消す（このタブ分）。ステータスのドットも更新
   if (p && p.dexNew) { const k = G.dexTab === 'enemies' ? 'e' : G.dexTab === 'items' ? 'i' : 'a'; if (Object.keys(p.dexNew[k] || {}).length) { p.dexNew[k] = {}; save(); if (G.view === 'status') renderStatus(); } }
@@ -2299,6 +2305,7 @@ function startRunGuarded(dId, dfId) {
 }
 function closeModal() {
   if (G._charSelectOpen) return;
+  { const sh = $('#m-sheet'); if (sh) { sh.classList.remove('dxon'); sh.removeAttribute('data-dx'); sh.style.removeProperty('--dxb'); sh.style.removeProperty('--dxg'); sh.style.removeProperty('--dxbg'); } }
   if ($('#fxd-arena')) {
     _fxDbgState.raged = false;
     _fxDbgState.buff = 'none';

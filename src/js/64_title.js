@@ -43,7 +43,7 @@ function showTitle() {
     G._titleUp = false;
     Sound.play('bell');
     el.classList.add('out');
-    setTimeout(() => { el.remove(); try { renderAll(); } catch (e) {} }, isReducedMotion() ? 0 : 450);
+    setTimeout(() => { el.remove(); try { renderAll(); } catch (e) {} setTimeout(() => { try { loginBonusPrompt(); } catch (e) {} }, 500); }, isReducedMotion() ? 0 : 450);
   };
   el.addEventListener('click', e => { if (e.target.closest('#ttl-credit')) { e.stopPropagation(); showCredits(); return; } close(); });
   el.addEventListener('keydown', e => { if (e.target.id === 'ttl-credit') return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); close(); } });
