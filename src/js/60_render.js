@@ -942,6 +942,7 @@ let lastEnemyShape = '';
 function renderEnemy(fresh) {
   const run = G.run; if (G.headless || !run || !run.enemy) return;
   { const fe = $('#f-enemy'); if (fe && fresh) fe.classList.remove('die', 'die-boss'); }
+  if (fresh && !run.enemy.boss && isFxEnabled() && !isReducedMotion()) { const fe = $('#f-enemy'); if (fe) { fe.classList.remove('enter'); void fe.offsetWidth; fe.classList.add('enter'); clearTimeout(fe._en); fe._en = setTimeout(() => fe.classList.remove('enter'), 450); } }
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
@@ -1044,6 +1045,7 @@ function popDamage(who, text, cls) {
   let tier = '';
   if (who === 'enemy' && G.run && G.run.enemy && /^\d+$/.test(text)) { const rt = Number(text) / Math.max(1, G.run.enemy.maxHp); tier = rt >= 0.2 ? ' huge' : rt >= 0.08 ? ' big' : ''; }
   const s = document.createElement('span'); s.className = 'pop ' + cls + (isFxEnabled() ? tier : ''); s.textContent = (cls === 'crit' && isFxEnabled()) ? 'CRITICAL!\n' + text : text; f.appendChild(s);
+  if (who === 'enemy' && (cls === 'crit' || tier === ' huge') && isFxEnabled()) { f.classList.add('hit-b'); clearTimeout(f._hb); f._hb = setTimeout(() => f.classList.remove('hit-b'), 500); }
   if (cls === 'crit' || tier === ' huge') battleImpact('big'); else if (who === 'player' && cls === 'bad') battleImpact('hit');
   setTimeout(() => s.remove(), 900);
   const pops = f.querySelectorAll('.pop'); if (pops.length > 6) pops[0].remove();
@@ -1092,11 +1094,27 @@ function levelBand(lv) {
     clearTimeout(f._lj); f._lj = setTimeout(() => { f.classList.remove('lv-joy'); f.querySelectorAll('.lv-spark').forEach(n => n.remove()); }, 1300);
   }
 }
+/* 戻り値＝演出の長さ(ms)。ボス撃破はこの間リザルト/次の階へ進まない */
 function killFx(boss) {
-  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
-  const f = $('#f-enemy'); if (!f) return;
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return 0;
+  const f = $('#f-enemy'); if (!f) return 0;
   f.classList.remove('die', 'die-boss'); void f.offsetWidth; f.classList.add(boss ? 'die-boss' : 'die');
-  if (boss) { const a = $('#arena'); if (a) { a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900); } }
+  if (boss) {
+    const a = $('#arena'); if (!a) return 0;
+    a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900);
+    // ボス撃破: 白フラッシュ → 連続爆発 → 揺れ → 崩れて消える
+    a.querySelectorAll('.boss-burst,.boss-white').forEach(n => n.remove());
+    const w = document.createElement('div'); w.className = 'boss-white'; a.appendChild(w); setTimeout(() => w.remove(), 700);
+    for (let i = 0; i < 7; i++) {
+      const b = document.createElement('div'); b.className = 'boss-burst'; b.textContent = i % 2 ? '✸' : '✹';
+      b.style.left = (52 + Math.random() * 36) + '%'; b.style.top = (14 + Math.random() * 46) + '%';
+      b.style.fontSize = (22 + Math.random() * 26) + 'px'; b.style.animationDelay = (i * 0.11) + 's';
+      a.appendChild(b); setTimeout(() => b.remove(), 1300);
+    }
+    a.classList.remove('rumble'); void a.offsetWidth; a.classList.add('rumble'); setTimeout(() => a.classList.remove('rumble'), 900);
+    return 1700;
+  }
+  return 0;
 }
 function lowHpWarn() {
   const on = !!(G.run && !G.headless && isFxEnabled() && G.p.hp > 0 && G.p.hp <= maxHp(G.p) * 0.25);

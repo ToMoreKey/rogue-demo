@@ -512,7 +512,9 @@ function battleRound() {
 function onKill() {
   const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
-  Sound.play(en.boss ? 'bossKill' : 'kill'); killFx(en.boss);
+  Sound.play(en.boss ? 'bossKill' : 'kill');
+  const fxMs = killFx(en.boss);
+  if (fxMs) run.introUntil = Date.now() + fxMs; // ボス撃破演出が終わるまでリザルト・次の階へ進まない
   recordDexEnemy(p, en.id, true);
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
@@ -810,6 +812,7 @@ function checkGoals(silent) {
   for (const { g, ok } of goalState(p)) {
     if (ok && !G._goalDone[g.id]) {
       G._goalDone[g.id] = true;
+      if (!silent) G._goalJoy = goalState(p).every(x => x.ok) ? 'surprise' : 'joy'; // ルルが次に広場で見せる表情
       if (!silent && !(G.tutorial && !G.tutorial.done)) setTimeout(() => toast(`🎯 目標達成！「${g.text}」`), 2200);
     }
   }

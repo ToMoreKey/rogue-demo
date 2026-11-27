@@ -114,6 +114,7 @@ function npcSay(fac, evt) {
 function npcHtml(fac) {
   const n = NPCS[fac]; if (!n) return '';
   if (!G._npc || G._npc.fac !== fac) G._npc = { fac, line: npcSay(fac, G._npcEvt || null) };
+  if (fac === 'guide' && G._goalJoy && !G._npcEx) { G._npcEx = { fac: 'guide', ex: G._goalJoy }; G._goalJoy = null; }
   const joy = !!(G._npcEvt && G._npcEvt !== 'townEnter');
   const ex = NPC_PNG[fac] ? (G._npcEx && G._npcEx.fac === fac ? G._npcEx.ex : (joy && fac !== 'guide' ? 'joy' : 'normal')) : 'normal';
   const img = NPC_PNG[fac] ? `<img src="${NPC_PNG[fac][ex]}" alt="" draggable="false">` : NPC_SVG[fac];
