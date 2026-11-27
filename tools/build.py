@@ -59,6 +59,7 @@ JS_ORDER = [
     'js/65_story.js',
     'js/66_gacha.js',
     'js/67_daily.js',
+    'js/68_hair.js',
     'js/70_tutorial.js',
     'js/80_boot.js',
 ]

@@ -18,20 +18,20 @@ const COS_SLOTS = [
   { k: 'floor', name: '足元' },
   { k: 'aura',  name: 'オーラ' }
 ];
-// おまけ装備。fx: tint=CSSフィルター / その他=オーバーレイの種類と色
+// おまけ装備。tint=髪色の染め（hair: 色相h・彩度s・明度l）/ その他=fx でオーバーレイの種類と色
 const COSMETICS = [
   // N: 染め
-  { id: 'c_tint_red',   rar: 0, slot: 'tint', name: '紅蓮の染め',   fx: 'hue-rotate(-40deg) saturate(1.35)' },
-  { id: 'c_tint_sea',   rar: 0, slot: 'tint', name: '深海の染め',   fx: 'hue-rotate(170deg) saturate(1.2)' },
-  { id: 'c_tint_leaf',  rar: 0, slot: 'tint', name: '若葉の染め',   fx: 'hue-rotate(80deg) saturate(1.2)' },
-  { id: 'c_tint_vio',   rar: 0, slot: 'tint', name: '菫の染め',     fx: 'hue-rotate(250deg) saturate(1.1)' },
-  { id: 'c_tint_pink',  rar: 0, slot: 'tint', name: '桃色の染め',   fx: 'hue-rotate(320deg) saturate(1.5) brightness(1.05)' },
-  { id: 'c_tint_mono',  rar: 0, slot: 'tint', name: '月影のモノクロ', fx: 'grayscale(1) contrast(1.1)' },
-  { id: 'c_tint_sepia', rar: 0, slot: 'tint', name: '古書のセピア', fx: 'sepia(.85) saturate(1.2)' },
-  { id: 'c_tint_gold',  rar: 0, slot: 'tint', name: '黄金の染め',   fx: 'hue-rotate(-95deg) saturate(1.5) brightness(1.08)' },
-  { id: 'c_tint_ember', rar: 0, slot: 'tint', name: '夕焼けの染め', fx: 'hue-rotate(-20deg) saturate(1.6) brightness(1.04)' },
-  { id: 'c_tint_ink',   rar: 0, slot: 'tint', name: '墨染め',       fx: 'grayscale(.7) brightness(.78) contrast(1.25)' },
-  { id: 'c_tint_snow',  rar: 0, slot: 'tint', name: '雪原の染め',   fx: 'hue-rotate(190deg) saturate(.7) brightness(1.15)' },
+  { id: 'c_tint_red', rar: 0, slot: 'tint', name: '紅蓮の髪染め', hair: { h: 355, s: 0.8, l: 0.5 } },
+  { id: 'c_tint_sea', rar: 0, slot: 'tint', name: '深海の髪染め', hair: { h: 212, s: 0.7, l: 0.48 } },
+  { id: 'c_tint_leaf', rar: 0, slot: 'tint', name: '若葉の髪染め', hair: { h: 105, s: 0.6, l: 0.5 } },
+  { id: 'c_tint_vio', rar: 0, slot: 'tint', name: '菫の髪染め', hair: { h: 268, s: 0.6, l: 0.55 } },
+  { id: 'c_tint_pink', rar: 0, slot: 'tint', name: '桃色の髪染め', hair: { h: 330, s: 0.8, l: 0.7 } },
+  { id: 'c_tint_mono', rar: 0, slot: 'tint', name: '月影の灰髪', hair: { h: 0, s: 0, l: 0.6 } },
+  { id: 'c_tint_sepia', rar: 0, slot: 'tint', name: '古書の栗色', hair: { h: 30, s: 0.45, l: 0.38 } },
+  { id: 'c_tint_gold', rar: 0, slot: 'tint', name: '黄金の髪染め', hair: { h: 45, s: 0.9, l: 0.62 } },
+  { id: 'c_tint_ember', rar: 0, slot: 'tint', name: '夕焼けの髪染め', hair: { h: 22, s: 0.9, l: 0.55 } },
+  { id: 'c_tint_ink', rar: 0, slot: 'tint', name: '墨染めの黒髪', hair: { h: 230, s: 0.15, l: 0.2 } },
+  { id: 'c_tint_snow', rar: 0, slot: 'tint', name: '雪原の白髪', hair: { h: 200, s: 0.4, l: 0.92 } },
   { id: 'c_floor_dust', rar: 0, slot: 'floor', name: '土の輪',       fx: 'ring', col: '#c9a77a' },
   { id: 'c_aura_snow',  rar: 0, slot: 'aura',  name: '雪の粒',       fx: 'dots', col: '#e6f4ff' },
   // R

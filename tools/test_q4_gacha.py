@@ -82,6 +82,19 @@ with sync_playwright() as pw:
     before = pg.evaluate("() => G.p.gacha.drops")
     pg.evaluate("() => { __rogue.addDrops(3, 'test'); }")
     check('addDropsで加算', pg.evaluate("() => G.p.gacha.drops") == before + 3)
+    # 髪染め: 髪だけが変わる（服などは変わらない）
+    r = pg.evaluate("""async () => {
+      const R = __rogue, c = R.COSMETICS.find(x => x.id === 'c_tint_red'), out = {};
+      for (const sk of R.CHAR_SKINS) {
+        R.hairSrc(sk.img, sk.id, c); await new Promise(r => setTimeout(r, 400));
+        const a = R.hairSrc(sk.img, sk.id, c), load = src => new Promise(res => { const i = new Image(); i.onload = () => { const cv = document.createElement('canvas'); cv.width = cv.height = 192; const x = cv.getContext('2d'); x.drawImage(i, 0, 0); res(x.getImageData(0, 0, 192, 192).data); }; i.src = src; });
+        const [d0, d1] = [await load(sk.img), await load(a)];
+        let ch = 0, op = 0; for (let k = 0; k < d0.length; k += 4) { if (d0[k + 3] > 128) { op++; if (d0[k] !== d1[k] || d0[k + 1] !== d1[k + 1] || d0[k + 2] !== d1[k + 2]) ch++; } }
+        out[sk.id] = [a !== sk.img, ch / op];
+      }
+      return out; }""")
+    for k, v in r.items():
+        check(f'髪染め {k}: 色が変わり、髪以外は残る', v[0] and 0.03 < v[1] < 0.5, v)
     # 引く演出（?reveal=1 で有効）
     pg.goto(URL + '?reveal=1'); pg.wait_for_timeout(600)
     pg.evaluate("() => { G._titleUp = false; G.p.gacha.drops = 50; __rogue.renderAll(); }")

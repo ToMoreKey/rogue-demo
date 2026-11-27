@@ -54,7 +54,6 @@ function gachaPull(n, genre) {
 }
 
 // ---------- 見た目への反映 ----------
-function cosTint(p) { const c = p && p.gacha && p.gacha.eq && cosById(p.gacha.eq.tint); return c ? c.fx : ''; }
 const WING_PATH = 'M50 34 C 34 2, 6 4, 0 26 C 10 22, 16 28, 13 38 C 23 33, 29 40, 25 50 C 37 44, 43 51, 50 42 Z';
 const BAT_PATH = 'M50 34 L12 4 L20 22 L2 30 L16 38 L8 54 L30 44 L40 58 Z';
 const BELL_PATH = 'M50 6 C 44 6 42 10 42 14 C 30 18 26 30 26 44 L 18 56 L 82 56 L 74 44 C 74 30 70 18 58 14 C 58 10 56 6 50 6 Z M 42 60 A 8 8 0 0 0 58 60 Z';
