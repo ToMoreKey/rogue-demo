@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>rogue_test</title>
+<title>鐘鳴りのダンジョン</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0e151b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -367,7 +367,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .fighter.atk .spr{animation:lunge var(--atk-ms,260ms) ease-out}
 .fname{font-family:var(--font-display);font-size:14px;overflow-wrap:anywhere}
 .fighter .gauge{width:100%}
-.fnum{font-family:var(--font-display);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.fnum{min-height:1.25em;line-height:1.25;font-family:var(--font-display);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .pop{position:absolute;left:50%;top:6%;transform:translateX(-50%);font-family:var(--font-display);font-size:22px;pointer-events:none;text-shadow:0 1px 0 #000,0 0 6px #000;animation:pop .85s ease-out forwards;z-index:3;white-space:nowrap}
 .pop.dmg{color:#fff} .pop.crit{color:var(--accent);font-size:28px} .pop.heal{color:var(--good)} .pop.bad{color:var(--bad)}
 .b-status{min-height:20px;margin-top:8px;font-size:12px;color:var(--muted);text-align:center;font-family:var(--font-display)}
@@ -755,12 +755,57 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 #f-enemy.hit.hit-b .spr svg,#f-enemy.hit.hit-b .spr img{animation:ehitb .42s ease-out}
 @keyframes ehitb{0%{transform:none;filter:none}20%{transform:translateX(24px) rotate(5deg) scale(.92,1.08);filter:brightness(3.2) saturate(.3)}55%{transform:translateX(-5px) rotate(-2deg);filter:brightness(1.5)}100%{transform:none;filter:none}}
 @media (prefers-reduced-motion:reduce){#f-enemy.enter .spr svg,#f-enemy.enter .spr img,#f-enemy.hit .spr svg,#f-enemy.hit .spr img{animation:none}}
+/* 敵の大きさが変わっても戦闘ウィンドウの高さを変えない: 敵スロットは固定の高さ、絵だけ --sz で拡縮（下端そろえ） */
+#spr-enemy{--k:1;width:100%;height:calc(134px*var(--k));display:flex;align-items:flex-end;justify-content:center}
+#spr-enemy>.sprite-img,#spr-enemy>div{flex:none;width:min(100%,calc(112px*var(--k)*var(--sz,1)));height:auto}
+@media (max-height:700px){#spr-enemy{--k:.8}}
+/* ================= タイトル画面 ================= */
+#title-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#07080d;color:#fff;cursor:pointer;animation:ttlin .6s ease-out}
+#title-screen.out{animation:ttlout .45s ease-in forwards;pointer-events:none}
+@keyframes ttlin{from{opacity:0}to{opacity:1}}
+@keyframes ttlout{to{opacity:0;transform:scale(1.04)}}
+.ttl-bg{position:absolute;inset:-4%;background:center/cover no-repeat;animation:ttlzoom 24s ease-in-out infinite alternate}
+@keyframes ttlzoom{from{transform:scale(1)}to{transform:scale(1.08) translateX(-1.5%)}}
+.ttl-shade{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(6,8,14,.1),rgba(6,8,14,.78) 72%),linear-gradient(rgba(6,8,14,.45),rgba(6,8,14,.1) 35%,rgba(6,8,14,.7))}
+.ttl-motes{position:absolute;inset:0;pointer-events:none}
+.ttl-motes i{position:absolute;left:var(--x);bottom:-8px;width:4px;height:4px;border-radius:50%;background:#ffd98a;box-shadow:0 0 8px #ffb84a;opacity:0;animation:ttlmote var(--d) linear var(--w) infinite}
+@keyframes ttlmote{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:0;transform:translateY(-78vh) translateX(14px)}}
+.ttl-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1.4vh,12px);padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));width:100%;max-width:520px;text-align:center}
+.ttl-bell{width:clamp(40px,8vh,64px);height:auto;filter:drop-shadow(0 0 14px rgba(255,200,90,.7));transform-origin:50% 8%;animation:ttlswing 3.2s ease-in-out infinite}
+@keyframes ttlswing{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
+.ttl-logo{display:flex;flex-direction:column;align-items:center;line-height:1.05;font-family:var(--font-display);font-weight:900}
+.ttl-l1{font-size:clamp(20px,4.4vh,30px);letter-spacing:.28em;margin-right:-.28em;color:#ffe9b0;text-shadow:0 2px 0 #3a2406,0 0 14px rgba(255,190,80,.6)}
+.ttl-l2{font-size:clamp(40px,9.5vh,62px);letter-spacing:.06em;background:linear-gradient(#fff6cf,#f2c14e 55%,#c88a22);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #3a2406) drop-shadow(0 0 16px rgba(255,170,60,.55))}
+.ttl-sub{font-size:11px;letter-spacing:.36em;margin-right:-.36em;color:#cdbf9a;opacity:.9}
+.ttl-heroes{display:flex;justify-content:center;align-items:flex-end;margin:clamp(2px,1.6vh,14px) 0 clamp(4px,2vh,16px);width:100%}
+.ttl-heroes img{width:clamp(54px,min(21vw,15vh),96px);height:auto;margin:0 -4px;image-rendering:pixelated;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6));animation:bob 2s ease-in-out infinite;animation-delay:calc(var(--i)*-.45s)}
+.ttl-heroes img:nth-child(2),.ttl-heroes img:nth-child(3){transform:scale(1.08)}
+.ttl-start{cursor:pointer;min-width:min(78vw,260px);padding:14px 28px;font:900 20px/1 var(--font-display);letter-spacing:.2em;text-indent:.2em;color:#2b1a04;border:2px solid #5a3a0a;border-radius:999px;background:linear-gradient(#ffe9a0,#e9b43c);box-shadow:0 4px 0 #7a4f10,0 0 22px rgba(255,190,70,.55);animation:ttlpulse 1.8s ease-in-out infinite}
+.ttl-start:active{transform:translateY(2px);box-shadow:0 2px 0 #7a4f10}
+.ttl-start:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@keyframes ttlpulse{0%,100%{box-shadow:0 4px 0 #7a4f10,0 0 18px rgba(255,190,70,.4)}50%{box-shadow:0 4px 0 #7a4f10,0 0 30px rgba(255,200,90,.85)}}
+.ttl-hint{font-size:12px;color:#cdbf9a;opacity:.85}
+.ttl-ver{position:absolute;z-index:1;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:10px;color:#9a917c;opacity:.7}
+@media (max-height:520px){.ttl-heroes{display:none}.ttl-sub{display:none}.ttl-bell{width:34px}}
+@media (prefers-reduced-motion:reduce){#title-screen,.ttl-bg,.ttl-bell,.ttl-motes i,.ttl-heroes img,.ttl-start{animation:none!important}.ttl-motes{display:none}}
+.ttl-credit{position:absolute;z-index:2;left:max(12px,env(safe-area-inset-left));bottom:max(6px,env(safe-area-inset-bottom));padding:8px 10px;font:12px var(--font-body);color:#cdbf9a;background:none;border:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.ttl-credit:focus-visible{outline:2px solid #fff;border-radius:4px}
+#credits-screen{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:rgba(4,5,10,.82);animation:ttlin .25s ease-out}
+.cr-box{display:flex;flex-direction:column;width:100%;max-width:440px;max-height:100%;background:linear-gradient(#1a1f2c,#10131c);border:1px solid #3a4259;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);overflow:hidden}
+.cr-scroll{overflow-y:auto;padding:22px 22px 8px;text-align:center;color:#e6e9f2}
+.cr-title{font:900 22px var(--font-display);letter-spacing:.12em;color:#f2c14e;margin-bottom:14px}
+.cr-g{margin:0 0 14px}.cr-g h3{margin:0 0 4px;font:700 12px var(--font-body);letter-spacing:.14em;color:#9aa3bd}
+.cr-g p{margin:2px 0;font-size:14px;line-height:1.55}
+.cr-note{margin:14px 0 4px;font-size:11px;color:#8a92a8}.cr-copy{margin:0 0 6px;font-size:12px;color:#9aa3bd}
+.cr-close{margin:6px 16px 16px;padding:12px;font:700 15px var(--font-body);color:#10131c;background:#e9b43c;border:0;border-radius:8px;cursor:pointer}
+.cr-close:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){#credits-screen{animation:none}}
 </style>
 
 <div id="app" class="wrap">
   <header class="hud">
     <div class="hud-top">
-      <div class="brand"><span class="moon" aria-hidden="true"></span><h1>rogue_test</h1></div>
+      <div class="brand"><span class="moon" aria-hidden="true"></span><h1>鐘鳴りのダンジョン</h1></div>
       <div class="purse">
         <span class="chip">G <b id="h-gold">0</b></span>
         <span class="chip">預金 <b id="h-bank">0</b></span>
@@ -865,7 +910,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v90';
+const APP_VERSION = 'rogue-v94';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -3731,6 +3776,7 @@ const Sound = (() => {
     heal:     () => { tone(N.C5, 0.12, 'sine', 0.4); tone(N.E5, 0.12, 'sine', 0.4, 0, 0.08); tone(N.G5, 0.2, 'sine', 0.4, 0, 0.16); },
     buff:     () => { tone(N.G4, 0.1, 'triangle', 0.4, N.C5); tone(N.C5, 0.18, 'triangle', 0.4, N.G5, 0.08); },
     kill:     () => { tone(420, 0.2, 'square', 0.35, 90); noise(0.15, 0.3, 500, 0.02); },
+    bell:     () => { tone(784, 0.9, 'sine', 0.5, 0); tone(1176, 0.7, 'sine', 0.25, 0, 0.02); tone(1568, 0.5, 'sine', 0.12, 0, 0.04); },
     warn:     () => { tone(880, 0.26, 'square', 0.4, 700); tone(660, 0.26, 'square', 0.4, 520, 0.28); },
     rumble:   () => { tone(58, 1.1, 'sawtooth', 0.55, 36); noise(1.0, 0.35, 60); },
     bossKill: () => { tone(300, 0.5, 'sawtooth', 0.5, 50); noise(0.45, 0.5, 300); [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, 0.25, 'triangle', 0.4, 0, 0.35 + i * 0.1)); },
@@ -4652,6 +4698,7 @@ function finishRun(result) {
 let loopTimer = null;
 function tick() {
   const run = G.run; if (!run) return;
+  if (G._titleUp) return; // タイトル表示中は進めない
   if (run.introUntil && Date.now() < run.introUntil) return; // ボス登場演出中は戦闘を止める
   try {
     if (run.phase === 'next') nextFloor();
@@ -5404,6 +5451,7 @@ const ACTS = {
   buyShop(d) { buyShopItem(d.id); },
   buyBuildBook() { buyBuildBook(); },
   npcTalk(d) { npcTalk(d.f); },
+  openCredits() { showCredits(); },
   hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
   goalGo(d) {
     const t = d.g;
@@ -6662,7 +6710,7 @@ function renderEnemy(fresh) {
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
-    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.width = eim ? `min(100%, ${Math.round(112 * eim.sz)}px)` : '';
+    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.setProperty('--sz', eim ? eim.sz : 1); // 枠は固定、絵の大きさだけ敵ごとに変える
     lastEnemyShape = en.id;
   }
   $('#f-enemy').classList.remove('dead');
@@ -7222,6 +7270,7 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
+          <button class="btn small" data-act="openCredits">クレジット</button>
         </div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245" id="sound-panel">
@@ -8667,6 +8716,89 @@ const NPC_ACTS = { inn: 1, sell: 1, buyShop: 1, smithUpgrade: 1, smithReforge: 1
 
 /* 表情を一時的に変える（次の NPC 操作・街の出入りで通常に戻る） */
 function npcReact(fac, ex) { G._npcEx = { fac, ex }; }
+/* ================= タイトル画面 =================
+   起動のたびに1回だけ表示。タップ/Enterで閉じる（その瞬間にサウンドも解禁）。
+   自動テスト(navigator.webdriver)・BOTでは出さない。テストで見たい時は ?title=1 を付ける。
+   表示中は戦闘ループを止める（G._titleUp）。 */
+function titleSkip() {
+  if (G.headless) return true;
+  const force = /[?&]title=1\b/.test(location.search);
+  if (force) return false;
+  try { if (navigator.webdriver) return true; } catch (e) {}
+  return /[?&]notitle\b/.test(location.search);
+}
+function showTitle() {
+  if (titleSkip() || document.getElementById('title-screen')) return;
+  const p = G.p;
+  const hasSave = !!(p && (p.lv > 1 || (p.stats && p.stats.runs > 0) || (G.tutorial && G.tutorial.done)));
+  const heroes = ['ruby', 'stella', 'silia', 'chloe'].map(id => CHAR_SKINS.find(s => s.id === id)).filter(Boolean);
+  const bg = (typeof SCENE_IMG !== 'undefined' && SCENE_IMG.I) ? `url('${SCENE_IMG.I}')` : 'none';
+  const el = document.createElement('div');
+  el.id = 'title-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'タイトル');
+  el.innerHTML = `
+    <div class="ttl-bg" style="background-image:${bg}"></div>
+    <div class="ttl-shade"></div>
+    <div class="ttl-motes" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="--x:${(i * 73) % 100}%;--d:${5 + (i * 7) % 6}s;--w:${(i * 37) % 7}s"></i>`).join('')}</div>
+    <div class="ttl-inner">
+      <svg class="ttl-bell" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
+        <defs><linearGradient id="ttlg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe9a0"/><stop offset=".6" stop-color="#e9b43c"/><stop offset="1" stop-color="#a8721a"/></linearGradient></defs>
+        <path d="M32 6c-2 0-3 1-3 3v2C21 13 17 20 17 29v8c0 3-2 5-5 8h40c-3-3-5-5-5-8v-8c0-9-4-16-12-18V9c0-2-1-3-3-3z" fill="url(#ttlg)" stroke="#5a3a0a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M26 49a6 6 0 0 0 12 0z" fill="#c98e26" stroke="#5a3a0a" stroke-width="2.5" stroke-linejoin="round"/>
+      </svg>
+      <div class="ttl-logo"><span class="ttl-l1">鐘鳴りの</span><span class="ttl-l2">ダンジョン</span></div>
+      <div class="ttl-sub">BELL-TOLLING DUNGEON</div>
+      <div class="ttl-heroes" aria-hidden="true">${heroes.map((s, i) => `<img src="${s.img}" alt="" draggable="false" style="--i:${i}">`).join('')}</div>
+      <button class="ttl-start" id="ttl-start" type="button">${hasSave ? 'つづきから' : 'はじめる'}</button>
+      <div class="ttl-hint">${hasSave ? `Lv${p.lv} ・ タップでもはじめられます` : 'タップでもはじめられます'}</div>
+    </div>
+    <button class="ttl-credit" id="ttl-credit" type="button">クレジット</button>
+    <div class="ttl-ver">ver ${typeof APP_VERSION === 'string' ? APP_VERSION.replace(/^rogue-/, '') : ''}</div>`;
+  document.body.appendChild(el);
+  G._titleUp = true;
+  const close = () => {
+    if (!G._titleUp) return;
+    G._titleUp = false;
+    Sound.play('bell');
+    el.classList.add('out');
+    setTimeout(() => { el.remove(); try { renderAll(); } catch (e) {} }, isReducedMotion() ? 0 : 450);
+  };
+  el.addEventListener('click', e => { if (e.target.closest('#ttl-credit')) { e.stopPropagation(); showCredits(); return; } close(); });
+  el.addEventListener('keydown', e => { if (e.target.id === 'ttl-credit') return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); close(); } });
+  const btn = el.querySelector('#ttl-start'); if (btn) btn.focus();
+}
+
+/* ================= クレジット（タイトル・データ画面から開く） ================= */
+const CREDITS = {
+  title: '鐘鳴りのダンジョン',
+  groups: [
+    { h: '企画・制作', rows: ['ToMoreKey'] },
+    { h: 'イラスト（キャラクター・敵・NPC・背景）', rows: ['画像生成 AI（Google Gemini）で生成し、制作者が選定・調整'] },
+    { h: 'プログラム・制作補助', rows: ['Claude（Anthropic）'] },
+    { h: 'サウンド', rows: ['効果音・BGM はゲーム内で合成（外部の音源は使用していません）'] },
+    { h: 'フォント', rows: ['DotGothic16', 'Zen Kaku Gothic New', 'いずれも SIL Open Font License 1.1（Google Fonts より配信）'] }
+  ],
+  note: 'この作品はフィクションです。登場する人物・団体・出来事は架空のものです。',
+  copy: '© 2026 ToMoreKey'
+};
+function creditsHtml() {
+  const c = CREDITS;
+  return `<div class="cr-title">${esc(c.title)}</div>` +
+    c.groups.map(g => `<section class="cr-g"><h3>${esc(g.h)}</h3>${g.rows.map(r => `<p>${esc(r)}</p>`).join('')}</section>`).join('') +
+    `<p class="cr-note">${esc(c.note)}</p><p class="cr-copy">${esc(c.copy)}</p>`;
+}
+function showCredits() {
+  if (document.getElementById('credits-screen')) return;
+  const el = document.createElement('div');
+  el.id = 'credits-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'クレジット');
+  el.innerHTML = `<div class="cr-box"><div class="cr-scroll">${creditsHtml()}</div><button type="button" class="cr-close" id="cr-close">閉じる</button></div>`;
+  const prev = document.activeElement;
+  const close = () => { document.removeEventListener('keydown', onKey, true); el.remove(); try { if (prev && prev.focus) prev.focus(); } catch (e) {} };
+  const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  el.addEventListener('click', e => { e.stopPropagation(); if (e.target === el || e.target.id === 'cr-close') close(); });
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(el);
+  const b = el.querySelector('#cr-close'); if (b) b.focus();
+}
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
@@ -8998,6 +9130,7 @@ window.__rogue = {
   regen(n) { const p = G.p; p.hp = Math.min(maxHp(p), p.hp + n); renderAll(); }
 };
 boot();
+showTitle();
 })();
 </script>
 

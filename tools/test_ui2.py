@@ -108,7 +108,7 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(100)
     sticky_res = pg.evaluate('''() => {
         const app = document.getElementById('app');
-        app.scrollTop = 260;
+        app.scrollTop = 420;
         const r = document.querySelector('#view-help .st-tabs').getBoundingClientRect();
         const scrolledTop = app.scrollTop;
         return { scrolledTop, barTop: r.top, barBottom: r.bottom };

@@ -52,6 +52,7 @@ JS_ORDER = [
     'js/61_fx_custom.js',
     'js/62_scenes.js',
     'js/63_npcs.js',
+    'js/64_title.js',
     'js/70_tutorial.js',
     'js/80_boot.js',
 ]
@@ -125,7 +126,7 @@ def to_dev(html):
     html, n = re.subn(r"formUrl: '[^']*'", "formUrl: ''", html)
     if n != 1:
         sys.exit('dev ビルド: formUrl の置換が1箇所ではありません（%d）' % n)
-    html = sub_once(html, '<title>rogue_test</title>', '<title>[TEST] rogue_test</title>')
+    html = sub_once(html, '<title>鐘鳴りのダンジョン</title>', '<title>[TEST] 鐘鳴りのダンジョン</title>')
     html = sub_once(html, '</style>\n\n<div id="app"', DEV_CSS + '</style>\n\n<div id="dev-badge" aria-hidden="true">TEST版</div>\n<div id="app"')
     return html
 

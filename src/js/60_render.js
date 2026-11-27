@@ -946,7 +946,7 @@ function renderEnemy(fresh) {
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
-    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.width = eim ? `min(100%, ${Math.round(112 * eim.sz)}px)` : '';
+    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.setProperty('--sz', eim ? eim.sz : 1); // 枠は固定、絵の大きさだけ敵ごとに変える
     lastEnemyShape = en.id;
   }
   $('#f-enemy').classList.remove('dead');
@@ -1506,6 +1506,7 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
+          <button class="btn small" data-act="openCredits">クレジット</button>
         </div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245" id="sound-panel">

@@ -1,6 +1,6 @@
 {
-  "name": "Rogue Demo",
-  "short_name": "Rogue",
+  "name": "鐘鳴りのダンジョン",
+  "short_name": "鐘鳴り",
   "description": "全15ダンジョン・無限回廊「天蓋の塔」・深淵に挑むブラウザRPG",
   "lang": "ja",
   "start_url": "./",

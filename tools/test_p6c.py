@@ -99,7 +99,7 @@ with sync_playwright() as pw:
     mf = json.loads((ROOT / 'manifest.json').read_text(encoding='utf-8'))
     check('manifest.json description updated and name/icons preserved',
           '全15ダンジョン' in mf['description'] and '天蓋の塔' in mf['description'] and '深淵' in mf['description']
-          and mf['name'] == 'Rogue Demo' and len(mf['icons']) == 3, mf)
+          and mf['name'] == '鐘鳴りのダンジョン' and len(mf['icons']) == 3, mf)
 
     # 4. オフライン動作確認 (Service Worker登録後 set_offline(True))
     pg.evaluate('() => navigator.serviceWorker && navigator.serviceWorker.ready')
