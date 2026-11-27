@@ -26,7 +26,7 @@ function playStory(id, opts) {
   const heroSkin = CHAR_SKINS.find(s => s.id === heroId);
   const el = document.createElement('div');
   el.id = 'story-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', '物語：' + sc.title);
-  el.innerHTML = `<div class="stv-bg" style="background-image:${sceneUri(id)}"></div><div class="stv-shade"></div>
+  el.innerHTML = `<div class="stv-bg" style="${sc.bg === 'none' ? 'background:radial-gradient(ellipse at 50% 40%,#1c2a3c,#07080d 75%)' : 'background-image:' + sceneUri(id)}"></div><div class="stv-shade"></div>
     <div class="stv-title">${esc(sc.title)}</div>
     <button class="stv-skip" type="button" id="stv-skip">スキップ ▶▶</button>
     <div class="stv-chara" id="stv-chara" aria-hidden="true"></div>

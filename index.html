@@ -822,6 +822,18 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 @media (max-height:520px){.stv-chara{height:34vh}.stv-text{font-size:14px;line-height:1.6;min-height:3em}.stv-box{min-height:88px}}
 @media (min-width:700px){.stv-box{max-width:640px;margin-left:auto;margin-right:auto;width:calc(100% - 32px)}}
 @media (prefers-reduced-motion:reduce){#story-screen,.stv-bg,.stv-chara img,.stv-next{animation:none}}
+/* チュートリアル: ルルとの会話枠（吹き出しの代わり） */
+.tut-bubble.lulu{position:fixed;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));width:auto;max-width:560px;margin:0 auto;transform:none;display:flex;align-items:flex-end;gap:10px;padding:10px 14px 12px 8px;background:rgba(12,15,26,.94);border:2px solid var(--accent);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.55);animation:tutlulu .28s ease-out;transition:none}
+.tut-bubble.lulu::after{display:none}
+.tut-bubble.lulu.at-top{top:calc(env(safe-area-inset-top) + 10px);bottom:auto}
+.tut-bubble.lulu.at-bottom{bottom:calc(env(safe-area-inset-bottom) + 88px);top:auto}
+.tut-lulu-img{flex:0 0 auto;width:72px;height:96px;object-fit:cover;object-position:50% 12%;border-radius:10px;background:rgba(255,255,255,.06)}
+.tut-say{min-width:0;flex:1}
+.tut-name{display:inline-block;margin-bottom:4px;padding:2px 10px;font:900 12px var(--font-display);letter-spacing:.12em;color:#2b1a04;background:#e9b43c;border-radius:999px}
+.tut-text{font-size:14px;line-height:1.65;color:#f1f3fa}
+.tut-text b{display:inline;margin:0;font-family:inherit;color:#ffd77a}
+@keyframes tutlulu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tut-bubble.lulu{animation:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -932,7 +944,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v100';
+const APP_VERSION = 'rogue-v101';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2132,6 +2144,13 @@ function dexEnemyGroups() {
    話者: guide=ルル inn=ミレイ shop=トト smith=ガンド bank=ノア hero=選択中の主人公 narr=地の文
    主人公: ルビィ(魔法使い・古書庫で封印の記録を見つけた) ステラ(剣士・鐘守の家系) シリア(聖職者・鐘の祈りを継ぐ者) クロエ(盗賊・里の外から来た流れ者) */
 const STORY = {
+  // チュートリアルの導入（最初のルルとの会話）。背景画像なし
+  TUT: { title: 'はじめまして', bg: 'none', lines: [
+    { sp: 'guide', ex: 'joy', t: 'はじめまして！ 福音の里の案内人、ルルです！ 鐘守の見習いをしています！' },
+    { sp: 'guide', ex: 'normal', t: 'この里は、「福音の鐘」の音に守られてきました。でも最近、鐘の音が弱まって、ダンジョンから魔物があふれ出しているんです……。' },
+    { sp: 'hero', t: { ruby: '鐘の音が弱まる……。古書庫の記録にも、そんな一節がありました。放っておけません。', stella: '私は鐘守の家の者です。里の鐘が危ないなら、黙ってはいられません。', silia: '鐘の祈りを継ぐ者として、行かなければなりませんね。', chloe: '里の外から来た身だけど、困ってるやつを放っとけないんだよな。引き受けるぜ。' } },
+    { sp: 'guide', ex: 'joy', t: 'ありがとうございます！ 目標は、魔王ガルゼを倒して鐘の音を取り戻すこと。まずは操作を、私と一緒に覚えましょう！' }
+  ] },
   A: { title: '鐘の欠片', lines: [
     { sp: 'narr', t: '墓守の王が崩れ落ちた。玉座の奥で、ひび割れた小さな鐘の欠片が淡く光っている。' },
     { sp: 'hero', t: { ruby: 'この模様……里の鐘と同じ。古書庫の記録にあった「鐘の欠片」かもしれない。', stella: 'この刻印、うちの鐘守の印と同じだ。どうしてこんな墓の底に……。', silia: '祈りの声が、聞こえる気がします。あたたかい音……。', chloe: 'ただの石ころじゃなさそうだな。とりあえず拾っとくか。' } },
@@ -5669,7 +5688,7 @@ const ACTS = {
     if (G.run) { toast('ダンジョン攻略中はできません'); return; }
     G.tutorial = { step: 0 }; G._charSelectOpen = false; G.view = 'town'; G.townView = 'plaza';
     try { localStorage.removeItem(TUT_SAVE_KEY); } catch (e) {}
-    renderAll(); tutStep(0);
+    renderAll(); tutIntro(() => tutStep(0));
   },
   switchBuild(d) { switchBuild(d.i); },
   resetAllTrees() { resetAllTrees(); },
@@ -9054,7 +9073,7 @@ function playStory(id, opts) {
   const heroSkin = CHAR_SKINS.find(s => s.id === heroId);
   const el = document.createElement('div');
   el.id = 'story-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', '物語：' + sc.title);
-  el.innerHTML = `<div class="stv-bg" style="background-image:${sceneUri(id)}"></div><div class="stv-shade"></div>
+  el.innerHTML = `<div class="stv-bg" style="${sc.bg === 'none' ? 'background:radial-gradient(ellipse at 50% 40%,#1c2a3c,#07080d 75%)' : 'background-image:' + sceneUri(id)}"></div><div class="stv-shade"></div>
     <div class="stv-title">${esc(sc.title)}</div>
     <button class="stv-skip" type="button" id="stv-skip">スキップ ▶▶</button>
     <div class="stv-chara" id="stv-chara" aria-hidden="true"></div>
@@ -9141,9 +9160,14 @@ function tutInit() {
   openCharSelectModal(null);
 }
 
+// 最初のルルとの会話（自動テストでは飛ばす）。終わったら cb を呼ぶ
+function tutIntro(cb) {
+  if (storySkip() || !STORY.TUT) { cb(); return; }
+  playStory('TUT', { onEnd: cb });
+}
 function tutStartAfterCharSelect() {
   G.tutorial = { step: 0, done: false };
-  requestAnimationFrame(() => requestAnimationFrame(() => tutStep(0)));
+  requestAnimationFrame(() => requestAnimationFrame(() => tutIntro(() => tutStep(0))));
 }
 
 function tutDone() {
@@ -9162,28 +9186,29 @@ function tutDone() {
 // step 6: 完了メッセージ
 // place: 'above' = 吹き出しをターゲットの上（矢印↓）, 'below' = 下（矢印↑）, 'center' = 中央
 const TUT_MSGS = {
-  0:  { title: 'はじめよう！', body: '下の <b>ダンジョン</b> タブを押してみよう。', place: 'above' },
-  1:  { title: 'ダンジョンに挑む', body: '<b>苔むす地下墓地 (ノービス)</b> の「挑戦」ボタンを押そう。', place: 'below' },
-  3:  { title: '撤退しよう！', body: 'HPが半分を切った！<br>今すぐ <b>撤退</b> ボタンを押して街に帰ろう。', place: 'above' },
-  4:  { title: 'ステータスを開こう', body: '下の <b>ステータス</b> タブを押してみよう。', place: 'above' },
-  41: { title: 'スキルを取得しよう', body: '<b>生命枠</b> の「+1 SP」ボタンを3回押して<b>ヒール</b>を習得しよう。', place: 'below' },
-  5:  { title: 'スキルを装備しよう', body: '習得した <b>ヒール</b> のS1〜S3ボタンを押してスロットにセットしよう。', place: 'below' },
-  6:  { title: 'チュートリアル完了！🎉', body: '装備したスキルは戦闘で自動発動されるよ。<br>詳しくは <b>ヘルプ</b> を見てね！', place: 'above' },
+  0:  { ex: 'normal',   body: 'まずは、下の <b>ダンジョン</b> タブを押してください！ 冒険のはじまりです！', place: 'above' },
+  1:  { ex: 'normal',   body: '最初は <b>苔むす地下墓地（初級）</b> がおすすめです。「挑戦」を押して、潜ってみましょう！', place: 'below' },
+  2:  { ex: 'normal',   body: '戦闘は自動で進みますよ。HPが減りすぎないか、私も見てますね！', place: 'below' },
+  3:  { ex: 'surprise', body: 'あっ、HPが半分を切りました！ 無理は禁物です。<b>撤退</b> を押して、街へ帰りましょう！', place: 'above' },
+  4:  { ex: 'joy',      body: 'ナイス判断です！ 次は下の <b>ステータス</b> タブで、スキルを覚えましょう。', place: 'above' },
+  41: { ex: 'normal',   body: '<b>生命枠</b> の「+1 SP」を3回押して、<b>ヒール</b> を覚えましょう！', place: 'below' },
+  5:  { ex: 'normal',   body: '覚えた <b>ヒール</b> のS1〜S3を押して、スロットにセットしましょう！', place: 'below' },
+  6:  { ex: 'joy',      body: 'これで準備OKです！ スキルは戦闘で自動発動しますよ。困ったら <b>ヘルプ</b> を見てくださいね。いってらっしゃい！', place: 'above' },
 };
 
 function getTutMsg(step) {
   const tgt = getCharTutorialTarget(G.p && G.p.skin);
   if (step === 41) {
     return {
-      title: 'スキルを取得しよう',
-      body: `<b>${esc(tgt.treeName)}</b> の「+1 SP」ボタンを3回押して<b>${esc(tgt.skillName)}</b>を習得しよう。<br><span class="sub">${esc(tgt.hint)}</span>`,
+      ex: 'normal',
+      body: `<b>${esc(tgt.treeName)}</b> の「+1 SP」を3回押して、<b>${esc(tgt.skillName)}</b> を覚えましょう！<br><span class="sub">${esc(tgt.hint)}</span>`,
       place: 'below'
     };
   }
   if (step === 5) {
     return {
-      title: 'スキルを装備しよう',
-      body: `習得した <b>${esc(tgt.skillName)}</b> のS1〜S3ボタンを押してスロットにセットしよう。`,
+      ex: 'normal',
+      body: `覚えた <b>${esc(tgt.skillName)}</b> のS1〜S3を押して、スロットにセットしましょう！`,
       place: 'below'
     };
   }
@@ -9263,36 +9288,15 @@ function tutRenderHole(el) {
 
 function tutRenderBubble(el, msg) {
   const bubble = document.getElementById('tut-bubble');
-  bubble.innerHTML = `<b>${msg.title}</b>${msg.body}`;
-  // place: 'above' → 吹き出しはターゲットの上、矢印は下向き
-  //        'below' → 吹き出しはターゲットの下、矢印は上向き
-  const above = !msg.place || msg.place === 'above';
-  bubble.className = 'tut-bubble ' + (above ? 'arrow-down' : 'arrow-up');
-  const vw = window.innerWidth;
-  if (el) {
-    const r = el.getBoundingClientRect();
-    const bw = Math.min(280, vw - 32);
-    let left = r.left + r.width / 2 - bw / 2;
-    left = Math.max(16, Math.min(left, vw - bw - 16));
-    bubble.style.left = left + 'px';
-    bubble.style.width = bw + 'px';
-    if (above) {
-      // 吹き出しをターゲットの上に配置（translateY(-100%) でtopから上へ）
-      bubble.style.top = (r.top - 16) + 'px';
-      bubble.style.transform = 'translateY(-100%)';
-    } else {
-      // 吹き出しをターゲットの下に配置
-      bubble.style.top = (r.bottom + 16) + 'px';
-      bubble.style.transform = '';
-    }
-  } else {
-    // 中央配置
-    bubble.style.top = '40%';
-    bubble.style.left = '50%';
-    bubble.style.transform = 'translate(-50%, -50%)';
-    bubble.style.width = Math.min(280, vw - 32) + 'px';
-  }
-  bubble.style.display = 'block';
+  const ex = (msg.ex && NPC_PNG.guide[msg.ex]) ? msg.ex : 'normal';
+  bubble.className = 'tut-bubble lulu';
+  bubble.innerHTML = `<img class="tut-lulu-img" src="${NPC_PNG.guide[ex]}" alt="" draggable="false"><div class="tut-say"><span class="tut-name">ルル</span><div class="tut-text">${msg.body}</div></div>`;
+  // 対象が画面の下半分にあれば上に、上半分なら下（ナビバーの上）に会話枠を出して、対象を隠さない
+  let top = true;
+  if (el) { const r = el.getBoundingClientRect(); top = (r.top + r.height / 2) > window.innerHeight * 0.5; }
+  bubble.style.left = ''; bubble.style.width = ''; bubble.style.transform = '';
+  bubble.classList.toggle('at-top', top); bubble.classList.toggle('at-bottom', !top);
+  bubble.style.display = 'flex';
 }
 
 function tutSetTarget(el, blockAll) {
@@ -9312,7 +9316,17 @@ function renderTutorial() {
   }
 
   // step 2: 戦闘中は何も表示しない（HP監視だけ）。キャラ選択モーダル表示中もオーバーレイは出さない
-  if (step === 2 || G._charSelectOpen) { tutHide(); return; }
+  if (G._charSelectOpen) { tutHide(); return; }
+  if (step === 2) {   // 戦闘中: ルルのひとことだけ（操作は妨げない）
+    if (G._tutBanner2) return;   // 表示中は再描画で消さない
+    if (tut.bannerShown) { tutHide(); return; }   // 1回だけ
+    const m2 = getTutMsg(2); if (!m2) { tutHide(); return; }
+    tut.bannerShown = true;
+    G._tutBanner2 = true;
+    overlay.style.display = 'block'; document.getElementById('tut-hole').style.display = 'none'; tutRenderBubble(null, m2);
+    setTimeout(() => { G._tutBanner2 = false; if (G.tutorial && G.tutorial.step === 2) tutHide(); }, 4500);
+    return;
+  }
 
   const msg = getTutMsg(step);
   if (!msg) { tutHide(); return; }

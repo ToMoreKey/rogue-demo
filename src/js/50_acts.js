@@ -389,7 +389,7 @@ const ACTS = {
     if (G.run) { toast('ダンジョン攻略中はできません'); return; }
     G.tutorial = { step: 0 }; G._charSelectOpen = false; G.view = 'town'; G.townView = 'plaza';
     try { localStorage.removeItem(TUT_SAVE_KEY); } catch (e) {}
-    renderAll(); tutStep(0);
+    renderAll(); tutIntro(() => tutStep(0));
   },
   switchBuild(d) { switchBuild(d.i); },
   resetAllTrees() { resetAllTrees(); },
