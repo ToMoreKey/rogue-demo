@@ -850,7 +850,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v81';
+const APP_VERSION = 'rogue-v82';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -5689,7 +5689,7 @@ function powerAfterimage(a, b) {
   if (G.headless || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
   const up = b > a, rk = powerRank(b);
   const old = document.getElementById('pw-ghosts'); if (old) old.remove();
-  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', rk.color);
+  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', up ? rk.color : '#7fa8ff'); // 下降は青系で区別
   let h = '';
   for (let i = 0; i < 4; i++) h += `<span class="pw-gh g${i}">${fmt(b)}</span>`;
   box.innerHTML = `<div class="pw-lab">戦闘力 ${rk.name}</div>${h}<span class="pw-gh main">${fmt(b)}</span><div class="pw-dl">${up ? '▲ +' : '▼ −'}${fmt(Math.abs(b - a))}</div>`;

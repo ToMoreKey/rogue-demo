@@ -17,7 +17,7 @@ function powerAfterimage(a, b) {
   if (G.headless || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
   const up = b > a, rk = powerRank(b);
   const old = document.getElementById('pw-ghosts'); if (old) old.remove();
-  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', rk.color);
+  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', up ? rk.color : '#7fa8ff'); // 下降は青系で区別
   let h = '';
   for (let i = 0; i < 4; i++) h += `<span class="pw-gh g${i}">${fmt(b)}</span>`;
   box.innerHTML = `<div class="pw-lab">戦闘力 ${rk.name}</div>${h}<span class="pw-gh main">${fmt(b)}</span><div class="pw-dl">${up ? '▲ +' : '▼ −'}${fmt(Math.abs(b - a))}</div>`;
