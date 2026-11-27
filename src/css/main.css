@@ -693,3 +693,16 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 @keyframes emote{0%{opacity:0;transform:translateY(6px)}30%{opacity:1}100%{opacity:1;transform:translateY(-4px)}}
 @keyframes joy{0%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
 @media (prefers-reduced-motion:reduce){.npc-emote,.npc.joy .npc-pt svg{animation:none}}
+
+/* ---- 5-B 図鑑・実績 ---- */
+.dex-new{display:inline-block;padding:0 5px;margin-left:4px;border-radius:999px;background:#ff5a7a;color:#fff;font-size:10px;font-weight:700;line-height:16px;vertical-align:middle}
+.dex-card,.dex-icard{position:relative}
+.dex-card>.dex-new,.dex-icard>.dex-new{position:absolute;top:2px;right:2px;margin:0;z-index:2}
+.dex-prog{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:11px;color:var(--muted)}
+.dex-bar{flex:1;height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+.dex-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#8fe3a0)}
+.dex-filter{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.ach-banner{position:fixed;left:50%;top:34%;transform:translateX(-50%);z-index:300;min-width:220px;max-width:88vw;padding:12px 18px;text-align:center;border-radius:12px;border:1px solid #ffd76a;background:linear-gradient(180deg,rgba(60,40,10,.96),rgba(20,14,6,.96));box-shadow:0 0 28px rgba(255,215,106,.55);display:flex;flex-direction:column;gap:2px;pointer-events:none;animation:achb 2.6s ease-out forwards}
+.ach-banner b{color:#ffd76a;font-size:12px;letter-spacing:.1em}.ach-banner span{font-family:var(--font-display);font-size:18px;color:#fff}.ach-banner small{color:#e8d9a8}
+@keyframes achb{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ach-banner{animation:none}}

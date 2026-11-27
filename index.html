@@ -707,6 +707,19 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 @keyframes emote{0%{opacity:0;transform:translateY(6px)}30%{opacity:1}100%{opacity:1;transform:translateY(-4px)}}
 @keyframes joy{0%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
 @media (prefers-reduced-motion:reduce){.npc-emote,.npc.joy .npc-pt svg{animation:none}}
+
+/* ---- 5-B 図鑑・実績 ---- */
+.dex-new{display:inline-block;padding:0 5px;margin-left:4px;border-radius:999px;background:#ff5a7a;color:#fff;font-size:10px;font-weight:700;line-height:16px;vertical-align:middle}
+.dex-card,.dex-icard{position:relative}
+.dex-card>.dex-new,.dex-icard>.dex-new{position:absolute;top:2px;right:2px;margin:0;z-index:2}
+.dex-prog{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:11px;color:var(--muted)}
+.dex-bar{flex:1;height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;border:1px solid var(--line)}
+.dex-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#8fe3a0)}
+.dex-filter{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.ach-banner{position:fixed;left:50%;top:34%;transform:translateX(-50%);z-index:300;min-width:220px;max-width:88vw;padding:12px 18px;text-align:center;border-radius:12px;border:1px solid #ffd76a;background:linear-gradient(180deg,rgba(60,40,10,.96),rgba(20,14,6,.96));box-shadow:0 0 28px rgba(255,215,106,.55);display:flex;flex-direction:column;gap:2px;pointer-events:none;animation:achb 2.6s ease-out forwards}
+.ach-banner b{color:#ffd76a;font-size:12px;letter-spacing:.1em}.ach-banner span{font-family:var(--font-display);font-size:18px;color:#fff}.ach-banner small{color:#e8d9a8}
+@keyframes achb{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ach-banner{animation:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -817,7 +830,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v75';
+const APP_VERSION = 'rogue-v77';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2702,11 +2715,22 @@ function newPlayer() {
   p.hp = maxHp(p); p.mp = maxMp(p);
   return p;
 }
+// 図鑑の「NEW」印。kind: e=敵 / i=装備 / a=実績。見た時点（図鑑を開いた時）で消える
+function markDexNew(p, kind, id) {
+  if (!p || !id) return;
+  p.dexNew = p.dexNew || { e: {}, i: {}, a: {} };
+  (p.dexNew[kind] = p.dexNew[kind] || {})[id] = true;
+}
+function dexNewCount(p) {
+  const d = (p && p.dexNew) || {};
+  return ['e', 'i', 'a'].reduce((n, k) => n + Object.keys(d[k] || {}).length, 0);
+}
 function recordDexEnemy(p, id, isKill = false) {
   if (!p || !id) return;
   p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
   p.dex.enemies = p.dex.enemies || {};
   const cur = p.dex.enemies[id] || { seen: true, kills: 0 };
+  if (!p.dex.enemies[id] || !p.dex.enemies[id].seen) { markDexNew(p, 'e', id); if (!G.headless && G.run && G.run.enemy && G.run.enemy.id === id) toast(`📖 図鑑に登録：${G.run.enemy.name}`); }
   cur.seen = true;
   if (isKill) cur.kills = (cur.kills || 0) + 1;
   p.dex.enemies[id] = cur;
@@ -2716,6 +2740,7 @@ function recordDexItem(p, it) {
   p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
   p.dex.items = p.dex.items || {};
   const k = dexItemKey(it);
+  if (k && !p.dex.items[k]) { markDexNew(p, 'i', k); if (!G.headless && G.p === p) toast(`📖 装備図鑑に登録：${itemName(it)}`); }
   if (k) p.dex.items[k] = true;
 }
 function flushPendingAchCoins(p, silent = false) {
@@ -2740,7 +2765,7 @@ function checkAchievements(ev = null, silent = false) {
     if (ev && a.ev !== ev) continue;
     if (p.ach[a.id]) continue;
     if (!a.cond(p)) continue;
-    p.ach[a.id] = today;
+    p.ach[a.id] = today; markDexNew(p, 'a', a.id);
     if (a.titleId && !p.tower.titles.includes(a.titleId)) p.tower.titles.push(a.titleId);
     if (a.coins > 0) {
       if (p.ending) {
@@ -2754,7 +2779,7 @@ function checkAchievements(ev = null, silent = false) {
     if (!silent && !G.headless) {
       const tObj = a.titleId && TOWER_TITLES.find(t => t.id === a.titleId);
       const tail = p.ending ? `🪙+${a.coins}` : `🪙+${a.coins}(クリア後付与)`;
-      toast(`🏆 実績解除「${a.name}」 ${tail}${tObj ? ` 称号「${tObj.name}」` : ''}`);
+      achBanner(a, tail, tObj);
     }
   }
   return unlocked;
@@ -2976,6 +3001,8 @@ function load() {
         for (let lv = 1; lv <= 10; lv++) if (s.abyss.cleared[lv]) p.abyss.cleared[lv] = true;
       }
     }
+    p.dexNew = { e: {}, i: {}, a: {} };
+    if (s.dexNew && typeof s.dexNew === 'object') for (const k of ['e', 'i', 'a']) if (s.dexNew[k] && typeof s.dexNew[k] === 'object') for (const id of Object.keys(s.dexNew[k]).slice(0, 500)) if (s.dexNew[k][id]) p.dexNew[k][String(id).slice(0, 40)] = true;
     p.dex = { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} };
     if (s.dex && typeof s.dex === 'object') {
       if (s.dex.enemies && typeof s.dex.enemies === 'object') {
@@ -5340,6 +5367,7 @@ const ACTS = {
   goTower() { startTowerRun(); },
   openDex() { openDexModal(G.dexTab || 'enemies'); },
   openAch() { openDexModal('ach'); },
+  dexFilter(d) { G.dexFilter = d.v; openDexModal(G.dexTab || 'enemies'); },
   dexTab(d) { openDexModal(d.tab || 'enemies'); },
   equipStatusTitle(d) {
     const p = G.p;
@@ -7018,7 +7046,7 @@ function renderStatus() {
         <dt>探索 / 踏破 / 撃破</dt><dd>${p.stats.runs} / ${p.stats.clears} / ${p.stats.kills}</dd>
       </dl>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn primary" data-act="openDex">📖 図鑑</button>
+        <button class="btn primary" data-act="openDex">📖 図鑑${dexNewCount(p) ? ` <span class="dex-new">NEW ${dexNewCount(p)}</span>` : ''}</button>
         <button class="btn" data-act="openAch">🏆 実績</button>
       </div></div>
     <div class="panel"><h2>称号（獲得済: ${(p.tower && p.tower.titles ? p.tower.titles.length : 0)} / ${TOWER_TITLES.length}）</h2>
@@ -7415,6 +7443,19 @@ function openRankingModal() {
   fetchRanking().then(res => { if (G.modalOpen) renderRankingModal(res); });
 }
 
+// 実績達成：画面中央に称号バナー（戦闘力の残像と同系の光の帯）。演出OFF・reduced-motionでは従来のトースト
+function achBanner(a, tail, tObj) {
+  const msg = `🏆 実績解除「${a.name}」 ${tail}${tObj ? ` 称号「${tObj.name}」` : ''}`;
+  if (G.headless || !isFxEnabled() || isReducedMotion() || typeof document === 'undefined') { toast(msg); return; }
+  document.querySelectorAll('.ach-banner').forEach(n => n.remove());
+  const b = document.createElement('div'); b.className = 'ach-banner'; b.setAttribute('role', 'status');
+  b.innerHTML = `<b>🏆 実績解除</b><span>${esc(a.name)}</span><small>${esc(tail)}${tObj ? ' ／ 称号「' + esc(tObj.name) + '」' : ''}</small>`;
+  document.body.appendChild(b); setTimeout(() => b.remove(), 2600);
+}
+function dexBar(done, total, label) {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  return `<div class="dex-prog"><div class="dex-bar"><i style="width:${pct}%"></i></div><span>${label ? esc(label) + ' ' : ''}${done}/${total}（${pct}%）</span></div>`;
+}
 function openDexModal(tab = 'enemies') {
   G.dexTab = tab === 'items' ? 'items' : tab === 'ach' ? 'ach' : 'enemies';
   const p = G.p, dex = (p && p.dex) || { enemies: {}, items: {}, rewards: {} };
@@ -7429,6 +7470,12 @@ function openDexModal(tab = 'enemies') {
     for (const st of DEX_MYTHICS) itemKeys.push({ key: `${sl}_m${st}`, slot: sl, star: st, mythic: true, hkey: `m${st}` });
   }
   const gotTotal = itemKeys.filter(x => itMap[x.key]).length;
+  const fl = G.dexFilter === 'todo' || G.dexFilter === 'done' ? G.dexFilter : 'all';
+  const keep = got => fl === 'all' || (fl === 'done' ? got : !got);
+  const fresh = (p && p.dexNew) || { e: {}, i: {}, a: {} };
+  const NEW = '<span class="dex-new">NEW</span>';
+  const allTotal = allEnemies.length + itemKeys.length + ACHIEVEMENTS.length, allDone = seenTotal + gotTotal + achTotal;
+  const filterBar = `<div class="dex-filter" role="group" aria-label="絞り込み">${[['all', 'すべて'], ['todo', '未達成のみ'], ['done', '達成済みのみ']].map(([v, l]) => `<button class="btn small ${fl === v ? 'on' : ''}" data-act="dexFilter" data-v="${v}" aria-pressed="${fl === v}">${l}</button>`).join('')}</div>`;
 
   const rewardBtn = (key, ready, label) => {
     const claimed = !!(dex.rewards && dex.rewards[key]);
@@ -7442,15 +7489,16 @@ function openDexModal(tab = 'enemies') {
   if (G.dexTab === 'enemies') {
     const allEnReady = seenTotal === allEnemies.length;
     body = `<div class="dex-gh"><span class="sub">発見 <b>${seenTotal} / ${allEnemies.length}</b></span>${rewardBtn('all_enemies', allEnReady, '🪙100＋称号「図鑑博士」')}</div>
+      ${dexBar(seenTotal, allEnemies.length, '敵図鑑')}${allEnReady ? '' : `<p class="sub" style="margin:2px 0 6px">あと${allEnemies.length - seenTotal}種で全種コンプ（図鑑博士）</p>`}${filterBar}
       <div class="dex-scroll">${groups.map(g => {
         const gSeen = g.list.filter(e => enMap[e.id] && enMap[e.id].seen).length;
         const reqList = g.id === 'O' ? g.list.slice(0, 6) : g.list;
         const gReady = reqList.every(e => enMap[e.id] && enMap[e.id].seen);
         return `<div class="dex-grp">
           <div class="dex-gh"><b>${esc(g.title)}</b><span class="sub">発見 ${gSeen}/${g.list.length}</span>${rewardBtn('grp_' + g.id, gReady, `🪙${g.rewardCoins}`)}</div>
-          <div class="dex-grid">${g.list.map(e => {
+          <div class="dex-grid">${g.list.filter(e => keep(!!(enMap[e.id] && enMap[e.id].seen))).map(e => {
             const rec = enMap[e.id], seen = !!(rec && rec.seen);
-            return `<div class="dex-card">
+            return `<div class="dex-card">${seen && fresh.e && fresh.e[e.id] ? NEW : ''}
               <div class="dex-spr${seen ? '' : ' dex-sil'}">${enemyArt(e, e.dId)}</div>
               <div class="dex-nm">${seen ? esc(e.name) : '？？？'}</div>
               <div class="dex-sub">${seen ? `撃破 ${rec.kills || 0}` : '未発見'}</div>
@@ -7461,11 +7509,14 @@ function openDexModal(tab = 'enemies') {
   } else if (G.dexTab === 'ach') {
     const pend = (!p.ending && p.pendingAchCoins > 0) ? ` <span class="sub">（保留コイン: 🪙${fmt(p.pendingAchCoins)}枚 / クリア後付与）</span>` : '';
     body = `<div class="dex-gh"><span class="sub">達成 <b>${achTotal} / ${ACHIEVEMENTS.length}</b>${pend}</span></div>
+      ${dexBar(achTotal, ACHIEVEMENTS.length, '実績')}${filterBar}
       <div class="dex-scroll">${ACH_CATS.map(cat => {
-        const list = ACHIEVEMENTS.filter(a => a.cat === cat);
-        const done = list.filter(a => achMap[a.id]).length;
+        const list0 = ACHIEVEMENTS.filter(a => a.cat === cat);
+        const done = list0.filter(a => achMap[a.id]).length;
+        const list = list0.filter(a => keep(!!achMap[a.id]));
+        if (!list.length) return '';
         return `<div class="dex-grp">
-          <div class="dex-gh"><b>${esc(cat)}</b><span class="sub">${done}/${list.length}</span></div>
+          <div class="dex-gh"><b>${esc(cat)}</b><span class="sub">${done}/${list0.length}</span></div>${dexBar(done, list0.length, '')}
           <div style="display:grid;gap:5px">${list.map(a => {
             const dt = achMap[a.id];
             const hid = !dt && a.hidden;
@@ -7473,7 +7524,7 @@ function openDexModal(tab = 'enemies') {
             const rewTxt = `🪙${a.coins}${tObj ? ` ＋ 称号「${tObj.name}」` : ''}`;
             const pgTxt = !dt && !hid && a.prog ? ` <span class="sub">(${esc(a.prog(p))})</span>` : '';
             return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <div style="min-width:0"><div><b>${dt ? '🏆 ' : '🔒 '}${hid ? '？？？' : esc(a.name)}</b>${pgTxt}</div>
+              <div style="min-width:0"><div><b>${dt ? '🏆 ' : '🔒 '}${hid ? '？？？' : esc(a.name)}</b>${dt && fresh.a && fresh.a[a.id] ? ' ' + NEW : ''}${pgTxt}</div>
                 <div class="sub">${hid ? '隠し実績' : esc(a.desc)}</div></div>
               <div style="text-align:right;white-space:nowrap;font-size:11px">${dt ? `<div class="l-good">${esc(dt)}</div>` : ''}<div class="sub">${hid ? '？？？' : esc(rewTxt)}</div></div>
             </div>`;
@@ -7484,14 +7535,14 @@ function openDexModal(tab = 'enemies') {
     const renderSlotGrid = (sl, label, mythic) => {
       const stars = mythic ? DEX_MYTHICS : DEX_STARS;
       return `<div class="dex-grp"><div class="dex-gh"><b>${label}</b></div>
-        <div class="dex-igrid">${stars.map(st => {
+        <div class="dex-igrid">${stars.filter(st => keep(!!itMap[`${sl}_${mythic ? 'm' : ''}${st}`])).map(st => {
           const key = `${sl}_${mythic ? 'm' : ''}${st}`;
           const got = !!itMap[key];
           const fake = { slot: sl, star: st, rarity: mythic ? 4 : (st >= 8 ? 3 : 0) };
           const nm = itemName(fake);
           const lbl = `${mythic ? '神話 ' : ''}★${st} ${sl === 'weapon' ? '武器' : '防具'}`;
           return `<div class="dex-icard${mythic ? ' r4' : ''}" data-act="dexHint" data-hkey="${mythic ? 'm' + st : st}" data-label="${esc(lbl)}">
-            <div class="${got ? '' : 'dex-sil'}">${itemIcon(fake)}</div>
+            ${got && fresh.i && fresh.i[key] ? NEW : ''}<div class="${got ? '' : 'dex-sil'}">${itemIcon(fake)}</div>
             <div class="dex-nm">${got ? esc(nm) : `★${st} 未入手`}</div>
             <div class="dex-sub">${got ? `★${st}` : 'タップでヒント'}</div>
           </div>`;
@@ -7499,6 +7550,7 @@ function openDexModal(tab = 'enemies') {
     };
     const allItReady = gotTotal === itemKeys.length;
     body = `<div class="dex-gh"><span class="sub">入手 <b>${gotTotal} / ${itemKeys.length}</b></span>${rewardBtn('all_items', allItReady, '🪙100＋称号「蒐集家」')}</div>
+      ${dexBar(gotTotal, itemKeys.length, '装備図鑑')}${filterBar}
       <div class="dex-hint" id="dex-hint-box">未入手の装備をタップすると入手条件のヒントが表示されます。</div>
       <div class="dex-scroll">
         ${renderSlotGrid('weapon', '武器（★1〜★9）', false)}
@@ -7510,14 +7562,17 @@ function openDexModal(tab = 'enemies') {
 
   $('#m-sheet').innerHTML = `
     <h2 class="win" id="m-title">📖 図鑑・実績</h2>
+    ${dexBar(allDone, allTotal, '全体のコンプ率')}
     <div class="dex-tabs">
-      <button class="btn small ${G.dexTab === 'enemies' ? 'primary' : ''}" data-act="dexTab" data-tab="enemies">敵図鑑（${seenTotal}/${allEnemies.length}）</button>
-      <button class="btn small ${G.dexTab === 'items' ? 'primary' : ''}" data-act="dexTab" data-tab="items">装備図鑑（${gotTotal}/${itemKeys.length}）</button>
-      <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）</button>
+      <button class="btn small ${G.dexTab === 'enemies' ? 'primary' : ''}" data-act="dexTab" data-tab="enemies">敵図鑑（${seenTotal}/${allEnemies.length}）${Object.keys(fresh.e || {}).length && G.dexTab !== 'enemies' ? '<i class="st-dot"></i>' : ''}</button>
+      <button class="btn small ${G.dexTab === 'items' ? 'primary' : ''}" data-act="dexTab" data-tab="items">装備図鑑（${gotTotal}/${itemKeys.length}）${Object.keys(fresh.i || {}).length && G.dexTab !== 'items' ? '<i class="st-dot"></i>' : ''}</button>
+      <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）${Object.keys(fresh.a || {}).length && G.dexTab !== 'ach' ? '<i class="st-dot"></i>' : ''}</button>
     </div>
     ${body}
     <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+  // 見た時点でNEWを消す（このタブ分）。ステータスのドットも更新
+  if (p && p.dexNew) { const k = G.dexTab === 'enemies' ? 'e' : G.dexTab === 'items' ? 'i' : 'a'; if (Object.keys(p.dexNew[k] || {}).length) { p.dexNew[k] = {}; save(); if (G.view === 'status') renderStatus(); } }
 }
 
 function openUnlockNoticeModal() {
@@ -8810,7 +8865,7 @@ window.__rogue = {
   idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, NPCS, NPC_EXTRA, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
   playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,

@@ -1407,7 +1407,7 @@ function renderStatus() {
         <dt>探索 / 踏破 / 撃破</dt><dd>${p.stats.runs} / ${p.stats.clears} / ${p.stats.kills}</dd>
       </dl>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn primary" data-act="openDex">📖 図鑑</button>
+        <button class="btn primary" data-act="openDex">📖 図鑑${dexNewCount(p) ? ` <span class="dex-new">NEW ${dexNewCount(p)}</span>` : ''}</button>
         <button class="btn" data-act="openAch">🏆 実績</button>
       </div></div>
     <div class="panel"><h2>称号（獲得済: ${(p.tower && p.tower.titles ? p.tower.titles.length : 0)} / ${TOWER_TITLES.length}）</h2>
@@ -1804,6 +1804,19 @@ function openRankingModal() {
   fetchRanking().then(res => { if (G.modalOpen) renderRankingModal(res); });
 }
 
+// 実績達成：画面中央に称号バナー（戦闘力の残像と同系の光の帯）。演出OFF・reduced-motionでは従来のトースト
+function achBanner(a, tail, tObj) {
+  const msg = `🏆 実績解除「${a.name}」 ${tail}${tObj ? ` 称号「${tObj.name}」` : ''}`;
+  if (G.headless || !isFxEnabled() || isReducedMotion() || typeof document === 'undefined') { toast(msg); return; }
+  document.querySelectorAll('.ach-banner').forEach(n => n.remove());
+  const b = document.createElement('div'); b.className = 'ach-banner'; b.setAttribute('role', 'status');
+  b.innerHTML = `<b>🏆 実績解除</b><span>${esc(a.name)}</span><small>${esc(tail)}${tObj ? ' ／ 称号「' + esc(tObj.name) + '」' : ''}</small>`;
+  document.body.appendChild(b); setTimeout(() => b.remove(), 2600);
+}
+function dexBar(done, total, label) {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  return `<div class="dex-prog"><div class="dex-bar"><i style="width:${pct}%"></i></div><span>${label ? esc(label) + ' ' : ''}${done}/${total}（${pct}%）</span></div>`;
+}
 function openDexModal(tab = 'enemies') {
   G.dexTab = tab === 'items' ? 'items' : tab === 'ach' ? 'ach' : 'enemies';
   const p = G.p, dex = (p && p.dex) || { enemies: {}, items: {}, rewards: {} };
@@ -1818,6 +1831,12 @@ function openDexModal(tab = 'enemies') {
     for (const st of DEX_MYTHICS) itemKeys.push({ key: `${sl}_m${st}`, slot: sl, star: st, mythic: true, hkey: `m${st}` });
   }
   const gotTotal = itemKeys.filter(x => itMap[x.key]).length;
+  const fl = G.dexFilter === 'todo' || G.dexFilter === 'done' ? G.dexFilter : 'all';
+  const keep = got => fl === 'all' || (fl === 'done' ? got : !got);
+  const fresh = (p && p.dexNew) || { e: {}, i: {}, a: {} };
+  const NEW = '<span class="dex-new">NEW</span>';
+  const allTotal = allEnemies.length + itemKeys.length + ACHIEVEMENTS.length, allDone = seenTotal + gotTotal + achTotal;
+  const filterBar = `<div class="dex-filter" role="group" aria-label="絞り込み">${[['all', 'すべて'], ['todo', '未達成のみ'], ['done', '達成済みのみ']].map(([v, l]) => `<button class="btn small ${fl === v ? 'on' : ''}" data-act="dexFilter" data-v="${v}" aria-pressed="${fl === v}">${l}</button>`).join('')}</div>`;
 
   const rewardBtn = (key, ready, label) => {
     const claimed = !!(dex.rewards && dex.rewards[key]);
@@ -1831,15 +1850,16 @@ function openDexModal(tab = 'enemies') {
   if (G.dexTab === 'enemies') {
     const allEnReady = seenTotal === allEnemies.length;
     body = `<div class="dex-gh"><span class="sub">発見 <b>${seenTotal} / ${allEnemies.length}</b></span>${rewardBtn('all_enemies', allEnReady, '🪙100＋称号「図鑑博士」')}</div>
+      ${dexBar(seenTotal, allEnemies.length, '敵図鑑')}${allEnReady ? '' : `<p class="sub" style="margin:2px 0 6px">あと${allEnemies.length - seenTotal}種で全種コンプ（図鑑博士）</p>`}${filterBar}
       <div class="dex-scroll">${groups.map(g => {
         const gSeen = g.list.filter(e => enMap[e.id] && enMap[e.id].seen).length;
         const reqList = g.id === 'O' ? g.list.slice(0, 6) : g.list;
         const gReady = reqList.every(e => enMap[e.id] && enMap[e.id].seen);
         return `<div class="dex-grp">
           <div class="dex-gh"><b>${esc(g.title)}</b><span class="sub">発見 ${gSeen}/${g.list.length}</span>${rewardBtn('grp_' + g.id, gReady, `🪙${g.rewardCoins}`)}</div>
-          <div class="dex-grid">${g.list.map(e => {
+          <div class="dex-grid">${g.list.filter(e => keep(!!(enMap[e.id] && enMap[e.id].seen))).map(e => {
             const rec = enMap[e.id], seen = !!(rec && rec.seen);
-            return `<div class="dex-card">
+            return `<div class="dex-card">${seen && fresh.e && fresh.e[e.id] ? NEW : ''}
               <div class="dex-spr${seen ? '' : ' dex-sil'}">${enemyArt(e, e.dId)}</div>
               <div class="dex-nm">${seen ? esc(e.name) : '？？？'}</div>
               <div class="dex-sub">${seen ? `撃破 ${rec.kills || 0}` : '未発見'}</div>
@@ -1850,11 +1870,14 @@ function openDexModal(tab = 'enemies') {
   } else if (G.dexTab === 'ach') {
     const pend = (!p.ending && p.pendingAchCoins > 0) ? ` <span class="sub">（保留コイン: 🪙${fmt(p.pendingAchCoins)}枚 / クリア後付与）</span>` : '';
     body = `<div class="dex-gh"><span class="sub">達成 <b>${achTotal} / ${ACHIEVEMENTS.length}</b>${pend}</span></div>
+      ${dexBar(achTotal, ACHIEVEMENTS.length, '実績')}${filterBar}
       <div class="dex-scroll">${ACH_CATS.map(cat => {
-        const list = ACHIEVEMENTS.filter(a => a.cat === cat);
-        const done = list.filter(a => achMap[a.id]).length;
+        const list0 = ACHIEVEMENTS.filter(a => a.cat === cat);
+        const done = list0.filter(a => achMap[a.id]).length;
+        const list = list0.filter(a => keep(!!achMap[a.id]));
+        if (!list.length) return '';
         return `<div class="dex-grp">
-          <div class="dex-gh"><b>${esc(cat)}</b><span class="sub">${done}/${list.length}</span></div>
+          <div class="dex-gh"><b>${esc(cat)}</b><span class="sub">${done}/${list0.length}</span></div>${dexBar(done, list0.length, '')}
           <div style="display:grid;gap:5px">${list.map(a => {
             const dt = achMap[a.id];
             const hid = !dt && a.hidden;
@@ -1862,7 +1885,7 @@ function openDexModal(tab = 'enemies') {
             const rewTxt = `🪙${a.coins}${tObj ? ` ＋ 称号「${tObj.name}」` : ''}`;
             const pgTxt = !dt && !hid && a.prog ? ` <span class="sub">(${esc(a.prog(p))})</span>` : '';
             return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <div style="min-width:0"><div><b>${dt ? '🏆 ' : '🔒 '}${hid ? '？？？' : esc(a.name)}</b>${pgTxt}</div>
+              <div style="min-width:0"><div><b>${dt ? '🏆 ' : '🔒 '}${hid ? '？？？' : esc(a.name)}</b>${dt && fresh.a && fresh.a[a.id] ? ' ' + NEW : ''}${pgTxt}</div>
                 <div class="sub">${hid ? '隠し実績' : esc(a.desc)}</div></div>
               <div style="text-align:right;white-space:nowrap;font-size:11px">${dt ? `<div class="l-good">${esc(dt)}</div>` : ''}<div class="sub">${hid ? '？？？' : esc(rewTxt)}</div></div>
             </div>`;
@@ -1873,14 +1896,14 @@ function openDexModal(tab = 'enemies') {
     const renderSlotGrid = (sl, label, mythic) => {
       const stars = mythic ? DEX_MYTHICS : DEX_STARS;
       return `<div class="dex-grp"><div class="dex-gh"><b>${label}</b></div>
-        <div class="dex-igrid">${stars.map(st => {
+        <div class="dex-igrid">${stars.filter(st => keep(!!itMap[`${sl}_${mythic ? 'm' : ''}${st}`])).map(st => {
           const key = `${sl}_${mythic ? 'm' : ''}${st}`;
           const got = !!itMap[key];
           const fake = { slot: sl, star: st, rarity: mythic ? 4 : (st >= 8 ? 3 : 0) };
           const nm = itemName(fake);
           const lbl = `${mythic ? '神話 ' : ''}★${st} ${sl === 'weapon' ? '武器' : '防具'}`;
           return `<div class="dex-icard${mythic ? ' r4' : ''}" data-act="dexHint" data-hkey="${mythic ? 'm' + st : st}" data-label="${esc(lbl)}">
-            <div class="${got ? '' : 'dex-sil'}">${itemIcon(fake)}</div>
+            ${got && fresh.i && fresh.i[key] ? NEW : ''}<div class="${got ? '' : 'dex-sil'}">${itemIcon(fake)}</div>
             <div class="dex-nm">${got ? esc(nm) : `★${st} 未入手`}</div>
             <div class="dex-sub">${got ? `★${st}` : 'タップでヒント'}</div>
           </div>`;
@@ -1888,6 +1911,7 @@ function openDexModal(tab = 'enemies') {
     };
     const allItReady = gotTotal === itemKeys.length;
     body = `<div class="dex-gh"><span class="sub">入手 <b>${gotTotal} / ${itemKeys.length}</b></span>${rewardBtn('all_items', allItReady, '🪙100＋称号「蒐集家」')}</div>
+      ${dexBar(gotTotal, itemKeys.length, '装備図鑑')}${filterBar}
       <div class="dex-hint" id="dex-hint-box">未入手の装備をタップすると入手条件のヒントが表示されます。</div>
       <div class="dex-scroll">
         ${renderSlotGrid('weapon', '武器（★1〜★9）', false)}
@@ -1899,14 +1923,17 @@ function openDexModal(tab = 'enemies') {
 
   $('#m-sheet').innerHTML = `
     <h2 class="win" id="m-title">📖 図鑑・実績</h2>
+    ${dexBar(allDone, allTotal, '全体のコンプ率')}
     <div class="dex-tabs">
-      <button class="btn small ${G.dexTab === 'enemies' ? 'primary' : ''}" data-act="dexTab" data-tab="enemies">敵図鑑（${seenTotal}/${allEnemies.length}）</button>
-      <button class="btn small ${G.dexTab === 'items' ? 'primary' : ''}" data-act="dexTab" data-tab="items">装備図鑑（${gotTotal}/${itemKeys.length}）</button>
-      <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）</button>
+      <button class="btn small ${G.dexTab === 'enemies' ? 'primary' : ''}" data-act="dexTab" data-tab="enemies">敵図鑑（${seenTotal}/${allEnemies.length}）${Object.keys(fresh.e || {}).length && G.dexTab !== 'enemies' ? '<i class="st-dot"></i>' : ''}</button>
+      <button class="btn small ${G.dexTab === 'items' ? 'primary' : ''}" data-act="dexTab" data-tab="items">装備図鑑（${gotTotal}/${itemKeys.length}）${Object.keys(fresh.i || {}).length && G.dexTab !== 'items' ? '<i class="st-dot"></i>' : ''}</button>
+      <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）${Object.keys(fresh.a || {}).length && G.dexTab !== 'ach' ? '<i class="st-dot"></i>' : ''}</button>
     </div>
     ${body}
     <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+  // 見た時点でNEWを消す（このタブ分）。ステータスのドットも更新
+  if (p && p.dexNew) { const k = G.dexTab === 'enemies' ? 'e' : G.dexTab === 'items' ? 'i' : 'a'; if (Object.keys(p.dexNew[k] || {}).length) { p.dexNew[k] = {}; save(); if (G.view === 'status') renderStatus(); } }
 }
 
 function openUnlockNoticeModal() {

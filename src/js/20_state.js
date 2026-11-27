@@ -259,11 +259,22 @@ function newPlayer() {
   p.hp = maxHp(p); p.mp = maxMp(p);
   return p;
 }
+// 図鑑の「NEW」印。kind: e=敵 / i=装備 / a=実績。見た時点（図鑑を開いた時）で消える
+function markDexNew(p, kind, id) {
+  if (!p || !id) return;
+  p.dexNew = p.dexNew || { e: {}, i: {}, a: {} };
+  (p.dexNew[kind] = p.dexNew[kind] || {})[id] = true;
+}
+function dexNewCount(p) {
+  const d = (p && p.dexNew) || {};
+  return ['e', 'i', 'a'].reduce((n, k) => n + Object.keys(d[k] || {}).length, 0);
+}
 function recordDexEnemy(p, id, isKill = false) {
   if (!p || !id) return;
   p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
   p.dex.enemies = p.dex.enemies || {};
   const cur = p.dex.enemies[id] || { seen: true, kills: 0 };
+  if (!p.dex.enemies[id] || !p.dex.enemies[id].seen) { markDexNew(p, 'e', id); if (!G.headless && G.run && G.run.enemy && G.run.enemy.id === id) toast(`📖 図鑑に登録：${G.run.enemy.name}`); }
   cur.seen = true;
   if (isKill) cur.kills = (cur.kills || 0) + 1;
   p.dex.enemies[id] = cur;
@@ -273,6 +284,7 @@ function recordDexItem(p, it) {
   p.dex = p.dex || { enemies: {}, items: {}, rewards: {} };
   p.dex.items = p.dex.items || {};
   const k = dexItemKey(it);
+  if (k && !p.dex.items[k]) { markDexNew(p, 'i', k); if (!G.headless && G.p === p) toast(`📖 装備図鑑に登録：${itemName(it)}`); }
   if (k) p.dex.items[k] = true;
 }
 function flushPendingAchCoins(p, silent = false) {
@@ -297,7 +309,7 @@ function checkAchievements(ev = null, silent = false) {
     if (ev && a.ev !== ev) continue;
     if (p.ach[a.id]) continue;
     if (!a.cond(p)) continue;
-    p.ach[a.id] = today;
+    p.ach[a.id] = today; markDexNew(p, 'a', a.id);
     if (a.titleId && !p.tower.titles.includes(a.titleId)) p.tower.titles.push(a.titleId);
     if (a.coins > 0) {
       if (p.ending) {
@@ -311,7 +323,7 @@ function checkAchievements(ev = null, silent = false) {
     if (!silent && !G.headless) {
       const tObj = a.titleId && TOWER_TITLES.find(t => t.id === a.titleId);
       const tail = p.ending ? `🪙+${a.coins}` : `🪙+${a.coins}(クリア後付与)`;
-      toast(`🏆 実績解除「${a.name}」 ${tail}${tObj ? ` 称号「${tObj.name}」` : ''}`);
+      achBanner(a, tail, tObj);
     }
   }
   return unlocked;

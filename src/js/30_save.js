@@ -215,6 +215,8 @@ function load() {
         for (let lv = 1; lv <= 10; lv++) if (s.abyss.cleared[lv]) p.abyss.cleared[lv] = true;
       }
     }
+    p.dexNew = { e: {}, i: {}, a: {} };
+    if (s.dexNew && typeof s.dexNew === 'object') for (const k of ['e', 'i', 'a']) if (s.dexNew[k] && typeof s.dexNew[k] === 'object') for (const id of Object.keys(s.dexNew[k]).slice(0, 500)) if (s.dexNew[k][id]) p.dexNew[k][String(id).slice(0, 40)] = true;
     p.dex = { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} };
     if (s.dex && typeof s.dex === 'object') {
       if (s.dex.enemies && typeof s.dex.enemies === 'object') {

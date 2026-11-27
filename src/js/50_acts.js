@@ -411,6 +411,7 @@ const ACTS = {
   goTower() { startTowerRun(); },
   openDex() { openDexModal(G.dexTab || 'enemies'); },
   openAch() { openDexModal('ach'); },
+  dexFilter(d) { G.dexFilter = d.v; openDexModal(G.dexTab || 'enemies'); },
   dexTab(d) { openDexModal(d.tab || 'enemies'); },
   equipStatusTitle(d) {
     const p = G.p;
