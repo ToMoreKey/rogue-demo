@@ -814,7 +814,7 @@ function checkGoals(silent) {
   }
 }
 function goalsVisible(p) {
-  if (p.goalsHidden || (G.tutorial && !G.tutorial.done)) return false;
+  if (G.tutorial && !G.tutorial.done) return false;
   return goalState(p).some(x => !x.ok);
 }
 function hintBox(key, text) {

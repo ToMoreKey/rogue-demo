@@ -720,6 +720,7 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .ach-banner b{color:#ffd76a;font-size:12px;letter-spacing:.1em}.ach-banner span{font-family:var(--font-display);font-size:18px;color:#fff}.ach-banner small{color:#e8d9a8}
 @keyframes achb{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ach-banner{animation:none}}
+.goal-card.mini{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px}.goal-card.mini span{font-weight:700;font-size:14px}
 </style>
 
 <div id="app" class="wrap">
@@ -830,7 +831,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v78';
+const APP_VERSION = 'rogue-v79';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -4674,7 +4675,7 @@ function checkGoals(silent) {
   }
 }
 function goalsVisible(p) {
-  if (p.goalsHidden || (G.tutorial && !G.tutorial.done)) return false;
+  if (G.tutorial && !G.tutorial.done) return false;
   return goalState(p).some(x => !x.ok);
 }
 function hintBox(key, text) {
@@ -5345,7 +5346,7 @@ const ACTS = {
     renderAll();
   },
   hideGoals() { G.p.goalsHidden = true; save(); renderAll(); },
-  showGoals() { G.p.goalsHidden = false; save(); toast('はじめの目標を表示しました（広場）'); renderAll(); },
+  showGoals() { G.p.goalsHidden = false; save(); renderAll(); },
   tutRestart() {
     if (G.run) { toast('ダンジョン攻略中はできません'); return; }
     G.tutorial = { step: 0 }; G._charSelectOpen = false; G.view = 'town'; G.townView = 'plaza';
@@ -5721,7 +5722,8 @@ function renderPlaza() {
     ${viewHero('town', '🏘️', '福音の里　広場', 'ここにいる間、HPが1秒ごとに <b>+2</b> 回復します。')}
     ${npcHtml('guide')}
     ${(() => { if (!goalsVisible(p)) return ''; const gs = goalState(p), done = gs.filter(x => x.ok).length;
-      return `<div class="panel goal-card"><h2 style="margin:0 0 6px">🎯 はじめの目標 <small>${done}/${gs.length}</small></h2>${gs.map(({ g, ok }) => `<div class="goal-row${ok ? ' ok' : ''}"><span class="goal-ck">${ok ? '✔' : '○'}</span><span class="goal-tx">${esc(g.text)}</span>${ok ? '' : `<button class="btn small" data-act="goalGo" data-g="${g.go}">行く</button>`}</div>`).join('')}<button class="btn small" style="margin-top:6px" data-act="hideGoals">閉じる</button></div>`; })()}
+      if (p.goalsHidden) return `<div class="panel goal-card mini"><span>🎯 はじめの目標 <small>${done}/${gs.length}</small></span><button class="btn small" data-act="showGoals" aria-label="はじめの目標を開く">開く ▼</button></div>`;
+      return `<div class="panel goal-card"><h2 style="margin:0 0 6px">🎯 はじめの目標 <small>${done}/${gs.length}</small></h2>${gs.map(({ g, ok }) => `<div class="goal-row${ok ? ' ok' : ''}"><span class="goal-ck">${ok ? '✔' : '○'}</span><span class="goal-tx">${esc(g.text)}</span>${ok ? '' : `<button class="btn small" data-act="goalGo" data-g="${g.go}">行く</button>`}</div>`).join('')}<button class="btn small" style="margin-top:6px" data-act="hideGoals">最小化 ▲</button></div>`; })()}
     <div class="panel"><p class="sub" style="margin:0">${esc(hpNote)}</p></div>
     <div class="panel">
       <h2 style="margin:0 0 12px">施設</h2>

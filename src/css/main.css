@@ -706,3 +706,4 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .ach-banner b{color:#ffd76a;font-size:12px;letter-spacing:.1em}.ach-banner span{font-family:var(--font-display);font-size:18px;color:#fff}.ach-banner small{color:#e8d9a8}
 @keyframes achb{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ach-banner{animation:none}}
+.goal-card.mini{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px}.goal-card.mini span{font-weight:700;font-size:14px}
