@@ -135,7 +135,8 @@ function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
   const q = GACHA_RARITY[rar];
   return `<button class="gc-card${on ? ' on' : ''}${owned ? '' : ' lock'}" style="--qc:${q.color}" data-act="${act}" ${attrs}><i class="gc-q">${q.name}</i><span class="gc-n">${esc(name)}</span><small>${owned ? '✓ 入手済み' : '未入手'}</small></button>`;
 }
-function openGachaCollection(tab) {
+function openGachaCollection(tab, keepScroll) {
+  const sh0 = $('#m-sheet'), bd0 = sh0.querySelector('.gc-body'), sc0 = keepScroll ? [sh0.scrollTop, bd0 ? bd0.scrollTop : 0] : null;
   const p = G.p, g = ensureGacha(p), st = gcState(), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
   if (tab) st.tab = tab;
   const n = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
@@ -169,6 +170,7 @@ function openGachaCollection(tab) {
       <button class="btn" data-act="gcReset" ${dirty ? '' : 'disabled'}>元に戻す</button>
       <button class="btn" data-act="gcClose">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+  if (sc0) { sh0.scrollTop = sc0[0]; const bd1 = sh0.querySelector('.gc-body'); if (bd1) bd1.scrollTop = sc0[1]; }   // 試着のたびにスクロールが戻らないように
 }
 function gcClose() { G._gc = null; closeModal(); renderTown(); }
 

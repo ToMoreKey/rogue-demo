@@ -53,6 +53,11 @@ with sync_playwright() as pw:
     pg.locator(f'[data-act="gcTry"][data-id="{ids[0]}"]').click(); pg.wait_for_timeout(200)
     pg.locator('[data-act="gcApply"]').click(); pg.wait_for_timeout(300)
     check('反映すると実際の装備になる', pg.evaluate("(id) => G.p.gacha.eq.back === id", ids[0]))
+    # 試着してもスクロール位置が戻らない
+    pg.evaluate("() => { document.querySelector('.gc-body').scrollTop = 120; document.getElementById('m-sheet').scrollTop = 30; }")
+    pg.evaluate("() => document.querySelector('[data-act=\"gcTry\"][data-slot=\"floor\"]:not(.none)').click()"); pg.wait_for_timeout(200)
+    sc = pg.evaluate("() => [document.querySelector('.gc-body').scrollTop, document.getElementById('m-sheet').scrollTop]")
+    check('試着でスクロールが戻らない', sc[0] >= 100, sc)
     pg.locator('[data-act="gcTab"][data-tab="frame"]').click(); pg.wait_for_timeout(200)
     check('図鑑の飾りタブ', pg.locator('[data-act="gcFrame"]').count() == pg.evaluate('() => __rogue.DEX_FRAMES.length') + 1)
     pg.locator('[data-act="gcTab"][data-tab="title"]').click(); pg.wait_for_timeout(200)
