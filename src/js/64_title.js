@@ -17,6 +17,7 @@ function showTitle() {
   const bg = (typeof SCENE_IMG !== 'undefined' && SCENE_IMG.I) ? `url('${SCENE_IMG.I}')` : 'none';
   const el = document.createElement('div');
   el.id = 'title-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'タイトル');
+  if (document.getElementById('boot-loading')) el.style.animation = 'none';   // Now Loading が覆っている間に出し、フェードで下のゲーム画面を透けさせない
   el.innerHTML = `
     <div class="ttl-bg" style="background-image:${bg}"></div>
     <div class="ttl-shade"></div>

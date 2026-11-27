@@ -64,8 +64,10 @@ const ACTS = {
         return;
       }
     }
-    startRun(d.d, G.sel[d.d]);
+    startRunGuarded(d.d, G.sel[d.d]);
   },
+  dangerCancel() { G._pendingRun = null; closeModal(); },
+  dangerGo() { const r = G._pendingRun; G._pendingRun = null; closeModal(); if (r) startRun(r.d, r.df); },
   speed(d) { G.opts.speed = Number(d.v); save(); renderBattle(); ensureLoop(); },
   autoSkill() { G.opts.autoSkill = !G.opts.autoSkill; save(); renderBattle(); },
   skill(d) {
@@ -405,7 +407,7 @@ const ACTS = {
     const l = G.last; closeModal();
     if (l && l.tower) startTowerRun();
     else if (l && l.abyss) startAbyssRun(l.abyss.lv);
-    else if (l) startRun(l.d.id, l.df.id);
+    else if (l) startRunGuarded(l.d.id, l.df.id);
   },
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },

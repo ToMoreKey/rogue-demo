@@ -2277,6 +2277,25 @@ function openV9ResetNoticeModal() {
     </div>`;
   $('#modal').hidden = false; G.modalOpen = true;
 }
+// 「危険」判定のダンジョンに入る前の確認ポップアップ（チュートリアル中は出さない）
+function dangerOf(dId, dfId) {
+  const d = dungeonOf(dId), df = diffOf(dfId); if (!d || !df || !G.p) return null;
+  const i = DIFFS.indexOf(df), rec = d.rec[i], v = powerVerdict(playerPower(G.p), refPower(d, i), G.p.lv, rec);
+  return v.k === 'bad' ? { d, df, i, rec, v } : null;
+}
+function startRunGuarded(dId, dfId) {
+  if (G.run) return;
+  const dg = (G.tutorial && !G.tutorial.done) ? null : dangerOf(dId, dfId);
+  if (!dg) { startRun(dId, dfId); return; }
+  G._pendingRun = { d: dId, df: dfId };
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title" class="lose">⚠ 厳しい戦いになるかも…</h2>
+    <p style="margin:6px 0">「${esc(dg.d.name)}」${esc(dg.df.name)}は、今の力だと<b style="color:#ff7a7a">危険</b>です。<br>本当に挑戦する？</p>
+    <p class="sub" style="margin:0 0 4px">推奨Lv${dg.rec}／あなた Lv${G.p.lv}<br>目安戦闘力 ${fmt(refPower(dg.d, dg.i))}／あなた ${fmt(playerPower(G.p))}</p>
+    <div class="act"><button class="btn primary" data-act="dangerCancel" id="m-danger-cancel">やめる</button><button class="btn danger" data-act="dangerGo">それでも挑戦する</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  const b = $('#m-danger-cancel'); if (b) b.focus();
+}
 function closeModal() {
   if (G._charSelectOpen) return;
   if ($('#fxd-arena')) {

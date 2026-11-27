@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}#boot-loading{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:#07080d;color:#e9d9a8;font:16px/1 "DotGothic16","Hiragino Kaku Gothic ProN","Yu Gothic",monospace;letter-spacing:.18em;transition:opacity .35s}#boot-loading.done{opacity:0;pointer-events:none}#boot-loading i{font-style:normal;display:inline-block;animation:bootdot 1.2s steps(4,end) infinite;width:1.6em;overflow:hidden;white-space:nowrap;vertical-align:bottom;text-align:left}@keyframes bootdot{0%{width:0}100%{width:1.6em}}@media (prefers-reduced-motion:reduce){#boot-loading i{animation:none;width:auto}}</style></head><body><div id="boot-loading" role="status" aria-live="polite">Now Loading<i>...</i></div>
 <title>鐘鳴りのダンジョン</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0e151b">
@@ -910,7 +910,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v98';
+const APP_VERSION = 'rogue-v99';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -1588,8 +1588,8 @@ function getCharTutorialTarget(charId) {
 
 const DIFFS = [
   { id: 'novice',  name: '初級', tag: '入口',   floors: 5,  stars: [[1, 70], [2, 30]],          rar: [70, 24, 5.5, 0.5], clearGold: 60,   clearSp: 1, expMult: 1.60, reqDiff: null },
-  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 1, expMult: 1.80, reqDiff: null },
-  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 650,  clearSp: 2, expMult: 1.40, reqDiff: null },
+  { id: 'mid',     name: '中級', tag: '道中',   floors: 10, stars: [[2, 45], [3, 40], [4, 15]], rar: [55, 33, 10, 2],    clearGold: 260,  clearSp: 1, expMult: 1.80, reqDiff: 'novice' },
+  { id: 'high',    name: '上級', tag: '最深部', floors: 20, stars: [[3, 50], [4, 35], [5, 15]], rar: [40, 38, 17, 5],    clearGold: 650,  clearSp: 2, expMult: 1.40, reqDiff: 'mid' },
   { id: 'super',   name: '超級', tag: '深層',   floors: 50, stars: [[4, 55], [5, 35], [6, 10]], rar: [28, 39, 23, 10],   clearGold: 1000, clearSp: 2, expMult: 0.37, reqDiff: 'high',  bossPrefix: '古の',         bossFilter: 'hue-rotate(38deg) saturate(1.35) contrast(1.08)' },
   { id: 'extreme', name: '極級', tag: '極致',   floors: 80, stars: [[5, 65], [6, 35]],          rar: [18, 37, 29, 16],   clearGold: 1800, clearSp: 3, expMult: 1.25, reqDiff: 'super', bossPrefix: '鬼気を帯びた', bossFilter: 'hue-rotate(-45deg) saturate(1.7) contrast(1.15) brightness(0.95)' }
 ];
@@ -2753,7 +2753,10 @@ function isDiffUnlocked(p, d, df) {
   if (!d || !df || !isDungeonUnlocked(p, d)) return false;
   if (IS_DEV_BUILD) return true;                 // TEST版: 全難易度も選べる
   if (!df.reqDiff) return true;
-  return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
+  const cm = (p && p.cleared && p.cleared[d.id]) || {};
+  if (cm[df.reqDiff]) return true;
+  // 以前のセーブ対策: すでにこの難易度以上をクリア済みなら解放済みとして扱う
+  const idx = DIFFS.indexOf(df); return DIFFS.some((x, i) => i >= idx && cm[x.id]);
 }
 function makeDefaultChars() {
   const out = {};
@@ -5219,8 +5222,10 @@ const ACTS = {
         return;
       }
     }
-    startRun(d.d, G.sel[d.d]);
+    startRunGuarded(d.d, G.sel[d.d]);
   },
+  dangerCancel() { G._pendingRun = null; closeModal(); },
+  dangerGo() { const r = G._pendingRun; G._pendingRun = null; closeModal(); if (r) startRun(r.d, r.df); },
   speed(d) { G.opts.speed = Number(d.v); save(); renderBattle(); ensureLoop(); },
   autoSkill() { G.opts.autoSkill = !G.opts.autoSkill; save(); renderBattle(); },
   skill(d) {
@@ -5560,7 +5565,7 @@ const ACTS = {
     const l = G.last; closeModal();
     if (l && l.tower) startTowerRun();
     else if (l && l.abyss) startAbyssRun(l.abyss.lv);
-    else if (l) startRun(l.d.id, l.df.id);
+    else if (l) startRunGuarded(l.d.id, l.df.id);
   },
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
@@ -8116,6 +8121,25 @@ function openV9ResetNoticeModal() {
     </div>`;
   $('#modal').hidden = false; G.modalOpen = true;
 }
+// 「危険」判定のダンジョンに入る前の確認ポップアップ（チュートリアル中は出さない）
+function dangerOf(dId, dfId) {
+  const d = dungeonOf(dId), df = diffOf(dfId); if (!d || !df || !G.p) return null;
+  const i = DIFFS.indexOf(df), rec = d.rec[i], v = powerVerdict(playerPower(G.p), refPower(d, i), G.p.lv, rec);
+  return v.k === 'bad' ? { d, df, i, rec, v } : null;
+}
+function startRunGuarded(dId, dfId) {
+  if (G.run) return;
+  const dg = (G.tutorial && !G.tutorial.done) ? null : dangerOf(dId, dfId);
+  if (!dg) { startRun(dId, dfId); return; }
+  G._pendingRun = { d: dId, df: dfId };
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title" class="lose">⚠ 厳しい戦いになるかも…</h2>
+    <p style="margin:6px 0">「${esc(dg.d.name)}」${esc(dg.df.name)}は、今の力だと<b style="color:#ff7a7a">危険</b>です。<br>本当に挑戦する？</p>
+    <p class="sub" style="margin:0 0 4px">推奨Lv${dg.rec}／あなた Lv${G.p.lv}<br>目安戦闘力 ${fmt(refPower(dg.d, dg.i))}／あなた ${fmt(playerPower(G.p))}</p>
+    <div class="act"><button class="btn primary" data-act="dangerCancel" id="m-danger-cancel">やめる</button><button class="btn danger" data-act="dangerGo">それでも挑戦する</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+  const b = $('#m-danger-cancel'); if (b) b.focus();
+}
 function closeModal() {
   if (G._charSelectOpen) return;
   if ($('#fxd-arena')) {
@@ -8810,6 +8834,7 @@ function showTitle() {
   const bg = (typeof SCENE_IMG !== 'undefined' && SCENE_IMG.I) ? `url('${SCENE_IMG.I}')` : 'none';
   const el = document.createElement('div');
   el.id = 'title-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'タイトル');
+  if (document.getElementById('boot-loading')) el.style.animation = 'none';   // Now Loading が覆っている間に出し、フェードで下のゲーム画面を透けさせない
   el.innerHTML = `
     <div class="ttl-bg" style="background-image:${bg}"></div>
     <div class="ttl-shade"></div>
@@ -9193,7 +9218,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  startRunGuarded, dangerOf, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
@@ -9207,6 +9232,8 @@ window.__rogue = {
 };
 boot();
 showTitle();
+// 「Now Loading...」を外す（タイトルが出ている時はタイトルが覆ってから／出さない時は即）
+{ const bl = document.getElementById('boot-loading'); if (bl) { bl.classList.add('done'); setTimeout(() => { try { bl.remove(); } catch (e) {} }, 450); } }
 })();
 </script>
 
