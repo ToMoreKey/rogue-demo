@@ -1,6 +1,6 @@
 /* ================= render: HUD ================= */
 // 戦力が変わる操作（装備・鍛冶・スキル・極意）。操作直後のHUD更新で「戦力 A → B ▲」を表示する
-const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
+const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, resetAllTrees: 1, switchBuild: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
 function showPowerChange(a, b) {
   const d = b - a, el = $('#h-pw');
   if (!el || d === 0) return;
@@ -121,7 +121,12 @@ function renderFacility(fac) {
       <h2>ショップ</h2>
       <h3 style="font-size:14px;margin:4px 0">購入（薬・強化石）</h3>
       <p class="sub" style="margin:0 0 8px">ダンジョン攻略に使う薬や、鍛冶屋で使う強化石を購入できます。</p>
-      <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}</div>
+      <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}${(() => {
+        const maxed = (p.buildSlots | 0) >= BUILD_MAX - 1, pr = maxed ? 0 : buildBookPrice(p), ok = !maxed && p.gold >= pr;
+        return `<div class="smith-item"><div class="it-h"><span class="it-name">📘 ビルドの書</span><span class="sub" style="margin-left:auto">ビルド枠: <b>${buildCount(p)}/${BUILD_MAX}</b></span></div>
+        <div class="it-meta"><span>スキルの振り方を別枠で保存できる（全キャラ共通で+1枠）</span>${maxed ? '' : `<span>価格 <b>${fmt(pr)}G</b></span>`}</div>
+        <button class="btn small${ok ? ' primary' : ''}" data-act="buyBuildBook" ${ok ? '' : 'disabled'}>${maxed ? '最大です' : `購入 (${fmt(pr)}G)`}</button></div>`;
+      })()}</div>
       <hr style="margin:14px 0;border:none;border-top:1px solid var(--bd)">
       <h3 style="font-size:14px;margin:0 0 4px">装備の一括売却</h3>
       <p class="sub">バッグの装備を一括で売却します。装備中とロック中の品は売りません。</p>
@@ -1199,8 +1204,23 @@ function renderSkillTrees(p) {
   const unlockedEvo = evoTrees.filter(t => t.unlockWhen(p));
   const lockedEvo = evoTrees.filter(t => !t.unlockWhen(p));
 
+  const cc = p.chars[p.skin], nb = buildCount(p), maxB = BUILD_MAX;
+  const inRun = !!G.run;
+  const buildTabs = Array.from({ length: maxB }, (_, i) => {
+    if (i >= nb) return `<button class="bd-tab locked" disabled>🔒<small>未購入</small></button>`;
+    const on = i === cc.activeBuild;
+    return `<button class="bd-tab${on ? ' on' : ''}" aria-pressed="${on}" data-act="switchBuild" data-i="${i}" ${on || inRun ? 'disabled' : ''}>${esc(cc.builds[i].name)}<small>SP ${spentSp(cc.builds[i].skillPts)}使用</small></button>`;
+  }).join('');
+  const ai = allResetInfo(p), arm = !!G.resetAllArm;
+  const buildPanel = `<div class="bd-wrap">
+    <div class="bd-tabs" role="group" aria-label="ビルド">${buildTabs}</div>
+    <div class="bd-edit"><input id="build-name" maxlength="8" value="${esc(cc.builds[cc.activeBuild].name)}" aria-label="ビルド名"><button class="btn small" data-act="renameBuild">名前変更</button></div>
+    <p class="sub" style="margin:4px 0 0">${nb < maxB ? 'ビルド枠はショップの「ビルドの書」で増やせます。' : ''}ビルドの切り替えは街でのみ可能で無料です。SPは全ビルド共通のプールを使い、切り替え時に差分が増減します。${inRun ? '<b>（攻略中は切り替え不可）</b>' : ''}</p>
+    <button class="btn small danger" style="margin-top:8px" data-act="resetAllTrees" ${ai.trees ? '' : 'disabled'}>${arm ? `⚠️ もう一度押すと全ツリーをリセット（${fmt(ai.cost)}G／SP+${ai.sp}）` : `全ツリーをリセット（${fmt(ai.cost)}G／SP+${ai.sp}）`}</button>
+  </div>`;
   return `<div class="panel" id="skill-trees-panel">
     <h2>スキル枠（${esc(cMeta.name)}・${esc(cMeta.job)}）</h2>
+    ${buildPanel}
     <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
     <div class="st-grid">${baseTrees.map(treeCard).join('')}</div>
     ${unlockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（解放済み）──</p><div class="st-grid">${unlockedEvo.map(treeCard).join('')}</div></div>` : ''}

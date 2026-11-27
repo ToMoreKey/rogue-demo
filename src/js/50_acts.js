@@ -364,6 +364,16 @@ const ACTS = {
   smithUpgrade(d) { smithUpgrade(d.id); },
   smithReforge(d) { smithReforge(d.id); },
   buyShop(d) { buyShopItem(d.id); },
+  buyBuildBook() { buyBuildBook(); },
+  switchBuild(d) { switchBuild(d.i); },
+  resetAllTrees() { resetAllTrees(); },
+  renameBuild() {
+    const p = G.p, c = p.chars[p.skin], el = $('#build-name');
+    if (!el) return;
+    const nm = el.value.replace(/\s+/g, ' ').trim().slice(0, 8);
+    if (!nm) { toast('名前を入力してください'); return; }
+    c.builds[c.activeBuild].name = nm; save(); toast('ビルド名を変更した'); renderStatus();
+  },
   expandBag() { expandBag(); },
   autoSellRaritySet(d) {
     const v = Number(d.v);

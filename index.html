@@ -652,6 +652,15 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .b-rec{color:#ffd76a}.b-done{color:#8fe3a0}.b-new{color:#9cc8ff}.b-part{color:#ffb86b}.b-lock{color:#aaa}
 .dg-goal{display:flex;flex-direction:column;gap:2px;border-color:#ffd76a88}
 .dg-goal small{opacity:.75}
+
+.bd-wrap{margin:6px 0 12px;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel2)}
+.bd-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.bd-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:44px;padding:4px 2px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg);font-size:12px;font-weight:700;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-tab small{font-weight:400;font-size:10px;color:var(--muted)}
+.bd-tab.on{border-color:var(--accent);color:var(--accent)}
+.bd-tab.locked{opacity:.5;cursor:default}
+.bd-edit{display:flex;gap:6px;margin-top:8px}
+.bd-edit input{flex:1;min-width:0;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-size:14px}
 </style>
 
 <div id="app" class="wrap">
@@ -2452,11 +2461,16 @@ function makeDefaultChars() {
     const trees = getCharTrees(cid);
     const sp = {};
     for (const t of trees) sp[t.id] = 0;
-    out[cid] = { skillPts: sp, equippedSkills: [null, null, null] };
+    const eq = [null, null, null];
+    out[cid] = { skillPts: sp, equippedSkills: eq, activeBuild: 0, builds: [{ name: 'ビルド1', skillPts: sp, equippedSkills: eq }] };
   }
   return out;
 }
 
+const BUILD_MAX = 3;
+const BUILD_BOOK_PRICES = [5000, 60000];   // 1冊目は安め・2冊目から高め（暫定）
+function buildCount(p) { return 1 + Math.max(0, Math.min(BUILD_MAX - 1, (p && p.buildSlots) | 0)); }
+function spentSp(pts) { let n = 0; for (const v of Object.values(pts || {})) n += Number(v) || 0; return n; }
 function syncActiveCharState(p) {
   if (!p) return;
   const cid = (p.skin && CHAR_TREES[p.skin]) ? p.skin : 'ruby';
@@ -2471,6 +2485,25 @@ function syncActiveCharState(p) {
     }
     if (!Array.isArray(p.chars[k].equippedSkills) || p.chars[k].equippedSkills.length !== 3) {
       p.chars[k].equippedSkills = [null, null, null];
+    }
+  }
+  p.buildSlots = Math.max(0, Math.min(BUILD_MAX - 1, Number(p.buildSlots) | 0));
+  const nb = buildCount(p);
+  for (const k of CHAR_IDS) {
+    const c = p.chars[k];
+    if (!Array.isArray(c.builds)) c.builds = [];
+    c.builds.length = nb;
+    c.activeBuild = Math.max(0, Math.min(nb - 1, Number(c.activeBuild) | 0));
+    for (let i = 0; i < nb; i++) {
+      let b = c.builds[i];
+      if (!b || typeof b !== 'object') b = c.builds[i] = {};
+      b.name = (typeof b.name === 'string' && b.name.trim()) ? b.name.slice(0, 8) : 'ビルド' + (i + 1);
+      if (i === c.activeBuild) { b.skillPts = c.skillPts; b.equippedSkills = c.equippedSkills; continue; }
+      const z = {}; for (const t of getCharTrees(k)) z[t.id] = Math.max(0, Math.min(t.maxSp || 30, Number(b.skillPts && b.skillPts[t.id]) || 0));
+      b.skillPts = z;
+      const eq = Array.isArray(b.equippedSkills) ? b.equippedSkills.slice(0, 3) : [];
+      while (eq.length < 3) eq.push(null);
+      b.equippedSkills = eq.map(x => (x && SK[x]) ? x : null);
     }
   }
   const active = p.chars[cid];
@@ -2497,7 +2530,7 @@ function syncActiveCharState(p) {
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
   const chars = makeDefaultChars();
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, skin: 'ruby', chars, v9ResetNoticePending: false, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: chars.ruby.skillPts, passiveSkills: {}, equippedSkills: chars.ruby.equippedSkills, potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, buildSlots: 0, gold: 50, bank: 0, skin: 'ruby', chars, v9ResetNoticePending: false, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: chars.ruby.skillPts, passiveSkills: {}, equippedSkills: chars.ruby.equippedSkills, potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);
@@ -2563,7 +2596,7 @@ function checkAchievements(ev = null, silent = false) {
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 9;
+const SAVE_VERSION = 10;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -2678,6 +2711,16 @@ const migrations = {
     const hadProgress = refund > 0 || (Number(p.lv) || 1) > 1 || (p.stats && (Number(p.stats.runs) || 0) > 0);
     p.v9ResetNoticePending = hadProgress;
     return Object.assign({}, d, { v: 9, p });
+  },
+  // v9 → v10: 複数ビルド。既存の状態を「ビルド1」にする（buildSlots=0）。構造は syncActiveCharState が補う
+  9: d => {
+    const p = Object.assign({}, d.p);
+    p.buildSlots = 0;
+    if (p.chars && typeof p.chars === 'object') {
+      p.chars = Object.assign({}, p.chars);
+      for (const k of Object.keys(p.chars)) if (p.chars[k] && typeof p.chars[k] === 'object') p.chars[k] = Object.assign({}, p.chars[k], { activeBuild: 0 });
+    }
+    return Object.assign({}, d, { v: 10, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -2813,6 +2856,27 @@ function load() {
       }
     }
     p.v9ResetNoticePending = !!s.v9ResetNoticePending;
+    p.buildSlots = num(s.buildSlots, 0, 0, BUILD_MAX - 1);
+    if (s.chars && typeof s.chars === 'object') {
+      for (const cid of CHAR_IDS) {
+        const sc = s.chars[cid];
+        if (!sc || typeof sc !== 'object') continue;
+        const nb = buildCount(p), ab = num(sc.activeBuild, 0, 0, nb - 1);
+        p.chars[cid].activeBuild = ab;
+        p.chars[cid].builds = [];
+        if (Array.isArray(sc.builds)) for (let i = 0; i < nb; i++) {
+          const sb = sc.builds[i]; if (!sb || typeof sb !== 'object') continue;
+          const b = { name: typeof sb.name === 'string' ? sb.name : '', skillPts: {}, equippedSkills: [null, null, null] };
+          for (const t of getCharTrees(cid)) b.skillPts[t.id] = num(sb.skillPts && sb.skillPts[t.id], 0, 0, t.maxSp || 30);
+          if (Array.isArray(sb.equippedSkills)) for (let j = 0; j < 3; j++) { const sid = sb.equippedSkills[j]; if (sid && SK[sid]) b.equippedSkills[j] = sid; }
+          p.chars[cid].builds[i] = b;
+        }
+        // アクティブビルドは従来の skillPts / equippedSkills を正とする（なければ builds[ab] から）
+        if (!(sc.skillPts && typeof sc.skillPts === 'object') && p.chars[cid].builds[ab]) {
+          p.chars[cid].skillPts = p.chars[cid].builds[ab].skillPts; p.chars[cid].equippedSkills = p.chars[cid].builds[ab].equippedSkills;
+        }
+      }
+    }
     syncActiveCharState(p);
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
@@ -4255,6 +4319,52 @@ function bagExpandCost(cap) {
 function skillResetCost(p) {
   return Math.max(50, (p ? p.lv : 1) * 50);
 }
+function buildBookPrice(p) { return BUILD_BOOK_PRICES[Math.min(p.buildSlots | 0, BUILD_BOOK_PRICES.length - 1)]; }
+function buyBuildBook() {
+  const p = G.p;
+  if ((p.buildSlots | 0) >= BUILD_MAX - 1) { toast('ビルドは最大3つです'); return; }
+  const price = buildBookPrice(p);
+  if (p.gold < price) { toast(`所持金が足りません（${fmt(price)}G必要）`); return; }
+  p.gold -= price; p.buildSlots = (p.buildSlots | 0) + 1;
+  syncActiveCharState(p);
+  save(); toast(`ビルドの書を使った！ビルド枠が ${buildCount(p)} つになった`); renderAll();
+}
+function switchBuild(idx) {
+  const p = G.p, c = p.chars[p.skin];
+  idx = Number(idx);
+  if (G.run) { toast('ダンジョン攻略中はビルドを切り替えられません'); return false; }
+  if (!(idx >= 0 && idx < buildCount(p)) || idx === c.activeBuild) return false;
+  const tgt = c.builds[idx], need = spentSp(tgt.skillPts) - spentSp(c.skillPts);
+  if (need > p.sp) { toast(`SPが足りません（このビルドを再現するには あと${need - p.sp}SP 必要）`); return false; }
+  p.sp -= need;
+  c.activeBuild = idx; c.skillPts = tgt.skillPts; c.equippedSkills = tgt.equippedSkills;
+  syncActiveCharState(p);
+  p.hp = Math.min(maxHp(p), p.hp); p.mp = Math.min(maxMp(p), p.mp);
+  save(); toast(`「${tgt.name}」に切り替えた`); renderHUD(); renderStatus();
+  return true;
+}
+function allResetInfo(p) {
+  const pts = p.skillPts || {};
+  const n = Object.values(pts).filter(v => v > 0).length;
+  return { trees: n, sp: spentSp(pts), cost: n * skillResetCost(p) };
+}
+function resetAllTrees() {
+  const p = G.p, info = allResetInfo(p);
+  if (!info.trees) { toast('振り直すSPがありません'); return; }
+  if (!G.resetAllArm) {
+    G.resetAllArm = true; renderStatus();
+    setTimeout(() => { if (G.resetAllArm) { G.resetAllArm = false; if (G.view === 'status') renderStatus(); } }, 5000);
+    return;
+  }
+  G.resetAllArm = false;
+  if (p.gold < info.cost) { toast(`リセットには ${fmt(info.cost)}G 必要です`); renderStatus(); return; }
+  p.gold -= info.cost; p.sp += info.sp;
+  for (const k of Object.keys(p.skillPts)) p.skillPts[k] = 0;
+  for (let i = 0; i < 3; i++) p.equippedSkills[i] = null;
+  syncActiveCharState(p);
+  p.hp = Math.min(maxHp(p), p.hp); p.mp = Math.min(maxMp(p), p.mp);
+  save(); toast(`全ツリーをリセットした（SP +${info.sp} 返還）`); renderHUD(); renderStatus();
+}
 function smithUpgrade(id) {
   const p = G.p;
   const it = [p.weapon, p.armor, ...p.bag].find(x => x && x.id === Number(id));
@@ -4857,6 +4967,16 @@ const ACTS = {
   smithUpgrade(d) { smithUpgrade(d.id); },
   smithReforge(d) { smithReforge(d.id); },
   buyShop(d) { buyShopItem(d.id); },
+  buyBuildBook() { buyBuildBook(); },
+  switchBuild(d) { switchBuild(d.i); },
+  resetAllTrees() { resetAllTrees(); },
+  renameBuild() {
+    const p = G.p, c = p.chars[p.skin], el = $('#build-name');
+    if (!el) return;
+    const nm = el.value.replace(/\s+/g, ' ').trim().slice(0, 8);
+    if (!nm) { toast('名前を入力してください'); return; }
+    c.builds[c.activeBuild].name = nm; save(); toast('ビルド名を変更した'); renderStatus();
+  },
   expandBag() { expandBag(); },
   autoSellRaritySet(d) {
     const v = Number(d.v);
@@ -5144,7 +5264,7 @@ const ACTS = {
 
 /* ================= render: HUD ================= */
 // 戦力が変わる操作（装備・鍛冶・スキル・極意）。操作直後のHUD更新で「戦力 A → B ▲」を表示する
-const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
+const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, smithReforge: 1, spAlloc: 1, spAllocReset: 1, resetAllTrees: 1, switchBuild: 1, masteryUp: 1, masteryReset: 1, mEquip: 1 };
 function showPowerChange(a, b) {
   const d = b - a, el = $('#h-pw');
   if (!el || d === 0) return;
@@ -5265,7 +5385,12 @@ function renderFacility(fac) {
       <h2>ショップ</h2>
       <h3 style="font-size:14px;margin:4px 0">購入（薬・強化石）</h3>
       <p class="sub" style="margin:0 0 8px">ダンジョン攻略に使う薬や、鍛冶屋で使う強化石を購入できます。</p>
-      <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}</div>
+      <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}${(() => {
+        const maxed = (p.buildSlots | 0) >= BUILD_MAX - 1, pr = maxed ? 0 : buildBookPrice(p), ok = !maxed && p.gold >= pr;
+        return `<div class="smith-item"><div class="it-h"><span class="it-name">📘 ビルドの書</span><span class="sub" style="margin-left:auto">ビルド枠: <b>${buildCount(p)}/${BUILD_MAX}</b></span></div>
+        <div class="it-meta"><span>スキルの振り方を別枠で保存できる（全キャラ共通で+1枠）</span>${maxed ? '' : `<span>価格 <b>${fmt(pr)}G</b></span>`}</div>
+        <button class="btn small${ok ? ' primary' : ''}" data-act="buyBuildBook" ${ok ? '' : 'disabled'}>${maxed ? '最大です' : `購入 (${fmt(pr)}G)`}</button></div>`;
+      })()}</div>
       <hr style="margin:14px 0;border:none;border-top:1px solid var(--bd)">
       <h3 style="font-size:14px;margin:0 0 4px">装備の一括売却</h3>
       <p class="sub">バッグの装備を一括で売却します。装備中とロック中の品は売りません。</p>
@@ -6343,8 +6468,23 @@ function renderSkillTrees(p) {
   const unlockedEvo = evoTrees.filter(t => t.unlockWhen(p));
   const lockedEvo = evoTrees.filter(t => !t.unlockWhen(p));
 
+  const cc = p.chars[p.skin], nb = buildCount(p), maxB = BUILD_MAX;
+  const inRun = !!G.run;
+  const buildTabs = Array.from({ length: maxB }, (_, i) => {
+    if (i >= nb) return `<button class="bd-tab locked" disabled>🔒<small>未購入</small></button>`;
+    const on = i === cc.activeBuild;
+    return `<button class="bd-tab${on ? ' on' : ''}" aria-pressed="${on}" data-act="switchBuild" data-i="${i}" ${on || inRun ? 'disabled' : ''}>${esc(cc.builds[i].name)}<small>SP ${spentSp(cc.builds[i].skillPts)}使用</small></button>`;
+  }).join('');
+  const ai = allResetInfo(p), arm = !!G.resetAllArm;
+  const buildPanel = `<div class="bd-wrap">
+    <div class="bd-tabs" role="group" aria-label="ビルド">${buildTabs}</div>
+    <div class="bd-edit"><input id="build-name" maxlength="8" value="${esc(cc.builds[cc.activeBuild].name)}" aria-label="ビルド名"><button class="btn small" data-act="renameBuild">名前変更</button></div>
+    <p class="sub" style="margin:4px 0 0">${nb < maxB ? 'ビルド枠はショップの「ビルドの書」で増やせます。' : ''}ビルドの切り替えは街でのみ可能で無料です。SPは全ビルド共通のプールを使い、切り替え時に差分が増減します。${inRun ? '<b>（攻略中は切り替え不可）</b>' : ''}</p>
+    <button class="btn small danger" style="margin-top:8px" data-act="resetAllTrees" ${ai.trees ? '' : 'disabled'}>${arm ? `⚠️ もう一度押すと全ツリーをリセット（${fmt(ai.cost)}G／SP+${ai.sp}）` : `全ツリーをリセット（${fmt(ai.cost)}G／SP+${ai.sp}）`}</button>
+  </div>`;
   return `<div class="panel" id="skill-trees-panel">
     <h2>スキル枠（${esc(cMeta.name)}・${esc(cMeta.job)}）</h2>
+    ${buildPanel}
     <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
     <div class="st-grid">${baseTrees.map(treeCard).join('')}</div>
     ${unlockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（解放済み）──</p><div class="st-grid">${unlockedEvo.map(treeCard).join('')}</div></div>` : ''}
@@ -8192,7 +8332,7 @@ window.__rogue = {
   idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, buyBuildBook, switchBuild, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
   playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,

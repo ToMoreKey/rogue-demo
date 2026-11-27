@@ -785,6 +785,52 @@ function bagExpandCost(cap) {
 function skillResetCost(p) {
   return Math.max(50, (p ? p.lv : 1) * 50);
 }
+function buildBookPrice(p) { return BUILD_BOOK_PRICES[Math.min(p.buildSlots | 0, BUILD_BOOK_PRICES.length - 1)]; }
+function buyBuildBook() {
+  const p = G.p;
+  if ((p.buildSlots | 0) >= BUILD_MAX - 1) { toast('ビルドは最大3つです'); return; }
+  const price = buildBookPrice(p);
+  if (p.gold < price) { toast(`所持金が足りません（${fmt(price)}G必要）`); return; }
+  p.gold -= price; p.buildSlots = (p.buildSlots | 0) + 1;
+  syncActiveCharState(p);
+  save(); toast(`ビルドの書を使った！ビルド枠が ${buildCount(p)} つになった`); renderAll();
+}
+function switchBuild(idx) {
+  const p = G.p, c = p.chars[p.skin];
+  idx = Number(idx);
+  if (G.run) { toast('ダンジョン攻略中はビルドを切り替えられません'); return false; }
+  if (!(idx >= 0 && idx < buildCount(p)) || idx === c.activeBuild) return false;
+  const tgt = c.builds[idx], need = spentSp(tgt.skillPts) - spentSp(c.skillPts);
+  if (need > p.sp) { toast(`SPが足りません（このビルドを再現するには あと${need - p.sp}SP 必要）`); return false; }
+  p.sp -= need;
+  c.activeBuild = idx; c.skillPts = tgt.skillPts; c.equippedSkills = tgt.equippedSkills;
+  syncActiveCharState(p);
+  p.hp = Math.min(maxHp(p), p.hp); p.mp = Math.min(maxMp(p), p.mp);
+  save(); toast(`「${tgt.name}」に切り替えた`); renderHUD(); renderStatus();
+  return true;
+}
+function allResetInfo(p) {
+  const pts = p.skillPts || {};
+  const n = Object.values(pts).filter(v => v > 0).length;
+  return { trees: n, sp: spentSp(pts), cost: n * skillResetCost(p) };
+}
+function resetAllTrees() {
+  const p = G.p, info = allResetInfo(p);
+  if (!info.trees) { toast('振り直すSPがありません'); return; }
+  if (!G.resetAllArm) {
+    G.resetAllArm = true; renderStatus();
+    setTimeout(() => { if (G.resetAllArm) { G.resetAllArm = false; if (G.view === 'status') renderStatus(); } }, 5000);
+    return;
+  }
+  G.resetAllArm = false;
+  if (p.gold < info.cost) { toast(`リセットには ${fmt(info.cost)}G 必要です`); renderStatus(); return; }
+  p.gold -= info.cost; p.sp += info.sp;
+  for (const k of Object.keys(p.skillPts)) p.skillPts[k] = 0;
+  for (let i = 0; i < 3; i++) p.equippedSkills[i] = null;
+  syncActiveCharState(p);
+  p.hp = Math.min(maxHp(p), p.hp); p.mp = Math.min(maxMp(p), p.mp);
+  save(); toast(`全ツリーをリセットした（SP +${info.sp} 返還）`); renderHUD(); renderStatus();
+}
 function smithUpgrade(id) {
   const p = G.p;
   const it = [p.weapon, p.armor, ...p.bag].find(x => x && x.id === Number(id));

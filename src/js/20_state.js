@@ -184,11 +184,16 @@ function makeDefaultChars() {
     const trees = getCharTrees(cid);
     const sp = {};
     for (const t of trees) sp[t.id] = 0;
-    out[cid] = { skillPts: sp, equippedSkills: [null, null, null] };
+    const eq = [null, null, null];
+    out[cid] = { skillPts: sp, equippedSkills: eq, activeBuild: 0, builds: [{ name: 'ビルド1', skillPts: sp, equippedSkills: eq }] };
   }
   return out;
 }
 
+const BUILD_MAX = 3;
+const BUILD_BOOK_PRICES = [5000, 60000];   // 1冊目は安め・2冊目から高め（暫定）
+function buildCount(p) { return 1 + Math.max(0, Math.min(BUILD_MAX - 1, (p && p.buildSlots) | 0)); }
+function spentSp(pts) { let n = 0; for (const v of Object.values(pts || {})) n += Number(v) || 0; return n; }
 function syncActiveCharState(p) {
   if (!p) return;
   const cid = (p.skin && CHAR_TREES[p.skin]) ? p.skin : 'ruby';
@@ -203,6 +208,25 @@ function syncActiveCharState(p) {
     }
     if (!Array.isArray(p.chars[k].equippedSkills) || p.chars[k].equippedSkills.length !== 3) {
       p.chars[k].equippedSkills = [null, null, null];
+    }
+  }
+  p.buildSlots = Math.max(0, Math.min(BUILD_MAX - 1, Number(p.buildSlots) | 0));
+  const nb = buildCount(p);
+  for (const k of CHAR_IDS) {
+    const c = p.chars[k];
+    if (!Array.isArray(c.builds)) c.builds = [];
+    c.builds.length = nb;
+    c.activeBuild = Math.max(0, Math.min(nb - 1, Number(c.activeBuild) | 0));
+    for (let i = 0; i < nb; i++) {
+      let b = c.builds[i];
+      if (!b || typeof b !== 'object') b = c.builds[i] = {};
+      b.name = (typeof b.name === 'string' && b.name.trim()) ? b.name.slice(0, 8) : 'ビルド' + (i + 1);
+      if (i === c.activeBuild) { b.skillPts = c.skillPts; b.equippedSkills = c.equippedSkills; continue; }
+      const z = {}; for (const t of getCharTrees(k)) z[t.id] = Math.max(0, Math.min(t.maxSp || 30, Number(b.skillPts && b.skillPts[t.id]) || 0));
+      b.skillPts = z;
+      const eq = Array.isArray(b.equippedSkills) ? b.equippedSkills.slice(0, 3) : [];
+      while (eq.length < 3) eq.push(null);
+      b.equippedSkills = eq.map(x => (x && SK[x]) ? x : null);
     }
   }
   const active = p.chars[cid];
@@ -229,7 +253,7 @@ function syncActiveCharState(p) {
 function newPlayer() {
   const stones = {}; for (const st of STONES) stones[st.id] = 0;
   const chars = makeDefaultChars();
-  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, gold: 50, bank: 0, skin: 'ruby', chars, v9ResetNoticePending: false, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: chars.ruby.skillPts, passiveSkills: {}, equippedSkills: chars.ruby.equippedSkills, potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
+  const p = { lv: 1, exp: 0, hp: 1, mp: 1, sp: 3, buildSlots: 0, gold: 50, bank: 0, skin: 'ruby', chars, v9ResetNoticePending: false, weapon: null, armor: null, bag: [], bagCap: BAG_CAP, cleared: {}, part1Cleared: false, ending: false, unlockNoticeShown: false, abyssNoticeShown: false, tower: { best: 0, coins: 0, totalCoins: 0, title: null, titles: [], nick: '', rankOptIn: false, sentBest: 0 }, abyss: { best: 0, cleared: {} }, mastery: {}, dex: { enemies: {}, items: { weapon_1: true, armor_1: true }, rewards: {} }, ach: {}, pendingAchCoins: 0, achStats: { totalGold: 0, blessings: 0, noDmgBoss: false }, skills: {}, skillPts: chars.ruby.skillPts, passiveSkills: {}, equippedSkills: chars.ruby.equippedSkills, potions: { hp: 0, mp: 0 }, stones, stats: { runs: 0, clears: 0, kills: 0 }, nextId: 1 };
   p.weapon = mkItem(p, { slot: 'weapon', star: 1, rarity: 0, roll: 0.8 });
   p.armor = mkItem(p, { slot: 'armor', star: 1, rarity: 0, roll: 0.8 });
   p.hp = maxHp(p); p.mp = maxMp(p);

@@ -1,7 +1,7 @@
 
 /* ================= save / load ================= */
 // セーブ形式のバージョン。キー名は互換のため rogue_test_save_v1 のまま（中身の v で判別する）
-const SAVE_VERSION = 9;
+const SAVE_VERSION = 10;
 // migrations[n] は「vn のセーブ → v(n+1) のセーブ」へ変換する関数。将来は {4: fn, ...} を足すだけで連鎖する。
 const migrations = {
   // v1 → v2: 構造は同一。版番号を付け替えるだけ（所持品・装備・Lv・スキル・ゴールド・設定はそのまま）
@@ -116,6 +116,16 @@ const migrations = {
     const hadProgress = refund > 0 || (Number(p.lv) || 1) > 1 || (p.stats && (Number(p.stats.runs) || 0) > 0);
     p.v9ResetNoticePending = hadProgress;
     return Object.assign({}, d, { v: 9, p });
+  },
+  // v9 → v10: 複数ビルド。既存の状態を「ビルド1」にする（buildSlots=0）。構造は syncActiveCharState が補う
+  9: d => {
+    const p = Object.assign({}, d.p);
+    p.buildSlots = 0;
+    if (p.chars && typeof p.chars === 'object') {
+      p.chars = Object.assign({}, p.chars);
+      for (const k of Object.keys(p.chars)) if (p.chars[k] && typeof p.chars[k] === 'object') p.chars[k] = Object.assign({}, p.chars[k], { activeBuild: 0 });
+    }
+    return Object.assign({}, d, { v: 10, p });
   }
 };
 // 生のセーブ(JSONをparseしたもの)を最新版へ変換して返す。移行不要なら同じオブジェクトを返す。変換できなければ null。
@@ -251,6 +261,27 @@ function load() {
       }
     }
     p.v9ResetNoticePending = !!s.v9ResetNoticePending;
+    p.buildSlots = num(s.buildSlots, 0, 0, BUILD_MAX - 1);
+    if (s.chars && typeof s.chars === 'object') {
+      for (const cid of CHAR_IDS) {
+        const sc = s.chars[cid];
+        if (!sc || typeof sc !== 'object') continue;
+        const nb = buildCount(p), ab = num(sc.activeBuild, 0, 0, nb - 1);
+        p.chars[cid].activeBuild = ab;
+        p.chars[cid].builds = [];
+        if (Array.isArray(sc.builds)) for (let i = 0; i < nb; i++) {
+          const sb = sc.builds[i]; if (!sb || typeof sb !== 'object') continue;
+          const b = { name: typeof sb.name === 'string' ? sb.name : '', skillPts: {}, equippedSkills: [null, null, null] };
+          for (const t of getCharTrees(cid)) b.skillPts[t.id] = num(sb.skillPts && sb.skillPts[t.id], 0, 0, t.maxSp || 30);
+          if (Array.isArray(sb.equippedSkills)) for (let j = 0; j < 3; j++) { const sid = sb.equippedSkills[j]; if (sid && SK[sid]) b.equippedSkills[j] = sid; }
+          p.chars[cid].builds[i] = b;
+        }
+        // アクティブビルドは従来の skillPts / equippedSkills を正とする（なければ builds[ab] から）
+        if (!(sc.skillPts && typeof sc.skillPts === 'object') && p.chars[cid].builds[ab]) {
+          p.chars[cid].skillPts = p.chars[cid].builds[ab].skillPts; p.chars[cid].equippedSkills = p.chars[cid].builds[ab].equippedSkills;
+        }
+      }
+    }
     syncActiveCharState(p);
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
