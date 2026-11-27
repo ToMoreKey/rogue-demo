@@ -41,7 +41,7 @@ with sync_playwright() as pw:
     # 右向きの敵は左向きに反転
     check('右向きの敵(d_beetle)は反転クラス', 'flip' in ev("() => __rogue.enemyArt({ id: 'd_beetle', name: 'x' }, 'D')"))
     check('左向き/正面の敵は反転しない', 'flip' not in ev("() => __rogue.enemyArt({ id: 'a_slime', name: 'x' }, 'A')"))
-    ev("() => __rogue.killFx(true)")
+    check('ボス撃破の演出時間を返す', ev("() => __rogue.killFx(true)") == 1700)
     check('ボス撃破: 白フラッシュ+連続爆発7つ', pg.locator('.boss-white').count() == 1 and pg.locator('.boss-burst').count() == 7)
     # ルルの表情: 目標達成で喜び、全達成で驚き
     ev("() => { G.view='town'; G.townView='plaza'; G._npc=null; G._npcEx=null; G._goalJoy='joy'; __rogue.renderAll(); }")

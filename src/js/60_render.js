@@ -1092,12 +1092,13 @@ function levelBand(lv) {
     clearTimeout(f._lj); f._lj = setTimeout(() => { f.classList.remove('lv-joy'); f.querySelectorAll('.lv-spark').forEach(n => n.remove()); }, 1300);
   }
 }
+/* 戻り値＝演出の長さ(ms)。ボス撃破はこの間リザルト/次の階へ進まない */
 function killFx(boss) {
-  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
-  const f = $('#f-enemy'); if (!f) return;
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return 0;
+  const f = $('#f-enemy'); if (!f) return 0;
   f.classList.remove('die', 'die-boss'); void f.offsetWidth; f.classList.add(boss ? 'die-boss' : 'die');
   if (boss) {
-    const a = $('#arena'); if (!a) return;
+    const a = $('#arena'); if (!a) return 0;
     a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900);
     // ボス撃破: 白フラッシュ → 連続爆発 → 揺れ → 崩れて消える
     a.querySelectorAll('.boss-burst,.boss-white').forEach(n => n.remove());
@@ -1109,7 +1110,9 @@ function killFx(boss) {
       a.appendChild(b); setTimeout(() => b.remove(), 1300);
     }
     a.classList.remove('rumble'); void a.offsetWidth; a.classList.add('rumble'); setTimeout(() => a.classList.remove('rumble'), 900);
+    return 1700;
   }
+  return 0;
 }
 function lowHpWarn() {
   const on = !!(G.run && !G.headless && isFxEnabled() && G.p.hp > 0 && G.p.hp <= maxHp(G.p) * 0.25);

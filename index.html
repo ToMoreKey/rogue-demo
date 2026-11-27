@@ -857,7 +857,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v85';
+const APP_VERSION = 'rogue-v86';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -4407,7 +4407,9 @@ function battleRound() {
 function onKill() {
   const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
-  Sound.play(en.boss ? 'bossKill' : 'kill'); killFx(en.boss);
+  Sound.play(en.boss ? 'bossKill' : 'kill');
+  const fxMs = killFx(en.boss);
+  if (fxMs) run.introUntil = Date.now() + fxMs; // ボス撃破演出が終わるまでリザルト・次の階へ進まない
   recordDexEnemy(p, en.id, true);
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
@@ -6778,12 +6780,13 @@ function levelBand(lv) {
     clearTimeout(f._lj); f._lj = setTimeout(() => { f.classList.remove('lv-joy'); f.querySelectorAll('.lv-spark').forEach(n => n.remove()); }, 1300);
   }
 }
+/* 戻り値＝演出の長さ(ms)。ボス撃破はこの間リザルト/次の階へ進まない */
 function killFx(boss) {
-  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
-  const f = $('#f-enemy'); if (!f) return;
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return 0;
+  const f = $('#f-enemy'); if (!f) return 0;
   f.classList.remove('die', 'die-boss'); void f.offsetWidth; f.classList.add(boss ? 'die-boss' : 'die');
   if (boss) {
-    const a = $('#arena'); if (!a) return;
+    const a = $('#arena'); if (!a) return 0;
     a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900);
     // ボス撃破: 白フラッシュ → 連続爆発 → 揺れ → 崩れて消える
     a.querySelectorAll('.boss-burst,.boss-white').forEach(n => n.remove());
@@ -6795,7 +6798,9 @@ function killFx(boss) {
       a.appendChild(b); setTimeout(() => b.remove(), 1300);
     }
     a.classList.remove('rumble'); void a.offsetWidth; a.classList.add('rumble'); setTimeout(() => a.classList.remove('rumble'), 900);
+    return 1700;
   }
+  return 0;
 }
 function lowHpWarn() {
   const on = !!(G.run && !G.headless && isFxEnabled() && G.p.hp > 0 && G.p.hp <= maxHp(G.p) * 0.25);

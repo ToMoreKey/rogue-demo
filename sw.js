@@ -1,5 +1,5 @@
 // Service Worker: オフライン対応。更新したら CACHE のバージョンを上げる。
-const CACHE = 'rogue-v85';
+const CACHE = 'rogue-v86';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-32.png'];
 
 self.addEventListener('install', e => {
