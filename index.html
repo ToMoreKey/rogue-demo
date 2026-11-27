@@ -6449,7 +6449,9 @@ function renderSkillTrees(p) {
     if (nextMs && nextMs.sp <= cap) {
       const base = playerPower(p), keep = pts[tree.id];
       let dp = 0;
-      try { pts[tree.id] = nextMs.sp; syncActiveCharState(p); dp = playerPower(p) - base; } finally { pts[tree.id] = keep; syncActiveCharState(p); }
+      const o = { sk: p.skills, ps: p.passiveSkills, eq: p.equippedSkills.slice() };
+      try { pts[tree.id] = nextMs.sp; syncActiveCharState(p); dp = playerPower(p) - base; }
+      finally { pts[tree.id] = keep; p.skills = o.sk; p.passiveSkills = o.ps; for (let i = 0; i < 3; i++) p.equippedSkills[i] = o.eq[i]; }
       nextHtml = `<div class="st-next">次の習得：<b>SP${nextMs.sp}</b>「${esc(nextMs.name)}」（あと${nextMs.sp - cur}SP）${dp > 0 ? `<span class="pw-up-chip">戦闘力 ▲+${fmt(dp)}</span>` : ''}</div>`;
     } else if (nextMs) {
       nextHtml = `<div class="st-next">次の習得：「${esc(nextMs.name)}」は上限の解放が必要です</div>`;
