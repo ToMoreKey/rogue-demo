@@ -851,7 +851,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v83';
+const APP_VERSION = 'rogue-v84';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2432,7 +2432,10 @@ function masteryBonus(p) {
   return { atkMult, defMult, hpMult, mpMult, healMult, critAdd, dmgMult, takenMult, expMult, goldMult };
 }
 /* 元絵が右向きの敵: プレイヤー（左側）に向くよう左右反転して表示する */
-const ENEMY_FLIP = new Set(['d_beetle', 'j_lizard', 'h_turret', 'j_hag']);
+const ENEMY_FLIP = new Set([
+  'd_beetle', 'j_lizard', 'h_turret', 'j_hag',
+  'a_skel', 'c_witch', 'd_mushroom', 'e_golem', 'f_jelly', 'f_siren', 'g_valkyrie', 'h_android', 'h_drone',
+  'h_gear', 'j_banshee', 'j_bog', 'j_wisp', 'k_golem', 'm_moon', 'n_egg', 'n_slayer', 'o_void']);
 function enemyArt(en, dId) {
   const im = (en && ENEMY_IMG[en.id]) || (en && en.fallbackId && ENEMY_IMG[en.fallbackId]);
   const filterVal = (en && en.raged) ? 'hue-rotate(140deg) saturate(1.6)' : ((en && en.bossFilter) || '');
