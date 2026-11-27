@@ -154,12 +154,17 @@ function refPower(d, dfIdx) {
   for (const slot of ['weapon', 'armor']) p[slot] = { id: 0, slot, star: st, rarity: 1, roll: 0.7, props: [], prop: null };
   return (_refPow[key] = playerPower(p));
 }
-function powerVerdict(mine, ref) {
+// 戦闘力(攻撃・防御中心)だけだと「装備は強いがLvが低くHPが少ない」状態が「余裕」と出てしまうため、推奨Lvとの比も加味して厳しい方を採用する
+const VERDICTS = [{ k: 'easy', label: '余裕' }, { k: 'ok', label: '適正' }, { k: 'warn', label: 'やや危険' }, { k: 'bad', label: '危険' }];
+function powerVerdict(mine, ref, lv, rec) {
   const r = mine / Math.max(1, ref);
-  if (r >= 1.3) return { k: 'easy', label: '余裕', r };
-  if (r >= 0.9) return { k: 'ok', label: '適正', r };
-  if (r >= 0.65) return { k: 'warn', label: 'やや危険', r };
-  return { k: 'bad', label: '危険', r };
+  let i = r >= 1.3 ? 0 : r >= 0.9 ? 1 : r >= 0.65 ? 2 : 3, lvLow = false;
+  if (lv != null && rec) {
+    const lr = lv / rec, li = lr >= 1 ? 0 : lr >= 0.8 ? 1 : lr >= 0.6 ? 2 : 3;
+    if (li > i) { i = li; }
+    lvLow = lr < 1;
+  }
+  return { k: VERDICTS[i].k, label: VERDICTS[i].label, r, lvLow };
 }
 const gearSnap = it => it ? { id: it.id, name: itemName(it), pw: gearPower(it), score: gearScore(it) } : null;
 const statSnap = p => ({ lv: p.lv, atk: playerAtk(p), def: playerDef(p), hp: maxHp(p), mp: maxMp(p), power: playerPower(p), weapon: gearSnap(p.weapon), armor: gearSnap(p.armor) });

@@ -59,7 +59,7 @@ function npcExtraPool(src, p) {
 function guidePool(p) {
   const L = GUIDE_LINES, pool = npcExtraPool(L, p);
   const g = typeof dgNextGoal === 'function' ? dgNextGoal(p) : null;
-  if (g) { const v = powerVerdict(playerPower(p), refPower(g.d, DIFFS.indexOf(g.df))); pool.push(`次は「ダンジョン${g.d.id}・${g.d.name}」の${g.df.name}が良さそうです！ 今の戦闘力だと「${v.label}」ですよ！`); }
+  if (g) { const gi = DIFFS.indexOf(g.df), v = powerVerdict(playerPower(p), refPower(g.d, gi), p.lv, g.d.rec[gi]); pool.push(`次は「ダンジョン${g.d.id}・${g.d.name}」の${g.df.name}が良さそうです！ 今の戦闘力だと「${v.label}」ですよ！${v.lvLow ? `（推奨Lv${g.d.rec[gi]}、いまはLv${p.lv}です）` : ''}`); }
   const todo = typeof goalState === 'function' ? goalState(p).find(x => !x.ok) : null;
   if (todo) pool.push(`はじめの目標、次は「${todo.g.text}」ですよ！ 広場の目標カードも見てくださいね！`);
   if (p.tower && p.tower.best > 0) pool.push(...L.tower);
