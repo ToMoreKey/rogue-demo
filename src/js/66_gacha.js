@@ -73,7 +73,7 @@ function cosOverlayHtml(p) {
   }
   if (floor) {
     if (floor.fx === 'ring') parts.push(`<i class="cos-ring" style="--fc:${floor.col}"></i>`);
-    else if (floor.fx === 'circle') parts.push(`<i class="cos-circle" style="--fc:${floor.col}"></i>`);
+    else if (floor.fx === 'circle') parts.push(`<i class="cos-circle${floor.big ? ' big' : ''}" style="--fc:${floor.col}"></i>`);
   }
   if (aura) {
     const n = aura.many ? 16 : 9, cols = aura.fx === 'rainbow' ? ['#ff6a7a', '#ffb347', '#ffe27a', '#8be05a', '#6ac0ff', '#b48cff'] : [aura.dots || aura.col];

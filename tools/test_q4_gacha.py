@@ -54,9 +54,9 @@ with sync_playwright() as pw:
     pg.locator('[data-act="gcApply"]').click(); pg.wait_for_timeout(300)
     check('反映すると実際の装備になる', pg.evaluate("(id) => G.p.gacha.eq.back === id", ids[0]))
     pg.locator('[data-act="gcTab"][data-tab="frame"]').click(); pg.wait_for_timeout(200)
-    check('図鑑の飾りタブ', pg.locator('[data-act="gcFrame"]').count() == 6)
+    check('図鑑の飾りタブ', pg.locator('[data-act="gcFrame"]').count() == pg.evaluate('() => __rogue.DEX_FRAMES.length') + 1)
     pg.locator('[data-act="gcTab"][data-tab="title"]').click(); pg.wait_for_timeout(200)
-    check('称号タブ', pg.locator('[data-act="gcTitle"]').count() == 8)
+    check('称号タブ', pg.locator('[data-act="gcTitle"]').count() == pg.evaluate('() => __rogue.GACHA_TITLES.length'))
     pg.locator('[data-act="gcClose"]').click(); pg.wait_for_timeout(200)
     check('閉じられる', pg.evaluate("() => document.getElementById('modal').hidden === true"))
     # ジャンル別（闇鍋ではない）
