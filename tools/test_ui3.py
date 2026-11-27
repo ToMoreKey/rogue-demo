@@ -59,8 +59,8 @@ with sync_playwright() as pw:
         const letters = Array.from(document.querySelectorAll('#dg-list .dc-letter')).map(e => e.textContent);
         return { secs, banners: banners.length, bgOk, cards, letters, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth };
     }''')
-    check('基準2a_前編・後編・エンドコンテンツの区切り見出しがある', r2['secs'] == ['毎日回数制限・Lvに自動調整', '前編魔王城への道', '後編真の黒幕との戦い', 'エンドコンテンツ塔・深淵'], r2)
-    check('基準2b_18枚（鐘の試練＋17）のカードすべてにバナー背景画像が実描画される', r2['cards'] == 18 and r2['banners'] == 18 and r2['bgOk'] == 18, r2)
+    check('基準2a_前編・後編・エンドコンテンツの区切り見出しがある', r2['secs'] == ['前編魔王城への道', '後編真の黒幕との戦い', 'エンドコンテンツ塔・深淵'], r2)
+    check('基準2b_17枚のカードすべてにバナー背景画像が実描画される', r2['cards'] == 17 and r2['banners'] == 17 and r2['bgOk'] == 17, r2)
     check('基準2c_360px幅で横スクロールなし', r2['sw'] <= r2['cw'], r2)
 
     # 基準3: 戦闘アリーナに背景シーンが設定される

@@ -7,6 +7,13 @@ const DAILY_CFG = {
   clearDrops: 2,        // 踏破で貰える鐘のしずく（基本）
   clearGoldBase: 160    // 踏破ボーナスGold = これ × 強さ係数 × 曜日倍率
 };
+// 難易度（挑戦者が選ぶ）: mul=敵の強さの係数（ease に掛ける）、drops=踏破しずくの基本値、gold=踏破Goldの倍率
+const DAILY_DIFFS = [
+  { id: 'easy',   name: 'やさしい', tag: '気軽に',   mul: 0.75, drops: 1, gold: 0.7 },
+  { id: 'normal', name: 'ふつう',   tag: '標準',     mul: 1.0,  drops: 2, gold: 1 },
+  { id: 'hard',   name: 'むずかしい', tag: '歯ごたえ', mul: 1.5,  drops: 3, gold: 1.6 }
+];
+const DAILY_DF_KEY = 'rogue_' + (IS_DEV_BUILD ? 'dev_' : '') + 'daily_df';
 // 曜日（0=日〜6=土）で変わる試練。src=敵とボスを借りるダンジョン、bonus=踏破の曜日ボーナス
 const DAILY_THEMES = [
   { wd: 0, src: 'I', name: '魔王城の試練',   icon: '🏰', bonus: { drops: 2 }, bonusTxt: 'しずく +2' },

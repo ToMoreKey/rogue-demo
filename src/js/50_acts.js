@@ -411,7 +411,7 @@ const ACTS = {
   },
   mRetry() {
     const l = G.last; closeModal();
-    if (l && l.daily) startDailyRun();
+    if (l && l.daily) startDailyRun(l.daily.df);
     else if (l && l.tower) startTowerRun();
     else if (l && l.abyss) startAbyssRun(l.abyss.lv);
     else if (l) startRunGuarded(l.d.id, l.df.id);
@@ -419,7 +419,9 @@ const ACTS = {
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
-  goDaily() { startDailyRun(); },
+  goDaily() { startDailyRun(G.dailyDf); },
+  dgTab(d) { G.dgTab = d.tab === 'daily' ? 'daily' : 'normal'; renderDungeonSelect(); },
+  dailyDf(d) { if (DAILY_DIFFS.some(x => x.id === d.df)) { G.dailyDf = d.df; try { localStorage.setItem(DAILY_DF_KEY, d.df); } catch (e) {} renderDungeonSelect(); } },
   openDex() { openDexModal(G.dexTab || 'enemies'); },
   openAch() { openDexModal('ach'); },
   dexFilter(d) { G.dexFilter = d.v; openDexModal(G.dexTab || 'enemies'); },

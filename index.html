@@ -879,12 +879,16 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .lg-cell{position:relative;display:flex;flex-direction:column;align-items:center;padding:8px 2px;border:1px solid #2b3245;border-radius:8px;background:rgba(255,255,255,.03)}
 .lg-cell small{font-size:10px;opacity:.7}.lg-cell b{font-size:15px}.lg-cell.got{opacity:.5}.lg-cell.got span{position:absolute;right:4px;top:2px;color:#58c98a;font-weight:900}
 .lg-cell.today{border-color:#e9b43c;background:rgba(233,180,60,.14);box-shadow:0 0 10px rgba(233,180,60,.4)}
-.lg-cell.last{grid-column:1/-1;padding:16px 8px;border:2px solid #ffd45a;background:linear-gradient(135deg,rgba(255,212,90,.22),rgba(180,140,255,.18));box-shadow:0 0 14px rgba(255,212,90,.45);overflow:hidden}
-.lg-cell.last small{font-size:13px;font-weight:900;color:#ffd45a;opacity:1;letter-spacing:.08em}
-.lg-cell.last b{font-size:30px;line-height:1.3;color:#fff3c4;text-shadow:0 0 10px rgba(255,212,90,.9)}
+.lg-cell.last,.lg-cell.last.today{grid-column:1/-1;padding:16px 8px;border:3px solid transparent;border-radius:10px;background:linear-gradient(#1b2133,#1b2133) padding-box,linear-gradient(90deg,#ff5f6d,#ffc371,#fff56a,#6be585,#5ec8ff,#a78bfa,#ff5f6d) border-box;background-size:auto,300% 100%;box-shadow:0 0 16px rgba(167,139,250,.5);overflow:hidden;animation:lgrain 4s linear infinite}
+.lg-cell.last small{font-size:13px;font-weight:900;opacity:1;letter-spacing:.08em;background:linear-gradient(90deg,#ff5f6d,#ffc371,#fff56a,#6be585,#5ec8ff,#a78bfa,#ff5f6d);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:lgrain 4s linear infinite}
+.lg-cell.last b{font-size:30px;line-height:1.3;color:#fff;text-shadow:0 0 10px rgba(255,255,255,.7),0 0 18px rgba(167,139,250,.8)}
 .lg-cell.last::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.35) 50%,transparent 60%);transform:translateX(-120%);animation:lgshine 3s ease-in-out infinite}
 .lg-cell.last.got::after{display:none}
+@keyframes lgrain{to{background-position:0 0,300% 0}}
 @keyframes lgshine{60%,100%{transform:translateX(120%)}}
+@media (prefers-reduced-motion:reduce){.lg-cell.last,.lg-cell.last small{animation:none}.lg-cell.last::after{animation:none;display:none}}
+.dl-seg{grid-template-columns:repeat(3,1fr)}
+.dg-tabs{grid-template-columns:1fr 1fr}.dg-tabs .seg-b{padding:10px 4px;font-size:14px}
 @media (prefers-reduced-motion:reduce){.lg-cell.last::after{animation:none;display:none}}
 .dxf{display:contents}
 .sheet.dxon{border:2px solid var(--dxb);background:var(--dxbg),var(--panel);box-shadow:0 0 18px var(--dxg),inset 0 0 22px var(--dxg)}
@@ -1002,7 +1006,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v105';
+const APP_VERSION = 'rogue-v106';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2000,6 +2004,13 @@ const DAILY_CFG = {
   clearDrops: 2,        // 踏破で貰える鐘のしずく（基本）
   clearGoldBase: 160    // 踏破ボーナスGold = これ × 強さ係数 × 曜日倍率
 };
+// 難易度（挑戦者が選ぶ）: mul=敵の強さの係数（ease に掛ける）、drops=踏破しずくの基本値、gold=踏破Goldの倍率
+const DAILY_DIFFS = [
+  { id: 'easy',   name: 'やさしい', tag: '気軽に',   mul: 0.75, drops: 1, gold: 0.7 },
+  { id: 'normal', name: 'ふつう',   tag: '標準',     mul: 1.0,  drops: 2, gold: 1 },
+  { id: 'hard',   name: 'むずかしい', tag: '歯ごたえ', mul: 1.5,  drops: 3, gold: 1.6 }
+];
+const DAILY_DF_KEY = 'rogue_' + (IS_DEV_BUILD ? 'dev_' : '') + 'daily_df';
 // 曜日（0=日〜6=土）で変わる試練。src=敵とボスを借りるダンジョン、bonus=踏破の曜日ボーナス
 const DAILY_THEMES = [
   { wd: 0, src: 'I', name: '魔王城の試練',   icon: '🏰', bonus: { drops: 2 }, bonusTxt: 'しずく +2' },
@@ -5883,7 +5894,7 @@ const ACTS = {
   },
   mRetry() {
     const l = G.last; closeModal();
-    if (l && l.daily) startDailyRun();
+    if (l && l.daily) startDailyRun(l.daily.df);
     else if (l && l.tower) startTowerRun();
     else if (l && l.abyss) startAbyssRun(l.abyss.lv);
     else if (l) startRunGuarded(l.d.id, l.df.id);
@@ -5891,7 +5902,9 @@ const ACTS = {
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
-  goDaily() { startDailyRun(); },
+  goDaily() { startDailyRun(G.dailyDf); },
+  dgTab(d) { G.dgTab = d.tab === 'daily' ? 'daily' : 'normal'; renderDungeonSelect(); },
+  dailyDf(d) { if (DAILY_DIFFS.some(x => x.id === d.df)) { G.dailyDf = d.df; try { localStorage.setItem(DAILY_DF_KEY, d.df); } catch (e) {} renderDungeonSelect(); } },
   openDex() { openDexModal(G.dexTab || 'enemies'); },
   openAch() { openDexModal('ach'); },
   dexFilter(d) { G.dexFilter = d.v; openDexModal(G.dexTab || 'enemies'); },
@@ -6392,7 +6405,8 @@ function renderDungeonSelect() {
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
   const goal = dgNextGoal(p0);
   const goalCard = goal ? `<div class="panel dg-goal"><b>🎯 次の目標</b><span>ダンジョン${goal.d.id}「${esc(goal.d.name)}」${esc(goal.df.name)}をクリア</span><small>目安戦闘力 ${fmt(refPower(goal.d, DIFFS.indexOf(goal.df)))}／あなた ${fmt(playerPower(p0))}　推奨Lv${goal.d.rec[DIFFS.indexOf(goal.df)]}／あなた Lv${p0.lv}</small></div>` : '';
-  $('#dg-list').innerHTML = hint + goalCard + dgSection('毎日', '回数制限・Lvに自動調整') + renderDailyCard(p0) + DUNGEONS.map(d => {
+  if (!G.dailyDf) { try { G.dailyDf = localStorage.getItem(DAILY_DF_KEY) || 'normal'; } catch (e) { G.dailyDf = 'normal'; } }
+  const normalHtml = hint + goalCard + DUNGEONS.map(d => {
     const dgUnlocked = isDungeonUnlocked(p0, d);
     let sel = diffOf(G.sel[d.id]) || DIFFS[0];
     if (!isDiffUnlocked(p0, d, sel)) { sel = DIFFS[0]; G.sel[d.id] = sel.id; }
@@ -6453,6 +6467,9 @@ function renderDungeonSelect() {
         : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
     </div></article>`;
   })();
+  const dgTab = G.dgTab === 'daily' ? 'daily' : 'normal', dLeft = dailyLeft(p0);
+  const tabs = `<div class="seg dg-tabs" role="tablist" aria-label="ダンジョンの種類"><button class="seg-b ${dgTab === 'normal' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'normal'}" data-act="dgTab" data-tab="normal">通常ダンジョン</button><button class="seg-b ${dgTab === 'daily' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'daily'}" data-act="dgTab" data-tab="daily">🔔 鐘の試練<small>今日あと ${dLeft} 回</small></button></div>`;
+  $('#dg-list').innerHTML = tabs + (dgTab === 'daily' ? renderDailyCard(p0) : normalHtml);
 }
 
 /* ================= render: battle ================= */
@@ -9498,10 +9515,11 @@ function dailyInterp(t, x) {
   for (let i = 1; i < t.length; i++) if (x <= t[i].x) { const a = t[i - 1], b = t[i]; return a.y + (b.y - a.y) * (x - a.x) / Math.max(1e-9, b.x - a.x); }
   return t[t.length - 1].y;
 }
-function dailyScale(p) {
+function dailyScale(p, dfId) {
+  const dfx = DAILY_DIFFS.find(x => x.id === dfId) || DAILY_DIFFS[1];
   const T = dailyTable();
   const sPw = dailyInterp(T.pw, playerPower(p)), sLv = dailyInterp(T.lv, p.lv);
-  return Math.min(sPw, sLv * 1.25) * DAILY_CFG.ease;
+  return Math.min(sPw, sLv * 1.25) * DAILY_CFG.ease * dfx.mul;
 }
 
 function ensureDaily(p) {
@@ -9516,33 +9534,34 @@ function ensureDaily(p) {
 const dailyUsed = p => (p.daily && p.daily.date === todayStr()) ? p.daily.used : 0;
 const dailyLeft = p => Math.max(0, DAILY_CFG.perDay - dailyUsed(p));
 
-function startDailyRun() {
+function dailyDfOf(id) { return DAILY_DIFFS.find(x => x.id === id) || DAILY_DIFFS[1]; }
+function startDailyRun(dfId) {
   if (G.run) return;
   const p = G.p, st = ensureDaily(p);
   if (st.used >= DAILY_CFG.perDay) { toast('今日の挑戦回数は使い切りました。日付が変わると回復します'); return; }
-  const th = dailyTheme(), src = dungeonOf(th.src);
+  const th = dailyTheme(), src = dungeonOf(th.src), dfx = dailyDfOf(dfId || G.dailyDf);
   st.used++;
   const d = Object.assign({}, src, { name: '鐘の試練', maxStar: 4, bossMaxStar: undefined });
   G.run = {
     d, df: DIFFS[1], floors: DAILY_CFG.floors, floor: 0, cleared: 0, phase: 'next', enemy: null, queued: null, guard: 0,
     gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: p.lv, skKey: '', skillCt: {},
-    daily: { theme: th, S0: dailyScale(p), expM: (th.bonus.exp || 1), goldM: (th.bonus.gold || 1) }
+    daily: { theme: th, dfx, df: dfx.id, S0: dailyScale(p, dfx.id), expM: (th.bonus.exp || 1), goldM: (th.bonus.gold || 1) }
   };
   G.run.snap = statSnap(p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
-  addLog(`鐘の試練「${th.name}」（全${DAILY_CFG.floors}階層・今日あと${DAILY_CFG.perDay - st.used}回）に突入した！`, 'l-sys');
+  addLog(`鐘の試練「${th.name}」（${dfx.name}・全${DAILY_CFG.floors}階層・今日あと${DAILY_CFG.perDay - st.used}回）に突入した！`, 'l-sys');
   save();
   renderAll(); ensureLoop();
 }
 
 // finishRun から呼ぶ。結果の補足 {drops, gold, sp, chest} を返す
 function dailyFinish(run, result) {
-  const p = G.p, th = run.daily.theme, st = ensureDaily(p), out = { drops: 0, clearGold: 0, sp: 0, chest: null, theme: th };
+  const p = G.p, th = run.daily.theme, st = ensureDaily(p), out = { drops: 0, clearGold: 0, sp: 0, chest: null, theme: th, df: run.daily.df, dfName: run.daily.dfx.name };
   if (result === 'clear') {
     st.clears++;
-    out.drops = DAILY_CFG.clearDrops + (th.bonus.drops || 0);
-    out.clearGold = Math.round(DAILY_CFG.clearGoldBase * run.daily.S0 * (th.bonus.gold || 1));
+    out.drops = run.daily.dfx.drops + (th.bonus.drops || 0);
+    out.clearGold = Math.round(DAILY_CFG.clearGoldBase * run.daily.S0 / run.daily.dfx.mul * run.daily.dfx.gold * (th.bonus.gold || 1));
     out.sp = th.bonus.sp || 0;
     p.gold += out.clearGold; p.sp += out.sp; p.stats.clears++;
     addDrops(out.drops, '鐘の試練');
@@ -9556,14 +9575,16 @@ function dailyFinish(run, result) {
 }
 
 function renderDailyCard(p) {
-  const th = dailyTheme(), left = dailyLeft(p);
+  const th = dailyTheme(), left = dailyLeft(p), dfx = dailyDfOf(G.dailyDf);
   const pips = Array.from({ length: DAILY_CFG.perDay }, (_, i) => `<i class="dl-pip${i < left ? ' on' : ''}"></i>`).join('');
+  const seg = DAILY_DIFFS.map(x => `<button class="seg-b ${x.id === dfx.id ? 'on' : ''}" aria-pressed="${x.id === dfx.id}" data-act="dailyDf" data-df="${x.id}">${x.name}<small>${x.tag}</small></button>`).join('');
   return `<article class="panel dcard dc-card dl-card" style="--a1:#2a2410;--a2:#14110a;--ac:#ffd45a">
     ${dgBanner(th.src, '鐘', `${th.icon} 鐘の試練`, `今日は「${esc(th.name)}」`, '')}
     <div class="dc-body">
-    <p class="dc-blurb">敵の強さは今の自分に合わせて自動で調整されます。いつでも・何度でも日課にできるエンドコンテンツ。</p>
-    <p class="dc-info">全 <b>${DAILY_CFG.floors}階層</b>　今日の曜日ボーナス <b>${esc(th.bonusTxt)}</b><br>踏破報酬 <b>💧${DAILY_CFG.clearDrops + (th.bonus.drops || 0)}</b> ＋ Gold<span class="dl-pips" aria-label="残り${left}回">${pips}</span> 残り <b>${left}</b> / ${DAILY_CFG.perDay} 回</p>
-    <button class="btn primary wide" data-act="goDaily" ${left > 0 ? '' : 'disabled'}>${left > 0 ? '挑戦する' : '本日は終了（明日また）'}</button>
+    <p class="dc-blurb">敵の強さは今の自分に合わせて自動で調整されます。難易度は好きに選べます。1日3回まで、日付が変わると回復。</p>
+    <div class="seg dl-seg" role="group" aria-label="難易度">${seg}</div>
+    <p class="dc-info">全 <b>${DAILY_CFG.floors}階層</b>　今日の曜日ボーナス <b>${esc(th.bonusTxt)}</b><br>踏破報酬 <b>💧${dfx.drops + (th.bonus.drops || 0)}</b> ＋ Gold<span class="dl-pips" aria-label="残り${left}回">${pips}</span> 残り <b>${left}</b> / ${DAILY_CFG.perDay} 回</p>
+    <button class="btn primary wide" data-act="goDaily" ${left > 0 ? '' : 'disabled'}>${left > 0 ? `${dfx.name}で挑戦する` : '本日は終了（明日また）'}</button>
     </div></article>`;
 }
 /* ================= tutorial ================= */
@@ -9880,7 +9901,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  startRunGuarded, dangerOf, startDailyRun, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  startRunGuarded, dangerOf, startDailyRun, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,

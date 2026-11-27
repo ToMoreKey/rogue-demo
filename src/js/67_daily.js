@@ -19,10 +19,11 @@ function dailyInterp(t, x) {
   for (let i = 1; i < t.length; i++) if (x <= t[i].x) { const a = t[i - 1], b = t[i]; return a.y + (b.y - a.y) * (x - a.x) / Math.max(1e-9, b.x - a.x); }
   return t[t.length - 1].y;
 }
-function dailyScale(p) {
+function dailyScale(p, dfId) {
+  const dfx = DAILY_DIFFS.find(x => x.id === dfId) || DAILY_DIFFS[1];
   const T = dailyTable();
   const sPw = dailyInterp(T.pw, playerPower(p)), sLv = dailyInterp(T.lv, p.lv);
-  return Math.min(sPw, sLv * 1.25) * DAILY_CFG.ease;
+  return Math.min(sPw, sLv * 1.25) * DAILY_CFG.ease * dfx.mul;
 }
 
 function ensureDaily(p) {
@@ -37,33 +38,34 @@ function ensureDaily(p) {
 const dailyUsed = p => (p.daily && p.daily.date === todayStr()) ? p.daily.used : 0;
 const dailyLeft = p => Math.max(0, DAILY_CFG.perDay - dailyUsed(p));
 
-function startDailyRun() {
+function dailyDfOf(id) { return DAILY_DIFFS.find(x => x.id === id) || DAILY_DIFFS[1]; }
+function startDailyRun(dfId) {
   if (G.run) return;
   const p = G.p, st = ensureDaily(p);
   if (st.used >= DAILY_CFG.perDay) { toast('今日の挑戦回数は使い切りました。日付が変わると回復します'); return; }
-  const th = dailyTheme(), src = dungeonOf(th.src);
+  const th = dailyTheme(), src = dungeonOf(th.src), dfx = dailyDfOf(dfId || G.dailyDf);
   st.used++;
   const d = Object.assign({}, src, { name: '鐘の試練', maxStar: 4, bossMaxStar: undefined });
   G.run = {
     d, df: DIFFS[1], floors: DAILY_CFG.floors, floor: 0, cleared: 0, phase: 'next', enemy: null, queued: null, guard: 0,
     gold: 0, sp: 0, items: [], potions: { hp: 0, mp: 0 }, kills: 0, startLv: p.lv, skKey: '', skillCt: {},
-    daily: { theme: th, S0: dailyScale(p), expM: (th.bonus.exp || 1), goldM: (th.bonus.gold || 1) }
+    daily: { theme: th, dfx, df: dfx.id, S0: dailyScale(p, dfx.id), expM: (th.bonus.exp || 1), goldM: (th.bonus.gold || 1) }
   };
   G.run.snap = statSnap(p);
   G.view = 'dungeon';
   $('#log').innerHTML = '';
-  addLog(`鐘の試練「${th.name}」（全${DAILY_CFG.floors}階層・今日あと${DAILY_CFG.perDay - st.used}回）に突入した！`, 'l-sys');
+  addLog(`鐘の試練「${th.name}」（${dfx.name}・全${DAILY_CFG.floors}階層・今日あと${DAILY_CFG.perDay - st.used}回）に突入した！`, 'l-sys');
   save();
   renderAll(); ensureLoop();
 }
 
 // finishRun から呼ぶ。結果の補足 {drops, gold, sp, chest} を返す
 function dailyFinish(run, result) {
-  const p = G.p, th = run.daily.theme, st = ensureDaily(p), out = { drops: 0, clearGold: 0, sp: 0, chest: null, theme: th };
+  const p = G.p, th = run.daily.theme, st = ensureDaily(p), out = { drops: 0, clearGold: 0, sp: 0, chest: null, theme: th, df: run.daily.df, dfName: run.daily.dfx.name };
   if (result === 'clear') {
     st.clears++;
-    out.drops = DAILY_CFG.clearDrops + (th.bonus.drops || 0);
-    out.clearGold = Math.round(DAILY_CFG.clearGoldBase * run.daily.S0 * (th.bonus.gold || 1));
+    out.drops = run.daily.dfx.drops + (th.bonus.drops || 0);
+    out.clearGold = Math.round(DAILY_CFG.clearGoldBase * run.daily.S0 / run.daily.dfx.mul * run.daily.dfx.gold * (th.bonus.gold || 1));
     out.sp = th.bonus.sp || 0;
     p.gold += out.clearGold; p.sp += out.sp; p.stats.clears++;
     addDrops(out.drops, '鐘の試練');
@@ -77,13 +79,15 @@ function dailyFinish(run, result) {
 }
 
 function renderDailyCard(p) {
-  const th = dailyTheme(), left = dailyLeft(p);
+  const th = dailyTheme(), left = dailyLeft(p), dfx = dailyDfOf(G.dailyDf);
   const pips = Array.from({ length: DAILY_CFG.perDay }, (_, i) => `<i class="dl-pip${i < left ? ' on' : ''}"></i>`).join('');
+  const seg = DAILY_DIFFS.map(x => `<button class="seg-b ${x.id === dfx.id ? 'on' : ''}" aria-pressed="${x.id === dfx.id}" data-act="dailyDf" data-df="${x.id}">${x.name}<small>${x.tag}</small></button>`).join('');
   return `<article class="panel dcard dc-card dl-card" style="--a1:#2a2410;--a2:#14110a;--ac:#ffd45a">
     ${dgBanner(th.src, '鐘', `${th.icon} 鐘の試練`, `今日は「${esc(th.name)}」`, '')}
     <div class="dc-body">
-    <p class="dc-blurb">敵の強さは今の自分に合わせて自動で調整されます。いつでも・何度でも日課にできるエンドコンテンツ。</p>
-    <p class="dc-info">全 <b>${DAILY_CFG.floors}階層</b>　今日の曜日ボーナス <b>${esc(th.bonusTxt)}</b><br>踏破報酬 <b>💧${DAILY_CFG.clearDrops + (th.bonus.drops || 0)}</b> ＋ Gold<span class="dl-pips" aria-label="残り${left}回">${pips}</span> 残り <b>${left}</b> / ${DAILY_CFG.perDay} 回</p>
-    <button class="btn primary wide" data-act="goDaily" ${left > 0 ? '' : 'disabled'}>${left > 0 ? '挑戦する' : '本日は終了（明日また）'}</button>
+    <p class="dc-blurb">敵の強さは今の自分に合わせて自動で調整されます。難易度は好きに選べます。1日3回まで、日付が変わると回復。</p>
+    <div class="seg dl-seg" role="group" aria-label="難易度">${seg}</div>
+    <p class="dc-info">全 <b>${DAILY_CFG.floors}階層</b>　今日の曜日ボーナス <b>${esc(th.bonusTxt)}</b><br>踏破報酬 <b>💧${dfx.drops + (th.bonus.drops || 0)}</b> ＋ Gold<span class="dl-pips" aria-label="残り${left}回">${pips}</span> 残り <b>${left}</b> / ${DAILY_CFG.perDay} 回</p>
+    <button class="btn primary wide" data-act="goDaily" ${left > 0 ? '' : 'disabled'}>${left > 0 ? `${dfx.name}で挑戦する` : '本日は終了（明日また）'}</button>
     </div></article>`;
 }

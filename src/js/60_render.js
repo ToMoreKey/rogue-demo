@@ -226,7 +226,8 @@ function renderDungeonSelect() {
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
   const goal = dgNextGoal(p0);
   const goalCard = goal ? `<div class="panel dg-goal"><b>🎯 次の目標</b><span>ダンジョン${goal.d.id}「${esc(goal.d.name)}」${esc(goal.df.name)}をクリア</span><small>目安戦闘力 ${fmt(refPower(goal.d, DIFFS.indexOf(goal.df)))}／あなた ${fmt(playerPower(p0))}　推奨Lv${goal.d.rec[DIFFS.indexOf(goal.df)]}／あなた Lv${p0.lv}</small></div>` : '';
-  $('#dg-list').innerHTML = hint + goalCard + dgSection('毎日', '回数制限・Lvに自動調整') + renderDailyCard(p0) + DUNGEONS.map(d => {
+  if (!G.dailyDf) { try { G.dailyDf = localStorage.getItem(DAILY_DF_KEY) || 'normal'; } catch (e) { G.dailyDf = 'normal'; } }
+  const normalHtml = hint + goalCard + DUNGEONS.map(d => {
     const dgUnlocked = isDungeonUnlocked(p0, d);
     let sel = diffOf(G.sel[d.id]) || DIFFS[0];
     if (!isDiffUnlocked(p0, d, sel)) { sel = DIFFS[0]; G.sel[d.id] = sel.id; }
@@ -287,6 +288,9 @@ function renderDungeonSelect() {
         : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
     </div></article>`;
   })();
+  const dgTab = G.dgTab === 'daily' ? 'daily' : 'normal', dLeft = dailyLeft(p0);
+  const tabs = `<div class="seg dg-tabs" role="tablist" aria-label="ダンジョンの種類"><button class="seg-b ${dgTab === 'normal' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'normal'}" data-act="dgTab" data-tab="normal">通常ダンジョン</button><button class="seg-b ${dgTab === 'daily' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'daily'}" data-act="dgTab" data-tab="daily">🔔 鐘の試練<small>今日あと ${dLeft} 回</small></button></div>`;
+  $('#dg-list').innerHTML = tabs + (dgTab === 'daily' ? renderDailyCard(p0) : normalHtml);
 }
 
 /* ================= render: battle ================= */
