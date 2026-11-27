@@ -138,7 +138,7 @@ function loginBonusPrompt() {
   const p = G.p; if (!p || loginBonusSkip() || (G.tutorial && !G.tutorial.done) || G._titleUp || G._storyUp || G.run) return;
   if (loginClaimed(p) || G.modalOpen) return;
   const day = p.login.claims % 7;
-  const cells = LOGIN_REWARDS.map((n, i) => `<div class="lg-cell${i < day ? ' got' : i === day ? ' today' : ''}"><small>${i + 1}日目</small><b>💧${n}</b>${i < day ? '<span>✓</span>' : ''}</div>`).join('');
+  const cells = LOGIN_REWARDS.map((n, i) => `<div class="lg-cell${i === LOGIN_REWARDS.length - 1 ? ' last' : ''}${i < day ? ' got' : i === day ? ' today' : ''}"><small>${i === LOGIN_REWARDS.length - 1 ? '✨ 7日目・大当たり ✨' : (i + 1) + '日目'}</small><b>💧${n}</b>${i < day ? '<span>✓</span>' : ''}</div>`).join('');
   $('#m-sheet').innerHTML = `<h2 class="win" id="m-title">ログインボーナス</h2><p class="sub" style="margin:0 0 8px">毎日起動すると鐘のしずくがもらえます（休んでも途中から続けられます）。</p><div class="lg-grid">${cells}</div><p style="margin:10px 0 0">今日は <b>💧${LOGIN_REWARDS[day]}</b> をプレゼント！</p><div class="act"><button class="btn primary" data-act="loginClaim" id="m-login">受け取る</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
   setTimeout(() => { const b = $('#m-login'); if (b) b.focus(); }, 0);
