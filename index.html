@@ -910,7 +910,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v95';
+const APP_VERSION = 'rogue-v96';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -3199,7 +3199,7 @@ function load() {
     G.p = p;
     if (migrated || !s.ach) checkAchievements(null, true);
     if (p.ending && p.pendingAchCoins > 0) flushPendingAchCoins(p, true);
-    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquipV2 = d.opts.autoEquipV2 === true; G.opts.autoEquip = d.opts.autoEquipV2 === true && d.opts.autoEquip === true; /* 旧版は既定ONだったため、V2以前の保存値は手動装備(OFF)に移行 */ if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; if (typeof d.opts.se === 'boolean') G.opts.se = d.opts.se; else delete G.opts.se; if (d.opts.bgm === true) G.opts.bgm = true; else delete G.opts.bgm; for (const k of ['seVol', 'bgmVol']) { if ([0, 1, 2].includes(d.opts[k])) G.opts[k] = d.opts[k]; else delete G.opts[k]; } }
+    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquipV2 = d.opts.autoEquipV2 === true; G.opts.autoEquip = d.opts.autoEquipV2 === true && d.opts.autoEquip === true; /* 旧版は既定ONだったため、V2以前の保存値は手動装備(OFF)に移行 */ if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; if (typeof d.opts.se === 'boolean') G.opts.se = d.opts.se; else delete G.opts.se; if (typeof d.opts.bgm === 'boolean') G.opts.bgm = d.opts.bgm; else delete G.opts.bgm; for (const k of ['seVol', 'bgmVol']) { if ([0, 1, 2].includes(d.opts[k])) G.opts[k] = d.opts[k]; else delete G.opts[k]; } }
     if (d.sel) for (const dg of DUNGEONS) {
       const df = diffOf(d.sel[dg.id]);
       if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;
@@ -3724,7 +3724,7 @@ async function maybeSendAnalytics() {
   }
 }
 /* ================= サウンド（WebAudio 合成・外部音源なし） =================
-   - SE は既定ON（小音量）、BGM は既定OFF。opts.se / seVol(0..2) / bgm / bgmVol(0..2)
+   - SE は既定ON（小音量）、BGM は既定ON。opts.se / seVol(0..2) / bgm / bgmVol(0..2)
    - 最初のユーザー操作後にだけ AudioContext を作成・resume（自動再生ポリシー対応）
    - G.headless（BOT）では完全に無音。同種SEは50ms以内に重ねない。
    - テスト用に Sound.calls へ再生要求（SE名）を記録する（直近200件）。 */
@@ -3734,7 +3734,7 @@ const Sound = (() => {
   const VOLS = [0.12, 0.25, 0.45];
   const seOn = () => !(G && G.opts && G.opts.se === false);
   const seVol = () => VOLS[Math.max(0, Math.min(2, (G && G.opts && G.opts.seVol) | 0))];
-  const bgmOn = () => !!(G && G.opts && G.opts.bgm === true);
+  const bgmOn = () => !!(G && G.opts && G.opts.bgm !== false);
   const bgmVol = () => VOLS[Math.max(0, Math.min(2, (G && G.opts && G.opts.bgmVol) | 0))] * 0.5;
   function ensure() {
     if (ctx) return ctx;
@@ -7342,7 +7342,7 @@ function renderStatus() {
         </div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245" id="sound-panel">
-        ${(() => { const vl = ['小', '中', '大'], sv = (G.opts.seVol | 0), bv = (G.opts.bgmVol | 0), seO = G.opts.se !== false, bgO = G.opts.bgm === true;
+        ${(() => { const vl = ['小', '中', '大'], sv = (G.opts.seVol | 0), bv = (G.opts.bgmVol | 0), seO = G.opts.se !== false, bgO = G.opts.bgm !== false;
           const seg = (act, cur) => vl.map((l, i) => `<button class="btn small ${cur === i ? 'on' : ''}" data-act="${act}" data-v="${i}" aria-pressed="${cur === i}">${l}</button>`).join('');
           return `<div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><button class="btn small ${seO ? 'on' : ''}" data-act="seToggle" aria-pressed="${seO}">効果音：${seO ? 'ON' : 'OFF'}</button>${seg('seVolSet', sv)}</div>
           <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn small ${bgO ? 'on' : ''}" data-act="bgmToggle" aria-pressed="${bgO}">BGM：${bgO ? 'ON' : 'OFF'}</button>${seg('bgmVolSet', bv)}</div>

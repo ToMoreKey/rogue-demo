@@ -1,5 +1,5 @@
 /* ================= サウンド（WebAudio 合成・外部音源なし） =================
-   - SE は既定ON（小音量）、BGM は既定OFF。opts.se / seVol(0..2) / bgm / bgmVol(0..2)
+   - SE は既定ON（小音量）、BGM は既定ON。opts.se / seVol(0..2) / bgm / bgmVol(0..2)
    - 最初のユーザー操作後にだけ AudioContext を作成・resume（自動再生ポリシー対応）
    - G.headless（BOT）では完全に無音。同種SEは50ms以内に重ねない。
    - テスト用に Sound.calls へ再生要求（SE名）を記録する（直近200件）。 */
@@ -9,7 +9,7 @@ const Sound = (() => {
   const VOLS = [0.12, 0.25, 0.45];
   const seOn = () => !(G && G.opts && G.opts.se === false);
   const seVol = () => VOLS[Math.max(0, Math.min(2, (G && G.opts && G.opts.seVol) | 0))];
-  const bgmOn = () => !!(G && G.opts && G.opts.bgm === true);
+  const bgmOn = () => !!(G && G.opts && G.opts.bgm !== false);
   const bgmVol = () => VOLS[Math.max(0, Math.min(2, (G && G.opts && G.opts.bgmVol) | 0))] * 0.5;
   function ensure() {
     if (ctx) return ctx;

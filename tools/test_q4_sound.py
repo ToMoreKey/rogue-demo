@@ -16,7 +16,7 @@ with sync_playwright() as pw:
     errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.goto('file://' + ROOT + '/index.html'); pg.wait_for_timeout(400); ev = pg.evaluate
     ev("() => { G.tutorial = { done: true }; G._charSelectOpen = false; G.run = null; G.view='status'; G.statusTab='data'; __rogue.renderAll(); }")
-    check('既定: SE ON・小音量・BGM OFF', ev("() => [G.opts.se !== false, G.opts.seVol | 0, G.opts.bgm === true]") == [True, 0, False])
+    check('既定: SE ON・小音量・BGM ON', ev("() => [G.opts.se !== false, G.opts.seVol | 0, G.opts.bgm !== false]") == [True, 0, True])
     check('操作前は AudioContext を作らない', ev("() => window.__ac.made") == 0)
     ev("() => __rogue.Sound.play('atk')")
     check('操作前の再生要求でも音は出ない(osc=0)', ev("() => window.__ac.osc") == 0)
@@ -72,6 +72,8 @@ with sync_playwright() as pw:
     ev("() => { G.opts.seVol = 2; G.opts.bgmVol = 1; G.opts.bgm = true; __rogue.save(true); }")
     pg.reload(); pg.wait_for_timeout(500)
     check('opts(se/bgm/音量)が復元される', ev("() => [G.opts.seVol, G.opts.bgmVol, G.opts.bgm]") == [2, 1, True])
+    ev("() => { G.opts.bgm = false; __rogue.save(true); }"); pg.reload(); pg.wait_for_timeout(500)
+    check('BGMをOFFにした設定は保存される', ev("() => G.opts.bgm") is False)
     check('ページエラーなし', not errs, errs)
     b.close()
 print('RESULT: ' + ('OK' if not F else 'NG')); sys.exit(1 if F else 0)

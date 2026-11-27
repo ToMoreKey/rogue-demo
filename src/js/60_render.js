@@ -1510,7 +1510,7 @@ function renderStatus() {
         </div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245" id="sound-panel">
-        ${(() => { const vl = ['小', '中', '大'], sv = (G.opts.seVol | 0), bv = (G.opts.bgmVol | 0), seO = G.opts.se !== false, bgO = G.opts.bgm === true;
+        ${(() => { const vl = ['小', '中', '大'], sv = (G.opts.seVol | 0), bv = (G.opts.bgmVol | 0), seO = G.opts.se !== false, bgO = G.opts.bgm !== false;
           const seg = (act, cur) => vl.map((l, i) => `<button class="btn small ${cur === i ? 'on' : ''}" data-act="${act}" data-v="${i}" aria-pressed="${cur === i}">${l}</button>`).join('');
           return `<div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><button class="btn small ${seO ? 'on' : ''}" data-act="seToggle" aria-pressed="${seO}">効果音：${seO ? 'ON' : 'OFF'}</button>${seg('seVolSet', sv)}</div>
           <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn small ${bgO ? 'on' : ''}" data-act="bgmToggle" aria-pressed="${bgO}">BGM：${bgO ? 'ON' : 'OFF'}</button>${seg('bgmVolSet', bv)}</div>
