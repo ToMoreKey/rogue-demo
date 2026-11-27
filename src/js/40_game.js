@@ -689,6 +689,7 @@ function finishRun(result) {
     clearSp = firstClear ? run.df.clearSp : 0;
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared[run.d.id][run.df.id] = true;
+    queueStory(p, run.d.id, run.df.id, firstClear);
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {
     p.hp = maxHp(p);  // 街帰還: HP全回復
@@ -729,7 +730,7 @@ function finishRun(result) {
 let loopTimer = null;
 function tick() {
   const run = G.run; if (!run) return;
-  if (G._titleUp) return; // タイトル表示中は進めない
+  if (G._titleUp || G._storyUp) return; // タイトル表示中は進めない
   if (run.introUntil && Date.now() < run.introUntil) return; // ボス登場演出中は戦闘を止める
   try {
     if (run.phase === 'next') nextFloor();

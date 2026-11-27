@@ -1506,6 +1506,7 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
+          <button class="btn small" data-act="openStoryList">物語を見返す</button>
           <button class="btn small" data-act="openCredits">クレジット</button>
         </div>
       </div>
@@ -2304,6 +2305,7 @@ function closeModal() {
     clearAllBattleFx(fxDebugTarget());
   }
   $('#modal').hidden = true; G.modalOpen = false; ensureLoop();
+  if (G._storyQueue && G._storyQueue.length && !G._storyUp) setTimeout(() => { if (!G._storyUp && !G.modalOpen && G._storyQueue.length) playStory(G._storyQueue.shift()); }, 300);
 }
 
 /* ================= render: help ================= */

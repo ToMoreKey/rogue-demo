@@ -800,6 +800,28 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .cr-close{margin:6px 16px 16px;padding:12px;font:700 15px var(--font-body);color:#10131c;background:#e9b43c;border:0;border-radius:8px;cursor:pointer}
 .cr-close:focus-visible{outline:3px solid #fff;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){#credits-screen{animation:none}}
+/* ================= 物語（会話シーン） ================= */
+#story-screen{position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:#07080d;color:#f1f3fa;cursor:pointer;animation:ttlin .35s ease-out;-webkit-tap-highlight-color:transparent}
+#story-screen.out{animation:ttlout .3s ease-in forwards;pointer-events:none}
+.stv-bg{position:absolute;inset:-3%;background:center/cover no-repeat;animation:ttlzoom 30s ease-in-out infinite alternate}
+.stv-shade{position:absolute;inset:0;background:linear-gradient(rgba(6,8,14,.55),rgba(6,8,14,.12) 30%,rgba(6,8,14,.35) 60%,rgba(6,8,14,.82))}
+.stv-title{position:absolute;z-index:2;left:max(16px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));font:900 15px var(--font-display);letter-spacing:.2em;color:#f2c14e;text-shadow:0 2px 6px #000}
+.stv-skip{position:absolute;z-index:3;right:max(12px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));padding:9px 12px;font:700 12px var(--font-body);color:#e6e9f2;background:rgba(10,12,20,.6);border:1px solid #4a5270;border-radius:999px;cursor:pointer}
+.stv-skip:focus-visible{outline:2px solid #fff}
+.stv-chara{position:relative;z-index:1;height:min(46vh,380px);display:flex;align-items:flex-end;padding:0 max(14px,env(safe-area-inset-left));pointer-events:none}
+.stv-chara.left{justify-content:flex-start}.stv-chara.right{justify-content:flex-end}
+.stv-chara img{max-height:100%;width:auto;max-width:62%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6));animation:stvin .28s ease-out}
+.stv-hero{image-rendering:pixelated;height:78%;width:auto}
+@keyframes stvin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.stv-box{position:relative;z-index:2;margin:0 max(12px,env(safe-area-inset-left)) max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-right));padding:14px 16px 18px;min-height:112px;background:rgba(12,15,26,.88);border:1px solid #3a4259;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.stv-box.narr .stv-text{color:#dfe3f0}
+.stv-name{position:absolute;left:14px;top:-14px;padding:3px 12px;font:900 13px var(--font-display);letter-spacing:.12em;color:#2b1a04;background:#e9b43c;border-radius:999px}
+.stv-text{font-size:15px;line-height:1.75;min-height:3.5em;padding-top:4px}
+.stv-next{position:absolute;right:14px;bottom:6px;font-size:12px;color:#e9b43c;animation:stvblink 1s steps(2,end) infinite}
+@keyframes stvblink{50%{opacity:0}}
+@media (max-height:520px){.stv-chara{height:34vh}.stv-text{font-size:14px;line-height:1.6;min-height:3em}.stv-box{min-height:88px}}
+@media (min-width:700px){.stv-box{max-width:640px;margin-left:auto;margin-right:auto;width:calc(100% - 32px)}}
+@media (prefers-reduced-motion:reduce){#story-screen,.stv-bg,.stv-chara img,.stv-next{animation:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -910,7 +932,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v99';
+const APP_VERSION = 'rogue-v100';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2104,6 +2126,104 @@ function dexEnemyGroups() {
   });
   return groups;
 }
+/* ================= 物語（各ダンジョンの上級クリアで再生する会話シーン） =================
+   世界観は docs/world_setting.md が正。ニヒルの名前は O まで出さない（情報の開示段階）。
+   行: { sp: 話者, ex: 表情(NPCのみ normal|joy|surprise), t: 文 or { ruby, stella, silia, chloe } }
+   話者: guide=ルル inn=ミレイ shop=トト smith=ガンド bank=ノア hero=選択中の主人公 narr=地の文
+   主人公: ルビィ(魔法使い・古書庫で封印の記録を見つけた) ステラ(剣士・鐘守の家系) シリア(聖職者・鐘の祈りを継ぐ者) クロエ(盗賊・里の外から来た流れ者) */
+const STORY = {
+  A: { title: '鐘の欠片', lines: [
+    { sp: 'narr', t: '墓守の王が崩れ落ちた。玉座の奥で、ひび割れた小さな鐘の欠片が淡く光っている。' },
+    { sp: 'hero', t: { ruby: 'この模様……里の鐘と同じ。古書庫の記録にあった「鐘の欠片」かもしれない。', stella: 'この刻印、うちの鐘守の印と同じだ。どうしてこんな墓の底に……。', silia: '祈りの声が、聞こえる気がします。あたたかい音……。', chloe: 'ただの石ころじゃなさそうだな。とりあえず拾っとくか。' } },
+    { sp: 'guide', ex: 'surprise', t: '鐘の欠片ですか！？ すぐ里に持ち帰ってください。鐘が少し元気になるかもしれません！' },
+    { sp: 'guide', ex: 'normal', t: '墓守の王は、鐘が鳴らなくなったから目を覚ましたのかも……。もっと欠片を集めましょう！' }
+  ] },
+  B: { title: '鐘と同じ金属', lines: [
+    { sp: 'narr', t: '溶岩の熱の中でも、鐘の欠片は冷たいままだった。' },
+    { sp: 'smith', ex: 'normal', t: '……見せてみな。' },
+    { sp: 'smith', ex: 'surprise', t: '……こいつは鐘と同じ金属だ。ご先祖が鍛えた音がする。' },
+    { sp: 'hero', t: { ruby: '金属が音に反応しているんですね。欠片同士が呼び合っているのかも。', stella: 'ガンドさんが驚くなんて……。やっぱり、ただの欠片じゃないんだな。', silia: '鐘の音が、欠片の中で眠っているみたいです。', chloe: 'へえ、あの無口な親方が目を丸くするとはね。' } },
+    { sp: 'guide', ex: 'joy', t: '集めるほど鐘の力が戻るはずです！ 次の場所へ急ぎましょう！' }
+  ] },
+  C: { title: '凍らない欠片', lines: [
+    { sp: 'narr', t: '氷の回廊でも、欠片は凍りつかなかった。ふいに、遠くで鐘の音が一度だけ響いた。' },
+    { sp: 'hero', t: { ruby: '今の音……里の鐘？ ここまで届くなんて。', stella: '聞こえた。確かに、鐘の音だった。', silia: '……ああ、今のは祈りに答えてくれたんです。', chloe: '気のせい……じゃないよな。確かに鳴った。' } },
+    { sp: 'inn', ex: 'normal', t: 'ほら、帰っておいき。温かい飯と寝床は、いつでも用意してあるからね。' },
+    { sp: 'guide', ex: 'joy', t: '里でも聞こえたそうです！ 欠片の数だけ、鐘の音が戻ってきているんですね！' }
+  ] },
+  D: { title: '古い碑文', lines: [
+    { sp: 'narr', t: '巨木の根が絡み合う奥に、苔むした碑文が埋もれていた。' },
+    { sp: 'narr', t: '「鐘ヲ鳴ラセ。ソノ音ヲ以テ、闇ヲ鎮メヨ」——百年前の冒険者が残したものらしい。' },
+    { sp: 'hero', t: { ruby: '書庫の古い写本と同じ文字。ここにも、あの人たちの痕跡があったなんて。', stella: '鐘守の教えと同じだ。先祖たちも、この道を通ったのか。', silia: '祈りの言葉です。昔の人も、鐘に願いを託したんですね。', chloe: '百年前の先輩か。遺言みたいで、ちょっと胸にくるな。' } },
+    { sp: 'guide', ex: 'normal', t: '百年前……。鐘が置かれたのも、そのころのはずです。つながっているのかもしれません。' }
+  ] },
+  E: { title: '壁画の四つの影', lines: [
+    { sp: 'narr', t: '遺跡の壁画には、鐘を囲む四つの影が描かれていた。顔はすり減って読めない。' },
+    { sp: 'shop', ex: 'joy', t: 'これはすごい遺物ですよ！ 壁画の絵の具が百年前のものでして、しかも使われている顔料が——あっ、すみません、つい早口に！' },
+    { sp: 'hero', t: { ruby: '四人……。書庫の記録にも、「四人の鐘の使い手」という言葉があった。', stella: '四つの影。まるで、今のわたしたちみたいだ。', silia: '祈りを分け合った四人。この方々が、鐘を置いたのでしょうか。', chloe: '四人組か。オレたちと同じ数なのは、偶然か？' } },
+    { sp: 'guide', ex: 'surprise', t: 'まるで今の私たちみたいですね……！ 続きが気になります！' }
+  ] },
+  F: { title: '水底の記録', lines: [
+    { sp: 'narr', t: '水没した神殿の奥で、水に濡れない古い石板を見つけた。そこには鐘を置いた者たちの名簿の一部が刻まれている。' },
+    { sp: 'bank', ex: 'normal', t: '……福音銀行にも、同じ年の預かり記録が残っております。鐘守への預かり金、でございます。' },
+    { sp: 'bank', ex: 'surprise', t: 'ですが肝心の名前は、どちらもインクが、そして石が、まるで誰かに消されたかのように……。' },
+    { sp: 'hero', t: { ruby: '誰かが、名前を消した……？ どうして。', stella: '名前を消す必要があった。そういうことか。', silia: '名を隠さなければならない理由が、あったのでしょうか。', chloe: '隠したい相手がいたのか、守りたい誰かがいたのか。どっちにしても訳ありだな。' } }
+  ] },
+  G: { title: '魔王の紋章', lines: [
+    { sp: 'narr', t: '倒れた守護像の背に、刃物でえぐったような紋章が刻まれていた。' },
+    { sp: 'hero', t: { ruby: 'この紋章、里に届いた脅迫状と同じ！ 魔王ガルゼの印です。', stella: '魔王の紋章……！ やはり奴が、鐘の欠片を狙っているのか。', silia: '欠片を集めるのは、わたしたちだけではなかったんですね。', chloe: '先を越されてる、ってわけじゃなさそうだ。まだ間に合う。' } },
+    { sp: 'guide', ex: 'surprise', t: '魔王ガルゼが、鐘の力を奪おうとしているんです……！ 私たちの方が、先に集めなきゃ！' }
+  ] },
+  H: { title: '機械の命令', lines: [
+    { sp: 'narr', t: '止まった機械兵の記録板に、同じ命令が何度も繰り返し刻まれていた。' },
+    { sp: 'narr', t: '「鐘ノ欠片ヲ集メヨ。魔王城ヘ運ベ」。' },
+    { sp: 'hero', t: { ruby: '魔王城に欠片が集まっている……。奪われたものを、取り戻さないと。', stella: '魔王城か。里の鐘のために、必ず取り返す。', silia: '鐘を、あるべき場所へ。それが、わたしたちの役目です。', chloe: '行き先が分かりゃ話は早い。殴り込みの時間だな。' } },
+    { sp: 'smith', ex: 'normal', t: '……装備を整えて行きな。俺の鐘の金属が、お前らを守る。' },
+    { sp: 'guide', ex: 'joy', t: '次はいよいよ魔王城です！ 準備して、全力で挑みましょう！' }
+  ] },
+  I: { title: '鳴りやまない鐘', lines: [
+    { sp: 'narr', t: '魔王ガルゼが倒れた。城に集められていた鐘の欠片が、一斉に光りはじめる。' },
+    { sp: 'guide', ex: 'joy', t: '鐘の音が、里まで……！ やりました！ 魔王を倒したんですね！' },
+    { sp: 'narr', t: 'だが、遠くの鐘はまだか細いままだった。魔王が倒れても、音は完全には戻らない。' },
+    { sp: 'hero', t: { ruby: '魔王は、ただの先兵だったのかもしれない。封印の本当の中身は、もっと奥にある……。', stella: '魔王を倒したのに、まだ鐘が弱い。まだ、何かがいるんだ。', silia: '鐘が、呼んでいます。まだ終わっていない、と。', chloe: '大ボスを倒して終わりじゃないって？ 面倒な話になってきたな。' } },
+    { sp: 'guide', ex: 'normal', t: '魔王を倒したのに、鐘の音がまだ弱いんです……。封印の奥に、まだ何かがいるのかもしれません。' }
+  ] },
+  J: { title: '歪みの正体', lines: [
+    { sp: 'narr', t: '濃い霧の向こうで、幻の風景が揺れた。ほころびた空間の向こうに、古い封印の模様が浮かんでいる。' },
+    { sp: 'hero', t: { ruby: '分かりました。ダンジョンは、封印がほころんだ場所にできた「歪み」なんです。', stella: 'ダンジョンは歪み……。封印のほころびから、魔物があふれているのか。', silia: '封印が、泣いているみたい。早く、なんとかしてあげないと。', chloe: '壁の向こうに何か押さえ込まれてる、ってことか。厄介だな。' } },
+    { sp: 'guide', ex: 'surprise', t: '歪みが増えるほど、封印が弱まる……。里の鐘は、それを守る最後の砦なんですね。' },
+    { sp: 'inn', ex: 'normal', t: '無理するんじゃないよ。……あの人も、無茶ばっかりして帰らなかったんだから。' }
+  ] },
+  K: { title: '水晶に残る記憶', lines: [
+    { sp: 'narr', t: '大鉱脈の水晶に、古い記憶が映っていた。四人の冒険者が、一つの鐘を前に祈っている。' },
+    { sp: 'hero', t: { ruby: '水晶が、鐘の音を溜めていたんだ。百年も、ずっと。', stella: '祈る背中が、うちの先祖の絵と重なる……。', silia: '何を祈っていたのか、聞こえた気がします。「次の誰かのために」と。', chloe: '次の誰かのため、か。オレたちは、その誰かってわけだ。' } },
+    { sp: 'guide', ex: 'normal', t: '水晶の記憶、里の古書庫の記録にもつながりそうです。持ち帰って調べますね！' }
+  ] },
+  L: { title: '終わりの噂', lines: [
+    { sp: 'narr', t: '亡者の祈りが静まった大聖堂の壁に、消えかけた文字が残っていた。' },
+    { sp: 'narr', t: '「最奥ニ、終ワリノ神ガ眠ル」。' },
+    { sp: 'hero', t: { ruby: '終わりの神……。書庫の記録にも、一行だけ似た記述がありました。', stella: '魔王が先兵なら、その主が、ここよりもっと奥にいるということか。', silia: '祈りの果てに眠るもの……。恐ろしいけれど、向き合わないといけません。', chloe: '名前も分かんないラスボスか。いいね、燃えてきた。' } },
+    { sp: 'bank', ex: 'normal', t: '……里の古い記録にも、その言葉が。ですが、決して口外してはならぬ、と。' }
+  ] },
+  M: { title: '百年目の星', lines: [
+    { sp: 'narr', t: '天文台の大望遠鏡が、夜空の一点を指して止まった。星の環が、ゆっくりと重なろうとしている。' },
+    { sp: 'hero', t: { ruby: '星の動きが、封印の期限を示しています。今年が、ちょうど百年目。', stella: '百年目……。鐘が弱まったのは、そのせいか。', silia: '鐘が泣くように鳴っていたのは、封印の限りを知らせていたのですね。', chloe: '時間切れが近いってわけか。急いだ方がよさそうだ。' } },
+    { sp: 'guide', ex: 'surprise', t: '百年目に封印が緩む……。だから、ダンジョンが一斉に広がったんですね！' },
+    { sp: 'shop', ex: 'normal', t: 'いい装備なら、ありますよ！ 値段は……少しだけ負けますからね！' }
+  ] },
+  N: { title: '古き勇者たちの足跡', lines: [
+    { sp: 'narr', t: '竜骨の渓谷の最奥に、錆びた四つの武器が突き立てられていた。持ち主の名は、やはり削られている。' },
+    { sp: 'hero', t: { ruby: '杖、剣、短剣、聖印……。私たちと同じ、四つの武器。', stella: '剣の柄に、鐘守の紋が。きっと、うちの先祖のものだ。', silia: '聖印の祈りの言葉、わたしの祈りと同じです。', chloe: '短剣の握りが、手に吸いつく。不思議だな……いい仕事してる。' } },
+    { sp: 'narr', t: '百年前の勇者たちは、ここまで来ていた。そして、戻らなかった。' },
+    { sp: 'guide', ex: 'normal', t: '……行きましょう。この先に、百年前から続いている戦いの答えがあります。' }
+  ] },
+  O: { title: '終焉神ニヒル', lines: [
+    { sp: 'narr', t: '虚空の神殿の扉が開いた。底のない闇の向こうで、巨大な何かが目を開く。' },
+    { sp: 'narr', t: '終焉神ニヒル。百年前、四人の勇者は命と引き換えにこの神を封じ、福音の鐘を置いた。' },
+    { sp: 'hero', t: { ruby: 'あの人たちが残したのは、鐘だけじゃない。「続きを頼む」という願い。', stella: '鐘守は代々、この日のために鐘を守ってきたんだ。私たちが、終わらせる。', silia: '百年の祈りが、ここへ私たちを導いてくれました。大丈夫、怖くありません。', chloe: '託されちゃったな。……いいぜ、百年分の決着をつけてやるよ。' } },
+    { sp: 'guide', ex: 'joy', t: '里の鐘が、鳴ってます。ずっと、ずっと！ 信じてますから！ 行ってきてください！' }
+  ] }
+};
 // 実績データ（36種・8カテゴリ・称号18種）
 const ACH_CATS = ['進行', '装備', '回廊', '深淵', '成長', '累計', '図鑑', 'やり込み'];
 
@@ -3198,6 +3318,7 @@ function load() {
     p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop', 'guide']) if (s.hints[k]) p.hints[k] = true;
     if ((Number(s.lv) || 1) > 1 || (s.stats && Number(s.stats.runs) > 0)) p.hints.guide = true;   // 進行済みのセーブはルルの初回紹介を済ませた扱い
     p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
+    p.story = { seen: {} }; if (s.story && s.story.seen && typeof s.story.seen === 'object') for (const k of Object.keys(STORY)) if (s.story.seen[k]) p.story.seen[k] = true;
     p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
@@ -4736,6 +4857,7 @@ function finishRun(result) {
     clearSp = firstClear ? run.df.clearSp : 0;
     p.gold += clearGold; p.sp += clearSp; p.stats.clears++;
     p.cleared[run.d.id][run.df.id] = true;
+    queueStory(p, run.d.id, run.df.id, firstClear);
     p.hp = maxHp(p);  // 街帰還: HP全回復
   } else if (result === 'retreat') {
     p.hp = maxHp(p);  // 街帰還: HP全回復
@@ -4776,7 +4898,7 @@ function finishRun(result) {
 let loopTimer = null;
 function tick() {
   const run = G.run; if (!run) return;
-  if (G._titleUp) return; // タイトル表示中は進めない
+  if (G._titleUp || G._storyUp) return; // タイトル表示中は進めない
   if (run.introUntil && Date.now() < run.introUntil) return; // ボス登場演出中は戦闘を止める
   try {
     if (run.phase === 'next') nextFloor();
@@ -5532,6 +5654,8 @@ const ACTS = {
   buyBuildBook() { buyBuildBook(); },
   npcTalk(d) { npcTalk(d.f); },
   openCredits() { showCredits(); },
+  openStoryList() { openStoryList(); },
+  storyPlay(d) { closeModal(); playStory(d.id); },
   hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
   goalGo(d) {
     const t = d.g;
@@ -7350,6 +7474,7 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
+          <button class="btn small" data-act="openStoryList">物語を見返す</button>
           <button class="btn small" data-act="openCredits">クレジット</button>
         </div>
       </div>
@@ -8148,6 +8273,7 @@ function closeModal() {
     clearAllBattleFx(fxDebugTarget());
   }
   $('#modal').hidden = true; G.modalOpen = false; ensureLoop();
+  if (G._storyQueue && G._storyQueue.length && !G._storyUp) setTimeout(() => { if (!G._storyUp && !G.modalOpen && G._storyQueue.length) playStory(G._storyQueue.shift()); }, 300);
 }
 
 /* ================= render: help ================= */
@@ -8900,6 +9026,98 @@ function showCredits() {
   document.body.appendChild(el);
   const b = el.querySelector('#cr-close'); if (b) b.focus();
 }
+/* ================= 物語（会話シーン） =================
+   各ダンジョンの「上級」を初めてクリアすると、リザルトを閉じた後に会話シーンが始まる。
+   タップ/Enter/スペースで次へ、スキップボタンまたはEscで終了。見終えたシーンはデータ画面の「物語を見返す」で何度でも見られる。
+   自動テスト(navigator.webdriver)では自動再生しない（?story=1 で有効）。表示中は戦闘ループを止める（G._storyUp）。 */
+function storySkip() {
+  if (G.headless) return true;
+  if (/[?&]story=1\b/.test(location.search)) return false;
+  try { if (navigator.webdriver) return true; } catch (e) {}
+  return false;
+}
+function storySeen(p, id) { return !!(p && p.story && p.story.seen && p.story.seen[id]); }
+// リザルトを閉じた後に再生する場面を、初回クリア時に予約する
+function queueStory(p, dId, dfId, firstClear) {
+  if (!firstClear || dfId !== 'high' || !STORY[dId] || storySeen(p, dId) || storySkip()) return;
+  (G._storyQueue = G._storyQueue || []).push(dId);
+}
+function storyLineText(line, heroId) {
+  const t = line.t;
+  return typeof t === 'string' ? t : (t[heroId] || t.ruby || '');
+}
+const STORY_NAMES = { guide: 'ルル', inn: 'ミレイ', shop: 'トト', smith: 'ガンド', bank: 'ノア' };
+function playStory(id, opts) {
+  const sc = STORY[id]; if (!sc || document.querySelector('#story-screen:not(.out)')) return;
+  const p = G.p, heroId = (p && p.skin && CHAR_META_OK(p.skin)) ? p.skin : 'ruby';
+  const heroMeta = CHAR_CLASS_META[heroId] || { name: '主人公' };
+  const heroSkin = CHAR_SKINS.find(s => s.id === heroId);
+  const el = document.createElement('div');
+  el.id = 'story-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', '物語：' + sc.title);
+  el.innerHTML = `<div class="stv-bg" style="background-image:${sceneUri(id)}"></div><div class="stv-shade"></div>
+    <div class="stv-title">${esc(sc.title)}</div>
+    <button class="stv-skip" type="button" id="stv-skip">スキップ ▶▶</button>
+    <div class="stv-chara" id="stv-chara" aria-hidden="true"></div>
+    <div class="stv-box" id="stv-box"><div class="stv-name" id="stv-name"></div><div class="stv-text" id="stv-text" aria-live="polite"></div><div class="stv-next" id="stv-next" aria-hidden="true">▼</div></div>`;
+  const prevFocus = document.activeElement;
+  G._storyUp = true;
+  document.body.appendChild(el);
+  let i = -1, typing = null, full = '', done = false;
+  const instant = () => isReducedMotion() || !isFxEnabled() || G.headless;
+  const $s = s => el.querySelector(s);
+  function show(line) {
+    const sp = line.sp, name = sp === 'hero' ? heroMeta.name : (sp === 'narr' ? '' : STORY_NAMES[sp] || '');
+    $s('#stv-name').textContent = name; $s('#stv-name').style.visibility = name ? 'visible' : 'hidden';
+    el.dataset.sp = sp;
+    let img = '';
+    if (sp === 'hero' && heroSkin) img = `<img class="stv-hero" src="${heroSkin.img}" alt="" draggable="false">`;
+    else if (NPC_PNG[sp]) img = `<img class="stv-npc" src="${NPC_PNG[sp][line.ex && NPC_PNG[sp][line.ex] ? line.ex : 'normal']}" alt="" draggable="false">`;
+    $s('#stv-chara').innerHTML = img; $s('#stv-chara').className = 'stv-chara ' + (sp === 'hero' ? 'left' : 'right');
+    full = storyLineText(line, heroId);
+    $s('#stv-box').classList.toggle('narr', sp === 'narr');
+    $s('#stv-next').style.visibility = 'hidden';
+    const tx = $s('#stv-text'); tx.textContent = '';
+    if (instant()) { tx.textContent = full; $s('#stv-next').style.visibility = 'visible'; return; }
+    let n = 0; typing = setInterval(() => { n++; tx.textContent = full.slice(0, n); if (n >= full.length) { clearInterval(typing); typing = null; $s('#stv-next').style.visibility = 'visible'; } }, 32);
+  }
+  function finish() {
+    if (done) return; done = true;
+    if (typing) { clearInterval(typing); typing = null; }
+    document.removeEventListener('keydown', onKey, true);
+    if (p) { p.story = p.story || { seen: {} }; p.story.seen[id] = true; try { save(); } catch (e) {} }
+    G._storyUp = false;
+    el.classList.add('out'); setTimeout(() => { try { el.remove(); } catch (e) {} }, 300);
+    try { if (prevFocus && prevFocus.focus) prevFocus.focus(); } catch (e) {}
+    if (opts && opts.onEnd) opts.onEnd();
+    if (G._storyQueue && G._storyQueue.length) { const nx = G._storyQueue.shift(); setTimeout(() => playStory(nx), 350); }
+    else if (typeof renderAll === 'function') renderAll();
+  }
+  function next() {
+    if (done) return;
+    if (typing) { clearInterval(typing); typing = null; $s('#stv-text').textContent = full; $s('#stv-next').style.visibility = 'visible'; return; }
+    i++; if (i >= sc.lines.length) { finish(); return; }
+    show(sc.lines[i]);
+  }
+  const onKey = e => {
+    if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); finish(); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); next(); }
+  };
+  document.addEventListener('keydown', onKey, true);
+  el.addEventListener('click', e => { e.stopPropagation(); if (e.target.closest('#stv-skip')) finish(); else next(); });
+  next();
+  $s('#stv-skip').focus({ preventScroll: true });
+}
+function CHAR_META_OK(id) { return !!CHAR_CLASS_META[id]; }
+// データ画面の「物語を見返す」
+function openStoryList() {
+  const p = G.p;
+  const rows = DUNGEONS.filter(d => STORY[d.id]).map(d => {
+    const ok = storySeen(p, d.id) || (p.cleared && p.cleared[d.id] && p.cleared[d.id].high);
+    return `<button class="btn small" style="display:block;width:100%;text-align:left;margin:4px 0" data-act="storyPlay" data-id="${d.id}" ${ok ? '' : 'disabled'}>${ok ? '' : '🔒 '}${d.id}　${ok ? esc(STORY[d.id].title) : '？？？'}<small style="opacity:.7">　${esc(d.name)}</small></button>`;
+  }).join('');
+  $('#m-sheet').innerHTML = `<h2 id="m-title">物語を見返す</h2><p class="sub" style="margin:0 0 6px">各ダンジョンの上級をクリアすると解放されます。</p><div style="max-height:56vh;overflow:auto">${rows}</div><div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
@@ -9218,7 +9436,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  startRunGuarded, dangerOf, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  startRunGuarded, dangerOf, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,

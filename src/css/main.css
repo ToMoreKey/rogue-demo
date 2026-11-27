@@ -786,3 +786,25 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .cr-close{margin:6px 16px 16px;padding:12px;font:700 15px var(--font-body);color:#10131c;background:#e9b43c;border:0;border-radius:8px;cursor:pointer}
 .cr-close:focus-visible{outline:3px solid #fff;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){#credits-screen{animation:none}}
+/* ================= 物語（会話シーン） ================= */
+#story-screen{position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:#07080d;color:#f1f3fa;cursor:pointer;animation:ttlin .35s ease-out;-webkit-tap-highlight-color:transparent}
+#story-screen.out{animation:ttlout .3s ease-in forwards;pointer-events:none}
+.stv-bg{position:absolute;inset:-3%;background:center/cover no-repeat;animation:ttlzoom 30s ease-in-out infinite alternate}
+.stv-shade{position:absolute;inset:0;background:linear-gradient(rgba(6,8,14,.55),rgba(6,8,14,.12) 30%,rgba(6,8,14,.35) 60%,rgba(6,8,14,.82))}
+.stv-title{position:absolute;z-index:2;left:max(16px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));font:900 15px var(--font-display);letter-spacing:.2em;color:#f2c14e;text-shadow:0 2px 6px #000}
+.stv-skip{position:absolute;z-index:3;right:max(12px,env(safe-area-inset-right));top:max(8px,env(safe-area-inset-top));padding:9px 12px;font:700 12px var(--font-body);color:#e6e9f2;background:rgba(10,12,20,.6);border:1px solid #4a5270;border-radius:999px;cursor:pointer}
+.stv-skip:focus-visible{outline:2px solid #fff}
+.stv-chara{position:relative;z-index:1;height:min(46vh,380px);display:flex;align-items:flex-end;padding:0 max(14px,env(safe-area-inset-left));pointer-events:none}
+.stv-chara.left{justify-content:flex-start}.stv-chara.right{justify-content:flex-end}
+.stv-chara img{max-height:100%;width:auto;max-width:62%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6));animation:stvin .28s ease-out}
+.stv-hero{image-rendering:pixelated;height:78%;width:auto}
+@keyframes stvin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.stv-box{position:relative;z-index:2;margin:0 max(12px,env(safe-area-inset-left)) max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-right));padding:14px 16px 18px;min-height:112px;background:rgba(12,15,26,.88);border:1px solid #3a4259;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.stv-box.narr .stv-text{color:#dfe3f0}
+.stv-name{position:absolute;left:14px;top:-14px;padding:3px 12px;font:900 13px var(--font-display);letter-spacing:.12em;color:#2b1a04;background:#e9b43c;border-radius:999px}
+.stv-text{font-size:15px;line-height:1.75;min-height:3.5em;padding-top:4px}
+.stv-next{position:absolute;right:14px;bottom:6px;font-size:12px;color:#e9b43c;animation:stvblink 1s steps(2,end) infinite}
+@keyframes stvblink{50%{opacity:0}}
+@media (max-height:520px){.stv-chara{height:34vh}.stv-text{font-size:14px;line-height:1.6;min-height:3em}.stv-box{min-height:88px}}
+@media (min-width:700px){.stv-box{max-width:640px;margin-left:auto;margin-right:auto;width:calc(100% - 32px)}}
+@media (prefers-reduced-motion:reduce){#story-screen,.stv-bg,.stv-chara img,.stv-next{animation:none}}

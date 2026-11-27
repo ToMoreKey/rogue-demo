@@ -374,6 +374,8 @@ const ACTS = {
   buyBuildBook() { buyBuildBook(); },
   npcTalk(d) { npcTalk(d.f); },
   openCredits() { showCredits(); },
+  openStoryList() { openStoryList(); },
+  storyPlay(d) { closeModal(); playStory(d.id); },
   hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
   goalGo(d) {
     const t = d.g;

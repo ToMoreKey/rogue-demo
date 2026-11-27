@@ -288,6 +288,7 @@ function load() {
     p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop', 'guide']) if (s.hints[k]) p.hints[k] = true;
     if ((Number(s.lv) || 1) > 1 || (s.stats && Number(s.stats.runs) > 0)) p.hints.guide = true;   // 進行済みのセーブはルルの初回紹介を済ませた扱い
     p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
+    p.story = { seen: {} }; if (s.story && s.story.seen && typeof s.story.seen === 'object') for (const k of Object.keys(STORY)) if (s.story.seen[k]) p.story.seen[k] = true;
     p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
