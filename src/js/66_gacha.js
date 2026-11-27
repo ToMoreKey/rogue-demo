@@ -4,6 +4,8 @@ function ensureGacha(p) {
   if (!p.gacha || typeof p.gacha !== 'object') p.gacha = {};
   const g = p.gacha;
   g.drops = Math.max(0, Math.floor(Number(g.drops) || 0)); g.pity = Math.max(0, Math.floor(Number(g.pity) || 0)); g.total = Math.max(0, Math.floor(Number(g.total) || 0));
+  if (!g.pities || typeof g.pities !== 'object') g.pities = {};
+  for (const gr of GACHA_GENRES) g.pities[gr.k] = Math.max(0, Math.floor(Number(g.pities[gr.k]) || 0));
   if (!g.owned || typeof g.owned !== 'object') g.owned = {};
   if (!g.eq || typeof g.eq !== 'object') g.eq = {};
   for (const s of COS_SLOTS) if (typeof g.eq[s.k] !== 'string') g.eq[s.k] = null;
@@ -22,23 +24,24 @@ function rewardDropsAch(a) { addDrops(Math.max(2, Math.round((a.coins || 0) / 3)
 function cosById(id) { return COSMETICS.find(c => c.id === id) || null; }
 
 // ---------- 抽選 ----------
-function gachaRollRarity(forceMin) {
+function gachaRollRarity(genre, forceMin) {
   const g = ensureGacha(G.p);
-  if (g.pity + 1 >= GACHA_CFG.pity) return 3;
+  if (g.pities[genre] + 1 >= GACHA_CFG.pity) return 3;
   let r = rng() * 100, k = 0;
   for (; k < 3; k++) { r -= GACHA_CFG.rates[k]; if (r < 0) break; }
   return Math.max(k, forceMin || 0);
 }
-function gachaPick(rar) { const pool = GACHA_POOL[rar]; return pool[Math.floor(rng() * pool.length) % pool.length]; }
-function gachaPull(n) {
+function gachaPick(genre, rar) { const pool = GACHA_POOL[genre][rar]; return pool[Math.floor(rng() * pool.length) % pool.length]; }
+function gachaPull(n, genre) {
   const p = G.p; if (!p || G.run) return null;
+  if (!GACHA_GENRES.some(x => x.k === genre)) genre = 'cos';
   const g = ensureGacha(p), cost = n === 10 ? GACHA_CFG.costTen : GACHA_CFG.costSingle;
   if (g.drops < cost) { toast('鐘のしずくが足りません'); return null; }
   g.drops -= cost;
   const out = [];
   for (let i = 0; i < n; i++) {
-    const rar = gachaRollRarity(n === 10 && i === 9 ? 2 : 0), it = gachaPick(rar);
-    g.total++; g.pity = rar === 3 ? 0 : g.pity + 1;
+    const rar = gachaRollRarity(genre, n === 10 && i === 9 ? 2 : 0), it = gachaPick(genre, rar);
+    g.total++; g.pities[genre] = rar === 3 ? 0 : g.pities[genre] + 1;
     const key = it.type + ':' + it.id, had = !!g.owned[key];
     g.owned[key] = (g.owned[key] || 0) + 1;
     let refund = 0;
@@ -86,27 +89,33 @@ function cosKey(p) { const g = p && p.gacha; return g && g.eq ? COS_SLOTS.map(s 
 function heroWithCos(sk, style) { return `<div class="cos-stage">${skinArt(sk, style)}${cosOverlayHtml()}</div>`; }
 
 // ---------- 画面 ----------
-function gachaRatesHtml() {
+function gachaRatesHtml(genre) {
   const r = GACHA_CFG.rates;
-  const rows = GACHA_RARITY.map((q, i) => `<tr><td style="color:${q.color};font-weight:700">${q.name}</td><td>${r[i]}%</td><td>${GACHA_POOL[i].length}種</td><td>ダブり → しずく${GACHA_CFG.refund[i]}</td></tr>`).join('');
+  const rows = GACHA_RARITY.map((q, i) => `<tr><td style="color:${q.color};font-weight:700">${q.name}</td><td>${r[i]}%</td><td>${GACHA_POOL[genre][i].length}種</td><td>ダブり → しずく${GACHA_CFG.refund[i]}</td></tr>`).join('');
   return `<table class="gc-rates"><tr><th>ランク</th><th>提供割合</th><th>景品数</th><th>ダブり</th></tr>${rows}</table>
-    <p class="sub" style="margin:6px 0 0">・10連の最後の1枠はSR以上が確定。<br>・SSRが出ないまま${GACHA_CFG.pity}回引くと、次の1回はSSR確定（天井）。<br>・景品はすべて見た目だけで、強さには影響しません。「鐘のしずく」はゲーム内で入手でき、お金では買えません。</p>`;
+    <p class="sub" style="margin:6px 0 0">・10連の最後の1枠はSR以上が確定。<br>・SSRが出ないまま${GACHA_CFG.pity}回引くと、次の1回はSSR確定（天井）。天井の回数はくじのジャンルごとに数えます。<br>・景品はすべて見た目だけで、強さには影響しません。「鐘のしずく」はゲーム内で入手でき、お金では買えません。</p>`;
 }
+
 function renderGachaFacility(p) {
-  const g = ensureGacha(p), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby')), left = GACHA_CFG.pity - g.pity;
-  const cnt = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
+  const g = ensureGacha(p), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
+  const gk = GACHA_GENRES.some(x => x.k === G.gcGenre) ? G.gcGenre : 'cos', gr = GACHA_GENRES.find(x => x.k === gk);
+  const left = GACHA_CFG.pity - g.pities[gk];
   const total = Object.keys(g.owned).length, all = COSMETICS.length + DEX_FRAMES.length + GACHA_TITLES.length;
+  const poolN = GACHA_POOL[gk].reduce((s, l) => s + l.length, 0), ownN = Object.keys(g.owned).filter(k => k.startsWith(gk + ':')).length;
+  const tabs = GACHA_GENRES.map(x => `<button class="seg-b ${x.k === gk ? 'on' : ''}" aria-pressed="${x.k === gk}" data-act="gachaGenre" data-g="${x.k}">${x.icon} ${x.name}<small>${Object.keys(g.owned).filter(k => k.startsWith(x.k + ':')).length}/${GACHA_POOL[x.k].reduce((s, l) => s + l.length, 0)}</small></button>`).join('');
   return `
     <h2>福音のくじ</h2>
-    <p class="sub" style="margin:0 0 8px">鐘のしずくで回せる、見た目だけのくじ引き。称号・図鑑の飾り・おまけ装備が出ます。</p>
+    <p class="sub" style="margin:0 0 8px">ジャンルを選んで引く、見た目だけのくじ引き。ジャンルごとに景品と天井が別です。</p>
+    <div class="seg gc-genres" role="tablist" aria-label="くじのジャンル">${tabs}</div>
     <div class="gc-top"><div class="gc-stage">${heroWithCos(sk, 'width:110px;height:110px')}</div>
       <div class="gc-bal"><div class="gc-drops">💧 <b>${fmt(g.drops)}</b><small> 鐘のしずく</small></div>
-        <small class="sub">天井まであと ${left} 回／累計 ${g.total} 回</small></div></div>
+        <small class="sub"><b>${gr.name}くじ</b>（${ownN}/${poolN}種）<br>天井まであと ${left} 回／累計 ${g.total} 回</small></div></div>
+    <p class="sub" style="margin:0 0 8px">${gr.desc}</p>
     <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="1" ${g.drops >= GACHA_CFG.costSingle ? '' : 'disabled'}>1回（💧${GACHA_CFG.costSingle}）</button>
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="10" ${g.drops >= GACHA_CFG.costTen ? '' : 'disabled'}>10連（💧${GACHA_CFG.costTen}）</button></div>
     <button class="btn wide gc-coll" data-act="gachaCollection">📖 景品一覧・着せ替え<small>集めた景品 ${total} / ${all}</small></button>
-    <details class="gc-det"><summary>提供割合・天井</summary>${gachaRatesHtml()}</details>
+    <details class="gc-det"><summary>${gr.name}くじの提供割合・天井</summary>${gachaRatesHtml(gk)}</details>
     <p class="sub" style="margin:10px 0 0"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／限定ダンジョン</p>`;
 }
 

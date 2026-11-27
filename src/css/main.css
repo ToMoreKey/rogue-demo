@@ -922,3 +922,5 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .gc-wrap.shown .gc-resl .gc-res{animation:gcpop .32s ease-out backwards;animation-delay:calc(var(--i) * 70ms)}
 @keyframes gcpop{from{opacity:0;transform:translateY(10px) scale(.96)}}
 @media (prefers-reduced-motion:reduce){.gc-rv-bell,.gc-rv-ring,.gc-rv-sp b,.gc-wrap.shown .gc-res{animation:none}}
+.gc-genres{grid-template-columns:repeat(3,1fr);margin:0 0 10px}
+.gc-genres .seg-b{padding:8px 2px;font-size:12px}

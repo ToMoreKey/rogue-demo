@@ -59,9 +59,19 @@ with sync_playwright() as pw:
     check('称号タブ', pg.locator('[data-act="gcTitle"]').count() == 8)
     pg.locator('[data-act="gcClose"]').click(); pg.wait_for_timeout(200)
     check('閉じられる', pg.evaluate("() => document.getElementById('modal').hidden === true"))
+    # ジャンル別（闇鍋ではない）
+    pg.evaluate("() => { G.p.gacha.drops = 500; }")
+    for gk in ['cos', 'frame', 'title']:
+        r = pg.evaluate("(gk) => __rogue.gachaPull(10, gk).map(x => x.it.type)", gk)
+        check(f'{gk}くじは{gk}の景品だけが出る', len(r) == 10 and set(r) == {gk}, r)
+    pg.evaluate("() => { __rogue.closeModal && 0; G.modalOpen = false; document.getElementById('modal').hidden = true; G.p.gacha.pities.frame = 5; G.p.gacha.pities.cos = 20; }")
+    pg.evaluate("() => { __rogue.renderAll(); }")
+    pg.locator('[data-act="gachaGenre"][data-g="frame"]').click(); pg.wait_for_timeout(200)
+    check('ジャンル切替・天井はジャンル別', '天井まであと 45 回' in pg.locator('.gc-bal').inner_text(), pg.locator('.gc-bal').inner_text())
+    check('ジャンル切替で3タブ', pg.locator('.gc-genres .seg-b').count() == 3)
     # 重複時の返却・天井
-    pg.evaluate("() => { const g = G.p.gacha; g.pity = 49; g.drops = 10; }")
-    r = pg.evaluate("() => { const x = __rogue.gachaPull(1); return x && x[0].rar; }")
+    pg.evaluate("() => { const g = G.p.gacha; g.pities.cos = 49; g.drops = 10; }")
+    r = pg.evaluate("() => { const x = __rogue.gachaPull(1, 'cos'); return x && x[0].rar; }")
     check('天井でSSR', r == 3, r)
     # 実績ドロップ
     before = pg.evaluate("() => G.p.gacha.drops")

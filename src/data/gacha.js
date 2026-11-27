@@ -67,10 +67,17 @@ const DEX_FRAMES = [
 // 称号をチュートリアル等の既存の一覧に合流（装備・表示は既存の称号UIがそのまま使える）
 GACHA_TITLES.forEach(t => TOWER_TITLES.push(t));
 // 抽選プール（景品を混ぜる＝闇鍋）
-const GACHA_POOL = [[], [], [], []];
-COSMETICS.forEach(c => GACHA_POOL[c.rar].push({ type: 'cos', id: c.id, name: c.name }));
-GACHA_TITLES.forEach(t => GACHA_POOL[t.rar].push({ type: 'title', id: t.id, name: t.name }));
-DEX_FRAMES.forEach(f => GACHA_POOL[f.rar].push({ type: 'frame', id: f.id, name: f.name }));
+// ジャンル別のくじ（おまけ装備 / 図鑑の飾り / 称号）。ジャンルごとに専用の景品プールと天井カウントを持つ
+const GACHA_GENRES = [
+  { k: 'cos',   icon: '👗', name: 'おまけ装備', desc: '染め・背中・足元・オーラ。キャラの見た目が変わる' },
+  { k: 'frame', icon: '🖼️', name: '図鑑の飾り', desc: '図鑑・実績画面を飾る額縁' },
+  { k: 'title', icon: '🏷️', name: '称号',       desc: 'ステータスの名前の横に付けられる二つ名' }
+];
+const GACHA_POOL = {};      // GACHA_POOL[genre][rarity] = [景品...]
+for (const gr of GACHA_GENRES) GACHA_POOL[gr.k] = [[], [], [], []];
+COSMETICS.forEach(c => GACHA_POOL.cos[c.rar].push({ type: 'cos', id: c.id, name: c.name }));
+GACHA_TITLES.forEach(t => GACHA_POOL.title[t.rar].push({ type: 'title', id: t.id, name: t.name }));
+DEX_FRAMES.forEach(f => GACHA_POOL.frame[f.rar].push({ type: 'frame', id: f.id, name: f.name }));
 // ログインボーナス（7日周期）
 const LOGIN_REWARDS = [2, 2, 3, 2, 3, 3, 8];
 // 初踏破でもらえるしずく（難易度ごと）
