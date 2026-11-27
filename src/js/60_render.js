@@ -288,8 +288,8 @@ function renderDungeonSelect() {
         : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
     </div></article>`;
   })();
-  const dgTab = G.dgTab === 'daily' ? 'daily' : 'normal', dLeft = dailyLeft(p0);
-  const tabs = `<div class="seg dg-tabs" role="tablist" aria-label="ダンジョンの種類"><button class="seg-b ${dgTab === 'normal' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'normal'}" data-act="dgTab" data-tab="normal">通常ダンジョン</button><button class="seg-b ${dgTab === 'daily' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'daily'}" data-act="dgTab" data-tab="daily">🔔 鐘の試練<small>今日あと ${dLeft} 回</small></button></div>`;
+  const dgTab = G.dgTab === 'daily' ? 'daily' : 'normal';
+  const tabs = `<div class="seg dg-tabs" role="tablist" aria-label="ダンジョンの種類"><button class="seg-b ${dgTab === 'normal' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'normal'}" data-act="dgTab" data-tab="normal">通常ダンジョン</button><button class="seg-b ${dgTab === 'daily' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'daily'}" data-act="dgTab" data-tab="daily">🔔 限定ダンジョン</button></div>`;
   $('#dg-list').innerHTML = tabs + (dgTab === 'daily' ? renderDailyCard(p0) : normalHtml);
 }
 

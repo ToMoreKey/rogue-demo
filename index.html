@@ -1006,7 +1006,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v106';
+const APP_VERSION = 'rogue-v107';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -6467,8 +6467,8 @@ function renderDungeonSelect() {
         : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
     </div></article>`;
   })();
-  const dgTab = G.dgTab === 'daily' ? 'daily' : 'normal', dLeft = dailyLeft(p0);
-  const tabs = `<div class="seg dg-tabs" role="tablist" aria-label="ダンジョンの種類"><button class="seg-b ${dgTab === 'normal' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'normal'}" data-act="dgTab" data-tab="normal">通常ダンジョン</button><button class="seg-b ${dgTab === 'daily' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'daily'}" data-act="dgTab" data-tab="daily">🔔 鐘の試練<small>今日あと ${dLeft} 回</small></button></div>`;
+  const dgTab = G.dgTab === 'daily' ? 'daily' : 'normal';
+  const tabs = `<div class="seg dg-tabs" role="tablist" aria-label="ダンジョンの種類"><button class="seg-b ${dgTab === 'normal' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'normal'}" data-act="dgTab" data-tab="normal">通常ダンジョン</button><button class="seg-b ${dgTab === 'daily' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'daily'}" data-act="dgTab" data-tab="daily">🔔 限定ダンジョン</button></div>`;
   $('#dg-list').innerHTML = tabs + (dgTab === 'daily' ? renderDailyCard(p0) : normalHtml);
 }
 
