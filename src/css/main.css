@@ -684,3 +684,12 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .item.r2{box-shadow:0 0 10px -4px var(--rc,#6af)}
 @media (prefers-reduced-motion:reduce){body.lowhp::before{animation:none;opacity:.7}.arena.shake-s,.arena.shake-b,.arena.crit-flash::after,.fighter.die .spr,.fighter.die-boss .spr,.boss-banner,.lv-band{animation:none!important}}
 .pop.crit{font-size:22px}.pop.big{font-size:26px}.pop.huge{font-size:32px}
+
+.npc-bub[data-act]{cursor:pointer}
+.npc-tap{display:block;margin-top:2px;font-size:10px;color:var(--muted);text-align:right}
+.npc-pt{position:relative}
+.npc-emote{position:absolute;top:-4px;right:-2px;font-size:16px;color:var(--nc,#ffd27a);animation:emote .9s ease-out 2}
+.npc.joy .npc-pt svg{animation:joy .5s ease-out 2}
+@keyframes emote{0%{opacity:0;transform:translateY(6px)}30%{opacity:1}100%{opacity:1;transform:translateY(-4px)}}
+@keyframes joy{0%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.npc-emote,.npc.joy .npc-pt svg{animation:none}}

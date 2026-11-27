@@ -25,6 +25,12 @@ const NPC_SVG = (() => {
       <path d="M17,38 Q18,56 32,56 Q46,56 47,38 Q44,48 32,48 Q20,48 17,38Z" fill="#b8501f"/><path d="M24,44 Q32,48 40,44" stroke="#8a3a14" stroke-width="2" fill="none"/>
       <rect x="21" y="32" width="9" height="2.6" rx="1.3" fill="#2a1a1a" transform="rotate(8 25 33)"/><rect x="34" y="32" width="9" height="2.6" rx="1.3" fill="#2a1a1a" transform="rotate(-8 39 33)"/><circle cx="26" cy="36" r="1.6" fill="#2a1a1a"/><circle cx="38" cy="36" r="1.6" fill="#2a1a1a"/>
       <circle cx="46" cy="40" r="2" fill="#2a1a1a" opacity=".2"/>`),
+    // 案内人ルル：ピンクのツインテール、見習いローブ、鐘のブローチ
+    guide: wrap(`<ellipse cx="32" cy="69" rx="22" ry="3" fill="#000" opacity=".25"/>
+      <path d="M12,72 Q14,52 32,50 Q50,52 52,72 Z" fill="#7a5ac8"/><path d="M26,50 L32,62 L38,50Z" fill="#f6efe0"/><circle cx="32" cy="58" r="3" fill="#ffd45a"/>
+      <circle cx="14" cy="38" r="6" fill="#ff9ec8"/><circle cx="50" cy="38" r="6" fill="#ff9ec8"/><circle cx="32" cy="34" r="16" fill="#f8d6bc"/>
+      <path d="M15,32 Q16,14 32,14 Q48,14 49,32 Q44,22 32,22 Q20,22 15,32Z" fill="#ff9ec8"/>
+      ${eyes('#3a2a4a')}${cheek}${mouth}`),
     // 銀行員ノア：青いベスト、片眼鏡、几帳面
     bank: wrap(`<ellipse cx="32" cy="69" rx="22" ry="3" fill="#000" opacity=".25"/>
       <path d="M12,72 Q14,52 32,50 Q50,52 52,72 Z" fill="#2a3a78"/><path d="M26,50 L32,64 L38,50Z" fill="#f6efe0"/><path d="M30,54 L32,66 L34,54 L32,52Z" fill="#c9b26a"/><path d="M28,50 L32,54 L36,50Z" fill="#c9645a"/>
@@ -35,10 +41,54 @@ const NPC_SVG = (() => {
 })();
 
 
+/* ---- Q4-4: 進行度・時間帯・主人公別の台詞 ---- */
+function npcStage(p) {
+  if (G._npcStage) return G._npcStage;   // テスト用に注入可
+  if (p.ending) return 4;
+  if (p.part1Cleared && p.cleared && p.cleared.J && Object.values(p.cleared.J).some(Boolean)) return 3;
+  return p.part1Cleared ? 2 : 1;
+}
+function npcTimeKey() {
+  const h = G._hour != null ? G._hour : new Date().getHours();
+  return h >= 5 && h < 10 ? 'morning' : h >= 10 && h < 17 ? 'day' : h >= 17 && h < 23 ? 'night' : 'mid';
+}
+function npcExtraPool(src, p) {
+  if (!src) return [];
+  return [...((src.stage && src.stage[npcStage(p)]) || []), ...((src.time && src.time[npcTimeKey()]) || []), ...((src.chars && src.chars[p.skin]) || [])];
+}
+function guidePool(p) {
+  const L = GUIDE_LINES, pool = npcExtraPool(L, p);
+  const g = typeof dgNextGoal === 'function' ? dgNextGoal(p) : null;
+  if (g) { const v = powerVerdict(playerPower(p), refPower(g.d, DIFFS.indexOf(g.df))); pool.push(`次は「ダンジョン${g.d.id}・${g.d.name}」の${g.df.name}が良さそうです！ 今の戦闘力だと「${v.label}」ですよ！`); }
+  const todo = typeof goalState === 'function' ? goalState(p).find(x => !x.ok) : null;
+  if (todo) pool.push(`はじめの目標、次は「${todo.g.text}」ですよ！ 広場の目標カードも見てくださいね！`);
+  if (p.tower && p.tower.best > 0) pool.push(...L.tower);
+  pool.push(...L.trivia);
+  return pool;
+}
+function npcTalkPool(fac, p) {
+  if (fac === 'guide') return guidePool(p);
+  const x = NPC_EXTRA[fac]; if (!x) return [];
+  return [...npcExtraPool(x, p), ...x.trivia, ...NPCS[fac].greet];
+}
+function npcTalk(fac) {
+  const p = G.p, cur = G._npc && G._npc.fac === fac ? G._npc.line : '';
+  const pool = [...new Set(npcTalkPool(fac, p))].filter(l => l !== cur);
+  if (!pool.length) return;
+  G._npc = { fac, line: pick(pool) };
+  if (G.view === 'town') renderTown();
+}
+function guideSay(p) {
+  if (!p.hints) p.hints = {};
+  if (!p.hints || !p.hints.guide) { if (p.hints) p.hints.guide = true; return GUIDE_LINES.first[0]; }
+  return pick(guidePool(p));
+}
+
 /* 施設ごとに「いま言うセリフ」を決める。evt が null なら入店時（状況に応じた台詞を高確率で採用） */
 function npcSay(fac, evt) {
   const n = NPCS[fac]; if (!n) return '';
   const p = G.p, c = n.cond || {};
+  if (fac === 'guide') return guideSay(p);
   if (evt && n.act && n.act[evt]) return pick(n.act[evt]);
   const cands = [];
   if (fac === 'inn') {
@@ -56,14 +106,17 @@ function npcSay(fac, evt) {
     if (p.gold >= 5000) cands.push(...c.richPurse);
     if (p.bank > 0) cands.push(...c.hasDeposit); else cands.push(...c.noDeposit);
   }
-  return cands.length && Math.random() < 0.6 ? pick(cands) : pick(n.greet);
+  if (fac === 'guide') return guideSay(p);
+  const pool = [...cands, ...npcExtraPool(NPC_EXTRA[fac], p)];
+  return pool.length && Math.random() < 0.75 ? pick(pool) : pick(n.greet);
 }
 
 function npcHtml(fac) {
   const n = NPCS[fac]; if (!n) return '';
   if (!G._npc || G._npc.fac !== fac) G._npc = { fac, line: npcSay(fac, G._npcEvt || null) };
-  return `<div class="npc" style="--nc:${n.color}"><div class="npc-pt">${NPC_SVG[fac]}</div>
-    <div class="npc-bub"><div class="npc-name">${n.name}<small>${n.role}</small></div><p>「${esc(G._npc.line)}」</p></div></div>`;
+  const joy = G._npcEvt && G._npcEvt !== 'townEnter' && fac !== 'guide';
+  return `<div class="npc${joy ? ' joy' : ''}" style="--nc:${n.color}" data-fac="${fac}" data-ex="${joy ? 'joy' : 'normal'}"><div class="npc-pt">${NPC_SVG[fac]}${joy ? '<span class="npc-emote">♪</span>' : ''}</div>
+    <div class="npc-bub" data-act="npcTalk" data-f="${fac}" role="button" tabindex="0" aria-label="${n.name}に話しかける"><div class="npc-name">${n.name}<small>${n.role}</small></div><p>「${esc(G._npc.line)}」</p><span class="npc-tap">タップで別の話 ▸</span></div></div>`;
 }
 
 const NPC_ACTS = { inn: 1, sell: 1, buyShop: 1, smithUpgrade: 1, smithReforge: 1, dep: 1, wd: 1, depAll: 1, wdAll: 1 };

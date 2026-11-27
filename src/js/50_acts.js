@@ -370,6 +370,7 @@ const ACTS = {
   smithReforge(d) { smithReforge(d.id); },
   buyShop(d) { buyShopItem(d.id); },
   buyBuildBook() { buyBuildBook(); },
+  npcTalk(d) { npcTalk(d.f); },
   hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
   goalGo(d) {
     const t = d.g;

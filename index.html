@@ -698,6 +698,15 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .item.r2{box-shadow:0 0 10px -4px var(--rc,#6af)}
 @media (prefers-reduced-motion:reduce){body.lowhp::before{animation:none;opacity:.7}.arena.shake-s,.arena.shake-b,.arena.crit-flash::after,.fighter.die .spr,.fighter.die-boss .spr,.boss-banner,.lv-band{animation:none!important}}
 .pop.crit{font-size:22px}.pop.big{font-size:26px}.pop.huge{font-size:32px}
+
+.npc-bub[data-act]{cursor:pointer}
+.npc-tap{display:block;margin-top:2px;font-size:10px;color:var(--muted);text-align:right}
+.npc-pt{position:relative}
+.npc-emote{position:absolute;top:-4px;right:-2px;font-size:16px;color:var(--nc,#ffd27a);animation:emote .9s ease-out 2}
+.npc.joy .npc-pt svg{animation:joy .5s ease-out 2}
+@keyframes emote{0%{opacity:0;transform:translateY(6px)}30%{opacity:1}100%{opacity:1;transform:translateY(-4px)}}
+@keyframes joy{0%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.npc-emote,.npc.joy .npc-pt svg{animation:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -808,7 +817,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v74';
+const APP_VERSION = 'rogue-v75';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -1819,6 +1828,126 @@ const NPCS = {
     },
     act: { dep: ['確かにお預かりしました。', 'お預け入れ、承りました。'], wd: ['お引き出しですね。どうぞお確かめください。', 'かしこまりました。道中、お気をつけて。'], depAll: ['全額、確かにお預かりしました。', '思い切りがいいですね。お預かりします。'], wdAll: ['全額お引き出しですね。ご武運を。', '承知しました。無駄遣いにはお気をつけて。'] }
   }
+};
+
+/* ---- 追加の台詞（Q4-4）：進行度(stage 1〜4)・時間帯・主人公別・豆知識 ----
+   stage: 1=魔王城(I)未クリア / 2=前編クリア後 / 3=後編(J以降)に挑戦後 / 4=エンディング後。
+   ※ 世界観の開示段階：stage 1〜3 の台詞（と stage 指定のない台詞）に終焉神の名前を出さないこと（test_q4_npc が全台詞を走査する）。 */
+const NPC_EXTRA = {
+  inn: {
+    stage: {
+      1: ['鐘の音が弱くなってるだろう？ 魔王ガルゼの仕業らしいよ。気をつけておいき。', '最近は泊まりに来る冒険者が増えたよ。みんなガルゼ討伐が目当てさ。'],
+      2: ['魔王を倒したってのに、鐘の音はまだ弱いままだねぇ……。妙な話だよ。', 'ご苦労さん。でも、これで終わりって顔してないね、あんた。'],
+      3: ['奥の方で、古い封印の気配がするって噂だよ。無茶はするんじゃないよ。', '最近、夜中に鐘が低く鳴るのさ。……気味が悪いねぇ。'],
+      4: ['鐘の音が昔みたいに響いてるよ。……ありがとうね、本当に。', 'ゆっくり休んでいきな。もう誰もあんたを急かさないさ。']
+    },
+    time: {
+      morning: ['おはよう！朝ごはんは食べたかい？', '朝は冒険者の顔が見られていいねぇ。'],
+      day: ['昼間は静かでいいもんだよ。', '昼寝かい？ ベッドなら空いてるよ。'],
+      night: ['こんばんは。今夜も月がきれいだよ。', '夜更かしは体に毒だよ。そろそろ休みな。'],
+      mid: ['こんな夜中にどうしたんだい。眠れないのかい？', '深夜は冷えるよ。毛布、持っていきな。']
+    },
+    chars: {
+      stella: ['ステラちゃん、無理してないかい？ 小さい頃から頑張り屋だったからねぇ。'],
+      ruby: ['ルビィ、また本ばっかり読んでたんだろう。たまには寝な。'],
+      silia: ['シリア、うちの部屋は空いてるよ。流れ者でも客は客さ。遠慮しないでおいき。'],
+      chloe: ['クロエ様、お祈りの後は温かいお茶をどうぞ。']
+    },
+    trivia: ['この宿の名前は、鐘が満月の夜に一番きれいに鳴るから付けたのさ。', '昔は私も冒険者でね。腕っぷしには自信があったんだよ。', '帰りを待つのも、宿屋の仕事のうちさ。']
+  },
+  shop: {
+    stage: {
+      1: ['ガルゼ討伐の冒険者さんは上客ですよ！ 品物、いい値で買い取ります！', '魔王のお膝元の品は珍しいんですよ〜。拝見しても？'],
+      2: ['前編クリア、おめでとうございます！ 後編の品揃え、楽しみにしててください！', '魔王の城の遺物……！ ぜひ見せてください、ぜひ！'],
+      3: ['奥地の装備は、古い封印の気配がして……ゾクゾクしますね！', 'とんでもない品を持ってきますね！ 目利きのしがいがありますよ！'],
+      4: ['世界を救った冒険者さんのお取引、光栄です！', '伝説級の装備、いつでも買い取りますよ〜！ ……手放せますかね？']
+    },
+    time: {
+      morning: ['おはようございます！ 朝イチのお客さんは縁起がいいんですよ！', '朝は仕入れの時間です。今ならいい品ありますよ！'],
+      day: ['いらっしゃいませ！ 昼のうちが一番品揃えがいいですよ！'],
+      night: ['夜の店番も悪くないですね。静かで、品物がよく見えます。'],
+      mid: ['こんな時間に！？ ……商売人としては、嬉しいですけどね！']
+    },
+    chars: {
+      stella: ['ステラさん、今日も鐘守のお務めお疲れさまです！ いい品、取り置きますよ！'],
+      ruby: ['ルビィさんの魔導書、いつか買い取らせてくださいよ〜！'],
+      silia: ['シリアさん、外の国の品が見られるのが楽しみなんです！ 歓迎ですよ！'],
+      chloe: ['クロエさん、お祈りの品はこちらです！ ……え、買わない？']
+    },
+    trivia: ['世界中の遺物を集めるのが夢なんです！', '装備のレア度は、買い取り額の目安にもなるんですよ。', '売る前に、装備タブで今の装備と戦闘力を見比べてくださいね！']
+  },
+  smith: {
+    stage: {
+      1: ['ガルゼに挑むなら、得物は鍛えていけ。……死ぬなよ。', '魔王の城の魔物は硬ぇ。武器の手入れを怠るな。'],
+      2: ['魔王を倒しても、鐘は鳴りやまねぇ。……鉄が、ざわついてやがる。', '前編を越えたか。次はもっと硬ぇ相手だ。鍛えな。'],
+      3: ['奥の方から、嫌な音がする。……鐘の金属が震えてやがる。', 'この先の敵は桁が違う。半端な装備じゃ通用しねぇぞ。'],
+      4: ['……見事だ。お前の武器は、いい声で鳴いてるぜ。', '世界を救った得物か。大事にしな。……手入れなら、いつでも請け負う。']
+    },
+    time: {
+      morning: ['朝は火の入りがいい。鍛えるなら今だ。'],
+      day: ['……昼間は炉が一番元気だ。'],
+      night: ['夜の炉の火は、嫌いじゃねぇ。'],
+      mid: ['……眠れねぇのか。鉄でも叩くか？']
+    },
+    chars: {
+      stella: ['鐘守の嬢ちゃんか。その剣、いい鉄を使ってるな。'],
+      ruby: ['魔術師が鉄に用か。……杖の金具なら、見てやる。'],
+      silia: ['……流れ者か。腕は確かなんだろうな？ 見せてみな。'],
+      chloe: ['祈りの子か。鐘の金属を鍛えたのは、うちの先祖だ。……覚えておけ。']
+    },
+    trivia: ['強化石は、鉄の声を整える触媒だ。', '装備には「声」がある。長く使うほどわかってくる。', '★が高いほど、鍛えるのは難しい。……だがやりがいもある。']
+  },
+  bank: {
+    stage: {
+      1: ['魔王討伐の資金、お預かりしてはいかがでしょう。敗北時の目減りを防げます。', 'ガルゼの討伐、ご武運をお祈りいたします。'],
+      2: ['前編のご踏破、おめでとうございます。資産の管理も、より慎重に。', '魔王を倒されたあとも、里は平穏ではございません。備えは大切でございます。'],
+      3: ['古い封印の記録が、当行の金庫にも眠っております。……詳しくは申せませんが。', '難所へ向かわれるなら、所持金は預けておかれるのが賢明でございます。'],
+      4: ['世界を救われた方の預金、光栄の極みでございます。', '百年守ってきた金庫室ですが、あなたの冒険譚の方が価値がございますね。']
+    },
+    time: {
+      morning: ['おはようございます。本日も良い取引日和でございます。'],
+      day: ['ようこそお越しくださいました。お預け入れでしょうか。'],
+      night: ['夜分に恐れ入ります。営業時間外ではございますが、承ります。'],
+      mid: ['深夜でも、お客様のためなら金庫は開けます。……内緒でございますよ。']
+    },
+    chars: {
+      stella: ['ステラ様、鐘守のお家には、代々お世話になっております。'],
+      ruby: ['ルビィ様、古書庫の件、また後日ゆっくりお聞かせください。'],
+      silia: ['シリア様、外の国の通貨は取り扱いが難しく……いえ、承ります。'],
+      chloe: ['クロエ様。……最大の敬意を込めて、ご案内いたします。']
+    },
+    trivia: ['預金は敗北しても減りません。所持金だけが半減いたします。', '当行は里の財を百年守ってまいりました。', '実は、冒険譚を伺うのが何よりの楽しみでございます。']
+  }
+};
+
+/* 広場の案内人ルル */
+NPCS.guide = {
+  name: 'ルル', role: '広場の案内人', color: '#ffb0d0',
+  greet: ['こんにちは！案内人のルルです。迷ったら何でも聞いてくださいね！', 'お帰りなさい！今日は何をしましょうか？', 'わあ、冒険者さん！お話、聞かせてください！'],
+  cond: {}, act: {}
+};
+const GUIDE_LINES = {
+  first: ['はじめまして！案内人のルルです。まずは魔王ガルゼを倒して、鐘の音を取り戻しましょう！'],
+  stage: {
+    1: ['魔王ガルゼが里を狙っているんです……。鐘の音が弱まったのも、きっとそのせいです！', 'ガルゼの城は、ダンジョンを順に攻略していけば辿り着けますよ！'],
+    2: ['魔王を倒したのに、鐘の音がまだ弱いんです……。鐘の奥に、まだ何かがいるのかもしれません。', '「封印」……里の古い記録にある言葉です。中身までは、まだ分からないんですけど。'],
+    3: ['ダンジョンの最奥に「終わりの神」がいるって噂、聞きましたか？ 名前までは分からないんですけど……。', '古い封印の気配が強くなってます。無理は禁物ですよ！'],
+    4: ['終焉神ニヒルを……本当に倒したんですね。鐘が、昔みたいに響いてます。', '100年前の勇者さんたちも、きっと喜んでます！ 私、今日は胸がいっぱいです！']
+  },
+  time: {
+    morning: ['おはようございます！今日も鐘がきれいに鳴ってますよ！'],
+    day: ['いいお天気ですね！冒険日和ですよ！'],
+    night: ['夜の広場は静かで好きです。でも、遅くなる前に宿屋で休んでくださいね'],
+    mid: ['こんな夜更けに！？ 夜更かしは明日の冒険に響きますよ！']
+  },
+  chars: {
+    stella: ['ステラさんは鐘守のお家の方ですよね！ 里のみんなが応援してます！'],
+    ruby: ['ルビィさん！古書庫の封印の記録、私も読ませてもらいました！憧れです！'],
+    silia: ['シリアさんは外の世界から来たんですよね！ 外のお話、聞かせてください！'],
+    chloe: ['クロエさんの祈りは、鐘と同じくらい心に響きます……！']
+  },
+  tower: ['天蓋の塔、すごい階数でしたね！里中で噂になってますよ！'],
+  trivia: ['戦闘力は「今の強さ」の目安です！ステータスで確認してみてくださいね。', '装備は、ステータス＞装備でも、結果画面でも切り替えられますよ！', '宿屋でMPを回復して、ショップで不要な装備を売るのがおすすめです！', '困ったら、ヘルプの「初心者ガイド」も見てみてくださいね！']
 };
 const BUGREPORT_CFG = {
   reportUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSd8nqnJ3vg-BGtE9hNYN3PTCsm7GlawkoPvpCkdqYPg2pHCXA/formResponse',
@@ -2915,7 +3044,7 @@ function load() {
       }
     }
     syncActiveCharState(p);
-    p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop']) if (s.hints[k]) p.hints[k] = true;
+    p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop', 'guide']) if (s.hints[k]) p.hints[k] = true;
     p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
     p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
@@ -5169,6 +5298,7 @@ const ACTS = {
   smithReforge(d) { smithReforge(d.id); },
   buyShop(d) { buyShopItem(d.id); },
   buyBuildBook() { buyBuildBook(); },
+  npcTalk(d) { npcTalk(d.f); },
   hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
   goalGo(d) {
     const t = d.g;
@@ -5550,6 +5680,7 @@ function renderPlaza() {
 
   $('#view-town').innerHTML = `
     ${viewHero('town', '🏘️', '福音の里　広場', 'ここにいる間、HPが1秒ごとに <b>+2</b> 回復します。')}
+    ${npcHtml('guide')}
     ${(() => { if (!goalsVisible(p)) return ''; const gs = goalState(p), done = gs.filter(x => x.ok).length;
       return `<div class="panel goal-card"><h2 style="margin:0 0 6px">🎯 はじめの目標 <small>${done}/${gs.length}</small></h2>${gs.map(({ g, ok }) => `<div class="goal-row${ok ? ' ok' : ''}"><span class="goal-ck">${ok ? '✔' : '○'}</span><span class="goal-tx">${esc(g.text)}</span>${ok ? '' : `<button class="btn small" data-act="goalGo" data-g="${g.go}">行く</button>`}</div>`).join('')}<button class="btn small" style="margin-top:6px" data-act="hideGoals">閉じる</button></div>`; })()}
     <div class="panel"><p class="sub" style="margin:0">${esc(hpNote)}</p></div>
@@ -8262,6 +8393,12 @@ const NPC_SVG = (() => {
       <path d="M17,38 Q18,56 32,56 Q46,56 47,38 Q44,48 32,48 Q20,48 17,38Z" fill="#b8501f"/><path d="M24,44 Q32,48 40,44" stroke="#8a3a14" stroke-width="2" fill="none"/>
       <rect x="21" y="32" width="9" height="2.6" rx="1.3" fill="#2a1a1a" transform="rotate(8 25 33)"/><rect x="34" y="32" width="9" height="2.6" rx="1.3" fill="#2a1a1a" transform="rotate(-8 39 33)"/><circle cx="26" cy="36" r="1.6" fill="#2a1a1a"/><circle cx="38" cy="36" r="1.6" fill="#2a1a1a"/>
       <circle cx="46" cy="40" r="2" fill="#2a1a1a" opacity=".2"/>`),
+    // 案内人ルル：ピンクのツインテール、見習いローブ、鐘のブローチ
+    guide: wrap(`<ellipse cx="32" cy="69" rx="22" ry="3" fill="#000" opacity=".25"/>
+      <path d="M12,72 Q14,52 32,50 Q50,52 52,72 Z" fill="#7a5ac8"/><path d="M26,50 L32,62 L38,50Z" fill="#f6efe0"/><circle cx="32" cy="58" r="3" fill="#ffd45a"/>
+      <circle cx="14" cy="38" r="6" fill="#ff9ec8"/><circle cx="50" cy="38" r="6" fill="#ff9ec8"/><circle cx="32" cy="34" r="16" fill="#f8d6bc"/>
+      <path d="M15,32 Q16,14 32,14 Q48,14 49,32 Q44,22 32,22 Q20,22 15,32Z" fill="#ff9ec8"/>
+      ${eyes('#3a2a4a')}${cheek}${mouth}`),
     // 銀行員ノア：青いベスト、片眼鏡、几帳面
     bank: wrap(`<ellipse cx="32" cy="69" rx="22" ry="3" fill="#000" opacity=".25"/>
       <path d="M12,72 Q14,52 32,50 Q50,52 52,72 Z" fill="#2a3a78"/><path d="M26,50 L32,64 L38,50Z" fill="#f6efe0"/><path d="M30,54 L32,66 L34,54 L32,52Z" fill="#c9b26a"/><path d="M28,50 L32,54 L36,50Z" fill="#c9645a"/>
@@ -8272,10 +8409,54 @@ const NPC_SVG = (() => {
 })();
 
 
+/* ---- Q4-4: 進行度・時間帯・主人公別の台詞 ---- */
+function npcStage(p) {
+  if (G._npcStage) return G._npcStage;   // テスト用に注入可
+  if (p.ending) return 4;
+  if (p.part1Cleared && p.cleared && p.cleared.J && Object.values(p.cleared.J).some(Boolean)) return 3;
+  return p.part1Cleared ? 2 : 1;
+}
+function npcTimeKey() {
+  const h = G._hour != null ? G._hour : new Date().getHours();
+  return h >= 5 && h < 10 ? 'morning' : h >= 10 && h < 17 ? 'day' : h >= 17 && h < 23 ? 'night' : 'mid';
+}
+function npcExtraPool(src, p) {
+  if (!src) return [];
+  return [...((src.stage && src.stage[npcStage(p)]) || []), ...((src.time && src.time[npcTimeKey()]) || []), ...((src.chars && src.chars[p.skin]) || [])];
+}
+function guidePool(p) {
+  const L = GUIDE_LINES, pool = npcExtraPool(L, p);
+  const g = typeof dgNextGoal === 'function' ? dgNextGoal(p) : null;
+  if (g) { const v = powerVerdict(playerPower(p), refPower(g.d, DIFFS.indexOf(g.df))); pool.push(`次は「ダンジョン${g.d.id}・${g.d.name}」の${g.df.name}が良さそうです！ 今の戦闘力だと「${v.label}」ですよ！`); }
+  const todo = typeof goalState === 'function' ? goalState(p).find(x => !x.ok) : null;
+  if (todo) pool.push(`はじめの目標、次は「${todo.g.text}」ですよ！ 広場の目標カードも見てくださいね！`);
+  if (p.tower && p.tower.best > 0) pool.push(...L.tower);
+  pool.push(...L.trivia);
+  return pool;
+}
+function npcTalkPool(fac, p) {
+  if (fac === 'guide') return guidePool(p);
+  const x = NPC_EXTRA[fac]; if (!x) return [];
+  return [...npcExtraPool(x, p), ...x.trivia, ...NPCS[fac].greet];
+}
+function npcTalk(fac) {
+  const p = G.p, cur = G._npc && G._npc.fac === fac ? G._npc.line : '';
+  const pool = [...new Set(npcTalkPool(fac, p))].filter(l => l !== cur);
+  if (!pool.length) return;
+  G._npc = { fac, line: pick(pool) };
+  if (G.view === 'town') renderTown();
+}
+function guideSay(p) {
+  if (!p.hints) p.hints = {};
+  if (!p.hints || !p.hints.guide) { if (p.hints) p.hints.guide = true; return GUIDE_LINES.first[0]; }
+  return pick(guidePool(p));
+}
+
 /* 施設ごとに「いま言うセリフ」を決める。evt が null なら入店時（状況に応じた台詞を高確率で採用） */
 function npcSay(fac, evt) {
   const n = NPCS[fac]; if (!n) return '';
   const p = G.p, c = n.cond || {};
+  if (fac === 'guide') return guideSay(p);
   if (evt && n.act && n.act[evt]) return pick(n.act[evt]);
   const cands = [];
   if (fac === 'inn') {
@@ -8293,14 +8474,17 @@ function npcSay(fac, evt) {
     if (p.gold >= 5000) cands.push(...c.richPurse);
     if (p.bank > 0) cands.push(...c.hasDeposit); else cands.push(...c.noDeposit);
   }
-  return cands.length && Math.random() < 0.6 ? pick(cands) : pick(n.greet);
+  if (fac === 'guide') return guideSay(p);
+  const pool = [...cands, ...npcExtraPool(NPC_EXTRA[fac], p)];
+  return pool.length && Math.random() < 0.75 ? pick(pool) : pick(n.greet);
 }
 
 function npcHtml(fac) {
   const n = NPCS[fac]; if (!n) return '';
   if (!G._npc || G._npc.fac !== fac) G._npc = { fac, line: npcSay(fac, G._npcEvt || null) };
-  return `<div class="npc" style="--nc:${n.color}"><div class="npc-pt">${NPC_SVG[fac]}</div>
-    <div class="npc-bub"><div class="npc-name">${n.name}<small>${n.role}</small></div><p>「${esc(G._npc.line)}」</p></div></div>`;
+  const joy = G._npcEvt && G._npcEvt !== 'townEnter' && fac !== 'guide';
+  return `<div class="npc${joy ? ' joy' : ''}" style="--nc:${n.color}" data-fac="${fac}" data-ex="${joy ? 'joy' : 'normal'}"><div class="npc-pt">${NPC_SVG[fac]}${joy ? '<span class="npc-emote">♪</span>' : ''}</div>
+    <div class="npc-bub" data-act="npcTalk" data-f="${fac}" role="button" tabindex="0" aria-label="${n.name}に話しかける"><div class="npc-name">${n.name}<small>${n.role}</small></div><p>「${esc(G._npc.line)}」</p><span class="npc-tap">タップで別の話 ▸</span></div></div>`;
 }
 
 const NPC_ACTS = { inn: 1, sell: 1, buyShop: 1, smithUpgrade: 1, smithReforge: 1, dep: 1, wd: 1, depAll: 1, wdAll: 1 };
@@ -8625,7 +8809,7 @@ window.__rogue = {
   idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, NPCS, NPC_EXTRA, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
   playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,

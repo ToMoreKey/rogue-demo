@@ -70,6 +70,7 @@ function renderPlaza() {
 
   $('#view-town').innerHTML = `
     ${viewHero('town', '🏘️', '福音の里　広場', 'ここにいる間、HPが1秒ごとに <b>+2</b> 回復します。')}
+    ${npcHtml('guide')}
     ${(() => { if (!goalsVisible(p)) return ''; const gs = goalState(p), done = gs.filter(x => x.ok).length;
       return `<div class="panel goal-card"><h2 style="margin:0 0 6px">🎯 はじめの目標 <small>${done}/${gs.length}</small></h2>${gs.map(({ g, ok }) => `<div class="goal-row${ok ? ' ok' : ''}"><span class="goal-ck">${ok ? '✔' : '○'}</span><span class="goal-tx">${esc(g.text)}</span>${ok ? '' : `<button class="btn small" data-act="goalGo" data-g="${g.go}">行く</button>`}</div>`).join('')}<button class="btn small" style="margin-top:6px" data-act="hideGoals">閉じる</button></div>`; })()}
     <div class="panel"><p class="sub" style="margin:0">${esc(hpNote)}</p></div>
