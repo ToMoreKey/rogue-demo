@@ -896,6 +896,46 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .dl-pips{display:inline-flex;gap:4px;margin:0 8px 0 10px;vertical-align:middle}
 .dl-pip{width:10px;height:10px;border-radius:50%;border:1px solid #ffd45a;background:transparent}
 .dl-pip.on{background:#ffd45a;box-shadow:0 0 6px #ffd45a}
+/* ---- 景品一覧・着せ替え / 引く演出 ---- */
+.gc-coll{margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gc-coll small{opacity:.75;font-size:12px}
+.gc-prev{display:flex;gap:12px;align-items:center}
+.gc-stage.big{width:150px;height:150px}
+.gc-prev-r{display:grid;gap:8px;min-width:0;flex:1}
+.gc-frame-sample{padding:10px;border:1px dashed #2b3245;border-radius:10px;text-align:center;font-size:13px;color:var(--muted,#9aa3bd)}
+.gc-frame-sample.on{border:2px solid var(--dxb);background:var(--dxbg);box-shadow:0 0 14px var(--dxg);color:inherit}
+.gc-tabs{grid-template-columns:repeat(3,1fr);margin:10px 0 6px}
+.gc-body{max-height:36vh;overflow:auto;padding-right:2px}
+.gc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.gc-card{position:relative;display:grid;gap:2px;justify-items:center;align-content:center;min-height:64px;padding:8px 4px;border:1px solid var(--qc);border-radius:8px;background:rgba(255,255,255,.04);color:inherit;cursor:pointer;font:inherit;text-align:center}
+.gc-card .gc-q{position:absolute;left:4px;top:3px;font-style:normal;font-size:10px;font-weight:900;color:var(--qc)}
+.gc-card .gc-n{font-size:12px;font-weight:700;line-height:1.25;margin-top:8px;word-break:keep-all}
+.gc-card small{font-size:10px;opacity:.7}
+.gc-card.lock{opacity:.55;border-style:dashed}
+.gc-card.on{background:color-mix(in srgb,var(--qc) 22%,transparent);box-shadow:0 0 10px color-mix(in srgb,var(--qc) 60%,transparent);opacity:1}
+.gc-card.none .gc-n{margin-top:0}
+.gc-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gc-wrap{position:relative;display:grid;gap:12px}
+.gc-rv{position:fixed;inset:0;z-index:60;display:grid;place-items:center;align-content:center;gap:10px;color:var(--qc);background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--qc) 30%,#05070d),#05070d 70%);cursor:pointer;animation:gcrvin .25s ease-out}
+.gc-rv.out{opacity:0;transition:opacity .35s}
+.gc-rv small{color:#9aa3bd;position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.gc-rv-bell{width:120px;filter:drop-shadow(0 0 14px var(--qc));transform-origin:50% 8%;animation:gcring .5s ease-in-out infinite alternate}
+.gc-rv-bell svg{width:100%;height:auto}
+.gc-rv-ring{position:absolute;left:50%;top:50%;width:80px;height:80px;margin:-40px 0 0 -40px;border:3px solid var(--qc);border-radius:50%;opacity:0;animation:gcwave 1.1s ease-out infinite}
+.gc-rv-t{margin:0;font-size:28px;font-weight:900;letter-spacing:.12em;text-shadow:0 0 14px var(--qc)}
+.gc-rv.rb3 .gc-rv-t{font-size:40px;background:linear-gradient(90deg,#ff5f6d,#ffc371,#fff56a,#6be585,#5ec8ff,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+.gc-rv.rb3 .gc-rv-bell{animation-duration:.3s;width:150px}
+.gc-rv.rb3 .gc-rv-ring{animation-duration:.7s}
+.gc-rv-sp{position:absolute;left:50%;top:46%}
+.gc-rv-sp b{position:absolute;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--qc);box-shadow:0 0 8px var(--qc);opacity:0;animation:gcspark 1s ease-out var(--d) infinite;transform:rotate(var(--a)) translateX(0)}
+@keyframes gcrvin{from{opacity:0}}
+@keyframes gcring{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+@keyframes gcwave{0%{transform:scale(.6);opacity:.9}100%{transform:scale(4.5);opacity:0}}
+@keyframes gcspark{0%{opacity:0;transform:rotate(var(--a)) translateX(30px)}20%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(150px)}}
+.gc-wrap.reveal .gc-resl .gc-res{opacity:0}
+.gc-wrap.shown .gc-resl .gc-res{animation:gcpop .32s ease-out backwards;animation-delay:calc(var(--i) * 70ms)}
+@keyframes gcpop{from{opacity:0;transform:translateY(10px) scale(.96)}}
+@media (prefers-reduced-motion:reduce){.gc-rv-bell,.gc-rv-ring,.gc-rv-sp b,.gc-wrap.shown .gc-res{animation:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -1006,7 +1046,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v107';
+const APP_VERSION = 'rogue-v108';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -5859,6 +5899,21 @@ const ACTS = {
   openCredits() { showCredits(); },
   gachaPull(d) { const res = gachaPull(Number(d.n) === 10 ? 10 : 1); if (res) { renderTown(); renderHUD && renderHUD(); openGachaResult(res); } },
   gachaEquip(d) { const g = ensureGacha(G.p); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) g.eq[d.slot] = null; else if (g.owned['cos:' + d.id] && cosById(d.id) && cosById(d.id).slot === d.slot) g.eq[d.slot] = d.id; save(); renderTown(); },
+  gachaCollection() { G._gc = null; openGachaCollection('cos'); },
+  gcTab(d) { openGachaCollection(d.tab); },
+  gcTry(d) { const st = gcState(); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) st.eq[d.slot] = null; else if (cosById(d.id) && cosById(d.id).slot === d.slot) st.eq[d.slot] = d.id; openGachaCollection(); },
+  gcFrame(d) { const st = gcState(); st.frame = d.id && DEX_FRAMES.some(f => f.id === d.id) ? d.id : null; openGachaCollection(); },
+  gcTitle(d) { const p = G.p, g = ensureGacha(p); if (!g.owned['title:' + d.id]) { toast('未入手の称号です'); return; } p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }; p.tower.title = p.tower.title === d.id ? null : d.id; save(); openGachaCollection(); },
+  gcApply() {
+    const g = ensureGacha(G.p), st = gcState();
+    for (const s of COS_SLOTS) { const id = st.eq[s.k]; if (id && !g.owned['cos:' + id]) { toast('未入手の景品は反映できません'); return; } }
+    if (st.frame && !g.owned['frame:' + st.frame]) { toast('未入手の景品は反映できません'); return; }
+    for (const s of COS_SLOTS) g.eq[s.k] = st.eq[s.k] || null;
+    g.frame = st.frame || null; save(); toast('見た目を変更した'); G._gc = null; openGachaCollection(); renderTown(); renderAll();
+  },
+  gcReset() { G._gc = null; openGachaCollection(); },
+  gcClose() { gcClose(); },
+  gcSkip() { gachaRevealEnd(); },
   gachaFrame(d) { const g = ensureGacha(G.p); if (!d.id) g.frame = null; else if (g.owned['frame:' + d.id]) g.frame = d.id; save(); renderTown(); },
   loginClaim() { loginClaim(); },
   openStoryList() { openStoryList(); },
@@ -6363,9 +6418,9 @@ function renderFacility(fac) {
       </div>`;
   }
 
-  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行' };
+  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行', gacha: '福音のくじ' };
   $('#view-town').innerHTML = `
-    ${viewHero(fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦' }[fac] || '', FAC_NAMES[fac] || '', '')}
+    ${viewHero(fac === 'gacha' ? 'town' : fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦', gacha: '🔔' }[fac] || '', FAC_NAMES[fac] || '', '')}
     <div class="facility-back-bar">
       <button class="btn small" data-act="townBack">← 広場に戻る</button>
     </div>
@@ -9437,13 +9492,8 @@ function gachaRatesHtml() {
 }
 function renderGachaFacility(p) {
   const g = ensureGacha(p), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby')), left = GACHA_CFG.pity - g.pity;
-  const owned = type => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).map(k => k.slice(type.length + 1));
-  const slotRow = s => {
-    const mine = COSMETICS.filter(c => c.slot === s.k && g.owned['cos:' + c.id]);
-    return `<div class="gc-slot"><b>${s.name}</b><div class="gc-opts"><button class="pill ${!g.eq[s.k] ? 'on' : ''}" data-act="gachaEquip" data-slot="${s.k}" data-id="">なし</button>${mine.map(c => `<button class="pill ${g.eq[s.k] === c.id ? 'on' : ''}" style="border-color:${GACHA_RARITY[c.rar].color}" data-act="gachaEquip" data-slot="${s.k}" data-id="${c.id}">${esc(c.name)}</button>`).join('')}${mine.length ? '' : '<span class="sub">未入手</span>'}</div></div>`;
-  };
-  const frames = DEX_FRAMES.filter(f => g.owned['frame:' + f.id]);
-  const cnt = (type, list) => owned(type).length + '/' + list.length;
+  const cnt = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
+  const total = Object.keys(g.owned).length, all = COSMETICS.length + DEX_FRAMES.length + GACHA_TITLES.length;
   return `
     <h2>福音のくじ</h2>
     <p class="sub" style="margin:0 0 8px">鐘のしずくで回せる、見た目だけのくじ引き。称号・図鑑の飾り・おまけ装備が出ます。</p>
@@ -9453,20 +9503,93 @@ function renderGachaFacility(p) {
     <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="1" ${g.drops >= GACHA_CFG.costSingle ? '' : 'disabled'}>1回（💧${GACHA_CFG.costSingle}）</button>
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="10" ${g.drops >= GACHA_CFG.costTen ? '' : 'disabled'}>10連（💧${GACHA_CFG.costTen}）</button></div>
-    <details class="gc-det" open><summary>提供割合・天井</summary>${gachaRatesHtml()}</details>
-    <p class="sub" style="margin:10px 0 4px"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／デイリーダンジョン</p>
-    <div class="panel" style="margin-top:10px"><h2 style="margin:0 0 6px">おまけ装備（${cnt('cos', COSMETICS)}）</h2>${COS_SLOTS.map(slotRow).join('')}</div>
-    <div class="panel" style="margin-top:10px"><h2 style="margin:0 0 6px">図鑑の飾り（${cnt('frame', DEX_FRAMES)}）</h2>
-      <div class="gc-opts"><button class="pill ${!g.frame ? 'on' : ''}" data-act="gachaFrame" data-id="">なし</button>${frames.map(f => `<button class="pill ${g.frame === f.id ? 'on' : ''}" style="border-color:${GACHA_RARITY[f.rar].color}" data-act="gachaFrame" data-id="${f.id}">${esc(f.name)}</button>`).join('')}${frames.length ? '' : '<span class="sub">未入手</span>'}</div></div>
-    <p class="sub" style="margin:10px 0 0">称号（${cnt('title', GACHA_TITLES)}）は、ステータス＞称号の一覧から付け替えられます。</p>`;
+    <button class="btn wide gc-coll" data-act="gachaCollection">📖 景品一覧・着せ替え<small>集めた景品 ${total} / ${all}</small></button>
+    <details class="gc-det"><summary>提供割合・天井</summary>${gachaRatesHtml()}</details>
+    <p class="sub" style="margin:10px 0 0"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／限定ダンジョン</p>`;
+}
+
+// ---------- 景品一覧・着せ替え（試着つき） ----------
+function gcState() {
+  const g = ensureGacha(G.p);
+  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null };
+  return G._gc;
+}
+// 指定の装備で立ち絵を描く（実際の装備は書き換えない）
+function heroPreviewHtml(sk, style, eq) {
+  const g = ensureGacha(G.p), keep = g.eq;
+  g.eq = eq;
+  try { return heroWithCos(sk, style); } finally { g.eq = keep; }
+}
+function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
+  const q = GACHA_RARITY[rar];
+  return `<button class="gc-card${on ? ' on' : ''}${owned ? '' : ' lock'}" style="--qc:${q.color}" data-act="${act}" ${attrs}><i class="gc-q">${q.name}</i><span class="gc-n">${esc(name)}</span><small>${owned ? '✓ 入手済み' : '未入手'}</small></button>`;
+}
+function openGachaCollection(tab) {
+  const p = G.p, g = ensureGacha(p), st = gcState(), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
+  if (tab) st.tab = tab;
+  const n = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
+  const tabs = [['cos', 'おまけ装備', n('cos', COSMETICS)], ['frame', '図鑑の飾り', n('frame', DEX_FRAMES)], ['title', '称号', n('title', GACHA_TITLES)]]
+    .map(([k, l, c]) => `<button class="seg-b ${st.tab === k ? 'on' : ''}" aria-pressed="${st.tab === k}" data-act="gcTab" data-tab="${k}">${l}<small>${c}</small></button>`).join('');
+  let body = '';
+  if (st.tab === 'cos') {
+    body = COS_SLOTS.map(s => {
+      const cards = COSMETICS.filter(c => c.slot === s.k).map(c => gcItemCard('cos', c.id, c.name, c.rar, !!g.owned['cos:' + c.id], st.eq[s.k] === c.id, 'gcTry', `data-slot="${s.k}" data-id="${c.id}"`)).join('');
+      return `<div class="gc-slot"><b>${s.name}</b><div class="gc-grid"><button class="gc-card none${!st.eq[s.k] ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcTry" data-slot="${s.k}" data-id=""><span class="gc-n">なし</span></button>${cards}</div></div>`;
+    }).join('');
+  } else if (st.tab === 'frame') {
+    body = `<div class="gc-slot"><b>図鑑・実績の額縁</b><div class="gc-grid"><button class="gc-card none${!st.frame ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcFrame" data-id=""><span class="gc-n">なし</span></button>${DEX_FRAMES.map(f => gcItemCard('frame', f.id, f.name, f.rar, !!g.owned['frame:' + f.id], st.frame === f.id, 'gcFrame', `data-id="${f.id}"`)).join('')}</div></div>`;
+  } else {
+    const tw = (p.tower && p.tower.title) || null;
+    body = `<div class="gc-slot"><b>称号（ステータスにも表示されます）</b><div class="gc-grid">${GACHA_TITLES.map(t => gcItemCard('title', t.id, t.name, t.rar, !!g.owned['title:' + t.id], tw === t.id, 'gcTitle', `data-id="${t.id}"`)).join('')}</div></div>`;
+  }
+  const fr = DEX_FRAMES.find(f => f.id === st.frame);
+  const need = COS_SLOTS.filter(s => st.eq[s.k] && !g.owned['cos:' + st.eq[s.k]]).length + (st.frame && !g.owned['frame:' + st.frame] ? 1 : 0);
+  const dirty = COS_SLOTS.some(s => (st.eq[s.k] || null) !== (g.eq[s.k] || null)) || (st.frame || null) !== (g.frame || null);
+  const sample = fr ? `style="--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}"` : '';
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">📖 景品一覧・着せ替え</h2>
+    <div class="gc-prev"><div class="gc-stage big">${heroPreviewHtml(sk, 'width:130px;height:130px', st.eq)}</div>
+      <div class="gc-prev-r"><div class="gc-frame-sample${fr ? ' on' : ''}" ${sample}>図鑑の額縁</div>
+        <small class="sub">タップで試着。${need ? `<b style="color:#ffb347">未入手が ${need} 点含まれています（試着のみ）</b>` : '入手済みの景品は「着る」で反映できます。'}</small></div></div>
+    <div class="seg gc-tabs" role="tablist">${tabs}</div>
+    <div class="gc-body">${body}</div>
+    <div class="act" style="grid-template-columns:1fr 1fr 1fr">
+      <button class="btn primary" data-act="gcApply" ${dirty && !need ? '' : 'disabled'}>着る</button>
+      <button class="btn" data-act="gcReset" ${dirty ? '' : 'disabled'}>元に戻す</button>
+      <button class="btn" data-act="gcClose">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function gcClose() { G._gc = null; closeModal(); renderTown(); }
+
+// ---------- 引く演出 ----------
+function gachaRevealSkip() {
+  if (G.headless || isReducedMotion()) return true;
+  if (/[?&]reveal=1\b/.test(location.search)) return false;
+  try { if (navigator.webdriver) return true; } catch (e) {}
+  return false;
 }
 function openGachaResult(res) {
-  const rows = res.map(r => {
+  const best = res.reduce((m, r) => Math.max(m, r.rar), 0), q0 = GACHA_RARITY[best], reveal = !gachaRevealSkip();
+  const rows = res.map((r, i) => {
     const q = GACHA_RARITY[r.rar], tp = r.it.type === 'cos' ? 'おまけ装備' : r.it.type === 'title' ? '称号' : '図鑑の飾り';
-    return `<div class="gc-res r${r.rar}" style="border-color:${q.color}"><b style="color:${q.color}">${q.name}</b><span>${esc(r.it.name)}<small> ${tp}</small></span>${r.isNew ? '<em>NEW</em>' : `<small class="sub">ダブり +💧${r.refund}</small>`}</div>`;
+    return `<div class="gc-res r${r.rar}" style="border-color:${q.color};--i:${i}"><b style="color:${q.color}">${q.name}</b><span>${esc(r.it.name)}<small> ${tp}</small></span>${r.isNew ? '<em>NEW</em>' : `<small class="sub">ダブり +💧${r.refund}</small>`}</div>`;
   }).join('');
-  $('#m-sheet').innerHTML = `<h2 class="win" id="m-title">🔔 くじの結果</h2><div class="gc-resl">${rows}</div><p class="sub" style="margin:6px 0">残り 💧${fmt(ensureGacha(G.p).drops)}</p><div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  const sparks = best >= 2 ? Array.from({ length: best === 3 ? 18 : 10 }, (_, i) => `<b style="--a:${i * (360 / (best === 3 ? 18 : 10))}deg;--d:${(i % 4) * 0.08}s"></b>`).join('') : '';
+  const rv = reveal ? `<div class="gc-rv rb${best}" data-act="gcSkip" style="--qc:${q0.color}" role="button" aria-label="演出をスキップ"><div class="gc-rv-bell"><svg viewBox="0 0 100 70"><path d="${BELL_PATH}" fill="currentColor" stroke="rgba(60,30,0,.5)" stroke-width="1.5"/></svg></div><i class="gc-rv-ring"></i><div class="gc-rv-sp">${sparks}</div><p class="gc-rv-t">${best === 3 ? '✨ SSR ✨' : best === 2 ? 'SR' : '…'}</p><small>タップでスキップ</small></div>` : '';
+  $('#m-sheet').innerHTML = `<div class="gc-wrap${reveal ? ' reveal' : ''}">${rv}<h2 class="win" id="m-title">🔔 くじの結果</h2><div class="gc-resl">${rows}</div><p class="sub" style="margin:6px 0">残り 💧${fmt(ensureGacha(G.p).drops)}</p><div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+  if (reveal) {
+    try { Sound.play('bell'); } catch (e) {}
+    const ms = best === 3 ? 2300 : best === 2 ? 1700 : 1300;
+    G._gcRvT = setTimeout(gachaRevealEnd, ms);
+    if (best >= 2) setTimeout(() => { try { Sound.play(best === 3 ? 'win' : 'levelup'); } catch (e) {} }, ms - 600);
+  }
+}
+function gachaRevealEnd() {
+  clearTimeout(G._gcRvT);
+  const w = document.querySelector('.gc-wrap.reveal'); if (!w) return;
+  w.classList.remove('reveal'); w.classList.add('shown');
+  const el = w.querySelector('.gc-rv'); if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 350); }
 }
 
 // ---------- ログインボーナス ----------
@@ -9579,7 +9702,7 @@ function renderDailyCard(p) {
   const pips = Array.from({ length: DAILY_CFG.perDay }, (_, i) => `<i class="dl-pip${i < left ? ' on' : ''}"></i>`).join('');
   const seg = DAILY_DIFFS.map(x => `<button class="seg-b ${x.id === dfx.id ? 'on' : ''}" aria-pressed="${x.id === dfx.id}" data-act="dailyDf" data-df="${x.id}">${x.name}<small>${x.tag}</small></button>`).join('');
   return `<article class="panel dcard dc-card dl-card" style="--a1:#2a2410;--a2:#14110a;--ac:#ffd45a">
-    ${dgBanner(th.src, '鐘', `${th.icon} 鐘の試練`, `今日は「${esc(th.name)}」`, '')}
+    ${dgBanner(th.src, '鐘', `${th.icon} 限定ダンジョン`, `鐘の試練「${esc(th.name)}」`, '')}
     <div class="dc-body">
     <p class="dc-blurb">敵の強さは今の自分に合わせて自動で調整されます。難易度は好きに選べます。1日3回まで、日付が変わると回復。</p>
     <div class="seg dl-seg" role="group" aria-label="難易度">${seg}</div>
@@ -9901,7 +10024,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  startRunGuarded, dangerOf, startDailyRun, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  startRunGuarded, dangerOf, startDailyRun, openGachaCollection, gcState, gachaRevealEnd, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,

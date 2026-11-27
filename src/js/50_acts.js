@@ -376,6 +376,21 @@ const ACTS = {
   openCredits() { showCredits(); },
   gachaPull(d) { const res = gachaPull(Number(d.n) === 10 ? 10 : 1); if (res) { renderTown(); renderHUD && renderHUD(); openGachaResult(res); } },
   gachaEquip(d) { const g = ensureGacha(G.p); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) g.eq[d.slot] = null; else if (g.owned['cos:' + d.id] && cosById(d.id) && cosById(d.id).slot === d.slot) g.eq[d.slot] = d.id; save(); renderTown(); },
+  gachaCollection() { G._gc = null; openGachaCollection('cos'); },
+  gcTab(d) { openGachaCollection(d.tab); },
+  gcTry(d) { const st = gcState(); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) st.eq[d.slot] = null; else if (cosById(d.id) && cosById(d.id).slot === d.slot) st.eq[d.slot] = d.id; openGachaCollection(); },
+  gcFrame(d) { const st = gcState(); st.frame = d.id && DEX_FRAMES.some(f => f.id === d.id) ? d.id : null; openGachaCollection(); },
+  gcTitle(d) { const p = G.p, g = ensureGacha(p); if (!g.owned['title:' + d.id]) { toast('未入手の称号です'); return; } p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }; p.tower.title = p.tower.title === d.id ? null : d.id; save(); openGachaCollection(); },
+  gcApply() {
+    const g = ensureGacha(G.p), st = gcState();
+    for (const s of COS_SLOTS) { const id = st.eq[s.k]; if (id && !g.owned['cos:' + id]) { toast('未入手の景品は反映できません'); return; } }
+    if (st.frame && !g.owned['frame:' + st.frame]) { toast('未入手の景品は反映できません'); return; }
+    for (const s of COS_SLOTS) g.eq[s.k] = st.eq[s.k] || null;
+    g.frame = st.frame || null; save(); toast('見た目を変更した'); G._gc = null; openGachaCollection(); renderTown(); renderAll();
+  },
+  gcReset() { G._gc = null; openGachaCollection(); },
+  gcClose() { gcClose(); },
+  gcSkip() { gachaRevealEnd(); },
   gachaFrame(d) { const g = ensureGacha(G.p); if (!d.id) g.frame = null; else if (g.owned['frame:' + d.id]) g.frame = d.id; save(); renderTown(); },
   loginClaim() { loginClaim(); },
   openStoryList() { openStoryList(); },

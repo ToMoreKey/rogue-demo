@@ -882,3 +882,43 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .dl-pips{display:inline-flex;gap:4px;margin:0 8px 0 10px;vertical-align:middle}
 .dl-pip{width:10px;height:10px;border-radius:50%;border:1px solid #ffd45a;background:transparent}
 .dl-pip.on{background:#ffd45a;box-shadow:0 0 6px #ffd45a}
+/* ---- 景品一覧・着せ替え / 引く演出 ---- */
+.gc-coll{margin-top:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gc-coll small{opacity:.75;font-size:12px}
+.gc-prev{display:flex;gap:12px;align-items:center}
+.gc-stage.big{width:150px;height:150px}
+.gc-prev-r{display:grid;gap:8px;min-width:0;flex:1}
+.gc-frame-sample{padding:10px;border:1px dashed #2b3245;border-radius:10px;text-align:center;font-size:13px;color:var(--muted,#9aa3bd)}
+.gc-frame-sample.on{border:2px solid var(--dxb);background:var(--dxbg);box-shadow:0 0 14px var(--dxg);color:inherit}
+.gc-tabs{grid-template-columns:repeat(3,1fr);margin:10px 0 6px}
+.gc-body{max-height:36vh;overflow:auto;padding-right:2px}
+.gc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.gc-card{position:relative;display:grid;gap:2px;justify-items:center;align-content:center;min-height:64px;padding:8px 4px;border:1px solid var(--qc);border-radius:8px;background:rgba(255,255,255,.04);color:inherit;cursor:pointer;font:inherit;text-align:center}
+.gc-card .gc-q{position:absolute;left:4px;top:3px;font-style:normal;font-size:10px;font-weight:900;color:var(--qc)}
+.gc-card .gc-n{font-size:12px;font-weight:700;line-height:1.25;margin-top:8px;word-break:keep-all}
+.gc-card small{font-size:10px;opacity:.7}
+.gc-card.lock{opacity:.55;border-style:dashed}
+.gc-card.on{background:color-mix(in srgb,var(--qc) 22%,transparent);box-shadow:0 0 10px color-mix(in srgb,var(--qc) 60%,transparent);opacity:1}
+.gc-card.none .gc-n{margin-top:0}
+.gc-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gc-wrap{position:relative;display:grid;gap:12px}
+.gc-rv{position:fixed;inset:0;z-index:60;display:grid;place-items:center;align-content:center;gap:10px;color:var(--qc);background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--qc) 30%,#05070d),#05070d 70%);cursor:pointer;animation:gcrvin .25s ease-out}
+.gc-rv.out{opacity:0;transition:opacity .35s}
+.gc-rv small{color:#9aa3bd;position:absolute;bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.gc-rv-bell{width:120px;filter:drop-shadow(0 0 14px var(--qc));transform-origin:50% 8%;animation:gcring .5s ease-in-out infinite alternate}
+.gc-rv-bell svg{width:100%;height:auto}
+.gc-rv-ring{position:absolute;left:50%;top:50%;width:80px;height:80px;margin:-40px 0 0 -40px;border:3px solid var(--qc);border-radius:50%;opacity:0;animation:gcwave 1.1s ease-out infinite}
+.gc-rv-t{margin:0;font-size:28px;font-weight:900;letter-spacing:.12em;text-shadow:0 0 14px var(--qc)}
+.gc-rv.rb3 .gc-rv-t{font-size:40px;background:linear-gradient(90deg,#ff5f6d,#ffc371,#fff56a,#6be585,#5ec8ff,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
+.gc-rv.rb3 .gc-rv-bell{animation-duration:.3s;width:150px}
+.gc-rv.rb3 .gc-rv-ring{animation-duration:.7s}
+.gc-rv-sp{position:absolute;left:50%;top:46%}
+.gc-rv-sp b{position:absolute;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--qc);box-shadow:0 0 8px var(--qc);opacity:0;animation:gcspark 1s ease-out var(--d) infinite;transform:rotate(var(--a)) translateX(0)}
+@keyframes gcrvin{from{opacity:0}}
+@keyframes gcring{from{transform:rotate(-14deg)}to{transform:rotate(14deg)}}
+@keyframes gcwave{0%{transform:scale(.6);opacity:.9}100%{transform:scale(4.5);opacity:0}}
+@keyframes gcspark{0%{opacity:0;transform:rotate(var(--a)) translateX(30px)}20%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(150px)}}
+.gc-wrap.reveal .gc-resl .gc-res{opacity:0}
+.gc-wrap.shown .gc-resl .gc-res{animation:gcpop .32s ease-out backwards;animation-delay:calc(var(--i) * 70ms)}
+@keyframes gcpop{from{opacity:0;transform:translateY(10px) scale(.96)}}
+@media (prefers-reduced-motion:reduce){.gc-rv-bell,.gc-rv-ring,.gc-rv-sp b,.gc-wrap.shown .gc-res{animation:none}}

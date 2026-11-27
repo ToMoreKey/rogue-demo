@@ -184,9 +184,9 @@ function renderFacility(fac) {
       </div>`;
   }
 
-  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行' };
+  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行', gacha: '福音のくじ' };
   $('#view-town').innerHTML = `
-    ${viewHero(fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦' }[fac] || '', FAC_NAMES[fac] || '', '')}
+    ${viewHero(fac === 'gacha' ? 'town' : fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦', gacha: '🔔' }[fac] || '', FAC_NAMES[fac] || '', '')}
     <div class="facility-back-bar">
       <button class="btn small" data-act="townBack">← 広場に戻る</button>
     </div>

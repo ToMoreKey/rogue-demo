@@ -83,7 +83,7 @@ function renderDailyCard(p) {
   const pips = Array.from({ length: DAILY_CFG.perDay }, (_, i) => `<i class="dl-pip${i < left ? ' on' : ''}"></i>`).join('');
   const seg = DAILY_DIFFS.map(x => `<button class="seg-b ${x.id === dfx.id ? 'on' : ''}" aria-pressed="${x.id === dfx.id}" data-act="dailyDf" data-df="${x.id}">${x.name}<small>${x.tag}</small></button>`).join('');
   return `<article class="panel dcard dc-card dl-card" style="--a1:#2a2410;--a2:#14110a;--ac:#ffd45a">
-    ${dgBanner(th.src, '鐘', `${th.icon} 鐘の試練`, `今日は「${esc(th.name)}」`, '')}
+    ${dgBanner(th.src, '鐘', `${th.icon} 限定ダンジョン`, `鐘の試練「${esc(th.name)}」`, '')}
     <div class="dc-body">
     <p class="dc-blurb">敵の強さは今の自分に合わせて自動で調整されます。難易度は好きに選べます。1日3回まで、日付が変わると回復。</p>
     <div class="seg dl-seg" role="group" aria-label="難易度">${seg}</div>

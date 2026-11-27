@@ -94,13 +94,8 @@ function gachaRatesHtml() {
 }
 function renderGachaFacility(p) {
   const g = ensureGacha(p), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby')), left = GACHA_CFG.pity - g.pity;
-  const owned = type => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).map(k => k.slice(type.length + 1));
-  const slotRow = s => {
-    const mine = COSMETICS.filter(c => c.slot === s.k && g.owned['cos:' + c.id]);
-    return `<div class="gc-slot"><b>${s.name}</b><div class="gc-opts"><button class="pill ${!g.eq[s.k] ? 'on' : ''}" data-act="gachaEquip" data-slot="${s.k}" data-id="">なし</button>${mine.map(c => `<button class="pill ${g.eq[s.k] === c.id ? 'on' : ''}" style="border-color:${GACHA_RARITY[c.rar].color}" data-act="gachaEquip" data-slot="${s.k}" data-id="${c.id}">${esc(c.name)}</button>`).join('')}${mine.length ? '' : '<span class="sub">未入手</span>'}</div></div>`;
-  };
-  const frames = DEX_FRAMES.filter(f => g.owned['frame:' + f.id]);
-  const cnt = (type, list) => owned(type).length + '/' + list.length;
+  const cnt = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
+  const total = Object.keys(g.owned).length, all = COSMETICS.length + DEX_FRAMES.length + GACHA_TITLES.length;
   return `
     <h2>福音のくじ</h2>
     <p class="sub" style="margin:0 0 8px">鐘のしずくで回せる、見た目だけのくじ引き。称号・図鑑の飾り・おまけ装備が出ます。</p>
@@ -110,20 +105,93 @@ function renderGachaFacility(p) {
     <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="1" ${g.drops >= GACHA_CFG.costSingle ? '' : 'disabled'}>1回（💧${GACHA_CFG.costSingle}）</button>
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="10" ${g.drops >= GACHA_CFG.costTen ? '' : 'disabled'}>10連（💧${GACHA_CFG.costTen}）</button></div>
-    <details class="gc-det" open><summary>提供割合・天井</summary>${gachaRatesHtml()}</details>
-    <p class="sub" style="margin:10px 0 4px"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／デイリーダンジョン</p>
-    <div class="panel" style="margin-top:10px"><h2 style="margin:0 0 6px">おまけ装備（${cnt('cos', COSMETICS)}）</h2>${COS_SLOTS.map(slotRow).join('')}</div>
-    <div class="panel" style="margin-top:10px"><h2 style="margin:0 0 6px">図鑑の飾り（${cnt('frame', DEX_FRAMES)}）</h2>
-      <div class="gc-opts"><button class="pill ${!g.frame ? 'on' : ''}" data-act="gachaFrame" data-id="">なし</button>${frames.map(f => `<button class="pill ${g.frame === f.id ? 'on' : ''}" style="border-color:${GACHA_RARITY[f.rar].color}" data-act="gachaFrame" data-id="${f.id}">${esc(f.name)}</button>`).join('')}${frames.length ? '' : '<span class="sub">未入手</span>'}</div></div>
-    <p class="sub" style="margin:10px 0 0">称号（${cnt('title', GACHA_TITLES)}）は、ステータス＞称号の一覧から付け替えられます。</p>`;
+    <button class="btn wide gc-coll" data-act="gachaCollection">📖 景品一覧・着せ替え<small>集めた景品 ${total} / ${all}</small></button>
+    <details class="gc-det"><summary>提供割合・天井</summary>${gachaRatesHtml()}</details>
+    <p class="sub" style="margin:10px 0 0"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／限定ダンジョン</p>`;
+}
+
+// ---------- 景品一覧・着せ替え（試着つき） ----------
+function gcState() {
+  const g = ensureGacha(G.p);
+  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null };
+  return G._gc;
+}
+// 指定の装備で立ち絵を描く（実際の装備は書き換えない）
+function heroPreviewHtml(sk, style, eq) {
+  const g = ensureGacha(G.p), keep = g.eq;
+  g.eq = eq;
+  try { return heroWithCos(sk, style); } finally { g.eq = keep; }
+}
+function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
+  const q = GACHA_RARITY[rar];
+  return `<button class="gc-card${on ? ' on' : ''}${owned ? '' : ' lock'}" style="--qc:${q.color}" data-act="${act}" ${attrs}><i class="gc-q">${q.name}</i><span class="gc-n">${esc(name)}</span><small>${owned ? '✓ 入手済み' : '未入手'}</small></button>`;
+}
+function openGachaCollection(tab) {
+  const p = G.p, g = ensureGacha(p), st = gcState(), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
+  if (tab) st.tab = tab;
+  const n = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
+  const tabs = [['cos', 'おまけ装備', n('cos', COSMETICS)], ['frame', '図鑑の飾り', n('frame', DEX_FRAMES)], ['title', '称号', n('title', GACHA_TITLES)]]
+    .map(([k, l, c]) => `<button class="seg-b ${st.tab === k ? 'on' : ''}" aria-pressed="${st.tab === k}" data-act="gcTab" data-tab="${k}">${l}<small>${c}</small></button>`).join('');
+  let body = '';
+  if (st.tab === 'cos') {
+    body = COS_SLOTS.map(s => {
+      const cards = COSMETICS.filter(c => c.slot === s.k).map(c => gcItemCard('cos', c.id, c.name, c.rar, !!g.owned['cos:' + c.id], st.eq[s.k] === c.id, 'gcTry', `data-slot="${s.k}" data-id="${c.id}"`)).join('');
+      return `<div class="gc-slot"><b>${s.name}</b><div class="gc-grid"><button class="gc-card none${!st.eq[s.k] ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcTry" data-slot="${s.k}" data-id=""><span class="gc-n">なし</span></button>${cards}</div></div>`;
+    }).join('');
+  } else if (st.tab === 'frame') {
+    body = `<div class="gc-slot"><b>図鑑・実績の額縁</b><div class="gc-grid"><button class="gc-card none${!st.frame ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcFrame" data-id=""><span class="gc-n">なし</span></button>${DEX_FRAMES.map(f => gcItemCard('frame', f.id, f.name, f.rar, !!g.owned['frame:' + f.id], st.frame === f.id, 'gcFrame', `data-id="${f.id}"`)).join('')}</div></div>`;
+  } else {
+    const tw = (p.tower && p.tower.title) || null;
+    body = `<div class="gc-slot"><b>称号（ステータスにも表示されます）</b><div class="gc-grid">${GACHA_TITLES.map(t => gcItemCard('title', t.id, t.name, t.rar, !!g.owned['title:' + t.id], tw === t.id, 'gcTitle', `data-id="${t.id}"`)).join('')}</div></div>`;
+  }
+  const fr = DEX_FRAMES.find(f => f.id === st.frame);
+  const need = COS_SLOTS.filter(s => st.eq[s.k] && !g.owned['cos:' + st.eq[s.k]]).length + (st.frame && !g.owned['frame:' + st.frame] ? 1 : 0);
+  const dirty = COS_SLOTS.some(s => (st.eq[s.k] || null) !== (g.eq[s.k] || null)) || (st.frame || null) !== (g.frame || null);
+  const sample = fr ? `style="--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}"` : '';
+  $('#m-sheet').innerHTML = `
+    <h2 class="win" id="m-title">📖 景品一覧・着せ替え</h2>
+    <div class="gc-prev"><div class="gc-stage big">${heroPreviewHtml(sk, 'width:130px;height:130px', st.eq)}</div>
+      <div class="gc-prev-r"><div class="gc-frame-sample${fr ? ' on' : ''}" ${sample}>図鑑の額縁</div>
+        <small class="sub">タップで試着。${need ? `<b style="color:#ffb347">未入手が ${need} 点含まれています（試着のみ）</b>` : '入手済みの景品は「着る」で反映できます。'}</small></div></div>
+    <div class="seg gc-tabs" role="tablist">${tabs}</div>
+    <div class="gc-body">${body}</div>
+    <div class="act" style="grid-template-columns:1fr 1fr 1fr">
+      <button class="btn primary" data-act="gcApply" ${dirty && !need ? '' : 'disabled'}>着る</button>
+      <button class="btn" data-act="gcReset" ${dirty ? '' : 'disabled'}>元に戻す</button>
+      <button class="btn" data-act="gcClose">閉じる</button></div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function gcClose() { G._gc = null; closeModal(); renderTown(); }
+
+// ---------- 引く演出 ----------
+function gachaRevealSkip() {
+  if (G.headless || isReducedMotion()) return true;
+  if (/[?&]reveal=1\b/.test(location.search)) return false;
+  try { if (navigator.webdriver) return true; } catch (e) {}
+  return false;
 }
 function openGachaResult(res) {
-  const rows = res.map(r => {
+  const best = res.reduce((m, r) => Math.max(m, r.rar), 0), q0 = GACHA_RARITY[best], reveal = !gachaRevealSkip();
+  const rows = res.map((r, i) => {
     const q = GACHA_RARITY[r.rar], tp = r.it.type === 'cos' ? 'おまけ装備' : r.it.type === 'title' ? '称号' : '図鑑の飾り';
-    return `<div class="gc-res r${r.rar}" style="border-color:${q.color}"><b style="color:${q.color}">${q.name}</b><span>${esc(r.it.name)}<small> ${tp}</small></span>${r.isNew ? '<em>NEW</em>' : `<small class="sub">ダブり +💧${r.refund}</small>`}</div>`;
+    return `<div class="gc-res r${r.rar}" style="border-color:${q.color};--i:${i}"><b style="color:${q.color}">${q.name}</b><span>${esc(r.it.name)}<small> ${tp}</small></span>${r.isNew ? '<em>NEW</em>' : `<small class="sub">ダブり +💧${r.refund}</small>`}</div>`;
   }).join('');
-  $('#m-sheet').innerHTML = `<h2 class="win" id="m-title">🔔 くじの結果</h2><div class="gc-resl">${rows}</div><p class="sub" style="margin:6px 0">残り 💧${fmt(ensureGacha(G.p).drops)}</p><div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+  const sparks = best >= 2 ? Array.from({ length: best === 3 ? 18 : 10 }, (_, i) => `<b style="--a:${i * (360 / (best === 3 ? 18 : 10))}deg;--d:${(i % 4) * 0.08}s"></b>`).join('') : '';
+  const rv = reveal ? `<div class="gc-rv rb${best}" data-act="gcSkip" style="--qc:${q0.color}" role="button" aria-label="演出をスキップ"><div class="gc-rv-bell"><svg viewBox="0 0 100 70"><path d="${BELL_PATH}" fill="currentColor" stroke="rgba(60,30,0,.5)" stroke-width="1.5"/></svg></div><i class="gc-rv-ring"></i><div class="gc-rv-sp">${sparks}</div><p class="gc-rv-t">${best === 3 ? '✨ SSR ✨' : best === 2 ? 'SR' : '…'}</p><small>タップでスキップ</small></div>` : '';
+  $('#m-sheet').innerHTML = `<div class="gc-wrap${reveal ? ' reveal' : ''}">${rv}<h2 class="win" id="m-title">🔔 くじの結果</h2><div class="gc-resl">${rows}</div><p class="sub" style="margin:6px 0">残り 💧${fmt(ensureGacha(G.p).drops)}</p><div class="act"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+  if (reveal) {
+    try { Sound.play('bell'); } catch (e) {}
+    const ms = best === 3 ? 2300 : best === 2 ? 1700 : 1300;
+    G._gcRvT = setTimeout(gachaRevealEnd, ms);
+    if (best >= 2) setTimeout(() => { try { Sound.play(best === 3 ? 'win' : 'levelup'); } catch (e) {} }, ms - 600);
+  }
+}
+function gachaRevealEnd() {
+  clearTimeout(G._gcRvT);
+  const w = document.querySelector('.gc-wrap.reveal'); if (!w) return;
+  w.classList.remove('reveal'); w.classList.add('shown');
+  const el = w.querySelector('.gc-rv'); if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 350); }
 }
 
 // ---------- ログインボーナス ----------
