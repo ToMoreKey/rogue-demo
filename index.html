@@ -755,6 +755,10 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 #f-enemy.hit.hit-b .spr svg,#f-enemy.hit.hit-b .spr img{animation:ehitb .42s ease-out}
 @keyframes ehitb{0%{transform:none;filter:none}20%{transform:translateX(24px) rotate(5deg) scale(.92,1.08);filter:brightness(3.2) saturate(.3)}55%{transform:translateX(-5px) rotate(-2deg);filter:brightness(1.5)}100%{transform:none;filter:none}}
 @media (prefers-reduced-motion:reduce){#f-enemy.enter .spr svg,#f-enemy.enter .spr img,#f-enemy.hit .spr svg,#f-enemy.hit .spr img{animation:none}}
+/* 敵の大きさが変わっても戦闘ウィンドウの高さを変えない: 敵スロットは固定の高さ、絵だけ --sz で拡縮（下端そろえ） */
+#spr-enemy{--k:1;width:100%;height:calc(134px*var(--k));display:flex;align-items:flex-end;justify-content:center}
+#spr-enemy>.sprite-img,#spr-enemy>div{flex:none;width:min(100%,calc(112px*var(--k)*var(--sz,1)));height:auto}
+@media (max-height:700px){#spr-enemy{--k:.8}}
 </style>
 
 <div id="app" class="wrap">
@@ -865,7 +869,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v90';
+const APP_VERSION = 'rogue-v91';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -6662,7 +6666,7 @@ function renderEnemy(fresh) {
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
-    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.width = eim ? `min(100%, ${Math.round(112 * eim.sz)}px)` : '';
+    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.setProperty('--sz', eim ? eim.sz : 1); // 枠は固定、絵の大きさだけ敵ごとに変える
     lastEnemyShape = en.id;
   }
   $('#f-enemy').classList.remove('dead');

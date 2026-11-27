@@ -741,3 +741,7 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 #f-enemy.hit.hit-b .spr svg,#f-enemy.hit.hit-b .spr img{animation:ehitb .42s ease-out}
 @keyframes ehitb{0%{transform:none;filter:none}20%{transform:translateX(24px) rotate(5deg) scale(.92,1.08);filter:brightness(3.2) saturate(.3)}55%{transform:translateX(-5px) rotate(-2deg);filter:brightness(1.5)}100%{transform:none;filter:none}}
 @media (prefers-reduced-motion:reduce){#f-enemy.enter .spr svg,#f-enemy.enter .spr img,#f-enemy.hit .spr svg,#f-enemy.hit .spr img{animation:none}}
+/* 敵の大きさが変わっても戦闘ウィンドウの高さを変えない: 敵スロットは固定の高さ、絵だけ --sz で拡縮（下端そろえ） */
+#spr-enemy{--k:1;width:100%;height:calc(134px*var(--k));display:flex;align-items:flex-end;justify-content:center}
+#spr-enemy>.sprite-img,#spr-enemy>div{flex:none;width:min(100%,calc(112px*var(--k)*var(--sz,1)));height:auto}
+@media (max-height:700px){#spr-enemy{--k:.8}}

@@ -946,7 +946,7 @@ function renderEnemy(fresh) {
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
-    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.width = eim ? `min(100%, ${Math.round(112 * eim.sz)}px)` : '';
+    const eim = ENEMY_IMG[en.id]; $('#spr-enemy').style.setProperty('--sz', eim ? eim.sz : 1); // 枠は固定、絵の大きさだけ敵ごとに変える
     lastEnemyShape = en.id;
   }
   $('#f-enemy').classList.remove('dead');
