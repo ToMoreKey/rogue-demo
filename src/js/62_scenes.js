@@ -100,6 +100,7 @@ const _sceneCache = {};
 function sceneUri(id) {
   const k = String(id || 'A');
   if (_sceneCache[k]) return _sceneCache[k];
+  if (typeof SCENE_IMG !== 'undefined' && SCENE_IMG[k]) return (_sceneCache[k] = "url('" + SCENE_IMG[k] + "')"); // Gemini製の背景画像があればそちらを使う
   const svg = SCENES[k] || SCENES.A;
   // style属性（二重引用符）内でも使えるよう、URLは単一引用符で囲み、SVG内の ' は %27 にする
   return (_sceneCache[k] = "url('data:image/svg+xml;utf8," + encodeURIComponent(svg).replace(/'/g, '%27') + "')");
