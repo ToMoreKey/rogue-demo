@@ -68,6 +68,8 @@ function renderPlaza() {
 
   $('#view-town').innerHTML = `
     ${viewHero('town', '🏘️', '福音の里　広場', 'ここにいる間、HPが1秒ごとに <b>+2</b> 回復します。')}
+    ${(() => { if (!goalsVisible(p)) return ''; const gs = goalState(p), done = gs.filter(x => x.ok).length;
+      return `<div class="panel goal-card"><h2 style="margin:0 0 6px">🎯 はじめの目標 <small>${done}/${gs.length}</small></h2>${gs.map(({ g, ok }) => `<div class="goal-row${ok ? ' ok' : ''}"><span class="goal-ck">${ok ? '✔' : '○'}</span><span class="goal-tx">${esc(g.text)}</span>${ok ? '' : `<button class="btn small" data-act="goalGo" data-g="${g.go}">行く</button>`}</div>`).join('')}<button class="btn small" style="margin-top:6px" data-act="hideGoals">閉じる</button></div>`; })()}
     <div class="panel"><p class="sub" style="margin:0">${esc(hpNote)}</p></div>
     <div class="panel">
       <h2 style="margin:0 0 12px">施設</h2>
@@ -119,6 +121,7 @@ function renderFacility(fac) {
     }).join('');
     content = `
       <h2>ショップ</h2>
+      ${hintBox('shop', '不要な装備はここで売ってゴールドに。今の装備より強いものは売らずに、装備タブで切り替えましょう。')}
       <h3 style="font-size:14px;margin:4px 0">購入（薬・強化石）</h3>
       <p class="sub" style="margin:0 0 8px">ダンジョン攻略に使う薬や、鍛冶屋で使う強化石を購入できます。</p>
       <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}${(() => {
@@ -1341,6 +1344,7 @@ function renderStatus() {
       <p class="sub" style="margin:6px 0 0;font-size:11px">戦闘力＝攻撃力＋防御力＋最大HP÷8＋最大MP÷20。Lv・装備・スキル・極意すべての強化が反映されます（目安は標準的な装備での値）。</p></div>`;
   })();
   const heroPanels = `
+    ${hintBox('status', '「戦闘力」は今の強さの目安です。装備タブで武器・防具を切り替えると、変化が▲▼で分かります。')}
     ${powerPanel}
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
@@ -1910,6 +1914,11 @@ function dropCardHtml(it, snap) {
 }
 function dropsHtml(l) {
   const snap = l.snap, p = G.p;
+  if (l.items && l.items.length) { const hb = hintBox('drop', '拾った装備は、カードの「装備する」で切り替えられます。戦闘力の増減を見て選びましょう。'); if (hb) return hb + dropsHtml2(l); }
+  return dropsHtml2(l);
+}
+function dropsHtml2(l) {
+  const snap = l.snap, p = G.p;
   const rank = it => { const eq = p[it.slot] && p[it.slot].id === it.id; const ref = eq ? (snap && snap[it.slot]) : gearSnap(p[it.slot]); return gearScore(it) - (ref ? ref.score : 0); };
   const items = [...l.items].sort((a, b) => rank(b) - rank(a) || b.rarity - a.rarity || b.star - a.star);
   return items.length ? `<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
@@ -2200,6 +2209,9 @@ function renderHelp() {
       <div class="help-step"><span class="help-step-n">4</span><div><b>繰り返してボスを倒す</b><br><span class="sub">まずはダンジョンAの初級クリアを目標に！</span></div></div>
     </div>
   </div>
+  <div class="panel"><h2>🔰 はじめての方へ</h2>
+    <p class="sub" style="margin:0 0 8px">戦闘力は「今の強さ」の目安、装備はステータス＞装備で切り替え（ダンジョン結果画面からも可）、不要な装備は売却・自動売却で整理できます。</p>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="showGoals">はじめの目標を表示</button><button class="btn small" data-act="tutRestart">チュートリアルをやり直す</button></div></div>
   <div class="panel">
     <h2>💡 その他のヒント</h2>
     <ul class="help-tips">
@@ -2360,6 +2372,7 @@ function renderAll() {
   }
   $('#nav-town').classList.toggle('locked', !!G.run);
   renderHUD();
+  checkGoals();
   if (v === 'town') renderTown();
   if (v === 'dungeon') {
     $('#dg-select').hidden = !!G.run; $('#dg-battle').hidden = !G.run;

@@ -785,6 +785,33 @@ function bagExpandCost(cap) {
 function skillResetCost(p) {
   return Math.max(50, (p ? p.lv : 1) * 50);
 }
+/* ---- はじめの目標 / 初回ヒント ---- */
+const FIRST_GOALS = [
+  { id: 'clearA', text: 'ダンジョンAを踏破する', go: 'dungeon', done: p => !!(p.cleared && p.cleared.A && Object.values(p.cleared.A).some(Boolean)) },
+  { id: 'equip', text: '装備を切り替える（ステータス＞装備）', go: 'gear', done: p => !!(p.goalFlags && p.goalFlags.equip) || (p.stats && p.stats.clears >= 3) },
+  { id: 'skill', text: 'SPでスキルを1つ習得する', go: 'skill', done: p => Object.keys(p.skills || {}).length > 0 },
+  { id: 'rank', text: '戦闘力ランク「駆け出し」に到達', go: 'hero', done: p => playerPower(p) >= POWER_RANKS[1].min },
+  { id: 'tryB', text: 'ダンジョンBに挑戦する', go: 'dungeon', done: p => !!(p.goalFlags && p.goalFlags.tryB) || !!(p.cleared && p.cleared.B && Object.values(p.cleared.B).some(Boolean)) }
+];
+function goalState(p) { return FIRST_GOALS.map(g => ({ g, ok: !!g.done(p) })); }
+function checkGoals(silent) {
+  const p = G.p; if (!p) return;
+  if (!p.goalDone) { p.goalDone = {}; silent = true; }
+  for (const { g, ok } of goalState(p)) {
+    if (ok && !p.goalDone[g.id]) {
+      p.goalDone[g.id] = true;
+      if (!silent && !(G.tutorial && !G.tutorial.done)) toast(`🎯 目標達成！「${g.text}」`);
+    }
+  }
+}
+function goalsVisible(p) {
+  if (p.goalsHidden || (G.tutorial && !G.tutorial.done)) return false;
+  return goalState(p).some(x => !x.ok);
+}
+function hintBox(key, text) {
+  const p = G.p; if (!p || (p.hints && p.hints[key]) || (G.tutorial && !G.tutorial.done)) return '';
+  return `<div class="hint-bubble"><span>💡 ${text}</span><button class="btn small" data-act="hintOk" data-k="${key}">わかった</button></div>`;
+}
 function buildBookPrice(p) { return BUILD_BOOK_PRICES[Math.min(p.buildSlots | 0, BUILD_BOOK_PRICES.length - 1)]; }
 function buyBuildBook() {
   const p = G.p;

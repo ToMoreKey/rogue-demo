@@ -283,6 +283,10 @@ function load() {
       }
     }
     syncActiveCharState(p);
+    p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop']) if (s.hints[k]) p.hints[k] = true;
+    p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
+    if (s.goalDone && typeof s.goalDone === 'object') { p.goalDone = {}; for (const g of FIRST_GOALS) if (s.goalDone[g.id]) p.goalDone[g.id] = true; }
+    p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
     if (s.stones && typeof s.stones === 'object') {

@@ -666,6 +666,13 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .st-next.done{border-color:var(--line);color:var(--muted)}
 .pw-up-chip{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;border:1px solid #8fe3a0;color:#8fe3a0;font-size:11px;font-weight:700}
 .sk-slot-desc{font-size:10px;color:var(--muted);line-height:1.35;margin-top:2px}
+
+.goal-card{border-color:#ffd76a88}.goal-card small{font-weight:400;color:var(--muted)}
+.goal-row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}
+.goal-row .goal-tx{flex:1;min-width:0}.goal-row.ok{color:var(--muted)}.goal-row.ok .goal-tx{text-decoration:line-through}.goal-ck{width:16px;color:#8fe3a0}
+.hint-bubble{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:8px 10px;border:1px solid var(--accent);border-radius:8px;background:var(--panel2);font-size:12px;line-height:1.5}
+.hint-bubble span{flex:1;min-width:0}
+.tut-skip{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:12px;z-index:202;pointer-events:auto;padding:6px 12px;min-height:32px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;cursor:pointer}
 </style>
 
 <div id="app" class="wrap">
@@ -750,6 +757,7 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 <div id="tut-overlay" aria-hidden="true">
   <div class="tut-hole" id="tut-hole"></div>
   <div class="tut-bubble" id="tut-bubble"></div>
+  <button class="tut-skip" data-act="tutSkip">スキップ ▶</button>
 </div>
 
 <script>
@@ -776,7 +784,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v69';
+const APP_VERSION = 'rogue-v71';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2883,6 +2891,10 @@ function load() {
       }
     }
     syncActiveCharState(p);
+    p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop']) if (s.hints[k]) p.hints[k] = true;
+    p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
+    if (s.goalDone && typeof s.goalDone === 'object') { p.goalDone = {}; for (const g of FIRST_GOALS) if (s.goalDone[g.id]) p.goalDone[g.id] = true; }
+    p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
     if (s.stones && typeof s.stones === 'object') {
@@ -4324,6 +4336,33 @@ function bagExpandCost(cap) {
 function skillResetCost(p) {
   return Math.max(50, (p ? p.lv : 1) * 50);
 }
+/* ---- はじめの目標 / 初回ヒント ---- */
+const FIRST_GOALS = [
+  { id: 'clearA', text: 'ダンジョンAを踏破する', go: 'dungeon', done: p => !!(p.cleared && p.cleared.A && Object.values(p.cleared.A).some(Boolean)) },
+  { id: 'equip', text: '装備を切り替える（ステータス＞装備）', go: 'gear', done: p => !!(p.goalFlags && p.goalFlags.equip) || (p.stats && p.stats.clears >= 3) },
+  { id: 'skill', text: 'SPでスキルを1つ習得する', go: 'skill', done: p => Object.keys(p.skills || {}).length > 0 },
+  { id: 'rank', text: '戦闘力ランク「駆け出し」に到達', go: 'hero', done: p => playerPower(p) >= POWER_RANKS[1].min },
+  { id: 'tryB', text: 'ダンジョンBに挑戦する', go: 'dungeon', done: p => !!(p.goalFlags && p.goalFlags.tryB) || !!(p.cleared && p.cleared.B && Object.values(p.cleared.B).some(Boolean)) }
+];
+function goalState(p) { return FIRST_GOALS.map(g => ({ g, ok: !!g.done(p) })); }
+function checkGoals(silent) {
+  const p = G.p; if (!p) return;
+  if (!p.goalDone) { p.goalDone = {}; silent = true; }
+  for (const { g, ok } of goalState(p)) {
+    if (ok && !p.goalDone[g.id]) {
+      p.goalDone[g.id] = true;
+      if (!silent && !(G.tutorial && !G.tutorial.done)) toast(`🎯 目標達成！「${g.text}」`);
+    }
+  }
+}
+function goalsVisible(p) {
+  if (p.goalsHidden || (G.tutorial && !G.tutorial.done)) return false;
+  return goalState(p).some(x => !x.ok);
+}
+function hintBox(key, text) {
+  const p = G.p; if (!p || (p.hints && p.hints[key]) || (G.tutorial && !G.tutorial.done)) return '';
+  return `<div class="hint-bubble"><span>💡 ${text}</span><button class="btn small" data-act="hintOk" data-k="${key}">わかった</button></div>`;
+}
 function buildBookPrice(p) { return BUILD_BOOK_PRICES[Math.min(p.buildSlots | 0, BUILD_BOOK_PRICES.length - 1)]; }
 function buyBuildBook() {
   const p = G.p;
@@ -4661,6 +4700,7 @@ const ACTS = {
     G.sel[d.d] = d.df; save(); renderDungeonSelect();
   },
   go(d) {
+    if (d.d === 'B' && G.p) (G.p.goalFlags = G.p.goalFlags || {}).tryB = true;
     // チュートリアル step 1: ダンジョンA novice を選んだら step 2 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 1) {
       if (d.d === 'A' && G.sel['A'] === 'novice') {
@@ -4699,7 +4739,7 @@ const ACTS = {
     const p = G.p, it = p.bag.find(x => x.id === Number(d.id)); if (!it) return;
     p.bag = p.bag.filter(x => x !== it);
     if (p[it.slot]) p.bag.push(p[it.slot]);
-    p[it.slot] = it; save(); renderAll();
+    p[it.slot] = it; (p.goalFlags = p.goalFlags || {}).equip = true; save(); renderAll();
   },
   mEquip(d) {
     // 結果画面から装備を変更し、比較表示を更新する（スクロール位置は維持）
@@ -4891,7 +4931,7 @@ const ACTS = {
     if (G.p) { G.p.v9ResetNoticePending = false; save(); }
     closeModal();
   },
-  autoEquipNow() { const n = equipBest(); save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
+  autoEquipNow() { const n = equipBest(); if (n) (G.p.goalFlags = G.p.goalFlags || {}).equip = true; save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
   autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; G.opts.autoEquipV2 = true; save(); renderStatus(); },
   fxToggle() { G.opts.fx = G.opts.fx === false; if (!G.opts.fx && typeof clearAllBattleFx === 'function') clearAllBattleFx(); save(); renderStatus(); if (G.run) renderBattle(); },
   reset() {
@@ -4973,6 +5013,22 @@ const ACTS = {
   smithReforge(d) { smithReforge(d.id); },
   buyShop(d) { buyShopItem(d.id); },
   buyBuildBook() { buyBuildBook(); },
+  hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
+  goalGo(d) {
+    const t = d.g;
+    if (t === 'dungeon') { G.view = 'dungeon'; }
+    else { G.view = 'status'; G.statusTab = t; }
+    renderAll();
+  },
+  hideGoals() { G.p.goalsHidden = true; save(); renderAll(); },
+  showGoals() { G.p.goalsHidden = false; save(); toast('はじめの目標を表示しました（広場）'); renderAll(); },
+  tutSkip() { tutDone(); save(); renderAll(); toast('チュートリアルをスキップしました（ヘルプからやり直せます）'); },
+  tutRestart() {
+    if (G.run) { toast('ダンジョン攻略中はできません'); return; }
+    G.tutorial = { step: 0 }; G._charSelectOpen = false; G.view = 'town'; G.townView = 'plaza';
+    try { localStorage.removeItem(TUT_SAVE_KEY); } catch (e) {}
+    renderAll(); tutStep(0);
+  },
   switchBuild(d) { switchBuild(d.i); },
   resetAllTrees() { resetAllTrees(); },
   renameBuild() {
@@ -5337,6 +5393,8 @@ function renderPlaza() {
 
   $('#view-town').innerHTML = `
     ${viewHero('town', '🏘️', '福音の里　広場', 'ここにいる間、HPが1秒ごとに <b>+2</b> 回復します。')}
+    ${(() => { if (!goalsVisible(p)) return ''; const gs = goalState(p), done = gs.filter(x => x.ok).length;
+      return `<div class="panel goal-card"><h2 style="margin:0 0 6px">🎯 はじめの目標 <small>${done}/${gs.length}</small></h2>${gs.map(({ g, ok }) => `<div class="goal-row${ok ? ' ok' : ''}"><span class="goal-ck">${ok ? '✔' : '○'}</span><span class="goal-tx">${esc(g.text)}</span>${ok ? '' : `<button class="btn small" data-act="goalGo" data-g="${g.go}">行く</button>`}</div>`).join('')}<button class="btn small" style="margin-top:6px" data-act="hideGoals">閉じる</button></div>`; })()}
     <div class="panel"><p class="sub" style="margin:0">${esc(hpNote)}</p></div>
     <div class="panel">
       <h2 style="margin:0 0 12px">施設</h2>
@@ -5388,6 +5446,7 @@ function renderFacility(fac) {
     }).join('');
     content = `
       <h2>ショップ</h2>
+      ${hintBox('shop', '不要な装備はここで売ってゴールドに。今の装備より強いものは売らずに、装備タブで切り替えましょう。')}
       <h3 style="font-size:14px;margin:4px 0">購入（薬・強化石）</h3>
       <p class="sub" style="margin:0 0 8px">ダンジョン攻略に使う薬や、鍛冶屋で使う強化石を購入できます。</p>
       <div class="stack" style="gap:8px;margin-bottom:14px">${shopBuyHtml}${(() => {
@@ -6610,6 +6669,7 @@ function renderStatus() {
       <p class="sub" style="margin:6px 0 0;font-size:11px">戦闘力＝攻撃力＋防御力＋最大HP÷8＋最大MP÷20。Lv・装備・スキル・極意すべての強化が反映されます（目安は標準的な装備での値）。</p></div>`;
   })();
   const heroPanels = `
+    ${hintBox('status', '「戦闘力」は今の強さの目安です。装備タブで武器・防具を切り替えると、変化が▲▼で分かります。')}
     ${powerPanel}
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
@@ -7179,6 +7239,11 @@ function dropCardHtml(it, snap) {
 }
 function dropsHtml(l) {
   const snap = l.snap, p = G.p;
+  if (l.items && l.items.length) { const hb = hintBox('drop', '拾った装備は、カードの「装備する」で切り替えられます。戦闘力の増減を見て選びましょう。'); if (hb) return hb + dropsHtml2(l); }
+  return dropsHtml2(l);
+}
+function dropsHtml2(l) {
+  const snap = l.snap, p = G.p;
   const rank = it => { const eq = p[it.slot] && p[it.slot].id === it.id; const ref = eq ? (snap && snap[it.slot]) : gearSnap(p[it.slot]); return gearScore(it) - (ref ? ref.score : 0); };
   const items = [...l.items].sort((a, b) => rank(b) - rank(a) || b.rarity - a.rarity || b.star - a.star);
   return items.length ? `<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
@@ -7469,6 +7534,9 @@ function renderHelp() {
       <div class="help-step"><span class="help-step-n">4</span><div><b>繰り返してボスを倒す</b><br><span class="sub">まずはダンジョンAの初級クリアを目標に！</span></div></div>
     </div>
   </div>
+  <div class="panel"><h2>🔰 はじめての方へ</h2>
+    <p class="sub" style="margin:0 0 8px">戦闘力は「今の強さ」の目安、装備はステータス＞装備で切り替え（ダンジョン結果画面からも可）、不要な装備は売却・自動売却で整理できます。</p>
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="showGoals">はじめの目標を表示</button><button class="btn small" data-act="tutRestart">チュートリアルをやり直す</button></div></div>
   <div class="panel">
     <h2>💡 その他のヒント</h2>
     <ul class="help-tips">
@@ -7629,6 +7697,7 @@ function renderAll() {
   }
   $('#nav-town').classList.toggle('locked', !!G.run);
   renderHUD();
+  checkGoals();
   if (v === 'town') renderTown();
   if (v === 'dungeon') {
     $('#dg-select').hidden = !!G.run; $('#dg-battle').hidden = !G.run;
@@ -8106,7 +8175,7 @@ function getTutMsg(step) {
 
 function tutAllowClick(step, b) {
   const act = b.dataset.act, v = b.dataset.v, tree = b.dataset.tree, id = b.dataset.id;
-  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice') return true;
+  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice' || act === 'tutSkip') return true;
   if (act === 'openRecovery' || act === 'recoverRestore' || act === 'recoverNew' || act === 'reloadPage' || act === 'closeTowerModal' || act === 'openImportModal' || act === 'validateImportInput' || act === 'confirmImportSave' || act === 'exportSaveFile') return true;   // セーブ復旧系は常に許可
   if (G._charSelectOpen) return act === 'selectStartChar' || act === 'confirmStartChar';
   const tgt = getCharTutorialTarget(G.p && G.p.skin);
@@ -8352,7 +8421,7 @@ window.__rogue = {
   idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, buyBuildBook, switchBuild, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
   playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,

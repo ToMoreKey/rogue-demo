@@ -53,6 +53,7 @@ const ACTS = {
     G.sel[d.d] = d.df; save(); renderDungeonSelect();
   },
   go(d) {
+    if (d.d === 'B' && G.p) (G.p.goalFlags = G.p.goalFlags || {}).tryB = true;
     // チュートリアル step 1: ダンジョンA novice を選んだら step 2 へ
     if (G.tutorial && !G.tutorial.done && G.tutorial.step === 1) {
       if (d.d === 'A' && G.sel['A'] === 'novice') {
@@ -91,7 +92,7 @@ const ACTS = {
     const p = G.p, it = p.bag.find(x => x.id === Number(d.id)); if (!it) return;
     p.bag = p.bag.filter(x => x !== it);
     if (p[it.slot]) p.bag.push(p[it.slot]);
-    p[it.slot] = it; save(); renderAll();
+    p[it.slot] = it; (p.goalFlags = p.goalFlags || {}).equip = true; save(); renderAll();
   },
   mEquip(d) {
     // 結果画面から装備を変更し、比較表示を更新する（スクロール位置は維持）
@@ -283,7 +284,7 @@ const ACTS = {
     if (G.p) { G.p.v9ResetNoticePending = false; save(); }
     closeModal();
   },
-  autoEquipNow() { const n = equipBest(); save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
+  autoEquipNow() { const n = equipBest(); if (n) (G.p.goalFlags = G.p.goalFlags || {}).equip = true; save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
   autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; G.opts.autoEquipV2 = true; save(); renderStatus(); },
   fxToggle() { G.opts.fx = G.opts.fx === false; if (!G.opts.fx && typeof clearAllBattleFx === 'function') clearAllBattleFx(); save(); renderStatus(); if (G.run) renderBattle(); },
   reset() {
@@ -365,6 +366,22 @@ const ACTS = {
   smithReforge(d) { smithReforge(d.id); },
   buyShop(d) { buyShopItem(d.id); },
   buyBuildBook() { buyBuildBook(); },
+  hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
+  goalGo(d) {
+    const t = d.g;
+    if (t === 'dungeon') { G.view = 'dungeon'; }
+    else { G.view = 'status'; G.statusTab = t; }
+    renderAll();
+  },
+  hideGoals() { G.p.goalsHidden = true; save(); renderAll(); },
+  showGoals() { G.p.goalsHidden = false; save(); toast('はじめの目標を表示しました（広場）'); renderAll(); },
+  tutSkip() { tutDone(); save(); renderAll(); toast('チュートリアルをスキップしました（ヘルプからやり直せます）'); },
+  tutRestart() {
+    if (G.run) { toast('ダンジョン攻略中はできません'); return; }
+    G.tutorial = { step: 0 }; G._charSelectOpen = false; G.view = 'town'; G.townView = 'plaza';
+    try { localStorage.removeItem(TUT_SAVE_KEY); } catch (e) {}
+    renderAll(); tutStep(0);
+  },
   switchBuild(d) { switchBuild(d.i); },
   resetAllTrees() { resetAllTrees(); },
   renameBuild() {
