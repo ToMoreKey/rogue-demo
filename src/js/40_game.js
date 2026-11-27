@@ -775,6 +775,7 @@ function sellBag() {
   const total = targets.reduce((s, it) => s + sellValue(it), 0);
   p.bag = p.bag.filter(it => !targets.includes(it));
   p.gold += total; save();
+  if (targets.some(it => it.rarity >= 4)) npcReact('shop', 'surprise');
   Sound.play('sell');
   toast(`${targets.length}個を売却して ${fmt(total)}G を手に入れた`);
   renderAll();
@@ -883,6 +884,7 @@ function smithUpgrade(id) {
   }
   p.gold -= cost;
   it.star++;
+  if (it.star >= 9) npcReact('smith', 'surprise');
   recordDexItem(p, it);
   checkAchievements('item');
   save();

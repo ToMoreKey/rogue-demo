@@ -114,9 +114,14 @@ function npcSay(fac, evt) {
 function npcHtml(fac) {
   const n = NPCS[fac]; if (!n) return '';
   if (!G._npc || G._npc.fac !== fac) G._npc = { fac, line: npcSay(fac, G._npcEvt || null) };
-  const joy = G._npcEvt && G._npcEvt !== 'townEnter' && fac !== 'guide';
-  return `<div class="npc${joy ? ' joy' : ''}" style="--nc:${n.color}" data-fac="${fac}" data-ex="${joy ? 'joy' : 'normal'}"><div class="npc-pt">${NPC_SVG[fac]}${joy ? '<span class="npc-emote">♪</span>' : ''}</div>
+  const joy = !!(G._npcEvt && G._npcEvt !== 'townEnter');
+  const ex = NPC_PNG[fac] ? (G._npcEx && G._npcEx.fac === fac ? G._npcEx.ex : (joy && fac !== 'guide' ? 'joy' : 'normal')) : 'normal';
+  const img = NPC_PNG[fac] ? `<img src="${NPC_PNG[fac][ex]}" alt="" draggable="false">` : NPC_SVG[fac];
+  return `<div class="npc${ex === 'joy' ? ' joy' : ''}${ex === 'surprise' ? ' surprise' : ''}" style="--nc:${n.color}" data-fac="${fac}" data-ex="${ex}"><div class="npc-pt">${img}${ex === 'joy' ? '<span class="npc-emote">♪</span>' : ''}${ex === 'surprise' ? '<span class="npc-emote">！</span>' : ''}</div>
     <div class="npc-bub" data-act="npcTalk" data-f="${fac}" role="button" tabindex="0" aria-label="${n.name}に話しかける"><div class="npc-name">${n.name}<small>${n.role}</small></div><p>「${esc(G._npc.line)}」</p><span class="npc-tap">タップで別の話 ▸</span></div></div>`;
 }
 
 const NPC_ACTS = { inn: 1, sell: 1, buyShop: 1, smithUpgrade: 1, smithReforge: 1, dep: 1, wd: 1, depAll: 1, wdAll: 1 };
+
+/* 表情を一時的に変える（次の NPC 操作・街の出入りで通常に戻る） */
+function npcReact(fac, ex) { G._npcEx = { fac, ex }; }
