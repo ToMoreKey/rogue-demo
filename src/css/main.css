@@ -631,3 +631,10 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
   .nav button{padding:3px 2px}
   .nav button svg{width:18px;height:18px}
 }
+
+.dc-badge{margin-left:auto;align-self:flex-start;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;background:rgba(0,0,0,.35)}
+.dc-title{flex-wrap:wrap}
+.dc-badge+.dc-badge{margin-left:4px}
+.b-rec{color:#ffd76a}.b-done{color:#8fe3a0}.b-new{color:#9cc8ff}.b-part{color:#ffb86b}.b-lock{color:#aaa}
+.dg-goal{display:flex;flex-direction:column;gap:2px;border-color:#ffd76a88}
+.dg-goal small{opacity:.75}

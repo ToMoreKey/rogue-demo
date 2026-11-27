@@ -645,6 +645,13 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
   .nav button{padding:3px 2px}
   .nav button svg{width:18px;height:18px}
 }
+
+.dc-badge{margin-left:auto;align-self:flex-start;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;background:rgba(0,0,0,.35)}
+.dc-title{flex-wrap:wrap}
+.dc-badge+.dc-badge{margin-left:4px}
+.b-rec{color:#ffd76a}.b-done{color:#8fe3a0}.b-new{color:#9cc8ff}.b-part{color:#ffb86b}.b-lock{color:#aaa}
+.dg-goal{display:flex;flex-direction:column;gap:2px;border-color:#ffd76a88}
+.dg-goal small{opacity:.75}
 </style>
 
 <div id="app" class="wrap">
@@ -755,7 +762,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v65';
+const APP_VERSION = 'rogue-v67';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -5318,16 +5325,37 @@ function renderFacility(fac) {
 
 /* ================= render: dungeon select ================= */
 function dgSection(label, sub) { return `<h3 class="dg-sec"><span>${label}</span><small>${sub}</small></h3>`; }
-function dgBanner(id, letter, title, subtitle, spr) {
+function dgBanner(id, letter, title, subtitle, spr, badge) {
   return `<div class="dc-banner" style="--scene:${sceneUri(id)};--ac:${SCENE_ACCENT[id] || '#9fb'}">
     ${spr ? `<div class="dc-spr">${spr}</div>` : ''}
-    <div class="dc-title"><span class="dc-letter">${letter}</span><div><h2>${title}</h2><span class="dc-sub">${subtitle}</span></div></div></div>`;
+    <div class="dc-title"><span class="dc-letter">${letter}</span><div><h2>${title}</h2><span class="dc-sub">${subtitle}</span></div>${badge || ''}</div></div>`;
+}
+function dgNextGoal(p) {
+  for (const d of DUNGEONS) {
+    if (!isDungeonUnlocked(p, d)) continue;
+    for (const df of DIFFS) {
+      if (!isDiffUnlocked(p, d, df)) continue;
+      if (!(p.cleared && p.cleared[d.id] && p.cleared[d.id][df.id])) return { d, df };
+    }
+  }
+  return null;
+}
+function dgBadge(p, d, goal) {
+  if (!isDungeonUnlocked(p, d)) return '<span class="dc-badge b-lock">🔒未解放</span>';
+  const cm = (p.cleared && p.cleared[d.id]) || {};
+  const n = DIFFS.filter(df => cm[df.id]).length;
+  const rec = goal && goal.d.id === d.id ? '<span class="dc-badge b-rec">★おすすめ</span>' : '';
+  if (n === DIFFS.length) return rec + '<span class="dc-badge b-done">踏破済み</span>';
+  if (n === 0) return rec + '<span class="dc-badge b-new">未踏破</span>';
+  return rec + `<span class="dc-badge b-part">踏破 ${n}/${DIFFS.length}</span>`;
 }
 function renderDungeonSelect() {
   const p0 = G.p;
   const learnable = SK_ORDER.filter(id => !p0.skills[id] && p0.sp >= SK[id].sp);
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
-  $('#dg-list').innerHTML = hint + DUNGEONS.map(d => {
+  const goal = dgNextGoal(p0);
+  const goalCard = goal ? `<div class="panel dg-goal"><b>🎯 次の目標</b><span>ダンジョン${goal.d.id}「${esc(goal.d.name)}」${esc(goal.df.name)}をクリア</span><small>目安戦闘力 ${fmt(refPower(goal.d, DIFFS.indexOf(goal.df)))}／あなた ${fmt(playerPower(p0))}</small></div>` : '';
+  $('#dg-list').innerHTML = hint + goalCard + DUNGEONS.map(d => {
     const dgUnlocked = isDungeonUnlocked(p0, d);
     let sel = diffOf(G.sel[d.id]) || DIFFS[0];
     if (!isDiffUnlocked(p0, d, sel)) { sel = DIFFS[0]; G.sel[d.id] = sel.id; }
@@ -5339,7 +5367,7 @@ function renderDungeonSelect() {
     const unlockReqDf = d.unlock ? (diffOf(d.unlock.df)?.name || d.unlock.df) : '';
     const secHead = d.id === 'A' ? dgSection('前編', '魔王城への道') : d.id === 'J' ? dgSection('後編', '真の黒幕との戦い') : '';
     return secHead + `<article class="panel dcard dc-card${dgUnlocked ? '' : ' is-locked'}" style="--a1:${d.a1};--ac:${SCENE_ACCENT[d.id]}">
-      ${dgBanner(d.id, d.id, esc(d.name), `ダンジョン${d.id}${dgUnlocked && (p0.cleared && p0.cleared[d.id] && DIFFS.every(df => p0.cleared[d.id][df.id])) ? '　✓全難易度踏破' : ''}`, enemyArt(d.mobs[0], d.id))}
+      ${dgBanner(d.id, d.id, esc(d.name), `ダンジョン${d.id}${dgUnlocked && (p0.cleared && p0.cleared[d.id] && DIFFS.every(df => p0.cleared[d.id][df.id])) ? '　✓全難易度踏破' : ''}`, enemyArt(d.mobs[0], d.id), dgBadge(p0, d, goal))}
       <div class="dc-body">
       <p class="sub dc-blurb">${dgUnlocked ? esc(d.blurb) : `🔒 未解放（${d.unlock.d}の${unlockReqDf}クリアで解放）`}</p>
       <div class="seg" role="group" aria-label="難易度">${DIFFS.map(df => {
