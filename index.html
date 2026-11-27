@@ -617,6 +617,34 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .rec-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.04)}
 .rec-info{display:grid;gap:2px;font-size:12px;min-width:0}.rec-info span{color:var(--muted)}
 .bk-warn{color:#ffb25a;font-weight:700}
+
+/* 小さい画面・横画面（Q4-2B）：戦闘中でも撤退ボタンが常に画面内・下のタブに隠れない */
+@media (max-height:640px){
+  .hud{gap:4px;padding:2px 0 4px}
+  .hud-top{flex-wrap:nowrap;gap:6px}
+  .brand h1{font-size:15px}
+  .brand .moon{width:20px;height:20px}
+  .purse{gap:4px;flex-wrap:nowrap}
+  .purse .chip{padding:2px 6px;font-size:11px}
+  .gauges{gap:4px 10px}
+  .g-label{font-size:11px}
+  .battle-head{flex-wrap:nowrap;gap:6px;margin-bottom:4px;align-items:center}
+  .battle-head .b-title{font-size:13px;line-height:1.25}
+  .speed .btn{padding:3px 8px;min-height:30px}
+  .arena{margin-bottom:4px}
+  .log{height:64px;font-size:12px;padding:4px 8px;line-height:1.5}
+}
+@media (max-height:480px) and (min-width:560px){
+  /* 横画面：戦闘は左に闘技場、右に操作（撤退ボタン）を置く */
+  .hud-top{display:none}
+  #dg-battle:not([hidden]){display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:4px 10px;align-items:start}
+  #dg-battle .battle-head{grid-column:1}
+  #dg-battle #arena{grid-column:1;grid-row:2}
+  #dg-battle .controls{grid-column:2;grid-row:1 / span 2}
+  #dg-battle #log{grid-column:1 / -1;height:46px}
+  .nav button{padding:3px 2px}
+  .nav button svg{width:18px;height:18px}
+}
 </style>
 
 <div id="app" class="wrap">
