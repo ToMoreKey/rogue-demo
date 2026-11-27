@@ -91,4 +91,5 @@ window.__rogue = {
   regen(n) { const p = G.p; p.hp = Math.min(maxHp(p), p.hp + n); renderAll(); }
 };
 boot();
+showTitle();
 })();

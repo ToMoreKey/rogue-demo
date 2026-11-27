@@ -745,3 +745,32 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 #spr-enemy{--k:1;width:100%;height:calc(134px*var(--k));display:flex;align-items:flex-end;justify-content:center}
 #spr-enemy>.sprite-img,#spr-enemy>div{flex:none;width:min(100%,calc(112px*var(--k)*var(--sz,1)));height:auto}
 @media (max-height:700px){#spr-enemy{--k:.8}}
+/* ================= タイトル画面 ================= */
+#title-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#07080d;color:#fff;cursor:pointer;animation:ttlin .6s ease-out}
+#title-screen.out{animation:ttlout .45s ease-in forwards;pointer-events:none}
+@keyframes ttlin{from{opacity:0}to{opacity:1}}
+@keyframes ttlout{to{opacity:0;transform:scale(1.04)}}
+.ttl-bg{position:absolute;inset:-4%;background:center/cover no-repeat;animation:ttlzoom 24s ease-in-out infinite alternate}
+@keyframes ttlzoom{from{transform:scale(1)}to{transform:scale(1.08) translateX(-1.5%)}}
+.ttl-shade{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,rgba(6,8,14,.1),rgba(6,8,14,.78) 72%),linear-gradient(rgba(6,8,14,.45),rgba(6,8,14,.1) 35%,rgba(6,8,14,.7))}
+.ttl-motes{position:absolute;inset:0;pointer-events:none}
+.ttl-motes i{position:absolute;left:var(--x);bottom:-8px;width:4px;height:4px;border-radius:50%;background:#ffd98a;box-shadow:0 0 8px #ffb84a;opacity:0;animation:ttlmote var(--d) linear var(--w) infinite}
+@keyframes ttlmote{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:0;transform:translateY(-78vh) translateX(14px)}}
+.ttl-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1.4vh,12px);padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));width:100%;max-width:520px;text-align:center}
+.ttl-bell{width:clamp(40px,8vh,64px);height:auto;filter:drop-shadow(0 0 14px rgba(255,200,90,.7));transform-origin:50% 8%;animation:ttlswing 3.2s ease-in-out infinite}
+@keyframes ttlswing{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
+.ttl-logo{display:flex;flex-direction:column;align-items:center;line-height:1.05;font-family:var(--font-display);font-weight:900}
+.ttl-l1{font-size:clamp(20px,4.4vh,30px);letter-spacing:.28em;margin-right:-.28em;color:#ffe9b0;text-shadow:0 2px 0 #3a2406,0 0 14px rgba(255,190,80,.6)}
+.ttl-l2{font-size:clamp(40px,9.5vh,62px);letter-spacing:.06em;background:linear-gradient(#fff6cf,#f2c14e 55%,#c88a22);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #3a2406) drop-shadow(0 0 16px rgba(255,170,60,.55))}
+.ttl-sub{font-size:11px;letter-spacing:.36em;margin-right:-.36em;color:#cdbf9a;opacity:.9}
+.ttl-heroes{display:flex;justify-content:center;align-items:flex-end;margin:clamp(2px,1.6vh,14px) 0 clamp(4px,2vh,16px);width:100%}
+.ttl-heroes img{width:clamp(54px,min(21vw,15vh),96px);height:auto;margin:0 -4px;image-rendering:pixelated;filter:drop-shadow(0 4px 6px rgba(0,0,0,.6));animation:bob 2s ease-in-out infinite;animation-delay:calc(var(--i)*-.45s)}
+.ttl-heroes img:nth-child(2),.ttl-heroes img:nth-child(3){transform:scale(1.08)}
+.ttl-start{cursor:pointer;min-width:min(78vw,260px);padding:14px 28px;font:900 20px/1 var(--font-display);letter-spacing:.2em;text-indent:.2em;color:#2b1a04;border:2px solid #5a3a0a;border-radius:999px;background:linear-gradient(#ffe9a0,#e9b43c);box-shadow:0 4px 0 #7a4f10,0 0 22px rgba(255,190,70,.55);animation:ttlpulse 1.8s ease-in-out infinite}
+.ttl-start:active{transform:translateY(2px);box-shadow:0 2px 0 #7a4f10}
+.ttl-start:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@keyframes ttlpulse{0%,100%{box-shadow:0 4px 0 #7a4f10,0 0 18px rgba(255,190,70,.4)}50%{box-shadow:0 4px 0 #7a4f10,0 0 30px rgba(255,200,90,.85)}}
+.ttl-hint{font-size:12px;color:#cdbf9a;opacity:.85}
+.ttl-ver{position:absolute;z-index:1;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:10px;color:#9a917c;opacity:.7}
+@media (max-height:520px){.ttl-heroes{display:none}.ttl-sub{display:none}.ttl-bell{width:34px}}
+@media (prefers-reduced-motion:reduce){#title-screen,.ttl-bg,.ttl-bell,.ttl-motes i,.ttl-heroes img,.ttl-start{animation:none!important}.ttl-motes{display:none}}
