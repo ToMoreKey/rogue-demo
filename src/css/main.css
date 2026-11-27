@@ -874,3 +874,7 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 @media (prefers-reduced-motion:reduce){.lg-cell.last::after{animation:none;display:none}}
 .dxf{display:contents}
 .sheet.dxon{border:2px solid var(--dxb);background:var(--dxbg),var(--panel);box-shadow:0 0 18px var(--dxg),inset 0 0 22px var(--dxg)}
+.dl-card{border-color:#ffd45a}
+.dl-pips{display:inline-flex;gap:4px;margin:0 8px 0 10px;vertical-align:middle}
+.dl-pip{width:10px;height:10px;border-radius:50%;border:1px solid #ffd45a;background:transparent}
+.dl-pip.on{background:#ffd45a;box-shadow:0 0 6px #ffd45a}

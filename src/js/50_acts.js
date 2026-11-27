@@ -411,13 +411,15 @@ const ACTS = {
   },
   mRetry() {
     const l = G.last; closeModal();
-    if (l && l.tower) startTowerRun();
+    if (l && l.daily) startDailyRun();
+    else if (l && l.tower) startTowerRun();
     else if (l && l.abyss) startAbyssRun(l.abyss.lv);
     else if (l) startRunGuarded(l.d.id, l.df.id);
   },
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
+  goDaily() { startDailyRun(); },
   openDex() { openDexModal(G.dexTab || 'enemies'); },
   openAch() { openDexModal('ach'); },
   dexFilter(d) { G.dexFilter = d.v; openDexModal(G.dexTab || 'enemies'); },

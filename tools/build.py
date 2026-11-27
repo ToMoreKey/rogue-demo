@@ -26,6 +26,7 @@ JS_ORDER = [
     'data/dungeons.js',
     'data/tower.js',
     'data/gacha.js',
+    'data/daily.js',
     'data/abyss.js',
     'data/ranking.js',
     'data/npcs.js',
@@ -57,6 +58,7 @@ JS_ORDER = [
     'js/64_title.js',
     'js/65_story.js',
     'js/66_gacha.js',
+    'js/67_daily.js',
     'js/70_tutorial.js',
     'js/80_boot.js',
 ]

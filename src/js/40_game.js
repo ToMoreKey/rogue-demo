@@ -180,13 +180,14 @@ function nextFloor() {
   if (run.floor > run.floors) { finishRun('clear'); return; }
   const boss = run.floor === run.floors;
   const miniboss = !boss && run.floor >= 10 && run.floor % 10 === 0;
-  if (!boss && !miniboss && run.floor >= 2 && rnd() < 0.16) { runEvent(); run.phase = 'pause'; run.cleared++; }
+  if (!run.daily && !boss && !miniboss && run.floor >= 2 && rnd() < 0.16) { runEvent(); run.phase = 'pause'; run.cleared++; }
   else spawnEnemy(boss, miniboss);
 }
 
 const cellPow = run => run.d.pow[DIFFS.indexOf(run.df)];
 function scaleOf(run, floor) {
   if (run.tower) return TOWER_CFG.basePow * Math.pow(TOWER_CFG.growth, Math.max(0, floor - 1));
+  if (run.daily) return run.daily.S0 * (1 + DAILY_CFG.floorSpan * (floor - 1) / Math.max(1, run.floors - 1));
   if (run.abyss) return run.abyss.dfA.pow * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1));
   return cellPow(run) * (1 + TUNE.floorSpan * (floor - 1) / Math.max(1, run.floors - 1));
 }
@@ -220,7 +221,7 @@ function spawnEnemy(boss, miniboss = false) {
   }
   const S = scaleOf(run, run.floor);
   const ae = run.abyss ? abyssEff(run) : null;
-  const ease = (!run.tower && !run.abyss && run.d && run.df) ? earlyEase(run.d.id, run.df.id) : { hp: 1, atk: 1 };
+  const ease = (!run.tower && !run.abyss && !run.daily && run.d && run.df) ? earlyEase(run.d.id, run.df.id) : { hp: 1, atk: 1 };
   const Shp = run.tower ? Math.pow(S, 0.45) : S;
   const Sa = run.tower ? Math.pow(S, 0.98) : Math.pow(S, TUNE.atkExp);
   const hpMult = run.tower ? (boss ? 1.85 : miniboss ? 1.3 : 1) : (boss ? (run.abyss ? run.abyss.dfA.bossMult * TUNE.bossHp : TUNE.bossHp) : miniboss ? 1.55 : 1) * (run.abyss && run.abyss.dfA.hpMult ? run.abyss.dfA.hpMult : 1);
@@ -231,8 +232,8 @@ function spawnEnemy(boss, miniboss = false) {
     id: base.id, name, shape: base.shape, boss, miniboss, bossFilter, hp, maxHp: hp, firstHit: true,
     atk: Math.max(1, Math.round(base.atk * Sa * TUNE.atkScale * atkMult * (ae ? ae.enAtkMult : 1) * ease.atk)),
     def: Math.round(base.def * Sa * TUNE.defScale * defMult),
-    exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (miniboss ? 1.5 : 1))),
-    gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
+    exp: Math.max(1, Math.round(base.exp * S * TUNE.expScale * (run.df.expMult || 1) * (run.daily ? run.daily.expM : 1) * (miniboss ? 1.5 : 1))),
+    gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (run.daily ? run.daily.goldM : 1) * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
   run.phase = 'battle';
   Sound.setScene(run.tower ? 'tower' : (boss ? 'boss' : 'dungeon'));
@@ -540,7 +541,7 @@ function onKill() {
   }
   // drops (チュートリアル中はドロップなし)
   const drops = [];
-  if (!G.tutorial || G.tutorial.done) {
+  if ((!G.tutorial || G.tutorial.done) && !run.daily) {
     const tBand = run.tower ? towerBand(run.floor) : null;
     const capStar = tBand ? tBand.maxDropStar : (run.abyss ? 5 : (run.d.maxStar || MAX_STAR));
     const bStar = tBand ? tBand.bossCapStar : (run.abyss ? 8 : run.d.bossMaxStar);
@@ -636,8 +637,12 @@ function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
   Sound.play(result === 'clear' ? 'win' : result === 'defeat' ? 'lose' : 'retreat'); Sound.setScene('town');
-  let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false, towerRes = null;
-  if (run.tower) {
+  let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false, towerRes = null, dailyRes = null;
+  if (run.daily) {
+    dailyRes = dailyFinish(run, result);
+    clearGold = dailyRes.clearGold; clearSp = dailyRes.sp;
+    if (result === 'defeat') { const before = p.gold; p.gold = Math.floor(p.gold / 2); lost = before - p.gold; }
+  } else if (run.tower) {
     const reached = Math.max(0, result === 'defeat' ? run.floor - 1 : run.floor);
     const coins = Math.round(TOWER_CFG.coinsForFloor(reached) * towerEff(run).coinMult);
     p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] };
@@ -712,7 +717,7 @@ function finishRun(result) {
   G.last = {
     result, d: run.d, df: run.df, floors: run.floors, floor: Math.min(run.floor, run.floors || run.floor), cleared: run.cleared,
     gold: run.gold + clearGold, clearGold, lost, sp: run.sp + clearSp, items: run.items, potions: run.potions,
-    lvFrom: run.startLv, lvTo: p.lv, snap: run.snap || null, after: statSnap(p), kills: run.kills, part1End, ending, tower: towerRes,
+    lvFrom: run.startLv, lvTo: p.lv, snap: run.snap || null, after: statSnap(p), kills: run.kills, part1End, ending, tower: towerRes, daily: dailyRes,
     abyss: run.abyss ? { lv: run.abyss.lv, coins: result === 'clear' ? run.abyss.dfA.coins : 0, mythicDrops: run.abyss.mythicDrops } : null
   };
   G.run = null;

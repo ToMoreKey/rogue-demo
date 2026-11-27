@@ -226,7 +226,7 @@ function renderDungeonSelect() {
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
   const goal = dgNextGoal(p0);
   const goalCard = goal ? `<div class="panel dg-goal"><b>🎯 次の目標</b><span>ダンジョン${goal.d.id}「${esc(goal.d.name)}」${esc(goal.df.name)}をクリア</span><small>目安戦闘力 ${fmt(refPower(goal.d, DIFFS.indexOf(goal.df)))}／あなた ${fmt(playerPower(p0))}　推奨Lv${goal.d.rec[DIFFS.indexOf(goal.df)]}／あなた Lv${p0.lv}</small></div>` : '';
-  $('#dg-list').innerHTML = hint + goalCard + DUNGEONS.map(d => {
+  $('#dg-list').innerHTML = hint + goalCard + dgSection('毎日', '回数制限・Lvに自動調整') + renderDailyCard(p0) + DUNGEONS.map(d => {
     const dgUnlocked = isDungeonUnlocked(p0, d);
     let sel = diffOf(G.sel[d.id]) || DIFFS[0];
     if (!isDiffUnlocked(p0, d, sel)) { sel = DIFFS[0]; G.sel[d.id] = sel.id; }
@@ -977,7 +977,7 @@ function renderBattle() {
     }
     $('#b-pips').innerHTML = pips;
   } else {
-    $('#b-title').textContent = `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
+    $('#b-title').textContent = run.daily ? `🔔 鐘の試練「${run.daily.theme.name}」　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F` : `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
     let pips = '';
     const pipCount = Math.min(run.floors, 20);
     for (let k = 1; k <= pipCount; k++) {
@@ -2127,8 +2127,9 @@ function openModal() {
   const items = [...l.items].sort((a, b) => b.rarity - a.rarity || b.star - a.star);
   $('#m-sheet').innerHTML = `
     <h2 class="${cls}" id="m-title">${title}</h2>
-    <p class="sub" style="margin:0">${l.abyss ? `深淵（難度${l.abyss.lv}）` : `ダンジョン${l.d.id}「${esc(l.d.name)}」（${l.df.name}）`}　到達 ${l.floor} / ${l.floors}F　撃破 ${l.kills}体</p>
+    <p class="sub" style="margin:0">${l.daily ? `鐘の試練「${esc(l.daily.theme.name)}」` : l.abyss ? `深淵（難度${l.abyss.lv}）` : `ダンジョン${l.d.id}「${esc(l.d.name)}」（${l.df.name}）`}　到達 ${l.floor} / ${l.floors}F　撃破 ${l.kills}体</p>
     ${l.abyss && l.abyss.mythicDrops && l.abyss.mythicDrops.length ? `<p class="l-r4" style="margin:6px 0;font-weight:700">★ 深淵の主から神話レア装備を獲得！（${l.abyss.mythicDrops.map(it => esc(itemName(it))).join(', ')}）</p>` : ''}
+    ${l.daily && l.result === 'clear' ? `<p class="l-good" style="margin:4px 0">💧 鐘のしずく +${l.daily.drops}個 獲得！${l.daily.sp ? `　SP +${l.daily.sp}` : ''}${l.daily.chest ? `　宝箱：${esc(itemName(l.daily.chest))}` : ''}</p>` : ''}
     ${l.abyss && l.abyss.coins ? `<p class="l-good" style="margin:4px 0">回廊コイン 🪙 +${l.abyss.coins}枚 獲得！</p>` : ''}
     <div class="res">
       <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b>${l.lost ? `<span class="neg">敗北で所持金が半減（−${fmt(l.lost)}G）</span>` : ''}${l.clearGold ? `<small>うち踏破ボーナス ${fmt(l.clearGold)}G</small>` : ''}</div>
