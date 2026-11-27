@@ -183,7 +183,10 @@ function isDiffUnlocked(p, d, df) {
   if (!d || !df || !isDungeonUnlocked(p, d)) return false;
   if (IS_DEV_BUILD) return true;                 // TEST版: 全難易度も選べる
   if (!df.reqDiff) return true;
-  return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
+  const cm = (p && p.cleared && p.cleared[d.id]) || {};
+  if (cm[df.reqDiff]) return true;
+  // 以前のセーブ対策: すでにこの難易度以上をクリア済みなら解放済みとして扱う
+  const idx = DIFFS.indexOf(df); return DIFFS.some((x, i) => i >= idx && cm[x.id]);
 }
 function makeDefaultChars() {
   const out = {};

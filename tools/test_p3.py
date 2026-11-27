@@ -208,6 +208,7 @@ with sync_playwright() as pw:
         G.p = R.newPlayer();
         G.p.lv = 90; G.p.hp = G.p.mhp = 9999; G.p.mp = G.p.mmp = 999;
         G.p.cleared.H = { high: true };
+        G.p.cleared.I = { novice: true, mid: true };
         R.startRun('I', 'high');
         G.run.floor = G.run.floors;
         // ボスを倒した直後として finishRun('clear') を呼ぶ

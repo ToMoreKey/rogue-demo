@@ -31,6 +31,7 @@ JS_ORDER = [
     'data/bugreport.js',
     'data/analytics.js',
     'data/dex.js',
+    'data/story.js',
     'data/achievements.js',
     'assets/enemy_images.js',
     'assets/char_skins.js',
@@ -53,6 +54,7 @@ JS_ORDER = [
     'js/62_scenes.js',
     'js/63_npcs.js',
     'js/64_title.js',
+    'js/65_story.js',
     'js/70_tutorial.js',
     'js/80_boot.js',
 ]
