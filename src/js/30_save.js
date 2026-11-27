@@ -296,7 +296,7 @@ function load() {
     G.p = p;
     if (migrated || !s.ach) checkAchievements(null, true);
     if (p.ending && p.pendingAchCoins > 0) flushPendingAchCoins(p, true);
-    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquipV2 = d.opts.autoEquipV2 === true; G.opts.autoEquip = d.opts.autoEquipV2 === true && d.opts.autoEquip === true; /* 旧版は既定ONだったため、V2以前の保存値は手動装備(OFF)に移行 */ if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; }
+    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquipV2 = d.opts.autoEquipV2 === true; G.opts.autoEquip = d.opts.autoEquipV2 === true && d.opts.autoEquip === true; /* 旧版は既定ONだったため、V2以前の保存値は手動装備(OFF)に移行 */ if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; if (typeof d.opts.se === 'boolean') G.opts.se = d.opts.se; else delete G.opts.se; if (d.opts.bgm === true) G.opts.bgm = true; else delete G.opts.bgm; for (const k of ['seVol', 'bgmVol']) { if ([0, 1, 2].includes(d.opts[k])) G.opts[k] = d.opts[k]; else delete G.opts[k]; } }
     if (d.sel) for (const dg of DUNGEONS) {
       const df = diffOf(d.sel[dg.id]);
       if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;

@@ -4,6 +4,7 @@ const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, s
 function showPowerChange(a, b) {
   const d = b - a, el = $('#h-pw');
   if (!el || d === 0) return;
+  Sound.play(d > 0 ? 'equipUp' : 'equipDown');
   el.classList.remove('pw-up', 'pw-down'); void el.offsetWidth; el.classList.add(d > 0 ? 'pw-up' : 'pw-down');
   const fl = document.createElement('span'); fl.className = 'pw-float ' + (d > 0 ? 'up' : 'down');
   fl.textContent = (d > 0 ? '▲ +' : '▼ −') + fmt(Math.abs(d));
@@ -1033,6 +1034,7 @@ function addLog(msg, cls = 'l-hit') {
   el.scrollTop = el.scrollHeight;
 }
 function popDamage(who, text, cls) {
+  if (who === 'enemy') Sound.play(cls === 'crit' ? 'crit' : 'atk'); else Sound.play(cls === 'heal' ? 'heal' : 'hit');
   if (G.headless) return;
   const f = $(who === 'player' ? '#f-player' : '#f-enemy'); if (!f) return;
   const s = document.createElement('span'); s.className = 'pop ' + cls; s.textContent = text; f.appendChild(s);
@@ -1426,6 +1428,13 @@ function renderStatus() {
           <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245" id="sound-panel">
+        ${(() => { const vl = ['小', '中', '大'], sv = (G.opts.seVol | 0), bv = (G.opts.bgmVol | 0), seO = G.opts.se !== false, bgO = G.opts.bgm === true;
+          const seg = (act, cur) => vl.map((l, i) => `<button class="btn small ${cur === i ? 'on' : ''}" data-act="${act}" data-v="${i}" aria-pressed="${cur === i}">${l}</button>`).join('');
+          return `<div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><button class="btn small ${seO ? 'on' : ''}" data-act="seToggle" aria-pressed="${seO}">効果音：${seO ? 'ON' : 'OFF'}</button>${seg('seVolSet', sv)}</div>
+          <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn small ${bgO ? 'on' : ''}" data-act="bgmToggle" aria-pressed="${bgO}">BGM：${bgO ? 'ON' : 'OFF'}</button>${seg('bgmVolSet', bv)}</div>
+          <p class="sub" style="margin:6px 0 0;font-size:11px">効果音・BGMはすべて端末内で合成しています。音量は小・中・大の3段階です（BGMは既定OFF）。</p>`; })()}
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
@@ -2372,6 +2381,7 @@ function renderAll() {
   $('#nav-town').classList.toggle('locked', !!G.run);
   renderHUD();
   checkGoals();
+  Sound.setScene(G.run ? (G.run.tower ? 'tower' : (G.run.enemy && G.run.enemy.boss ? 'boss' : 'dungeon')) : 'town');
   if (v === 'town') renderTown();
   if (v === 'dungeon') {
     $('#dg-select').hidden = !!G.run; $('#dg-battle').hidden = !G.run;

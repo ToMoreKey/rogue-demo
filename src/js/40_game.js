@@ -3,6 +3,7 @@
 let toastTimer = null;
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  if (/足りません|できません|不可|最大です|持てません/.test(msg)) Sound.play('error');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
 }
 
@@ -42,6 +43,7 @@ function genMythic9(slot) {
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
+  if (it.rarity >= 1) Sound.play('drop' + Math.min(4, it.rarity));
   recordDexItem(p, it);
   checkAchievements('item');
   if (G.opts.autoEquip && !hasProp(it, 'madness') && gearScore(it) > gearScore(p[slot])) {
@@ -233,6 +235,7 @@ function spawnEnemy(boss, miniboss = false) {
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
   run.phase = 'battle';
+  Sound.setScene(run.tower ? 'tower' : (boss ? 'boss' : 'dungeon'));
   if (boss) run.bossHitTaken = false;
   recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
@@ -352,6 +355,7 @@ function useSkillEffect(id) {
     return true;
   }
   if (s.type === 'buff') {
+    Sound.play('buff');
     if (s.gen) {
       run.gen = Object.assign({}, s.gen);
       const parts = [];
@@ -507,6 +511,7 @@ function battleRound() {
 function onKill() {
   const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
+  Sound.play(en.boss ? 'bossKill' : 'kill');
   recordDexEnemy(p, en.id, true);
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
@@ -618,7 +623,7 @@ function gainExp(n) {
     const dh = maxHp(p) - oh, dm = maxMp(p) - om;
     p.hp = Math.min(maxHp(p), p.hp + dh + Math.round(maxHp(p) * 0.2));
     p.mp = Math.min(maxMp(p), p.mp + dm);
-    addLog(`レベルアップ！ Lv${p.lv} になった。SP+1`, 'l-gold');
+    addLog(`レベルアップ！ Lv${p.lv} になった。SP+1`, 'l-gold'); Sound.play('levelup');
   }
   if (p.lv >= LV_CAP) p.exp = 0;
   if (p.lv > lv0) checkAchievements('lv');
@@ -627,6 +632,7 @@ function gainExp(n) {
 function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
+  Sound.play(result === 'clear' ? 'win' : result === 'defeat' ? 'lose' : 'retreat'); Sound.setScene('town');
   let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false, towerRes = null;
   if (run.tower) {
     const reached = Math.max(0, result === 'defeat' ? run.floor - 1 : run.floor);
@@ -768,6 +774,7 @@ function sellBag() {
   const total = targets.reduce((s, it) => s + sellValue(it), 0);
   p.bag = p.bag.filter(it => !targets.includes(it));
   p.gold += total; save();
+  Sound.play('sell');
   toast(`${targets.length}個を売却して ${fmt(total)}G を手に入れた`);
   renderAll();
 }
@@ -917,7 +924,7 @@ function buyShopItem(id) {
     if ((p.stones[item.key] || 0) >= 999) { toast('これ以上持てません'); return; }
     p.gold -= item.price; p.stones[item.key] = (p.stones[item.key] || 0) + 1;
   }
-  save(); toast(`${item.name}を1個購入した`); renderAll();
+  Sound.play('buy'); save(); toast(`${item.name}を1個購入した`); renderAll();
 }
 function expandBag() {
   const p = G.p, cap = p.bagCap || BAG_CAP;

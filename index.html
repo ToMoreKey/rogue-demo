@@ -782,7 +782,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v72';
+const APP_VERSION = 'rogue-v73';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2902,7 +2902,7 @@ function load() {
     G.p = p;
     if (migrated || !s.ach) checkAchievements(null, true);
     if (p.ending && p.pendingAchCoins > 0) flushPendingAchCoins(p, true);
-    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquipV2 = d.opts.autoEquipV2 === true; G.opts.autoEquip = d.opts.autoEquipV2 === true && d.opts.autoEquip === true; /* 旧版は既定ONだったため、V2以前の保存値は手動装備(OFF)に移行 */ if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; }
+    if (d.opts) { G.opts.speed = [1, 2, 4].includes(d.opts.speed) ? d.opts.speed : 1; G.opts.autoSkill = d.opts.autoSkill !== false; G.opts.autoEquipV2 = d.opts.autoEquipV2 === true; G.opts.autoEquip = d.opts.autoEquipV2 === true && d.opts.autoEquip === true; /* 旧版は既定ONだったため、V2以前の保存値は手動装備(OFF)に移行 */ if (typeof d.opts.fx === 'boolean') G.opts.fx = d.opts.fx; else delete G.opts.fx; if (typeof d.opts.se === 'boolean') G.opts.se = d.opts.se; else delete G.opts.se; if (d.opts.bgm === true) G.opts.bgm = true; else delete G.opts.bgm; for (const k of ['seVol', 'bgmVol']) { if ([0, 1, 2].includes(d.opts[k])) G.opts[k] = d.opts[k]; else delete G.opts[k]; } }
     if (d.sel) for (const dg of DUNGEONS) {
       const df = diffOf(d.sel[dg.id]);
       if (df && isDiffUnlocked(p, dg, df)) G.sel[dg.id] = df.id;
@@ -3426,6 +3426,127 @@ async function maybeSendAnalytics() {
     return { sent: false, reason: 'error' };
   }
 }
+/* ================= サウンド（WebAudio 合成・外部音源なし） =================
+   - SE は既定ON（小音量）、BGM は既定OFF。opts.se / seVol(0..2) / bgm / bgmVol(0..2)
+   - 最初のユーザー操作後にだけ AudioContext を作成・resume（自動再生ポリシー対応）
+   - G.headless（BOT）では完全に無音。同種SEは50ms以内に重ねない。
+   - テスト用に Sound.calls へ再生要求（SE名）を記録する（直近200件）。 */
+const Sound = (() => {
+  let ctx = null, master = null, bgmGain = null, unlocked = false;
+  const last = {}, calls = [];
+  const VOLS = [0.12, 0.25, 0.45];
+  const seOn = () => !(G && G.opts && G.opts.se === false);
+  const seVol = () => VOLS[Math.max(0, Math.min(2, (G && G.opts && G.opts.seVol) | 0))];
+  const bgmOn = () => !!(G && G.opts && G.opts.bgm === true);
+  const bgmVol = () => VOLS[Math.max(0, Math.min(2, (G && G.opts && G.opts.bgmVol) | 0))] * 0.5;
+  function ensure() {
+    if (ctx) return ctx;
+    const AC = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+    if (!AC) return null;
+    try { ctx = new AC(); master = ctx.createGain(); master.connect(ctx.destination); bgmGain = ctx.createGain(); bgmGain.connect(ctx.destination); } catch (e) { ctx = null; }
+    return ctx;
+  }
+  function unlock() {
+    if (unlocked) return; unlocked = true;
+    if (!ensure()) return;
+    try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) {}
+    bgmUpdate();
+  }
+  // 1音: freq(Hz)→slide, 長さ(秒), 波形, 音量(0..1), 開始遅延(秒)
+  function tone(f, dur, type, vol, slide, delay, out) {
+    if (!ctx) return;
+    const t0 = ctx.currentTime + (delay || 0), o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t0);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, slide), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(out || master); o.start(t0); o.stop(t0 + dur + 0.03);
+  }
+  function noise(dur, vol, hp, delay) {
+    if (!ctx) return;
+    const n = Math.floor(ctx.sampleRate * dur), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(), t0 = ctx.currentTime + (delay || 0);
+    s.buffer = buf; f.type = 'highpass'; f.frequency.value = hp || 800; g.gain.value = vol;
+    s.connect(f); f.connect(g); g.connect(master); s.start(t0);
+  }
+  const N = { C4: 261.6, D4: 293.7, E4: 329.6, G4: 392, A4: 440, B4: 493.9, C5: 523.3, D5: 587.3, E5: 659.3, G5: 784, A5: 880, C6: 1046.5 };
+  const SE = {
+    click:    () => tone(900, 0.04, 'square', 0.18, 700),
+    atk:      () => { noise(0.07, 0.5, 1500); tone(300, 0.08, 'triangle', 0.5, 120); },
+    crit:     () => { noise(0.1, 0.7, 1200); tone(520, 0.14, 'sawtooth', 0.45, 160); tone(1040, 0.1, 'square', 0.25, 520, 0.02); },
+    hit:      () => { tone(160, 0.14, 'sawtooth', 0.55, 60); noise(0.08, 0.35, 300); },
+    heal:     () => { tone(N.C5, 0.12, 'sine', 0.4); tone(N.E5, 0.12, 'sine', 0.4, 0, 0.08); tone(N.G5, 0.2, 'sine', 0.4, 0, 0.16); },
+    buff:     () => { tone(N.G4, 0.1, 'triangle', 0.4, N.C5); tone(N.C5, 0.18, 'triangle', 0.4, N.G5, 0.08); },
+    kill:     () => { tone(420, 0.2, 'square', 0.35, 90); noise(0.15, 0.3, 500, 0.02); },
+    bossKill: () => { tone(300, 0.5, 'sawtooth', 0.5, 50); noise(0.45, 0.5, 300); [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, 0.25, 'triangle', 0.4, 0, 0.35 + i * 0.1)); },
+    levelup:  () => [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone(f, 0.18, 'triangle', 0.45, 0, i * 0.09)),
+    drop0:    () => tone(N.E5, 0.1, 'sine', 0.35),
+    drop1:    () => { tone(N.E5, 0.1, 'sine', 0.4); tone(N.A5, 0.12, 'sine', 0.4, 0, 0.07); },
+    drop2:    () => { tone(N.G4 * 2, 0.1, 'triangle', 0.4); tone(N.B4 * 2, 0.1, 'triangle', 0.4, 0, 0.07); tone(N.D5 * 2, 0.16, 'triangle', 0.4, 0, 0.14); },
+    drop3:    () => [N.C5, N.E5, N.G5, N.C6, N.E5 * 2].forEach((f, i) => tone(f, 0.16, 'triangle', 0.42, 0, i * 0.07)),
+    drop4:    () => [N.C5, N.G5, N.C6, N.E5 * 2, N.G5 * 2, N.C6 * 2].forEach((f, i) => tone(f, 0.2, 'sine', 0.42, 0, i * 0.075)),
+    equipUp:  () => { tone(440, 0.1, 'triangle', 0.4, 660); tone(660, 0.16, 'triangle', 0.4, 990, 0.09); },
+    equipDown:() => { tone(660, 0.1, 'triangle', 0.35, 440); tone(440, 0.16, 'triangle', 0.35, 280, 0.09); },
+    sell:     () => { tone(1320, 0.05, 'square', 0.25); tone(1760, 0.08, 'square', 0.25, 0, 0.05); },
+    buy:      () => { tone(880, 0.05, 'square', 0.25); tone(660, 0.08, 'square', 0.25, 0, 0.05); },
+    win:      () => [N.C5, N.E5, N.G5, N.C6, N.G5, N.C6].forEach((f, i) => tone(f, 0.22, 'triangle', 0.45, 0, i * 0.11)),
+    lose:     () => [N.G4, N.E4, N.D4, N.C4].forEach((f, i) => tone(f, 0.3, 'sawtooth', 0.35, f * 0.9, i * 0.18)),
+    retreat:  () => { tone(500, 0.12, 'triangle', 0.35, 300); tone(300, 0.2, 'triangle', 0.35, 200, 0.1); },
+    error:    () => { tone(200, 0.1, 'square', 0.3); tone(150, 0.14, 'square', 0.3, 0, 0.1); }
+  };
+  function play(name) {
+    if (typeof G === 'undefined' || G.headless || !seOn() || !SE[name]) return;
+    const now = Date.now();
+    if (last[name] && now - last[name] < 50) return;   // 同種SEの間引き
+    last[name] = now;
+    calls.push(name); if (calls.length > 200) calls.shift();
+    if (!unlocked || !ensure()) return;
+    try { if (ctx.state === 'suspended') ctx.resume(); master.gain.value = seVol(); SE[name](); } catch (e) {}
+  }
+  // ---- 簡易BGM（合成ループ）。scene: town / dungeon / boss / tower ----
+  const SCENES = {
+    town:    { bpm: 84,  wave: 'sine',     bass: [N.C4 / 2, N.G4 / 2, N.A4 / 2, N.G4 / 2], mel: [N.E5, 0, N.G5, 0, N.A5, 0, N.G5, 0, N.E5, 0, N.D5, 0, N.C5, 0, 0, 0] },
+    dungeon: { bpm: 100, wave: 'triangle', bass: [N.A4 / 2, N.A4 / 2, N.G4 / 2, N.E4 / 2], mel: [N.A4, 0, N.C5, 0, N.E5, 0, N.C5, 0, N.D5, 0, N.B4, 0, N.G4, 0, 0, 0] },
+    boss:    { bpm: 132, wave: 'sawtooth', bass: [N.D4 / 2, N.D4 / 2, N.C4 / 2, N.D4 / 2], mel: [N.D5, N.D5, 0, N.A4, N.C5, 0, N.D5, 0, N.E5, N.D5, 0, N.C5, N.A4, 0, 0, 0] },
+    tower:   { bpm: 112, wave: 'triangle', bass: [N.E4 / 2, N.B4 / 2, N.C4 / 2, N.B4 / 2], mel: [N.E5, 0, N.B4, 0, N.G5, 0, N.E5, 0, N.D5, 0, N.B4, 0, N.A4, 0, 0, 0] }
+  };
+  let scene = null, timer = null, step = 0, nextT = 0;
+  function bgmTick() {
+    if (!ctx || !scene) return;
+    if (document.hidden) { nextT = ctx.currentTime + 0.1; return; }
+    const sc = SCENES[scene], dur = 60 / sc.bpm / 2;
+    while (nextT < ctx.currentTime + 0.25) {
+      const i = step % 16, m = sc.mel[i];
+      if (nextT < ctx.currentTime) nextT = ctx.currentTime + 0.02;
+      if (i % 4 === 0) toneAt(sc.bass[(i / 4) | 0], dur * 3.6, 'sine', 0.5, nextT);
+      if (m) toneAt(m, dur * 1.6, sc.wave, 0.28, nextT);
+      nextT += dur; step++;
+    }
+  }
+  function toneAt(f, dur, type, vol, t0) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(bgmGain); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function bgmUpdate() {
+    if (typeof G === 'undefined' || G.headless) return;
+    const want = bgmOn() && unlocked && ensure() ? G._bgmScene : null;
+    if (bgmGain) bgmGain.gain.value = bgmVol();
+    if (!want) { if (timer) { clearInterval(timer); timer = null; } scene = null; return; }
+    if (want !== scene) { scene = want; step = 0; nextT = ctx.currentTime + 0.05; }
+    if (!timer) timer = setInterval(bgmTick, 60);
+    try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) {}
+  }
+  function setScene(s) { if (G) G._bgmScene = s; bgmUpdate(); }
+  if (typeof document !== 'undefined') {
+    const u = () => unlock();
+    ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, u, { capture: true, passive: true }));
+    document.addEventListener('visibilitychange', () => { if (ctx) { try { document.hidden ? ctx.suspend() : ctx.resume(); } catch (e) {} } });
+  }
+  return { play, setScene, bgmUpdate, unlock, calls, names: Object.keys(SE) };
+})();
 /* ================= セーブの安全性（Q4-1） =================
    ・保存失敗の警告バナー　・壊れたセーブの退避と復旧画面
    ・IndexedDB の自動バックアップ3世代　・別タブでの上書き防止 */
@@ -3551,6 +3672,7 @@ function recoveryNew() {
 let toastTimer = null;
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  if (/足りません|できません|不可|最大です|持てません/.test(msg)) Sound.play('error');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2200);
 }
 
@@ -3590,6 +3712,7 @@ function genMythic9(slot) {
 // returns a short outcome string for the log: 'equipped' | 'bag' | 'sold'
 function receiveItem(it) {
   const p = G.p, slot = it.slot, cap = p.bagCap || BAG_CAP;
+  if (it.rarity >= 1) Sound.play('drop' + Math.min(4, it.rarity));
   recordDexItem(p, it);
   checkAchievements('item');
   if (G.opts.autoEquip && !hasProp(it, 'madness') && gearScore(it) > gearScore(p[slot])) {
@@ -3781,6 +3904,7 @@ function spawnEnemy(boss, miniboss = false) {
     gold: Math.max(1, Math.round(base.gold * S * TUNE.goldScale * (0.8 + rnd() * 0.4) * (miniboss ? 1.5 : 1)))
   };
   run.phase = 'battle';
+  Sound.setScene(run.tower ? 'tower' : (boss ? 'boss' : 'dungeon'));
   if (boss) run.bossHitTaken = false;
   recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
@@ -3900,6 +4024,7 @@ function useSkillEffect(id) {
     return true;
   }
   if (s.type === 'buff') {
+    Sound.play('buff');
     if (s.gen) {
       run.gen = Object.assign({}, s.gen);
       const parts = [];
@@ -4055,6 +4180,7 @@ function battleRound() {
 function onKill() {
   const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
+  Sound.play(en.boss ? 'bossKill' : 'kill');
   recordDexEnemy(p, en.id, true);
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
@@ -4166,7 +4292,7 @@ function gainExp(n) {
     const dh = maxHp(p) - oh, dm = maxMp(p) - om;
     p.hp = Math.min(maxHp(p), p.hp + dh + Math.round(maxHp(p) * 0.2));
     p.mp = Math.min(maxMp(p), p.mp + dm);
-    addLog(`レベルアップ！ Lv${p.lv} になった。SP+1`, 'l-gold');
+    addLog(`レベルアップ！ Lv${p.lv} になった。SP+1`, 'l-gold'); Sound.play('levelup');
   }
   if (p.lv >= LV_CAP) p.exp = 0;
   if (p.lv > lv0) checkAchievements('lv');
@@ -4175,6 +4301,7 @@ function gainExp(n) {
 function finishRun(result) {
   const run = G.run, p = G.p;
   if (!run) return;
+  Sound.play(result === 'clear' ? 'win' : result === 'defeat' ? 'lose' : 'retreat'); Sound.setScene('town');
   let clearGold = 0, clearSp = 0, lost = 0, part1End = false, ending = false, towerRes = null;
   if (run.tower) {
     const reached = Math.max(0, result === 'defeat' ? run.floor - 1 : run.floor);
@@ -4316,6 +4443,7 @@ function sellBag() {
   const total = targets.reduce((s, it) => s + sellValue(it), 0);
   p.bag = p.bag.filter(it => !targets.includes(it));
   p.gold += total; save();
+  Sound.play('sell');
   toast(`${targets.length}個を売却して ${fmt(total)}G を手に入れた`);
   renderAll();
 }
@@ -4465,7 +4593,7 @@ function buyShopItem(id) {
     if ((p.stones[item.key] || 0) >= 999) { toast('これ以上持てません'); return; }
     p.gold -= item.price; p.stones[item.key] = (p.stones[item.key] || 0) + 1;
   }
-  save(); toast(`${item.name}を1個購入した`); renderAll();
+  Sound.play('buy'); save(); toast(`${item.name}を1個購入した`); renderAll();
 }
 function expandBag() {
   const p = G.p, cap = p.bagCap || BAG_CAP;
@@ -4930,6 +5058,10 @@ const ACTS = {
   },
   autoEquipNow() { const n = equipBest(); if (n) (G.p.goalFlags = G.p.goalFlags || {}).equip = true; save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
   autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; G.opts.autoEquipV2 = true; save(); renderStatus(); },
+  seToggle() { G.opts.se = G.opts.se === false; save(); renderStatus(); Sound.play('click'); },
+  bgmToggle() { G.opts.bgm = !G.opts.bgm; Sound.unlock(); Sound.bgmUpdate(); save(); renderStatus(); },
+  seVolSet(d) { G.opts.seVol = Number(d.v); save(); renderStatus(); Sound.play('heal'); },
+  bgmVolSet(d) { G.opts.bgmVol = Number(d.v); Sound.bgmUpdate(); save(); renderStatus(); },
   fxToggle() { G.opts.fx = G.opts.fx === false; if (!G.opts.fx && typeof clearAllBattleFx === 'function') clearAllBattleFx(); save(); renderStatus(); if (G.run) renderBattle(); },
   reset() {
     if (G.run) { toast('探索中は初期化できません'); return; }
@@ -5325,6 +5457,7 @@ const POWER_ACTS = { equip: 1, equipBest: 1, autoEquipNow: 1, smithUpgrade: 1, s
 function showPowerChange(a, b) {
   const d = b - a, el = $('#h-pw');
   if (!el || d === 0) return;
+  Sound.play(d > 0 ? 'equipUp' : 'equipDown');
   el.classList.remove('pw-up', 'pw-down'); void el.offsetWidth; el.classList.add(d > 0 ? 'pw-up' : 'pw-down');
   const fl = document.createElement('span'); fl.className = 'pw-float ' + (d > 0 ? 'up' : 'down');
   fl.textContent = (d > 0 ? '▲ +' : '▼ −') + fmt(Math.abs(d));
@@ -6354,6 +6487,7 @@ function addLog(msg, cls = 'l-hit') {
   el.scrollTop = el.scrollHeight;
 }
 function popDamage(who, text, cls) {
+  if (who === 'enemy') Sound.play(cls === 'crit' ? 'crit' : 'atk'); else Sound.play(cls === 'heal' ? 'heal' : 'hit');
   if (G.headless) return;
   const f = $(who === 'player' ? '#f-player' : '#f-enemy'); if (!f) return;
   const s = document.createElement('span'); s.className = 'pop ' + cls; s.textContent = text; f.appendChild(s);
@@ -6747,6 +6881,13 @@ function renderStatus() {
           <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
+      </div>
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245" id="sound-panel">
+        ${(() => { const vl = ['小', '中', '大'], sv = (G.opts.seVol | 0), bv = (G.opts.bgmVol | 0), seO = G.opts.se !== false, bgO = G.opts.bgm === true;
+          const seg = (act, cur) => vl.map((l, i) => `<button class="btn small ${cur === i ? 'on' : ''}" data-act="${act}" data-v="${i}" aria-pressed="${cur === i}">${l}</button>`).join('');
+          return `<div class="row" style="gap:6px;align-items:center;flex-wrap:wrap"><button class="btn small ${seO ? 'on' : ''}" data-act="seToggle" aria-pressed="${seO}">効果音：${seO ? 'ON' : 'OFF'}</button>${seg('seVolSet', sv)}</div>
+          <div class="row" style="gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px"><button class="btn small ${bgO ? 'on' : ''}" data-act="bgmToggle" aria-pressed="${bgO}">BGM：${bgO ? 'ON' : 'OFF'}</button>${seg('bgmVolSet', bv)}</div>
+          <p class="sub" style="margin:6px 0 0;font-size:11px">効果音・BGMはすべて端末内で合成しています。音量は小・中・大の3段階です（BGMは既定OFF）。</p>`; })()}
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
         <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
@@ -7693,6 +7834,7 @@ function renderAll() {
   $('#nav-town').classList.toggle('locked', !!G.run);
   renderHUD();
   checkGoals();
+  Sound.setScene(G.run ? (G.run.tower ? 'tower' : (G.run.enemy && G.run.enemy.boss ? 'boss' : 'dungeon')) : 'town');
   if (v === 'town') renderTown();
   if (v === 'dungeon') {
     $('#dg-select').hidden = !!G.run; $('#dg-battle').hidden = !G.run;
@@ -8367,6 +8509,7 @@ function boot() {
 
     // disabled ならスキップ
     if (b.disabled) { e.stopPropagation(); e.preventDefault(); return; }
+    Sound.play('click');
 
     // ACT を実行してバブリングもキャンセル（二重実行防止）
     e.stopPropagation();
@@ -8416,7 +8559,7 @@ window.__rogue = {
   idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, Sound, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
   playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,

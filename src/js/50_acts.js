@@ -286,6 +286,10 @@ const ACTS = {
   },
   autoEquipNow() { const n = equipBest(); if (n) (G.p.goalFlags = G.p.goalFlags || {}).equip = true; save(); toast(n ? '最強の装備に切り替えました' : 'すでに最強の装備です'); renderAll(); },
   autoEquipToggle() { G.opts.autoEquip = !G.opts.autoEquip; G.opts.autoEquipV2 = true; save(); renderStatus(); },
+  seToggle() { G.opts.se = G.opts.se === false; save(); renderStatus(); Sound.play('click'); },
+  bgmToggle() { G.opts.bgm = !G.opts.bgm; Sound.unlock(); Sound.bgmUpdate(); save(); renderStatus(); },
+  seVolSet(d) { G.opts.seVol = Number(d.v); save(); renderStatus(); Sound.play('heal'); },
+  bgmVolSet(d) { G.opts.bgmVol = Number(d.v); Sound.bgmUpdate(); save(); renderStatus(); },
   fxToggle() { G.opts.fx = G.opts.fx === false; if (!G.opts.fx && typeof clearAllBattleFx === 'function') clearAllBattleFx(); save(); renderStatus(); if (G.run) renderBattle(); },
   reset() {
     if (G.run) { toast('探索中は初期化できません'); return; }
