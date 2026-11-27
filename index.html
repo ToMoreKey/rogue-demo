@@ -910,7 +910,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v96';
+const APP_VERSION = 'rogue-v97';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2740,11 +2740,13 @@ function mkItem(p, o) {
 }
 function isDungeonUnlocked(p, d) {
   if (!d) return false;
+  if (IS_DEV_BUILD) return true;                 // TEST版: 全ダンジョンに入れる
   if (!d.unlock) return true;
   return !!(p && p.cleared && p.cleared[d.unlock.d] && p.cleared[d.unlock.d][d.unlock.df]);
 }
 function isDiffUnlocked(p, d, df) {
   if (!d || !df || !isDungeonUnlocked(p, d)) return false;
+  if (IS_DEV_BUILD) return true;                 // TEST版: 全難易度も選べる
   if (!df.reqDiff) return true;
   return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
 }

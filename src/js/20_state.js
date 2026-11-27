@@ -170,11 +170,13 @@ function mkItem(p, o) {
 }
 function isDungeonUnlocked(p, d) {
   if (!d) return false;
+  if (IS_DEV_BUILD) return true;                 // TEST版: 全ダンジョンに入れる
   if (!d.unlock) return true;
   return !!(p && p.cleared && p.cleared[d.unlock.d] && p.cleared[d.unlock.d][d.unlock.df]);
 }
 function isDiffUnlocked(p, d, df) {
   if (!d || !df || !isDungeonUnlocked(p, d)) return false;
+  if (IS_DEV_BUILD) return true;                 // TEST版: 全難易度も選べる
   if (!df.reqDiff) return true;
   return !!(p && p.cleared && p.cleared[d.id] && p.cleared[d.id][df.reqDiff]);
 }
