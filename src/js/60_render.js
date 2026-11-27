@@ -1855,9 +1855,7 @@ function dropsHtml(l) {
   const snap = l.snap, p = G.p;
   const rank = it => { const eq = p[it.slot] && p[it.slot].id === it.id; const ref = eq ? (snap && snap[it.slot]) : gearSnap(p[it.slot]); return gearScore(it) - (ref ? ref.score : 0); };
   const items = [...l.items].sort((a, b) => rank(b) - rank(a) || b.rarity - a.rarity || b.star - a.star);
-  const better = items.some(it => p.bag.some(x => x.id === it.id) && rank(it) > 0);
-  const head = better ? `<div class="drops-best"><button class="btn small primary" data-act="mEquipBest">⚔ 最強装備にする</button><span class="sub">今より強い装備があります</span></div>` : '';
-  return items.length ? `${head}<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
+  return items.length ? `<div class="drops">${items.map(it => dropCardHtml(it, snap)).join('')}</div>` : '<p class="empty">装備は手に入らなかった。</p>';
 }
 // 出撃前→現在の「強くなった」表示（Lv・各ステータス・戦力・装備）
 function growthHtml(l) {

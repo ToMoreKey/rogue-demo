@@ -239,13 +239,13 @@ with sync_playwright() as pw:
         const host = document.createElement('div'); host.id = 'tmp-drops'; host.innerHTML = html; document.body.appendChild(host);
         const out = { equipBtns: host.querySelectorAll('[data-act="mEquip"]').length, best: host.querySelectorAll('[data-act="mEquipBest"]').length, dl: host.querySelectorAll('.it-dl.up').length };
         host.remove();
-        R.ACTS.mEquipBest(); out.bothEquipped = p.weapon === ws && p.armor === as;
+        R.ACTS.mEquip({ id: String(ws.id) }); R.ACTS.mEquip({ id: String(as.id) }); out.bothEquipped = p.weapon === ws && p.armor === as;
         const html2 = R.dropsHtml(G.last); const h2 = document.createElement('div'); h2.innerHTML = html2;
         out.backBtn = [...h2.querySelectorAll('[data-act="mEquip"]')].some(b => Number(b.dataset.id) === w0.id);
         R.ACTS.mEquip({ id: String(w0.id) }); out.reverted = p.weapon === w0;
         return out;
     }''')
-    check('基準13a_リザルトの未装備ドロップに切り替えボタン・増減・最強装備ボタンが出る', r13['equipBtns'] == 2 and r13['best'] == 1 and r13['dl'] == 2, r13)
+    check('基準13a_リザルトの未装備ドロップに切り替えボタン・増減が出る（最強装備ボタンは無い）', r13['equipBtns'] == 2 and r13['best'] == 0 and r13['dl'] == 2, r13)
     r14 = pg.evaluate('''() => {
         const R = window.__rogue; const p = G.p; G.opts.autoEquip = false; p.lv = 20;
         const mk = (slot, star, roll) => { const it = R.genItem(R.DIFFS[1], false, slot, star); it.star = star; it.roll = roll; it.rarity = 1; it.props = []; it.prop = null; return it; };
@@ -267,7 +267,7 @@ with sync_playwright() as pw:
         return { rs, inBag: p.bag.includes(strongRare), btns: h.querySelectorAll('[data-act="mEquip"]').length, sold: h.querySelectorAll('.ds-tag').length };
     }''')
     check('基準15_今の装備より強いドロップは自動売却されず切り替えボタンが出る（弱いものだけ自動売却と明示）', r15['rs'] == ['bag', 'sold', 'sold'] and r15['inBag'] and r15['btns'] == 1 and r15['sold'] == 2, r15)
-    check('基準13b_最強装備で一括切り替え、元の装備に戻すボタンで戻せる', r13['bothEquipped'] and r13['backBtn'] and r13['reverted'], r13)
+    check('基準13b_個別に切り替えられ、元の装備に戻すボタンで戻せる', r13['bothEquipped'] and r13['backBtn'] and r13['reverted'], r13)
 
     check('ページエラーなし', len(errors) == 0, errors)
     b.close()
