@@ -42,7 +42,7 @@ with sync_playwright() as pw:
     click('[data-act="go"][data-d="A"]')
     check('step2（戦闘中）へ進む', pg.evaluate('() => G.tutorial.step') == 2)
     # 戦闘を進めて HP 50% 未満にする（敵の攻撃で減る）。上限を決めて回す
-    stepped = pg.evaluate('''() => { const R = window.__rogue; G.noTimer = true; let n = 0;
+    stepped = pg.evaluate('''() => { const R = window.__rogue; G.noTimer = true; G.opts.fx = false; let n = 0;
         while (G.tutorial && G.tutorial.step === 2 && G.run && n < 3000) { R.tick(); n++; }
         return { step: G.tutorial.step, run: !!G.run, n }; }''')
     check('step3（撤退を促す）へ進む', stepped['step'] == 3, stepped)
