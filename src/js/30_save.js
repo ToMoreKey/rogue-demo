@@ -131,11 +131,16 @@ function migrateSave(raw) {
   }
   return d;   // v が最新、または未来の版ならそのまま（読み込み側の検証に任せる）
 }
-function save() {
+function save(milestone) {
+  if (G._saveBlocked || G._staleTab) return;   // 破損データ保護中／別タブが新しい間は書き込まない
+  let raw = null;
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity }));
-    if (typeof idbMirrorSave === 'function') idbMirrorSave(false);
-  } catch (e) { /* storage unavailable */ }
+    raw = JSON.stringify({ v: SAVE_VERSION, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity });
+    localStorage.setItem(SAVE_KEY, raw);
+    if (G._saveErr) setSaveWarn(null);
+  } catch (e) { setSaveWarn(e); }
+  // localStorage が使えなくても、IndexedDB 側には残す
+  if (raw && typeof idbMirrorSave === 'function') idbMirrorSave(!!milestone, raw);
 }
 function cleanItem(it) {
   if (!it || typeof it !== 'object') return null;

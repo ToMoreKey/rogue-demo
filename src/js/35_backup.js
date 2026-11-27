@@ -174,8 +174,10 @@ function applyImportedSave(payload) {
     } catch (e) {}
     return false;
   }
-  save();
+  G._saveBlocked = false; G._staleTab = false;
+  save(true);
   idbMirrorSave(true);
+  renderSaveWarn();
   renderAll();
   return true;
 }
@@ -193,11 +195,11 @@ function openBackupDb() {
     req.onerror = () => reject(req.error || new Error('idb open error'));
   });
 }
-async function idbMirrorSave(force = false) {
+async function idbMirrorSave(force = false, rawOverride = null) {
   const now = Date.now();
   if (!force && now - _lastIdbSyncAt < IDB_SYNC_INTERVAL_MS) return false;
-  let raw = null;
-  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  let raw = rawOverride;
+  if (!raw) { try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {} }
   if (!raw) return false;
   _lastIdbSyncAt = now;
   try {
@@ -208,6 +210,8 @@ async function idbMirrorSave(force = false) {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    G._lastBackupAt = now;
+    try { await idbHistoryPush(db, raw, now, force); } catch (e) {}
     db.close();
     return true;
   } catch (e) { return false; }

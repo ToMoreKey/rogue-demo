@@ -609,6 +609,14 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .drop-sold .item{filter:saturate(.6)}
 .ds-tag{padding:6px 10px;border:1px dashed var(--line);border-top:none;border-radius:0 0 8px 8px;font-size:12px;font-weight:700;color:var(--muted)}
 .ds-tag small{margin-left:8px;font-weight:400}
+
+/* セーブ安全性 */
+#save-warn{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:80;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:linear-gradient(90deg,#7a1f1f,#a03a2a);color:#fff;font-size:12px;font-weight:700;box-shadow:0 2px 12px rgba(0,0,0,.5)}
+#save-warn span{flex:1 1 200px;min-width:0}
+.rec-list{display:grid;gap:8px}
+.rec-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.04)}
+.rec-info{display:grid;gap:2px;font-size:12px;min-width:0}.rec-info span{color:var(--muted)}
+.bk-warn{color:#ffb25a;font-weight:700}
 </style>
 
 <div id="app" class="wrap">
@@ -719,7 +727,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v64';
+const APP_VERSION = 'rogue-v65';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2650,11 +2658,16 @@ function migrateSave(raw) {
   }
   return d;   // v が最新、または未来の版ならそのまま（読み込み側の検証に任せる）
 }
-function save() {
+function save(milestone) {
+  if (G._saveBlocked || G._staleTab) return;   // 破損データ保護中／別タブが新しい間は書き込まない
+  let raw = null;
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ v: SAVE_VERSION, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity }));
-    if (typeof idbMirrorSave === 'function') idbMirrorSave(false);
-  } catch (e) { /* storage unavailable */ }
+    raw = JSON.stringify({ v: SAVE_VERSION, p: G.p, opts: G.opts, sel: G.sel, shopSel: G.shopSel, autoSellRarity: G.autoSellRarity });
+    localStorage.setItem(SAVE_KEY, raw);
+    if (G._saveErr) setSaveWarn(null);
+  } catch (e) { setSaveWarn(e); }
+  // localStorage が使えなくても、IndexedDB 側には残す
+  if (raw && typeof idbMirrorSave === 'function') idbMirrorSave(!!milestone, raw);
 }
 function cleanItem(it) {
   if (!it || typeof it !== 'object') return null;
@@ -2963,8 +2976,10 @@ function applyImportedSave(payload) {
     } catch (e) {}
     return false;
   }
-  save();
+  G._saveBlocked = false; G._staleTab = false;
+  save(true);
   idbMirrorSave(true);
+  renderSaveWarn();
   renderAll();
   return true;
 }
@@ -2982,11 +2997,11 @@ function openBackupDb() {
     req.onerror = () => reject(req.error || new Error('idb open error'));
   });
 }
-async function idbMirrorSave(force = false) {
+async function idbMirrorSave(force = false, rawOverride = null) {
   const now = Date.now();
   if (!force && now - _lastIdbSyncAt < IDB_SYNC_INTERVAL_MS) return false;
-  let raw = null;
-  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+  let raw = rawOverride;
+  if (!raw) { try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {} }
   if (!raw) return false;
   _lastIdbSyncAt = now;
   try {
@@ -2997,6 +3012,8 @@ async function idbMirrorSave(force = false) {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    G._lastBackupAt = now;
+    try { await idbHistoryPush(db, raw, now, force); } catch (e) {}
     db.close();
     return true;
   } catch (e) { return false; }
@@ -3295,6 +3312,126 @@ async function maybeSendAnalytics() {
   } catch (e) {
     return { sent: false, reason: 'error' };
   }
+}
+/* ================= セーブの安全性（Q4-1） =================
+   ・保存失敗の警告バナー　・壊れたセーブの退避と復旧画面
+   ・IndexedDB の自動バックアップ3世代　・別タブでの上書き防止 */
+const SAVE_HIST_MAX = 3;                       // 自動バックアップの保持世代
+const SAVE_HIST_GAP_MS = 20 * 60 * 1000;       // 世代を増やす最小間隔
+const CORRUPT_KEEP = 2;                        // 退避した壊れたセーブの保持数
+
+/* ---- 警告バナー（保存失敗／破損データ保護中／別タブ更新） ---- */
+function renderSaveWarn() {
+  if (typeof document === 'undefined' || G.headless) return;
+  let msg = '', btn = '';
+  if (G._staleTab) { msg = '⚠ 別のタブでセーブが更新されました。このタブでは保存を止めています。'; btn = '<button class="btn small" data-act="reloadPage">再読み込み</button>'; }
+  else if (G._saveBlocked) { msg = '⚠ 破損したセーブを保護中のため、いまは保存していません。'; btn = '<button class="btn small" data-act="openRecovery">復旧画面を開く</button>'; }
+  else if (G._saveErr) { msg = '⚠ セーブできていません（保存領域がいっぱいか、保存が許可されていません）。'; btn = '<button class="btn small" data-act="exportSaveFile">いまの内容をファイルに書き出す</button>'; }
+  let el = document.getElementById('save-warn');
+  if (!msg) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'save-warn'; el.setAttribute('role', 'alert'); document.body.appendChild(el); }
+  el.innerHTML = `<span>${msg}</span>${btn}`;
+}
+function setSaveWarn(err) { const had = !!G._saveErr; G._saveErr = err ? String(err && err.message || err) : null; if (had !== !!err) renderSaveWarn(); }
+
+/* ---- 起動時: 保存領域が使えるか ---- */
+function probeStorage() {
+  try { const k = SAVE_KEY + '_probe'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return true; } catch (e) { return false; }
+}
+
+/* ---- 壊れたセーブの退避 ---- */
+function stashCorruptSave(raw) {
+  try {
+    const key = SAVE_KEY + '_corrupt_' + Date.now();
+    localStorage.setItem(key, raw);
+    const keys = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(SAVE_KEY + '_corrupt_')) keys.push(k); }
+    keys.sort().slice(0, Math.max(0, keys.length - CORRUPT_KEEP)).forEach(k => localStorage.removeItem(k));
+    return key;
+  } catch (e) { return null; }
+}
+function listCorruptSaves() {
+  const out = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(SAVE_KEY + '_corrupt_')) out.push(k); } } catch (e) {}
+  return out.sort();
+}
+
+/* ---- 自動バックアップ（IndexedDB・直近3世代） ---- */
+function saveSummaryOf(raw) {
+  try { const mig = migrateSave(JSON.parse(raw)); if (mig && mig.p) return summarizeSavePlayer(mig.p); } catch (e) {}
+  return null;
+}
+async function idbHistoryPush(db, raw, now, force) {
+  if (!saveSummaryOf(raw)) return;      // 壊れた内容は世代に入れない
+  const rec = await new Promise((res, rej) => { const rq = db.transaction('saves', 'readonly').objectStore('saves').get('history'); rq.onsuccess = () => res(rq.result || { id: 'history', items: [] }); rq.onerror = () => rej(rq.error); });
+  const items = Array.isArray(rec.items) ? rec.items : [];
+  if (items.length && items[0].raw === raw) return;
+  if (items.length && now - items[0].at < SAVE_HIST_GAP_MS && !force) return;
+  items.unshift({ raw, at: now });
+  rec.items = items.slice(0, SAVE_HIST_MAX);
+  await new Promise((res, rej) => { const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put(rec); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+}
+async function idbReadHistory() {
+  try {
+    const db = await openBackupDb();
+    const recs = await new Promise((res, rej) => { const st = db.transaction('saves', 'readonly').objectStore('saves'); const a = st.get('history'), b = st.get('latest'); let h, l, n = 0; const done = () => { if (++n === 2) res({ h: h && h.items || [], l }); }; a.onsuccess = () => { h = a.result; done(); }; b.onsuccess = () => { l = b.result; done(); }; a.onerror = b.onerror = () => rej(a.error || b.error); });
+    db.close();
+    const list = recs.h.slice();
+    if (recs.l && recs.l.raw && !list.some(x => x.raw === recs.l.raw)) list.unshift({ raw: recs.l.raw, at: recs.l.updatedAt || 0 });
+    return list.filter(x => x && typeof x.raw === 'string').sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, SAVE_HIST_MAX + 1);
+  } catch (e) { return []; }
+}
+
+/* ---- 別タブでの更新検知 ---- */
+function watchOtherTabs() {
+  if (typeof window === 'undefined') return;
+  window.addEventListener('storage', e => {
+    if (e.key !== SAVE_KEY || G._staleTab) return;
+    G._staleTab = true; renderSaveWarn();
+  });
+}
+
+/* ---- 復旧画面（破損時／ステータス>データから） ---- */
+async function openRecoveryModal(reason) {
+  const list = await idbReadHistory();
+  G._recList = list; G._recArm = null; G._recReason = reason || '';
+  renderRecoveryModal();
+}
+function renderRecoveryModal() {
+  const list = G._recList || [], blocked = !!G._saveBlocked, reason = G._recReason || '';
+  const rows = list.map((r, i) => {
+    const s = saveSummaryOf(r.raw) || { lv: '?', gold: 0, progress: '' };
+    const armed = G._recArm === i;
+    return `<div class="rec-row"><div class="rec-info"><b>${esc(formatBackupDate(r.at))}</b><span>Lv ${s.lv} ／ ${fmt(s.gold)} G ／ ${esc(s.progress)}</span></div>
+      <button class="btn small ${armed ? 'danger' : 'primary'}" data-act="recoverRestore" data-idx="${i}">${armed ? 'もう一度押すと復元' : blocked ? '復元する' : 'この時点に戻す'}</button></div>`;
+  }).join('');
+  $('#m-sheet').innerHTML = `
+    <h2 id="m-title">${blocked ? 'セーブデータを読み込めません' : 'バックアップから復元'}</h2>
+    ${blocked ? `<p class="sub" style="margin:0 0 8px">${esc(reason || 'セーブデータが壊れているようです。')}<br>壊れたデータは消さずにこの端末へ退避してあります（上書きしません）。</p>` : '<p class="sub" style="margin:0 0 8px">このブラウザに自動で残している直近のバックアップです。戻すと<b>いまのデータは置き換わります</b>（直前の状態は退避されます）。</p>'}
+    ${rows ? `<div class="rec-list">${rows}</div>` : '<p class="empty">自動バックアップはまだありません。</p>'}
+    <div class="act" style="gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn" data-act="openImportModal">ファイル／コードから読み込む</button>
+      ${blocked ? `<button class="btn ${G._recNewArm ? 'danger' : ''}" data-act="recoverNew">${G._recNewArm ? 'もう一度押すと新しく始めます' : '新しく始める'}</button>` : '<button class="btn" data-act="closeTowerModal">閉じる</button>'}
+    </div>`;
+  $('#modal').hidden = false; G.modalOpen = true;
+}
+function recoveryRestore(idx) {
+  const r = (G._recList || [])[idx]; if (!r) return;
+  if (G._recArm !== idx && !G._saveBlocked) { G._recArm = idx; renderRecoveryModal(); return; }
+  let prev = null; try { prev = localStorage.getItem(SAVE_KEY); if (prev && !G._saveBlocked) localStorage.setItem(SAVE_KEY + '_bak_restore', prev); localStorage.setItem(SAVE_KEY, r.raw); } catch (e) { setSaveWarn(e); }
+  if (load()) {
+    G._saveBlocked = false; G._recArm = null; G.tutorial = { done: true };
+    try { localStorage.setItem(TUT_SAVE_KEY, '1'); } catch (e) {}
+    if (typeof tutHide === 'function') tutHide();
+    save(); renderSaveWarn(); closeModal(); renderAll(); toast('バックアップから復元しました');
+  } else {
+    try { if (prev !== null) localStorage.setItem(SAVE_KEY, prev); } catch (e) {}
+    toast('このバックアップは読み込めませんでした');
+  }
+}
+function recoveryNew() {
+  if (!G._recNewArm) { G._recNewArm = true; renderRecoveryModal(); return; }
+  G._recNewArm = false; G._saveBlocked = false; G._recArm = null;
+  save(); renderSaveWarn(); closeModal();
+  if (G.tutorial && !G.tutorial.done && G.tutorial.step === 0) openCharSelectModal(G._charSelectPick || null);
 }
 
 /* ================= toast ================= */
@@ -4005,7 +4142,7 @@ function finishRun(result) {
   G.run = null;
   if (typeof clearAllBattleFx === 'function') clearAllBattleFx();
   G.townView = 'plaza';  // 街帰還時は広場に戻る
-  save();
+  save(true);   // ダンジョン帰還は自動バックアップの区切り
   renderAll();
   openModal();
   if (towerRes && towerRes.isNewBest && p.tower.rankOptIn && p.tower.best > (p.tower.sentBest || 0) && isRankingSubmitConfigured()) {
@@ -4752,6 +4889,10 @@ const ACTS = {
   pickBless(d) { pickBlessing(d.id); },
   towerBlessList() { openBlessListModal(); },
   closeTowerModal() { closeModal(); },
+  openRecovery() { openRecoveryModal(G._saveBlocked ? 'セーブデータを読み込めませんでした。' : ''); },
+  recoverRestore(d) { recoveryRestore(Number(d.idx)); },
+  recoverNew() { recoveryNew(); },
+  reloadPage() { try { location.reload(); } catch (e) {} },
   towerShop() { openTowerShopModal(); },
   buyTowerShop(d) {
     const p = G.p, item = TOWER_SHOP.find(x => x.id === d.id);
@@ -6326,11 +6467,12 @@ function renderStatus() {
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245">
-        <div class="sub" style="margin-bottom:6px;font-size:12px">セーブの書き出し・読み込み（バックアップ／引き継ぎ）<br>最終書き出し：<b>${formatBackupDate(readBackupMeta().lastExportAt)}</b></div>
+        <div class="sub" style="margin-bottom:6px;font-size:12px">セーブの書き出し・読み込み（バックアップ／引き継ぎ）<br>最終書き出し：<b>${formatBackupDate(readBackupMeta().lastExportAt)}</b>${(() => { const le = readBackupMeta().lastExportAt; return (!le || Date.now() - le >= BACKUP_REMIND_MS) && hasAnyDungeonClear(p) ? '　<span class="bk-warn">⚠ 1週間以上書き出していません</span>' : ''; })()}<br>自動バックアップ：このブラウザ内に直近${SAVE_HIST_MAX}世代を保存${G._lastBackupAt ? `（最新 ${formatBackupDate(G._lastBackupAt)}）` : ''}</div>
         <div class="row" style="flex-wrap:wrap;gap:6px">
           <button class="btn small" data-act="exportSaveFile">セーブを書き出す（ファイル）</button>
           <button class="btn small" data-act="exportSaveCode">セーブを書き出す（コード）</button>
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
+          <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
         </div>
       </div>
@@ -7749,6 +7891,7 @@ function getTutMsg(step) {
 function tutAllowClick(step, b) {
   const act = b.dataset.act, v = b.dataset.v, tree = b.dataset.tree, id = b.dataset.id;
   if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice') return true;
+  if (act === 'openRecovery' || act === 'recoverRestore' || act === 'recoverNew' || act === 'reloadPage' || act === 'closeTowerModal' || act === 'openImportModal' || act === 'validateImportInput' || act === 'confirmImportSave' || act === 'exportSaveFile') return true;   // セーブ復旧系は常に許可
   if (G._charSelectOpen) return act === 'selectStartChar' || act === 'confirmStartChar';
   const tgt = getCharTutorialTarget(G.p && G.p.skin);
   switch (step) {
@@ -7915,7 +8058,17 @@ function tutHide() {
 function boot() {
   let hadLocalSave = false;
   try { hadLocalSave = !!localStorage.getItem(SAVE_KEY); } catch (e) {}
-  if (!load()) { G.p = newPlayer(); }
+  let corrupt = false;
+  if (!load()) {
+    G.p = newPlayer();
+    if (hadLocalSave) {   // セーブはあるのに読めない＝壊れている。上書きせずに退避して保護する
+      let raw = null; try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
+      if (raw) { stashCorruptSave(raw); corrupt = true; G._saveBlocked = true; }
+    }
+  }
+  const storageOk = probeStorage();
+  if (!storageOk) G._saveErr = 'storage unavailable';
+  watchOtherTabs();
   // チュートリアル中: captureフェーズで全クリックを横取りし、許可ACTのみ実行
   document.addEventListener('click', e => {
     requestPersistOnce();
@@ -7957,9 +8110,14 @@ function boot() {
   recordAnalyticsLaunch();
   maybeSendAnalytics();
   renderAll();
+  renderSaveWarn();
+  if (hadLocalSave && !corrupt) setTimeout(() => idbMirrorSave(true), 1500);   // 起動時にも1世代
   // 新規プレイヤーのみチュートリアルを開始
   tutInit();
-  if (!hadLocalSave) {
+  if (corrupt) {
+    G._charSelectOpen = false; G.tutorial = G.tutorial && !G.tutorial.done ? G.tutorial : { done: true };
+    openRecoveryModal('セーブデータを読み込めませんでした。');
+  } else if (!hadLocalSave) {
     idbReadSave().then(rec => {
       let nowHas = false;
       try { nowHas = !!localStorage.getItem(SAVE_KEY); } catch (e) {}
@@ -7975,7 +8133,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, STONES, STONE_REQ,

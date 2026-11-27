@@ -707,7 +707,7 @@ function finishRun(result) {
   G.run = null;
   if (typeof clearAllBattleFx === 'function') clearAllBattleFx();
   G.townView = 'plaza';  // 街帰還時は広場に戻る
-  save();
+  save(true);   // ダンジョン帰還は自動バックアップの区切り
   renderAll();
   openModal();
   if (towerRes && towerRes.isNewBest && p.tower.rankOptIn && p.tower.best > (p.tower.sentBest || 0) && isRankingSubmitConfigured()) {

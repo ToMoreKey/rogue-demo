@@ -595,3 +595,11 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .drop-sold .item{filter:saturate(.6)}
 .ds-tag{padding:6px 10px;border:1px dashed var(--line);border-top:none;border-radius:0 0 8px 8px;font-size:12px;font-weight:700;color:var(--muted)}
 .ds-tag small{margin-left:8px;font-weight:400}
+
+/* セーブ安全性 */
+#save-warn{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:80;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:linear-gradient(90deg,#7a1f1f,#a03a2a);color:#fff;font-size:12px;font-weight:700;box-shadow:0 2px 12px rgba(0,0,0,.5)}
+#save-warn span{flex:1 1 200px;min-width:0}
+.rec-list{display:grid;gap:8px}
+.rec-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.04)}
+.rec-info{display:grid;gap:2px;font-size:12px;min-width:0}.rec-info span{color:var(--muted)}
+.bk-warn{color:#ffb25a;font-weight:700}

@@ -42,6 +42,7 @@ JS_ORDER = [
     'js/35_backup.js',
     'js/36_bugreport.js',
     'js/37_analytics.js',
+    'js/39_savesafe.js',
     'js/40_game.js',
     'js/50_acts.js',
     'js/60_render.js',

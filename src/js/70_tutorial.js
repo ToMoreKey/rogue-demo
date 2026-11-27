@@ -73,6 +73,7 @@ function getTutMsg(step) {
 function tutAllowClick(step, b) {
   const act = b.dataset.act, v = b.dataset.v, tree = b.dataset.tree, id = b.dataset.id;
   if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice') return true;
+  if (act === 'openRecovery' || act === 'recoverRestore' || act === 'recoverNew' || act === 'reloadPage' || act === 'closeTowerModal' || act === 'openImportModal' || act === 'validateImportInput' || act === 'confirmImportSave' || act === 'exportSaveFile') return true;   // セーブ復旧系は常に許可
   if (G._charSelectOpen) return act === 'selectStartChar' || act === 'confirmStartChar';
   const tgt = getCharTutorialTarget(G.p && G.p.skin);
   switch (step) {

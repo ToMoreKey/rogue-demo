@@ -431,6 +431,10 @@ const ACTS = {
   pickBless(d) { pickBlessing(d.id); },
   towerBlessList() { openBlessListModal(); },
   closeTowerModal() { closeModal(); },
+  openRecovery() { openRecoveryModal(G._saveBlocked ? 'セーブデータを読み込めませんでした。' : ''); },
+  recoverRestore(d) { recoveryRestore(Number(d.idx)); },
+  recoverNew() { recoveryNew(); },
+  reloadPage() { try { location.reload(); } catch (e) {} },
   towerShop() { openTowerShopModal(); },
   buyTowerShop(d) {
     const p = G.p, item = TOWER_SHOP.find(x => x.id === d.id);
