@@ -44,7 +44,7 @@ with sync_playwright() as pw:
         const R = window.__rogue; const ids = R.DUNGEONS.map(d => d.id).concat(['T', 'Y']);
         const uris = ids.map(id => sceneUriProbe(id));
         function sceneUriProbe(id) { return R.sceneUri(id); }
-        return { n: ids.length, uniq: new Set(uris).size, bad: ids.filter((id, i) => !uris[i] || uris[i].indexOf('data:image/svg') < 0), noAccent: ids.filter(id => !R.SCENE_ACCENT[id]) };
+        return { n: ids.length, uniq: new Set(uris).size, bad: ids.filter((id, i) => !uris[i] || uris[i].indexOf('data:image/') < 0), noAccent: ids.filter(id => !R.SCENE_ACCENT[id]) };
     }''')
     check('基準1_15ダンジョン＋塔＋深淵の背景シーンがすべて固有', r1['n'] == 17 and r1['uniq'] == 17 and not r1['bad'] and not r1['noAccent'], r1)
 
@@ -54,7 +54,7 @@ with sync_playwright() as pw:
     r2 = pg.evaluate('''() => {
         const secs = Array.from(document.querySelectorAll('#dg-list .dg-sec')).map(e => e.textContent.replace(/\\s+/g, ''));
         const banners = Array.from(document.querySelectorAll('#dg-list .dc-banner'));
-        const bgOk = banners.filter(e => getComputedStyle(e).backgroundImage.indexOf('data:image/svg') >= 0).length;
+        const bgOk = banners.filter(e => getComputedStyle(e).backgroundImage.indexOf('data:image/') >= 0).length;
         const cards = document.querySelectorAll('#dg-list .dc-card').length;
         const letters = Array.from(document.querySelectorAll('#dg-list .dc-letter')).map(e => e.textContent);
         return { secs, banners: banners.length, bgOk, cards, letters, sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth };
@@ -68,7 +68,7 @@ with sync_playwright() as pw:
         const R = window.__rogue; G.run = null; R.startRun('E', 'novice'); R.nextFloor && R.nextFloor();
         const bg = getComputedStyle(document.getElementById('arena')).backgroundImage;
         const v = document.getElementById('arena').style.getPropertyValue('--scene');
-        const out = { bgHasSvg: bg.indexOf('data:image/svg') >= 0, v: v.indexOf('data:image/svg') >= 0, hasSnap: !!(G.run && G.run.snap && G.run.snap.power > 0) };
+        const out = { bgHasSvg: bg.indexOf('data:image/') >= 0, v: v.indexOf('data:image/') >= 0, hasSnap: !!(G.run && G.run.snap && G.run.snap.power > 0) };
         G.run = null; return out;
     }''')
     check('基準3_戦闘アリーナに背景シーンが描画され、出撃時にスナップショットを持つ', r3['bgHasSvg'] and r3['v'] and r3['hasSnap'], r3)

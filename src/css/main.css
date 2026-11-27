@@ -241,7 +241,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .pip.boss{width:14px}
 .speed{display:flex;gap:4px}
 .speed .btn{min-height:32px;padding:3px 10px;font-size:13px}
-.arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(rgba(6,8,12,.18),rgba(6,8,12,.5)),var(--scene,none) center/cover no-repeat,linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
+.arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(rgba(6,8,12,.26),rgba(6,8,12,.62)),var(--scene,none) center/cover no-repeat,linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
 .arena.rage-active{box-shadow:inset 0 0 28px rgba(235,45,75,.38);border-color:#9e3348}
 .arena.rage-burst::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(255,60,80,.55),rgba(180,20,50,.35) 70%);pointer-events:none;z-index:5;animation:rageFlash .32s ease-out forwards}
 .fname.rage-name{color:#ff6b8b;text-shadow:0 0 8px rgba(255,60,100,.65);font-weight:700}
