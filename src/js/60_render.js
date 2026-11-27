@@ -942,6 +942,7 @@ let lastEnemyShape = '';
 function renderEnemy(fresh) {
   const run = G.run; if (G.headless || !run || !run.enemy) return;
   { const fe = $('#f-enemy'); if (fe && fresh) fe.classList.remove('die', 'die-boss'); }
+  if (fresh && !run.enemy.boss && isFxEnabled() && !isReducedMotion()) { const fe = $('#f-enemy'); if (fe) { fe.classList.remove('enter'); void fe.offsetWidth; fe.classList.add('enter'); clearTimeout(fe._en); fe._en = setTimeout(() => fe.classList.remove('enter'), 450); } }
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
@@ -1044,6 +1045,7 @@ function popDamage(who, text, cls) {
   let tier = '';
   if (who === 'enemy' && G.run && G.run.enemy && /^\d+$/.test(text)) { const rt = Number(text) / Math.max(1, G.run.enemy.maxHp); tier = rt >= 0.2 ? ' huge' : rt >= 0.08 ? ' big' : ''; }
   const s = document.createElement('span'); s.className = 'pop ' + cls + (isFxEnabled() ? tier : ''); s.textContent = (cls === 'crit' && isFxEnabled()) ? 'CRITICAL!\n' + text : text; f.appendChild(s);
+  if (who === 'enemy' && (cls === 'crit' || tier === ' huge') && isFxEnabled()) { f.classList.add('hit-b'); clearTimeout(f._hb); f._hb = setTimeout(() => f.classList.remove('hit-b'), 500); }
   if (cls === 'crit' || tier === ' huge') battleImpact('big'); else if (who === 'player' && cls === 'bad') battleImpact('hit');
   setTimeout(() => s.remove(), 900);
   const pops = f.querySelectorAll('.pop'); if (pops.length > 6) pops[0].remove();

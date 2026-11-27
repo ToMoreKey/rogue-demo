@@ -230,7 +230,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dc-spr{width:56px;flex:none}
 .sprite{display:block;width:100%;height:auto;image-rendering:pixelated}
 .sprite-img{image-rendering:auto;object-fit:contain}
-.sprite-img.flip{transform:scaleX(-1)}
+.sprite-img.flip{scale:-1 1} /* アニメーションのtransformと干渉しないよう scale プロパティで反転 */
 .aura-6{filter:drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px rgba(255,212,90,.55))}
 .aura-7{filter:drop-shadow(0 0 6px #6de7ff) drop-shadow(0 0 12px rgba(109,231,255,.6))}
 .aura-8{filter:drop-shadow(0 0 7px #c56bff) drop-shadow(0 0 14px rgba(197,107,255,.65))}
@@ -747,6 +747,14 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .boss-burst{position:absolute;z-index:6;pointer-events:none;color:#ffd24a;text-shadow:0 0 10px #ff7a00,0 0 18px #ff3b00;opacity:0;transform:translate(-50%,-50%) scale(.3);animation:bossburst .6s ease-out forwards}
 @keyframes bossburst{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(20deg)}100%{opacity:0;transform:translate(-50%,-60%) scale(1.8) rotate(60deg)}}
 @media (prefers-reduced-motion:reduce){.boss-white,.boss-burst{animation:none;display:none}}
+/* 敵の登場・被弾モーション */
+#f-enemy.enter .spr svg,#f-enemy.enter .spr img{animation:enemyin .4s ease-out}
+@keyframes enemyin{0%{opacity:0;transform:translateX(38px) scale(.86)}70%{opacity:1;transform:translateX(-4px) scale(1.03)}100%{opacity:1;transform:none}}
+#f-enemy.hit .spr svg,#f-enemy.hit .spr img{animation:ehit .28s ease-out}
+@keyframes ehit{0%{transform:none;filter:none}25%{transform:translateX(12px) scale(.95,1.05);filter:brightness(2.6)}60%{transform:translateX(-3px) scale(1.02,.98);filter:brightness(1.3)}100%{transform:none;filter:none}}
+#f-enemy.hit.hit-b .spr svg,#f-enemy.hit.hit-b .spr img{animation:ehitb .42s ease-out}
+@keyframes ehitb{0%{transform:none;filter:none}20%{transform:translateX(24px) rotate(5deg) scale(.92,1.08);filter:brightness(3.2) saturate(.3)}55%{transform:translateX(-5px) rotate(-2deg);filter:brightness(1.5)}100%{transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){#f-enemy.enter .spr svg,#f-enemy.enter .spr img,#f-enemy.hit .spr svg,#f-enemy.hit .spr img{animation:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -857,7 +865,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v86';
+const APP_VERSION = 'rogue-v87';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -6630,6 +6638,7 @@ let lastEnemyShape = '';
 function renderEnemy(fresh) {
   const run = G.run; if (G.headless || !run || !run.enemy) return;
   { const fe = $('#f-enemy'); if (fe && fresh) fe.classList.remove('die', 'die-boss'); }
+  if (fresh && !run.enemy.boss && isFxEnabled() && !isReducedMotion()) { const fe = $('#f-enemy'); if (fe) { fe.classList.remove('enter'); void fe.offsetWidth; fe.classList.add('enter'); clearTimeout(fe._en); fe._en = setTimeout(() => fe.classList.remove('enter'), 450); } }
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
@@ -6732,6 +6741,7 @@ function popDamage(who, text, cls) {
   let tier = '';
   if (who === 'enemy' && G.run && G.run.enemy && /^\d+$/.test(text)) { const rt = Number(text) / Math.max(1, G.run.enemy.maxHp); tier = rt >= 0.2 ? ' huge' : rt >= 0.08 ? ' big' : ''; }
   const s = document.createElement('span'); s.className = 'pop ' + cls + (isFxEnabled() ? tier : ''); s.textContent = (cls === 'crit' && isFxEnabled()) ? 'CRITICAL!\n' + text : text; f.appendChild(s);
+  if (who === 'enemy' && (cls === 'crit' || tier === ' huge') && isFxEnabled()) { f.classList.add('hit-b'); clearTimeout(f._hb); f._hb = setTimeout(() => f.classList.remove('hit-b'), 500); }
   if (cls === 'crit' || tier === ' huge') battleImpact('big'); else if (who === 'player' && cls === 'bad') battleImpact('hit');
   setTimeout(() => s.remove(), 900);
   const pops = f.querySelectorAll('.pop'); if (pops.length > 6) pops[0].remove();
@@ -8957,7 +8967,7 @@ window.__rogue = {
   idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
   playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,

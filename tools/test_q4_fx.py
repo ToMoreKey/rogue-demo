@@ -48,6 +48,10 @@ with sync_playwright() as pw:
     check('目標達成後の広場でルルが喜ぶ', pg.locator('.npc[data-fac=guide][data-ex=joy]').count() == 1)
     ev("() => { G._npc=null; G._npcEx=null; G._goalJoy='surprise'; __rogue.renderAll(); }")
     check('全目標達成でルルが驚く', pg.locator('.npc[data-fac=guide][data-ex=surprise]').count() == 1)
+    ev("() => { G.opts.fx = true; document.getElementById('f-enemy').className = 'fighter'; __rogue.popDamage('enemy', '99', 'crit'); }")
+    check('敵の大ダメージで強い被弾モーション(hit-b)', pg.locator('#f-enemy.hit-b').count() == 1)
+    ev("() => { G.run.enemy.boss = false; __rogue.renderEnemy(true); }")
+    check('通常敵の登場モーション(enter)', pg.locator('#f-enemy.enter').count() == 1)
     # 低HP
     ev("() => { G.p.hp = Math.floor(__rogue.maxHp(G.p) * 0.2); __rogue.lowHpWarn(); }")
     check('HP25%以下で低HP警告', ev("() => document.body.classList.contains('lowhp')"))

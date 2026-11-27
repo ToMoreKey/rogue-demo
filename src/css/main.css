@@ -216,7 +216,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dc-spr{width:56px;flex:none}
 .sprite{display:block;width:100%;height:auto;image-rendering:pixelated}
 .sprite-img{image-rendering:auto;object-fit:contain}
-.sprite-img.flip{transform:scaleX(-1)}
+.sprite-img.flip{scale:-1 1} /* アニメーションのtransformと干渉しないよう scale プロパティで反転 */
 .aura-6{filter:drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px rgba(255,212,90,.55))}
 .aura-7{filter:drop-shadow(0 0 6px #6de7ff) drop-shadow(0 0 12px rgba(109,231,255,.6))}
 .aura-8{filter:drop-shadow(0 0 7px #c56bff) drop-shadow(0 0 14px rgba(197,107,255,.65))}
@@ -733,3 +733,11 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .boss-burst{position:absolute;z-index:6;pointer-events:none;color:#ffd24a;text-shadow:0 0 10px #ff7a00,0 0 18px #ff3b00;opacity:0;transform:translate(-50%,-50%) scale(.3);animation:bossburst .6s ease-out forwards}
 @keyframes bossburst{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(20deg)}100%{opacity:0;transform:translate(-50%,-60%) scale(1.8) rotate(60deg)}}
 @media (prefers-reduced-motion:reduce){.boss-white,.boss-burst{animation:none;display:none}}
+/* 敵の登場・被弾モーション */
+#f-enemy.enter .spr svg,#f-enemy.enter .spr img{animation:enemyin .4s ease-out}
+@keyframes enemyin{0%{opacity:0;transform:translateX(38px) scale(.86)}70%{opacity:1;transform:translateX(-4px) scale(1.03)}100%{opacity:1;transform:none}}
+#f-enemy.hit .spr svg,#f-enemy.hit .spr img{animation:ehit .28s ease-out}
+@keyframes ehit{0%{transform:none;filter:none}25%{transform:translateX(12px) scale(.95,1.05);filter:brightness(2.6)}60%{transform:translateX(-3px) scale(1.02,.98);filter:brightness(1.3)}100%{transform:none;filter:none}}
+#f-enemy.hit.hit-b .spr svg,#f-enemy.hit.hit-b .spr img{animation:ehitb .42s ease-out}
+@keyframes ehitb{0%{transform:none;filter:none}20%{transform:translateX(24px) rotate(5deg) scale(.92,1.08);filter:brightness(3.2) saturate(.3)}55%{transform:translateX(-5px) rotate(-2deg);filter:brightness(1.5)}100%{transform:none;filter:none}}
+@media (prefers-reduced-motion:reduce){#f-enemy.enter .spr svg,#f-enemy.enter .spr img,#f-enemy.hit .spr svg,#f-enemy.hit .spr img{animation:none}}
