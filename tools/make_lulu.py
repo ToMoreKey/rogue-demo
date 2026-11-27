@@ -1,87 +1,117 @@
 #!/usr/bin/env python3
-"""ルル（広場の案内人）のドット絵を生成する。プレイキャラと同じ 192x192・ドット絵・黒縁取りに合わせる。
-   64x64 のグリッドに描いて 3 倍(最近傍)に拡大。 出力: --out 192x192 PNG と --b64 で base64"""
-import sys, base64, io
+"""案内人ルルのドット絵を、プレイキャラ（銀髪エルフの立ち絵）をベースに加工して作る。
+   プレイキャラと同じ 192x192・同じ描き込み・同じ黒縁に揃えるため、ゼロから描かずに既存スプライトを改変する。
+   加工: 髪を青く / 花飾りとエルフ耳を除去 / 両サイドを三つ編みに描き直し / 服の紫を水色に。
+   使い方: python3 tools/make_lulu.py OUT.png"""
+import re, base64, io, sys, colorsys, os
 from PIL import Image, ImageDraw
-OL=(27,27,58,255)
-SK=(250,220,196,255); SKS=(232,184,160,255)
-HB=(74,127,216,255); HS=(46,85,168,255); HL=(128,176,255,255)
-RB=(255,222,120,255); RBS=(214,168,64,255)
-CL=(246,240,224,255); CLS=(214,204,184,255)
-CP=(58,86,170,255); CPS=(40,60,130,255)
-GD=(236,190,70,255)
-SH=(120,72,48,255); SHS=(84,48,32,255)
-EY=(48,40,110,255); EYL=(255,255,255,255); EYM=(110,150,255,255)
-BL=(255,150,160,255)
-def build(expr='normal'):
-    S=64; im=Image.new('RGBA',(S,S),(0,0,0,0)); d=ImageDraw.Draw(im)
-    def e(box,c): d.ellipse(box,fill=c)
-    def r(box,c): d.rectangle(box,fill=c)
-    def p(pts,c): d.polygon(pts,fill=c)
-    # --- 後ろ髪（頭の後ろ、あご〜肩の高さ）
-    e((16,11,48,42),HB); r((17,26,47,36),HB)
-    # --- 足・靴
-    r((25,56,30,59),SH); r((34,56,39,59),SH); r((25,58,30,59),SHS); r((34,58,39,59),SHS)
-    # --- 服：白いチュニック＋青いケープ
-    p([(23,38),(41,38),(44,57),(20,57)],CL); r((20,54,44,57),CLS)
-    p([(21,37),(43,37),(46,47),(42,45),(22,45),(18,47)],CP); r((22,44,42,45),CPS)
-    # 腕（袖は白、手は肌）
-    e((15,40,23,52),CL); e((41,40,49,52),CL); e((16,49,22,54),SK); e((42,49,48,54),SK)
-    # 首・襟・鐘のブローチ
-    r((29,36,35,39),SKS); p([(27,38),(37,38),(32,43)],CL); e((30,41,34,46),GD); r((31,46,33,47),GD); d.point((32,43),fill=RBS)
-    # --- 顔（幼く丸く、大きめ）
-    e((17,14,47,42),SK); r((22,38,42,42),SK)
-    e((22,36,42,43),SK)
-    # 頬の影
-    r((20,37,23,39),SKS)
-    # --- 三つ編み（両サイド・肩の前に垂らす）
-    for sx in (-1,1):
-        cx=32+sx*17
-        for i,yy in enumerate((36,41,46,51)):
-            w=2
-            col=HB if i%2==0 else HS
-            e((cx-w,yy-3,cx+w,yy+3),col)
-            d.point((cx-1,yy-1),fill=HL)
-        e((cx-2,53,cx+2,57),HB); e((cx-3,57,cx+3,61),RB); r((cx-3,56,cx+3,57),RBS)
-    # --- 前髪（ぱっつん気味のセンター分け）
-    p([(16,30),(15,21),(20,13),(32,10),(44,13),(49,21),(48,30),(44,24),(40,17),(36,22),(32,16),(28,22),(24,17),(20,24)],HB)
-    p([(21,14),(28,11),(30,13),(25,18)],HL); p([(36,11),(42,13),(44,17),(38,16)],HL)
-    r((15,24,18,36),HS); r((46,24,49,36),HS)
-    # ヘアピン（小さな鐘）
-    e((38,15,42,19),GD)
-    # --- 目（大きく幼く）
-    for ex in (26,38):
-        if expr=='joy':
-            d.arc((ex-3,28,ex+3,35),200,340,fill=EY,width=2)
-        elif expr=='surprise':
-            e((ex-3,27,ex+3,35),EYL); e((ex-1,29,ex+1,33),EY); d.point((ex-1,29),fill=EYL)
-        else:
-            e((ex-3,27,ex+3,36),EY)
-            r((ex-2,32,ex+2,34),EYM)
-            r((ex-2,28,ex-1,30),EYL); d.point((ex+1,33),fill=EYL)
-            r((ex-3,26,ex+3,26),OL)
-    # 頬・口（小さく）
-    e((20,35,24,38),BL); e((40,35,44,38),BL)
-    if expr=='joy': r((30,37,34,37),OL); r((31,38,33,39),(190,70,80,255))
-    elif expr=='surprise': e((31,37,33,40),(190,70,80,255))
-    else: r((30,38,34,38),(190,70,80,255)); d.point((29,37),fill=(190,70,80,255)); d.point((35,37),fill=(190,70,80,255))
-    # 影
-    s=Image.new('RGBA',(S,S),(0,0,0,0)); sd=ImageDraw.Draw(s); sd.ellipse((18,59,46,63),fill=(0,0,0,70))
-    px=im.load(); out=Image.new('RGBA',(S,S),(0,0,0,0)); op=out.load()
-    for y in range(S):
-        for x in range(S):
-            if px[x,y][3]>0: op[x,y]=px[x,y]
-    for y in range(S):
-        for x in range(S):
-            if px[x,y][3]==0:
-                for dx,dy in ((1,0),(-1,0),(0,1),(0,-1)):
-                    xx,yy=x+dx,y+dy
-                    if 0<=xx<S and 0<=yy<S and px[xx,yy][3]>0: op[x,y]=OL; break
-    base=Image.new('RGBA',(S,S),(0,0,0,0)); base.alpha_composite(s); base.alpha_composite(out)
-    return base
-if __name__=='__main__':
-    ex=sys.argv[1] if len(sys.argv)>1 else 'normal'
-    big=build(ex).resize((192,192),Image.NEAREST)
-    if '--b64' in sys.argv:
-        b=io.BytesIO(); big.save(b,'PNG',optimize=True); print(base64.b64encode(b.getvalue()).decode())
-    else: big.save(sys.argv[2] if len(sys.argv)>2 else 'lulu.png')
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_INDEX = 16   # char_skins.js 内の PNG の並び: 銀髪エルフ立ち絵（通常）
+def load_base():
+    s = open(os.path.join(ROOT, 'src/assets/char_skins.js'), encoding='utf-8').read()
+    imgs = re.findall(r'data:image/png;base64,([A-Za-z0-9+/=]+)', s)
+    return Image.open(io.BytesIO(base64.b64decode(imgs[BASE_INDEX]))).convert('RGBA')
+OL = (32, 26, 56, 255)
+def lerp(a, b, t): return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+DARK, MID, LIGHT = (38, 66, 150), (88, 134, 222), (150, 190, 250)
+def blue_ramp(y):   # 明るさ(0..1)→青
+    t = max(0, min(1, (y - 0.45) / 0.5))
+    return lerp(DARK, MID, t * 2) if t < .5 else lerp(MID, LIGHT, (t - .5) * 2)
+def is_hairlike(px):
+    r, g, b, a = px
+    if a < 200: return False
+    h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+    return s < 0.35 and l > 0.45 and not (r > 245 and g > 245 and b > 245 and False)
+def build():
+    im = load_base(); px = im.load(); W, H = im.size
+    # 1) 頭頂を左右対称にして花飾りを消す（右半分を左へ鏡写し）
+    for y in range(6, 52):
+        for x in range(44, 96):
+            im.putpixel((x, y), px[191 - x, y])
+    # 2) エルフ耳を消す（顔の外側へ突き出た肌色）
+    for (x0, x1) in ((30, 57), (136, 162)):
+        for y in range(60, 86):
+            for x in range(x0, x1):
+                if px[x, y][3]: im.putpixel((x, y), (0, 0, 0, 0))
+    # 3) 両サイドの長い髪を消して三つ編みを描き直すため、サイドの下部を切り取る
+    for y in range(96, 160):
+        for x in list(range(30, 70)) + list(range(122, 164)):
+            if px[x, y][3] and not (62 <= x <= 84 and y >= 128) and not (110 <= x <= 130 and y >= 128):
+                r, g, b, a = px[x, y]
+                h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+                if s < 0.35 or (r < 70 and g < 70 and b < 100):   # 髪とその縁
+                    im.putpixel((x, y), (0, 0, 0, 0))
+    # 4) 髪を青に（頭の領域・衣装の白は除く）
+    for y in range(6, 108):
+        for x in range(W):
+            p = px[x, y]
+            if p[3] and is_hairlike(p) and not (y > 100 and 70 < x < 122):
+                r, g, b, a = p; Y = (0.3 * r + 0.59 * g + 0.11 * b) / 255
+                c = blue_ramp(Y) if Y < 0.9 else MID   # 白に近いハイライト点は青に馴染ませる
+                im.putpixel((x, y), c + (a,))
+    # 4a) 前髪まわりの白いハイライト点（ほぼ白）を青に馴染ませる。目の白(y>=62)は触らない
+    for y in range(6, 62):
+        for x in range(W):
+            r, g, b, a = px[x, y]
+            if a > 200 and min(r, g, b) > 215: im.putpixel((x, y), (140, 182, 244, a))
+    # 4b) 首元に残った旧い髪（灰紫）を青に
+    for y in range(100, 135):
+        for x in list(range(58, 86)) + list(range(106, 134)):
+            r, g, b, a = px[x, y]
+            if a and 150 < r < 215 and abs(r - g) < 18 and b > g and (b - g) < 40 and r < 215:
+                im.putpixel((x, y), blue_ramp((0.3 * r + 0.59 * g + 0.11 * b) / 255) + (a,))
+    # 5) 服の紫を水色へ
+    for y in range(108, 175):
+        for x in range(W):
+            r, g, b, a = px[x, y]
+            if a and b > r + 10 and r > 120 and g < b - 15 and (r - g) > 5:   # 薄紫
+                h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+                nr, ng, nb = colorsys.hls_to_rgb(0.56, l, s)
+                im.putpixel((x, y), (int(nr * 255), int(ng * 255), int(nb * 255), a))
+    # 6) 三つ編みを描く（左右対称）
+    d = ImageDraw.Draw(im)
+    def braid(cx, top, n=5, seg=15):
+        y = top
+        for i in range(n):
+            w = 8 - (1 if i >= n - 2 else 0)
+            col = MID if i % 2 == 0 else DARK
+            d.ellipse((cx - w - 1, y - 1, cx + w + 1, y + seg + 1), fill=OL)
+            d.ellipse((cx - w, y, cx + w, y + seg), fill=col)
+            d.line((cx - w + 3, y + 3, cx - 1, y + seg - 3), fill=LIGHT, width=1)   # ハイライト
+            d.line((cx + 2, y + 2, cx + w - 2, y + seg - 4), fill=DARK if i % 2 == 0 else MID, width=1)
+            y += seg - 3
+        # リボン
+        d.rectangle((cx - 7, y - 1, cx + 7, y + 9), fill=OL); d.rectangle((cx - 6, y, cx + 6, y + 8), fill=(255, 216, 110, 255))
+        d.line((cx - 5, y + 6, cx + 5, y + 6), fill=(214, 160, 60, 255))
+        return y
+    braid(58, 94); braid(134, 94)
+    return im
+def drop_specks(im, minpx=60):
+    # 加工で切り離された小さな残りカス（孤立したピクセル群）を消す
+    px = im.load(); W, H = im.size; seen = set()
+    for y in range(H):
+        for x in range(W):
+            if px[x, y][3] and (x, y) not in seen:
+                st = [(x, y)]; comp = []; seen.add((x, y))
+                while st:
+                    cx, cy = st.pop(); comp.append((cx, cy))
+                    for dx in (-1, 0, 1):
+                        for dy in (-1, 0, 1):
+                            nx, ny = cx + dx, cy + dy
+                            if 0 <= nx < W and 0 <= ny < H and (nx, ny) not in seen and px[nx, ny][3]:
+                                seen.add((nx, ny)); st.append((nx, ny))
+                if len(comp) < minpx:
+                    for c in comp: im.putpixel(c, (0, 0, 0, 0))
+    return im
+def outline(im):
+    px = im.load(); W, H = im.size; out = im.copy(); op = out.load()
+    for y in range(H):
+        for x in range(W):
+            if px[x, y][3] == 0:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    xx, yy = x + dx, y + dy
+                    if 0 <= xx < W and 0 <= yy < H and px[xx, yy][3] > 200: op[x, y] = OL; break
+    return out
+if __name__ == '__main__':
+    im = outline(drop_specks(build()))
+    im.save(sys.argv[1] if len(sys.argv) > 1 else 'lulu.png')
