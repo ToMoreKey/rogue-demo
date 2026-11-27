@@ -17,8 +17,11 @@ with sync_playwright() as pw:
     check('Aクリアで自動チェック', '1/5' in pg.inner_text('.goal-card') or '2/5' in pg.inner_text('.goal-card'))
     ev("() => { G.p.cleared = { A: { novice: true }, B: { novice: true } }; G.p.skills = { x: true }; G.p.goalFlags = { equip: true }; G.p.lv = 30; G.p.weapon = G.p.weapon; __rogue.renderAll(); }")
     check('既存進行を反映し、全達成で消える（戦闘力条件次第）', ev("() => __rogue.goalState(G.p).filter(x => x.ok).length") >= 4)
+    ev("() => { G.p.cleared = {}; G.p.goalFlags = {}; G.p.goalsHidden = true; __rogue.renderAll(); }")
+    check('最小化すると1行バーになり、開くで戻せる', pg.locator('.goal-card.mini').count() == 1 and pg.locator('.goal-row').count() == 0)
+    ev("() => { G.p.goalsHidden = false; __rogue.renderAll(); }")
+    check('開くと目標一覧が戻る', pg.locator('.goal-card:not(.mini) .goal-row').count() > 0)
     ev("() => { G.p.goalsHidden = true; __rogue.renderAll(); }")
-    check('閉じると非表示', pg.locator('.goal-card').count() == 0)
     # ヒント
     ev("() => { G.view='status'; G.statusTab='hero'; __rogue.renderAll(); }")
     check('ステータスで初回ヒント', pg.locator('.hint-bubble').count() == 1)

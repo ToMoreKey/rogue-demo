@@ -379,7 +379,7 @@ const ACTS = {
     renderAll();
   },
   hideGoals() { G.p.goalsHidden = true; save(); renderAll(); },
-  showGoals() { G.p.goalsHidden = false; save(); toast('はじめの目標を表示しました（広場）'); renderAll(); },
+  showGoals() { G.p.goalsHidden = false; save(); renderAll(); },
   tutRestart() {
     if (G.run) { toast('ダンジョン攻略中はできません'); return; }
     G.tutorial = { step: 0 }; G._charSelectOpen = false; G.view = 'town'; G.townView = 'plaza';

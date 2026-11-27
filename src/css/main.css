@@ -521,8 +521,8 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 
 /* 施設NPC */
 .npc{display:flex;align-items:flex-end;gap:10px;margin:0 0 10px}
-.npc-pt{flex:none;width:76px;height:84px;border-radius:12px 12px 8px 8px;overflow:hidden;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--nc) 55%,transparent),color-mix(in srgb,var(--nc) 14%,#10142e) 75%);border:1px solid color-mix(in srgb,var(--nc) 60%,#2c3b49);box-shadow:0 0 14px color-mix(in srgb,var(--nc) 35%,transparent)}
-.npc-pt svg{width:100%;height:100%;display:block}
+.npc-pt{flex:none;width:88px;height:96px;border-radius:12px 12px 8px 8px;overflow:hidden;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--nc) 55%,transparent),color-mix(in srgb,var(--nc) 14%,#10142e) 75%);border:1px solid color-mix(in srgb,var(--nc) 60%,#2c3b49);box-shadow:0 0 14px color-mix(in srgb,var(--nc) 35%,transparent)}
+.npc-pt svg,.npc-pt img{width:100%;height:100%;display:block;object-fit:contain;image-rendering:pixelated}
 .npc-bub{position:relative;flex:1;min-width:0;padding:9px 12px;border-radius:12px;background:linear-gradient(160deg,rgba(52,66,120,.85),rgba(28,34,70,.9));border:1px solid color-mix(in srgb,var(--nc) 55%,#2c3b49)}
 .npc-bub::before{content:"";position:absolute;left:-7px;bottom:16px;width:12px;height:12px;background:inherit;border-left:1px solid color-mix(in srgb,var(--nc) 55%,#2c3b49);border-bottom:1px solid color-mix(in srgb,var(--nc) 55%,#2c3b49);transform:rotate(45deg)}
 .npc-name{font-family:var(--font-display);font-size:13px;color:var(--nc)}
@@ -689,10 +689,10 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .npc-tap{display:block;margin-top:2px;font-size:10px;color:var(--muted);text-align:right}
 .npc-pt{position:relative}
 .npc-emote{position:absolute;top:-4px;right:-2px;font-size:16px;color:var(--nc,#ffd27a);animation:emote .9s ease-out 2}
-.npc.joy .npc-pt svg{animation:joy .5s ease-out 2}
+.npc.joy .npc-pt svg,.npc.joy .npc-pt img,.npc.surprise .npc-pt img{animation:joy .5s ease-out 2}
 @keyframes emote{0%{opacity:0;transform:translateY(6px)}30%{opacity:1}100%{opacity:1;transform:translateY(-4px)}}
 @keyframes joy{0%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
-@media (prefers-reduced-motion:reduce){.npc-emote,.npc.joy .npc-pt svg{animation:none}}
+@media (prefers-reduced-motion:reduce){.npc-emote,.npc.joy .npc-pt svg,.npc.joy .npc-pt img,.npc.surprise .npc-pt img{animation:none}}
 
 /* ---- 5-B 図鑑・実績 ---- */
 .dex-new{display:inline-block;padding:0 5px;margin-left:4px;border-radius:999px;background:#ff5a7a;color:#fff;font-size:10px;font-weight:700;line-height:16px;vertical-align:middle}
@@ -706,3 +706,4 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .ach-banner b{color:#ffd76a;font-size:12px;letter-spacing:.1em}.ach-banner span{font-family:var(--font-display);font-size:18px;color:#fff}.ach-banner small{color:#e8d9a8}
 @keyframes achb{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ach-banner{animation:none}}
+.goal-card.mini{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px}.goal-card.mini span{font-weight:700;font-size:14px}
