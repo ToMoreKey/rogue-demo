@@ -41,15 +41,22 @@ with sync_playwright() as pw:
     # 右向きの敵は左向きに反転
     check('右向きの敵(d_beetle)は反転クラス', 'flip' in ev("() => __rogue.enemyArt({ id: 'd_beetle', name: 'x' }, 'D')"))
     check('左向き/正面の敵は反転しない', 'flip' not in ev("() => __rogue.enemyArt({ id: 'a_slime', name: 'x' }, 'A')"))
+    ev("() => __rogue.killFx(true)")
+    check('ボス撃破: 白フラッシュ+連続爆発7つ', pg.locator('.boss-white').count() == 1 and pg.locator('.boss-burst').count() == 7)
+    # ルルの表情: 目標達成で喜び、全達成で驚き
+    ev("() => { G.view='town'; G.townView='plaza'; G._npc=null; G._npcEx=null; G._goalJoy='joy'; __rogue.renderAll(); }")
+    check('目標達成後の広場でルルが喜ぶ', pg.locator('.npc[data-fac=guide][data-ex=joy]').count() == 1)
+    ev("() => { G._npc=null; G._npcEx=null; G._goalJoy='surprise'; __rogue.renderAll(); }")
+    check('全目標達成でルルが驚く', pg.locator('.npc[data-fac=guide][data-ex=surprise]').count() == 1)
     # 低HP
     ev("() => { G.p.hp = Math.floor(__rogue.maxHp(G.p) * 0.2); __rogue.lowHpWarn(); }")
     check('HP25%以下で低HP警告', ev("() => document.body.classList.contains('lowhp')"))
     ev("() => { G.p.hp = __rogue.maxHp(G.p); __rogue.lowHpWarn(); }")
     check('回復で解除', not ev("() => document.body.classList.contains('lowhp')"))
     # 演出OFF
-    ev("() => { G.opts.fx = false; document.getElementById('arena').className = 'arena'; document.querySelectorAll('.boss-banner,.lv-band').forEach(n => n.remove()); G.p.hp = 1; }")
+    ev("() => { G.opts.fx = false; document.getElementById('arena').className = 'arena'; document.querySelectorAll('.boss-banner,.lv-band,.boss-white,.boss-burst').forEach(n => n.remove()); document.getElementById('f-enemy').classList.remove('die', 'die-boss'); G.p.hp = 1; }")
     ev("() => { __rogue.popDamage('enemy', '30', 'crit'); __rogue.bossBanner('X'); __rogue.levelBand(5); __rogue.killFx(true); __rogue.lowHpWarn(); }")
-    check('演出OFFで全て出ない', ev("() => { const c = document.getElementById('arena').classList; return !c.contains('shake-b') && !document.querySelector('.boss-banner') && !document.querySelector('.lv-band') && !document.body.classList.contains('lowhp') && !document.getElementById('f-enemy').classList.contains('die-boss'); }"))
+    check('演出OFFで全て出ない', ev("() => { const c = document.getElementById('arena').classList; return !c.contains('shake-b') && !document.querySelector('.boss-banner') && !document.querySelector('.boss-burst') && !document.querySelector('.lv-band') && !document.body.classList.contains('lowhp') && !document.getElementById('f-enemy').classList.contains('die-boss'); }"))
     check('演出OFFでもダメージ数字は出る(CRITICAL!無し)', 'CRITICAL!' not in pg.inner_text('#f-enemy .pop.crit >> nth=-1'))
     # reduced-motion
     ev("() => { G.opts.fx = true; G._forceReducedMotion = true; document.getElementById('arena').className = 'arena'; }")

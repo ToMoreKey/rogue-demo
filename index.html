@@ -686,7 +686,7 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .arena.crit-flash::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.35);pointer-events:none;animation:cf .26s ease-out forwards;z-index:4}
 @keyframes cf{from{opacity:1}to{opacity:0}}
 .fighter.die .spr{animation:die-n .6s ease-in forwards}
-.fighter.die-boss .spr{animation:die-b 1s ease-in forwards}
+.fighter.die-boss .spr{animation:die-b 1.3s ease-in forwards}
 @keyframes die-n{0%{opacity:1;transform:none;filter:none}100%{opacity:0;transform:translateY(10px) scale(.85);filter:brightness(2)}}
 @keyframes die-b{0%{opacity:1;filter:brightness(1)}35%{opacity:1;filter:brightness(3);transform:scale(1.08)}100%{opacity:0;filter:brightness(4);transform:scale(1.25)}}
 .arena.boss-glow::before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(255,240,180,.7),transparent 65%);pointer-events:none;animation:cf .9s ease-out forwards;z-index:3}
@@ -741,6 +741,12 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .lv-spark{position:absolute;left:50%;top:30%;margin-left:-6px;pointer-events:none;z-index:6;font-size:16px;color:#ffe27a;text-shadow:0 0 6px #ffb800;opacity:0;animation:lvspark .9s ease-out forwards}
 @keyframes lvspark{0%{opacity:0;transform:translate(0,10px) scale(.4)}25%{opacity:1}100%{opacity:0;transform:translate(var(--sx),-46px) scale(1.2) rotate(40deg)}}
 @media (prefers-reduced-motion:reduce){#f-player.lv-joy .spr,.lv-spark{animation:none!important}}
+/* ボス撃破: 白フラッシュと連続爆発 */
+.boss-white{position:absolute;inset:0;z-index:6;pointer-events:none;background:#fff;animation:bosswhite .6s ease-out forwards}
+@keyframes bosswhite{0%{opacity:.9}100%{opacity:0}}
+.boss-burst{position:absolute;z-index:6;pointer-events:none;color:#ffd24a;text-shadow:0 0 10px #ff7a00,0 0 18px #ff3b00;opacity:0;transform:translate(-50%,-50%) scale(.3);animation:bossburst .6s ease-out forwards}
+@keyframes bossburst{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(20deg)}100%{opacity:0;transform:translate(-50%,-60%) scale(1.8) rotate(60deg)}}
+@media (prefers-reduced-motion:reduce){.boss-white,.boss-burst{animation:none;display:none}}
 </style>
 
 <div id="app" class="wrap">
@@ -851,7 +857,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v84';
+const APP_VERSION = 'rogue-v85';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -4699,6 +4705,7 @@ function checkGoals(silent) {
   for (const { g, ok } of goalState(p)) {
     if (ok && !G._goalDone[g.id]) {
       G._goalDone[g.id] = true;
+      if (!silent) G._goalJoy = goalState(p).every(x => x.ok) ? 'surprise' : 'joy'; // ルルが次に広場で見せる表情
       if (!silent && !(G.tutorial && !G.tutorial.done)) setTimeout(() => toast(`🎯 目標達成！「${g.text}」`), 2200);
     }
   }
@@ -6775,7 +6782,20 @@ function killFx(boss) {
   if (G.headless || !isFxEnabled() || isReducedMotion()) return;
   const f = $('#f-enemy'); if (!f) return;
   f.classList.remove('die', 'die-boss'); void f.offsetWidth; f.classList.add(boss ? 'die-boss' : 'die');
-  if (boss) { const a = $('#arena'); if (a) { a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900); } }
+  if (boss) {
+    const a = $('#arena'); if (!a) return;
+    a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900);
+    // ボス撃破: 白フラッシュ → 連続爆発 → 揺れ → 崩れて消える
+    a.querySelectorAll('.boss-burst,.boss-white').forEach(n => n.remove());
+    const w = document.createElement('div'); w.className = 'boss-white'; a.appendChild(w); setTimeout(() => w.remove(), 700);
+    for (let i = 0; i < 7; i++) {
+      const b = document.createElement('div'); b.className = 'boss-burst'; b.textContent = i % 2 ? '✸' : '✹';
+      b.style.left = (52 + Math.random() * 36) + '%'; b.style.top = (14 + Math.random() * 46) + '%';
+      b.style.fontSize = (22 + Math.random() * 26) + 'px'; b.style.animationDelay = (i * 0.11) + 's';
+      a.appendChild(b); setTimeout(() => b.remove(), 1300);
+    }
+    a.classList.remove('rumble'); void a.offsetWidth; a.classList.add('rumble'); setTimeout(() => a.classList.remove('rumble'), 900);
+  }
 }
 function lowHpWarn() {
   const on = !!(G.run && !G.headless && isFxEnabled() && G.p.hp > 0 && G.p.hp <= maxHp(G.p) * 0.25);
@@ -8599,6 +8619,7 @@ function npcSay(fac, evt) {
 function npcHtml(fac) {
   const n = NPCS[fac]; if (!n) return '';
   if (!G._npc || G._npc.fac !== fac) G._npc = { fac, line: npcSay(fac, G._npcEvt || null) };
+  if (fac === 'guide' && G._goalJoy && !G._npcEx) { G._npcEx = { fac: 'guide', ex: G._goalJoy }; G._goalJoy = null; }
   const joy = !!(G._npcEvt && G._npcEvt !== 'townEnter');
   const ex = NPC_PNG[fac] ? (G._npcEx && G._npcEx.fac === fac ? G._npcEx.ex : (joy && fac !== 'guide' ? 'joy' : 'normal')) : 'normal';
   const img = NPC_PNG[fac] ? `<img src="${NPC_PNG[fac][ex]}" alt="" draggable="false">` : NPC_SVG[fac];

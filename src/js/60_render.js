@@ -1096,7 +1096,20 @@ function killFx(boss) {
   if (G.headless || !isFxEnabled() || isReducedMotion()) return;
   const f = $('#f-enemy'); if (!f) return;
   f.classList.remove('die', 'die-boss'); void f.offsetWidth; f.classList.add(boss ? 'die-boss' : 'die');
-  if (boss) { const a = $('#arena'); if (a) { a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900); } }
+  if (boss) {
+    const a = $('#arena'); if (!a) return;
+    a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900);
+    // ボス撃破: 白フラッシュ → 連続爆発 → 揺れ → 崩れて消える
+    a.querySelectorAll('.boss-burst,.boss-white').forEach(n => n.remove());
+    const w = document.createElement('div'); w.className = 'boss-white'; a.appendChild(w); setTimeout(() => w.remove(), 700);
+    for (let i = 0; i < 7; i++) {
+      const b = document.createElement('div'); b.className = 'boss-burst'; b.textContent = i % 2 ? '✸' : '✹';
+      b.style.left = (52 + Math.random() * 36) + '%'; b.style.top = (14 + Math.random() * 46) + '%';
+      b.style.fontSize = (22 + Math.random() * 26) + 'px'; b.style.animationDelay = (i * 0.11) + 's';
+      a.appendChild(b); setTimeout(() => b.remove(), 1300);
+    }
+    a.classList.remove('rumble'); void a.offsetWidth; a.classList.add('rumble'); setTimeout(() => a.classList.remove('rumble'), 900);
+  }
 }
 function lowHpWarn() {
   const on = !!(G.run && !G.headless && isFxEnabled() && G.p.hp > 0 && G.p.hp <= maxHp(G.p) * 0.25);

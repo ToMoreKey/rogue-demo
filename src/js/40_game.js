@@ -810,6 +810,7 @@ function checkGoals(silent) {
   for (const { g, ok } of goalState(p)) {
     if (ok && !G._goalDone[g.id]) {
       G._goalDone[g.id] = true;
+      if (!silent) G._goalJoy = goalState(p).every(x => x.ok) ? 'surprise' : 'joy'; // ルルが次に広場で見せる表情
       if (!silent && !(G.tutorial && !G.tutorial.done)) setTimeout(() => toast(`🎯 目標達成！「${g.text}」`), 2200);
     }
   }
