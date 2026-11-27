@@ -796,11 +796,11 @@ const FIRST_GOALS = [
 function goalState(p) { return FIRST_GOALS.map(g => ({ g, ok: !!g.done(p) })); }
 function checkGoals(silent) {
   const p = G.p; if (!p) return;
-  if (!p.goalDone) { p.goalDone = {}; silent = true; }
+  if (!G._goalDone) { G._goalDone = {}; silent = true; }
   for (const { g, ok } of goalState(p)) {
-    if (ok && !p.goalDone[g.id]) {
-      p.goalDone[g.id] = true;
-      if (!silent && !(G.tutorial && !G.tutorial.done)) toast(`🎯 目標達成！「${g.text}」`);
+    if (ok && !G._goalDone[g.id]) {
+      G._goalDone[g.id] = true;
+      if (!silent && !(G.tutorial && !G.tutorial.done)) setTimeout(() => toast(`🎯 目標達成！「${g.text}」`), 2200);
     }
   }
 }

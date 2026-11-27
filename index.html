@@ -672,7 +672,6 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 .goal-row .goal-tx{flex:1;min-width:0}.goal-row.ok{color:var(--muted)}.goal-row.ok .goal-tx{text-decoration:line-through}.goal-ck{width:16px;color:#8fe3a0}
 .hint-bubble{display:flex;align-items:center;gap:8px;margin:0 0 8px;padding:8px 10px;border:1px solid var(--accent);border-radius:8px;background:var(--panel2);font-size:12px;line-height:1.5}
 .hint-bubble span{flex:1;min-width:0}
-.tut-skip{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:12px;z-index:202;pointer-events:auto;padding:6px 12px;min-height:32px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:12px;cursor:pointer}
 </style>
 
 <div id="app" class="wrap">
@@ -757,7 +756,6 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 <div id="tut-overlay" aria-hidden="true">
   <div class="tut-hole" id="tut-hole"></div>
   <div class="tut-bubble" id="tut-bubble"></div>
-  <button class="tut-skip" data-act="tutSkip">スキップ ▶</button>
 </div>
 
 <script>
@@ -784,7 +782,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v71';
+const APP_VERSION = 'rogue-v72';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2893,7 +2891,6 @@ function load() {
     syncActiveCharState(p);
     p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop']) if (s.hints[k]) p.hints[k] = true;
     p.goalFlags = {}; if (s.goalFlags && typeof s.goalFlags === 'object') { if (s.goalFlags.equip) p.goalFlags.equip = true; if (s.goalFlags.tryB) p.goalFlags.tryB = true; }
-    if (s.goalDone && typeof s.goalDone === 'object') { p.goalDone = {}; for (const g of FIRST_GOALS) if (s.goalDone[g.id]) p.goalDone[g.id] = true; }
     p.goalsHidden = !!s.goalsHidden;
     p.potions = { hp: num(s.potions && s.potions.hp, 0, 0, 99), mp: num(s.potions && s.potions.mp, 0, 0, 99) };
     p.stats = { runs: num(s.stats && s.stats.runs, 0), clears: num(s.stats && s.stats.clears, 0), kills: num(s.stats && s.stats.kills, 0) };
@@ -4347,11 +4344,11 @@ const FIRST_GOALS = [
 function goalState(p) { return FIRST_GOALS.map(g => ({ g, ok: !!g.done(p) })); }
 function checkGoals(silent) {
   const p = G.p; if (!p) return;
-  if (!p.goalDone) { p.goalDone = {}; silent = true; }
+  if (!G._goalDone) { G._goalDone = {}; silent = true; }
   for (const { g, ok } of goalState(p)) {
-    if (ok && !p.goalDone[g.id]) {
-      p.goalDone[g.id] = true;
-      if (!silent && !(G.tutorial && !G.tutorial.done)) toast(`🎯 目標達成！「${g.text}」`);
+    if (ok && !G._goalDone[g.id]) {
+      G._goalDone[g.id] = true;
+      if (!silent && !(G.tutorial && !G.tutorial.done)) setTimeout(() => toast(`🎯 目標達成！「${g.text}」`), 2200);
     }
   }
 }
@@ -5022,7 +5019,6 @@ const ACTS = {
   },
   hideGoals() { G.p.goalsHidden = true; save(); renderAll(); },
   showGoals() { G.p.goalsHidden = false; save(); toast('はじめの目標を表示しました（広場）'); renderAll(); },
-  tutSkip() { tutDone(); save(); renderAll(); toast('チュートリアルをスキップしました（ヘルプからやり直せます）'); },
   tutRestart() {
     if (G.run) { toast('ダンジョン攻略中はできません'); return; }
     G.tutorial = { step: 0 }; G._charSelectOpen = false; G.view = 'town'; G.townView = 'plaza';
@@ -7533,10 +7529,9 @@ function renderHelp() {
       <div class="help-arrow">↓</div>
       <div class="help-step"><span class="help-step-n">4</span><div><b>繰り返してボスを倒す</b><br><span class="sub">まずはダンジョンAの初級クリアを目標に！</span></div></div>
     </div>
+    <p class="sub" style="margin:12px 0 8px">戦闘力は「今の強さ」の目安、装備はステータス＞装備で切り替え（ダンジョン結果画面からも可）、不要な装備は売却・自動売却で整理できます。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="showGoals">はじめの目標を表示</button><button class="btn small" data-act="tutRestart">チュートリアルをやり直す</button></div>
   </div>
-  <div class="panel"><h2>🔰 はじめての方へ</h2>
-    <p class="sub" style="margin:0 0 8px">戦闘力は「今の強さ」の目安、装備はステータス＞装備で切り替え（ダンジョン結果画面からも可）、不要な装備は売却・自動売却で整理できます。</p>
-    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="showGoals">はじめの目標を表示</button><button class="btn small" data-act="tutRestart">チュートリアルをやり直す</button></div></div>
   <div class="panel">
     <h2>💡 その他のヒント</h2>
     <ul class="help-tips">
@@ -8175,7 +8170,7 @@ function getTutMsg(step) {
 
 function tutAllowClick(step, b) {
   const act = b.dataset.act, v = b.dataset.v, tree = b.dataset.tree, id = b.dataset.id;
-  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice' || act === 'tutSkip') return true;
+  if (act === 'restoreIdbSave' || act === 'dismissIdbRestore' || act === 'closeV9Notice') return true;
   if (act === 'openRecovery' || act === 'recoverRestore' || act === 'recoverNew' || act === 'reloadPage' || act === 'closeTowerModal' || act === 'openImportModal' || act === 'validateImportInput' || act === 'confirmImportSave' || act === 'exportSaveFile') return true;   // セーブ復旧系は常に許可
   if (G._charSelectOpen) return act === 'selectStartChar' || act === 'confirmStartChar';
   const tgt = getCharTutorialTarget(G.p && G.p.skin);

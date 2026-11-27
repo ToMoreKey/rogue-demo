@@ -2208,10 +2208,9 @@ function renderHelp() {
       <div class="help-arrow">↓</div>
       <div class="help-step"><span class="help-step-n">4</span><div><b>繰り返してボスを倒す</b><br><span class="sub">まずはダンジョンAの初級クリアを目標に！</span></div></div>
     </div>
+    <p class="sub" style="margin:12px 0 8px">戦闘力は「今の強さ」の目安、装備はステータス＞装備で切り替え（ダンジョン結果画面からも可）、不要な装備は売却・自動売却で整理できます。</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="showGoals">はじめの目標を表示</button><button class="btn small" data-act="tutRestart">チュートリアルをやり直す</button></div>
   </div>
-  <div class="panel"><h2>🔰 はじめての方へ</h2>
-    <p class="sub" style="margin:0 0 8px">戦闘力は「今の強さ」の目安、装備はステータス＞装備で切り替え（ダンジョン結果画面からも可）、不要な装備は売却・自動売却で整理できます。</p>
-    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" data-act="showGoals">はじめの目標を表示</button><button class="btn small" data-act="tutRestart">チュートリアルをやり直す</button></div></div>
   <div class="panel">
     <h2>💡 その他のヒント</h2>
     <ul class="help-tips">

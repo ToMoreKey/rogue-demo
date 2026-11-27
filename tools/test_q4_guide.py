@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Q4-3 1-A 導線: はじめの目標・初回ヒント・チュートリアルのスキップ/やり直し"""
+"""Q4-3 1-A 導線: はじめの目標・初回ヒント・チュートリアルのやり直し"""
 import os, sys
 from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,10 +25,6 @@ with sync_playwright() as pw:
     pg.click('.hint-bubble [data-act=hintOk]'); pg.wait_for_timeout(100)
     check('「わかった」で消え再表示なし', pg.locator('.hint-bubble').count() == 0 and ev("() => G.p.hints.status") is True)
     # スキップ/やり直し
-    ev("() => { G.tutorial = { step: 0 }; G.view='town'; __rogue.renderAll(); }"); pg.wait_for_timeout(300)
-    check('チュートリアル中はスキップが見える', pg.locator('.tut-skip').is_visible())
-    pg.click('.tut-skip'); pg.wait_for_timeout(200)
-    check('スキップで完了扱い', ev("() => G.tutorial.done") is True)
     ev("() => { G.view='help'; G.helpTab='intro'; __rogue.renderAll(); }")
     pg.click('[data-act=tutRestart]'); pg.wait_for_timeout(300)
     check('やり直しで step0 から', ev("() => !G.tutorial.done && G.tutorial.step === 0"))
