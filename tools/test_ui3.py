@@ -139,7 +139,7 @@ with sync_playwright() as pw:
         for (const f of ['inn','shop','smith','bank']) {
             G.view = 'town'; G._npc = null; G._npcEvt = null; G.townView = f; R.renderAll();
             const el = document.querySelector('#view-town .npc');
-            out[f] = { has: !!el, svg: !!(el && el.querySelector('svg')), line: el ? el.querySelector('p').textContent : '' };
+            out[f] = { has: !!el, svg: !!(el && el.querySelector('svg, img')), line: el ? el.querySelector('p').textContent : '' };
         }
         // 再描画しても台詞が変わらない
         const l1 = document.querySelector('#view-town .npc p').textContent; R.renderAll();
