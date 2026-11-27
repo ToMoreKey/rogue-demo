@@ -353,7 +353,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .fighter.atk .spr{animation:lunge var(--atk-ms,260ms) ease-out}
 .fname{font-family:var(--font-display);font-size:14px;overflow-wrap:anywhere}
 .fighter .gauge{width:100%}
-.fnum{font-family:var(--font-display);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.fnum{min-height:1.25em;line-height:1.25;font-family:var(--font-display);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .pop{position:absolute;left:50%;top:6%;transform:translateX(-50%);font-family:var(--font-display);font-size:22px;pointer-events:none;text-shadow:0 1px 0 #000,0 0 6px #000;animation:pop .85s ease-out forwards;z-index:3;white-space:nowrap}
 .pop.dmg{color:#fff} .pop.crit{color:var(--accent);font-size:28px} .pop.heal{color:var(--good)} .pop.bad{color:var(--bad)}
 .b-status{min-height:20px;margin-top:8px;font-size:12px;color:var(--muted);text-align:center;font-family:var(--font-display)}

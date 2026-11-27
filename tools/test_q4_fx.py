@@ -55,6 +55,9 @@ with sync_playwright() as pw:
     # 敵の大きさが変わっても戦闘ウィンドウ(アリーナ)の高さは一定
     hs = ev("() => [0.8, 1.0, 1.2, 1.3].map(z => { document.getElementById('spr-enemy').style.setProperty('--sz', z); return Math.round(document.getElementById('arena').getBoundingClientRect().height); })")
     check('敵サイズ(0.8〜1.3)でアリーナの高さが変わらない', len(set(hs)) == 1, hs)
+    # 出撃直後(敵がまだいない)と戦闘開始後でアリーナの高さが同じ
+    hh = ev("() => { const h = () => Math.round(document.getElementById('arena').getBoundingClientRect().height); const a = h(); const run = G.run, en = run.enemy; run.enemy = null; __rogue.renderBattle(); const b = h(); run.enemy = en; __rogue.renderBattle(); return [a, b, h()]; }")
+    check('敵がいない時と戦闘中でアリーナの高さが同じ', len(set(hh)) == 1, hh)
     # 低HP
     ev("() => { G.p.hp = Math.floor(__rogue.maxHp(G.p) * 0.2); __rogue.lowHpWarn(); }")
     check('HP25%以下で低HP警告', ev("() => document.body.classList.contains('lowhp')"))
