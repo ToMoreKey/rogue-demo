@@ -45,6 +45,24 @@ with sync_playwright() as pw:
     calls = ev("() => __rogue.Sound.calls")
     check('戦闘で攻撃SEと撃破SEが鳴る', 'atk' in calls or 'crit' in calls, calls)
     check('撃破SE', 'kill' in calls or 'bossKill' in calls, calls)
+    # BGM: 5場面・フェード切替・停止
+    ev("() => { G.headless = false; G.opts.bgm = true; G.opts.bgmVol = 1; }")
+    pg.mouse.click(10, 10); pg.wait_for_timeout(200)
+    check('BGM場面が5つ', sorted(ev("() => __rogue.Sound.scenes")) == ['boss', 'dungeon', 'title', 'tower', 'town'])
+    ev("() => { G._titleUp = true; }")   # 戦闘ループによる場面上書きを止める
+    for sc in ['town', 'dungeon', 'boss', 'tower', 'title']:
+        ev("(s) => __rogue.Sound.setScene(s)" .replace('(s)', '()').replace('(s)', "('" + sc + "')")) if False else ev("() => __rogue.Sound.setScene('%s')" % sc)
+        pg.wait_for_timeout(900)
+        st = ev("() => __rogue.Sound.bgmState()")
+        check('BGM再生中: ' + sc, st['playing'] and st['scene'] == sc, st)
+    # 描画のたびにsetSceneが呼ばれても切替が遅れない
+    ev("() => { __rogue.Sound.setScene('town'); }")
+    for _ in range(8):
+        pg.wait_for_timeout(100); ev("() => __rogue.Sound.setScene('town')")
+    check('連続呼び出しでも場面が切り替わる', ev("() => __rogue.Sound.bgmState().scene") == 'town')
+    ev("() => { G.opts.bgm = false; __rogue.Sound.bgmUpdate(); }"); pg.wait_for_timeout(900)
+    ev("() => { G._titleUp = false; }")
+    check('BGM OFFでフェード後に停止', ev("() => __rogue.Sound.bgmState().playing") is False)
     # ヘッドレス無音
     ev("() => { G.headless = true; __rogue.Sound.calls.length = 0; }"); pg.wait_for_timeout(80)
     ev("() => __rogue.Sound.play('levelup')")

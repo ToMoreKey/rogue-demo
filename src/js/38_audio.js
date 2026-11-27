@@ -79,38 +79,106 @@ const Sound = (() => {
     if (!unlocked || !ensure()) return;
     try { if (ctx.state === 'suspended') ctx.resume(); master.gain.value = seVol(); SE[name](); } catch (e) {}
   }
-  // ---- 簡易BGM（合成ループ）。scene: town / dungeon / boss / tower ----
+  // ---- BGM（合成ループ）。scene: title / town / dungeon / boss / tower ----
+  // 8小節(A A' B A'')。prog=各小節の和音(音階度数)、mel=2小節(16step)のフレーズ3種(音階度数, null=休符, 7で1オクターブ上)
+  // drum: 1小節8stepの文字列(k=キック h=ハット s=スネア)。arp: 1小節8stepのコード音番号(0..2, -1=休)
+  const MAJ = [0, 2, 4, 5, 7, 9, 11], MIN = [0, 2, 3, 5, 7, 8, 10];
+  const _ = null;
   const SCENES = {
-    town:    { bpm: 84,  wave: 'sine',     bass: [N.C4 / 2, N.G4 / 2, N.A4 / 2, N.G4 / 2], mel: [N.E5, 0, N.G5, 0, N.A5, 0, N.G5, 0, N.E5, 0, N.D5, 0, N.C5, 0, 0, 0] },
-    dungeon: { bpm: 100, wave: 'triangle', bass: [N.A4 / 2, N.A4 / 2, N.G4 / 2, N.E4 / 2], mel: [N.A4, 0, N.C5, 0, N.E5, 0, N.C5, 0, N.D5, 0, N.B4, 0, N.G4, 0, 0, 0] },
-    boss:    { bpm: 132, wave: 'sawtooth', bass: [N.D4 / 2, N.D4 / 2, N.C4 / 2, N.D4 / 2], mel: [N.D5, N.D5, 0, N.A4, N.C5, 0, N.D5, 0, N.E5, N.D5, 0, N.C5, N.A4, 0, 0, 0] },
-    tower:   { bpm: 112, wave: 'triangle', bass: [N.E4 / 2, N.B4 / 2, N.C4 / 2, N.B4 / 2], mel: [N.E5, 0, N.B4, 0, N.G5, 0, N.E5, 0, N.D5, 0, N.B4, 0, N.A4, 0, 0, 0] }
+    title: { bpm: 70, key: 62, sc: MIN, wave: 'sine', mvol: 0.20, pad: 0.10, bass: 'half', arp: [0, -1, 1, -1, 2, -1, 1, -1], drum: '........', bell: true,
+      prog: [0, 5, 2, 6, 0, 5, 3, 4],
+      mel: [[7, _, _, _, 9, _, 8, _, 7, _, _, _, 4, _, _, _], [8, _, _, _, 9, _, 11, _, 9, _, _, _, 8, _, _, _], [7, _, 8, _, 9, _, _, _, 11, _, 9, _, 7, _, _, _]] },
+    town: { bpm: 88, key: 60, sc: MAJ, wave: 'triangle', mvol: 0.22, pad: 0.07, bass: 'half', arp: [0, 1, 2, 1, 0, 1, 2, 1], drum: '..h...h.',
+      prog: [0, 4, 5, 2, 3, 0, 1, 4],
+      mel: [[7, _, 9, _, 11, _, 9, _, 7, _, 4, _, 5, _, _, _], [11, _, 9, _, 7, _, 9, _, 8, _, 7, _, 4, _, _, _], [9, _, 11, _, 12, _, 11, _, 9, _, 7, _, 7, _, _, _]] },
+    dungeon: { bpm: 104, key: 57, sc: MIN, wave: 'triangle', mvol: 0.22, pad: 0.07, bass: 'eighth', arp: [0, 2, 1, 2, 0, 2, 1, 2], drum: 'k..hk.h.',
+      prog: [0, 5, 2, 6, 0, 5, 3, 4],
+      mel: [[7, _, 9, _, 11, _, 9, _, 8, _, 7, _, 4, _, _, _], [9, _, 11, _, 14, _, 11, _, 9, _, 8, _, 7, _, _, _], [7, _, 7, 9, 8, _, 7, _, 11, _, 9, _, 8, _, _, _]] },
+    boss: { bpm: 140, key: 50, sc: MIN, wave: 'sawtooth', mvol: 0.15, pad: 0.06, bass: 'eighth', arp: [0, 1, 2, 1, 0, 1, 2, 1], drum: 'k.hkk.hs',
+      prog: [0, 0, 5, 6, 0, 0, 3, 4],
+      mel: [[7, 7, _, 4, 6, _, 7, _, 9, 7, _, 6, 4, _, _, _], [9, 9, _, 11, 9, _, 8, _, 7, 8, _, 9, 7, _, _, _], [11, _, 11, 9, 8, _, 7, _, 14, 11, _, 9, 8, _, _, _]] },
+    tower: { bpm: 112, key: 52, sc: MIN, wave: 'triangle', mvol: 0.22, pad: 0.07, bass: 'eighth', arp: [0, 1, 2, 1, 2, 1, 2, 1], drum: 'k...k.h.',
+      prog: [0, 2, 5, 6, 0, 3, 5, 4],
+      mel: [[7, _, 4, _, 9, _, 7, _, 6, _, 4, _, 2, _, _, _], [9, _, 7, _, 11, _, 9, _, 8, _, 7, _, 4, _, _, _], [11, _, 9, _, 14, _, 11, _, 9, _, 8, _, 7, _, _, _]] }
   };
-  let scene = null, timer = null, step = 0, nextT = 0;
+  let scene = null, timer = null, step = 0, nextT = 0, sceneGain = null, bgmBus = null, noiseBuf = null, swapTo = null, swapWant = undefined;
+  const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+  const deg = (sc, d) => { const o = Math.floor(d / 7), i = ((d % 7) + 7) % 7; return sc[i] + 12 * o; };
+  function bgmGraph() {          // voices → sceneGain → lowpass → bgmGain、＋ほんのりディレイ
+    if (bgmBus || !ctx) return;
+    sceneGain = ctx.createGain(); sceneGain.gain.value = 1;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5200; lp.Q.value = 0.4;
+    const dl = ctx.createDelay(1); dl.delayTime.value = 0.27; const fb = ctx.createGain(); fb.gain.value = 0.28; const wet = ctx.createGain(); wet.gain.value = 0.22;
+    sceneGain.connect(lp); lp.connect(bgmGain); lp.connect(dl); dl.connect(fb); fb.connect(dl); dl.connect(wet); wet.connect(bgmGain);
+    bgmBus = sceneGain;
+    const n = ctx.sampleRate * 0.5 | 0; noiseBuf = ctx.createBuffer(1, n, ctx.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  }
+  function toneAt(f, dur, type, vol, t0, atk) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), a = atk || 0.015;
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(vol, 0.0002), t0 + a); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(bgmBus); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function drumAt(c, t0, boss) {
+    if (c === 'k') {
+      const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine';
+      o.frequency.setValueAtTime(130, t0); o.frequency.exponentialRampToValueAtTime(42, t0 + 0.12);
+      g.gain.setValueAtTime(boss ? 0.5 : 0.38, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+      o.connect(g); g.connect(bgmBus); o.start(t0); o.stop(t0 + 0.2);
+    } else if (c === 'h' || c === 's') {
+      const sn = ctx.createBufferSource(); sn.buffer = noiseBuf; const f = ctx.createBiquadFilter(), g = ctx.createGain();
+      f.type = c === 's' ? 'bandpass' : 'highpass'; f.frequency.value = c === 's' ? 1800 : 7000;
+      const dur = c === 's' ? 0.14 : 0.04, v = c === 's' ? 0.22 : 0.07;
+      g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      sn.connect(f); f.connect(g); g.connect(bgmBus); sn.start(t0); sn.stop(t0 + dur + 0.02);
+    }
+  }
   function bgmTick() {
-    if (!ctx || !scene) return;
+    if (!ctx || !scene || !bgmBus) return;
     if (document.hidden) { nextT = ctx.currentTime + 0.1; return; }
     const sc = SCENES[scene], dur = 60 / sc.bpm / 2;
     while (nextT < ctx.currentTime + 0.25) {
-      const i = step % 16, m = sc.mel[i];
       if (nextT < ctx.currentTime) nextT = ctx.currentTime + 0.02;
-      if (i % 4 === 0) toneAt(sc.bass[(i / 4) | 0], dur * 3.6, 'sine', 0.5, nextT);
-      if (m) toneAt(m, dur * 1.6, sc.wave, 0.28, nextT);
+      const i = step % 64, bar = (i / 8) | 0, pos = i % 8, root = sc.prog[bar], t = nextT;
+      const tri = [0, 2, 4].map(k => sc.key + deg(sc.sc, root + k));
+      if (pos === 0) tri.forEach((m, k) => toneAt(hz(m - 12 + (k === 2 ? 0 : 0)), dur * 7.6, 'sine', sc.pad, t, 0.25));   // パッド(1小節)
+      const bm = sc.key + deg(sc.sc, root) - 24;
+      if (sc.bass === 'eighth') { if (pos % 2 === 0 || scene === 'boss') toneAt(hz(bm + (pos === 4 ? 12 : 0)), dur * 1.5, 'triangle', 0.34, t); }
+      else if (pos === 0 || pos === 4) toneAt(hz(bm), dur * 3.8, 'sine', 0.42, t);
+      const ai = sc.arp[pos]; if (ai >= 0) toneAt(hz(tri[ai] + 12), dur * 1.2, 'square', 0.035, t);
+      const ph = [0, 1, 0, 2][(bar / 2) | 0], md = sc.mel[ph][(bar % 2) * 8 + pos];
+      if (md != null) {
+        const m = sc.key + deg(sc.sc, md) + 12;
+        toneAt(hz(m), dur * (sc.bell ? 4 : 1.7), sc.wave, sc.mvol, t, sc.bell ? 0.005 : 0.02);
+        if (sc.bell) toneAt(hz(m + 12), dur * 2.4, 'sine', sc.mvol * 0.35, t, 0.005);
+      }
+      const dc = sc.drum[pos]; if (dc && dc !== '.') drumAt(dc, t, scene === 'boss');
       nextT += dur; step++;
     }
   }
-  function toneAt(f, dur, type, vol, t0) {
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type; o.frequency.value = f;
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g); g.connect(bgmGain); o.start(t0); o.stop(t0 + dur + 0.05);
-  }
+  function startScene(want) { scene = want; step = 0; nextT = ctx.currentTime + 0.08; if (sceneGain) sceneGain.gain.setTargetAtTime(1, ctx.currentTime, 0.18); }
   function bgmUpdate() {
     if (typeof G === 'undefined' || G.headless) return;
     const want = bgmOn() && unlocked && ensure() ? G._bgmScene : null;
     if (bgmGain) bgmGain.gain.value = bgmVol();
-    if (!want) { if (timer) { clearInterval(timer); timer = null; } scene = null; return; }
-    if (want !== scene) { scene = want; step = 0; nextT = ctx.currentTime + 0.05; }
+    if (swapTo && swapWant === want) return;                       // 同じ転換待ちは再スケジュールしない(頻繁な描画で遅れないように)
+    if (swapTo) { clearTimeout(swapTo); swapTo = null; }
+    if (!want) {
+      if (timer && ctx) {
+        if (sceneGain) sceneGain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+        swapWant = null; swapTo = setTimeout(() => { swapTo = null; swapWant = undefined; if (!(bgmOn() && G._bgmScene)) { clearInterval(timer); timer = null; scene = null; } else bgmUpdate(); }, 450);
+      } else scene = null;
+      return;
+    }
+    bgmGraph();
+    if (want !== scene) {
+      if (!scene || !timer) startScene(want);
+      else {                                                       // 場面転換: フェードアウト→新しい曲をフェードイン
+        sceneGain.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+        swapWant = want; swapTo = setTimeout(() => { swapTo = null; swapWant = undefined; if (ctx && bgmOn() && G._bgmScene) startScene(G._bgmScene); }, 400);
+      }
+    } else if (sceneGain) sceneGain.gain.setTargetAtTime(1, ctx.currentTime, 0.1);
     if (!timer) timer = setInterval(bgmTick, 60);
     try { if (ctx.state === 'suspended') ctx.resume(); } catch (e) {}
   }
@@ -120,5 +188,5 @@ const Sound = (() => {
     ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, u, { capture: true, passive: true }));
     document.addEventListener('visibilitychange', () => { if (ctx) { try { document.hidden ? ctx.suspend() : ctx.resume(); } catch (e) {} } });
   }
-  return { play, setScene, bgmUpdate, unlock, calls, names: Object.keys(SE) };
+  return { play, setScene, bgmUpdate, unlock, calls, names: Object.keys(SE), scenes: Object.keys(SCENES), bgmState: () => ({ scene, playing: !!timer }) };
 })();
