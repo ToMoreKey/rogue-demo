@@ -605,6 +605,11 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 /* 結果画面：装備の切り替え */
 .drops-best{display:flex;align-items:center;gap:10px;margin:0 0 8px;flex-wrap:wrap}
 .drops .swap-card .it-act .btn{flex:1 1 auto}
+
+.drop-sold{position:relative;opacity:.72}
+.drop-sold .item{filter:saturate(.6)}
+.ds-tag{padding:6px 10px;border:1px dashed var(--line);border-top:none;border-radius:0 0 8px 8px;font-size:12px;font-weight:700;color:var(--muted)}
+.ds-tag small{margin-left:8px;font-weight:400}
 </style>
 
 <div id="app" class="wrap">
@@ -715,7 +720,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v62';
+const APP_VERSION = 'rogue-v63';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -3347,10 +3352,12 @@ function receiveItem(it) {
     return 'equipped';
   }
   // 自動売却フィルター
-  if (G.autoSellRarity >= 0 && it.rarity <= G.autoSellRarity && !it.locked) {
-    const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold';
+  // 今の装備より強い装備は、自分で装備を選べるよう自動売却しない（手動装備が既定のため）
+  const betterThanNow = gearScore(it) > gearScore(p[slot]);
+  if (G.autoSellRarity >= 0 && it.rarity <= G.autoSellRarity && !it.locked && !betterThanNow) {
+    const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; it.soldFor = v; return 'sold';
   }
-  if (p.bag.length >= cap) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold'; }
+  if (p.bag.length >= cap) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; it.soldFor = v; return 'sold'; }
   p.bag.push(it);
   return 'bag';
 }
@@ -6806,6 +6813,10 @@ function dropCompareHtml(it, snap) {
 }
 function dropCardHtml(it, snap) {
   const p = G.p, isW = it.slot === 'weapon', nm = isW ? '武器' : '防具';
+  if (it.soldFor != null && !p.bag.some(x => x.id === it.id) && !(p[it.slot] && p[it.slot].id === it.id)) {
+    // 自動売却された装備（今の装備より弱いものだけが対象）。切り替えはできない
+    return `<div class="drop-sold">${itemCard(it, { sell: false, showRec: false })}<div class="ds-tag">💰 自動売却済み（+${fmt(it.soldFor)}G）<small>今の${nm}より強くなかったため</small></div></div>`;
+  }
   const inBag = p.bag.some(x => x.id === it.id);
   const eq = p[it.slot] && p[it.slot].id === it.id;
   if (!eq && inBag) {

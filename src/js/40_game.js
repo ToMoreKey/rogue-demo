@@ -53,10 +53,12 @@ function receiveItem(it) {
     return 'equipped';
   }
   // 自動売却フィルター
-  if (G.autoSellRarity >= 0 && it.rarity <= G.autoSellRarity && !it.locked) {
-    const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold';
+  // 今の装備より強い装備は、自分で装備を選べるよう自動売却しない（手動装備が既定のため）
+  const betterThanNow = gearScore(it) > gearScore(p[slot]);
+  if (G.autoSellRarity >= 0 && it.rarity <= G.autoSellRarity && !it.locked && !betterThanNow) {
+    const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; it.soldFor = v; return 'sold';
   }
-  if (p.bag.length >= cap) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; return 'sold'; }
+  if (p.bag.length >= cap) { const v = sellValue(it); p.gold += v; if (G.run) G.run.gold += v; it.soldFor = v; return 'sold'; }
   p.bag.push(it);
   return 'bag';
 }

@@ -256,6 +256,17 @@ with sync_playwright() as pw:
         return { btns: btns.length, innerScroll: dr.scrollHeight > dr.clientHeight + 1, ov: getComputedStyle(dr).overflowY, mh: getComputedStyle(dr).maxHeight };
     }''')
     check('基準14_弱い装備でも切り替えボタンが隠れない（ドロップ欄に内側スクロールがない）', r14['btns'] == 3 and not r14['innerScroll'] and r14['mh'] == 'none', r14)
+    r15 = pg.evaluate('''() => {
+        const R = window.__rogue; G.run = null; G.p = R.newPlayer(); const p = G.p; p.lv = 20; G.opts.autoEquip = false; G.autoSellRarity = 2;
+        const mk = (slot, star, roll, r) => { const it = R.genItem(R.DIFFS[1], false, slot, star); it.star = star; it.roll = roll; it.rarity = r; it.props = []; it.prop = null; return it; };
+        p.weapon = mk('weapon', 3, .8, 1); p.armor = mk('armor', 3, .8, 1); p.bag = [];
+        const strongRare = mk('armor', 5, 1, 1), weakRare = mk('armor', 1, .2, 1), weakCommon = mk('weapon', 1, .2, 0);
+        const rs = [R.receiveItem(strongRare), R.receiveItem(weakRare), R.receiveItem(weakCommon)];
+        G.last = { result: 'clear', d: R.DUNGEONS[0], df: R.DIFFS[1], floors: 5, floor: 5, cleared: true, gold: 0, clearGold: 0, lost: 0, sp: 0, items: [strongRare, weakRare, weakCommon], potions: { hp: 0, mp: 0 }, lvFrom: 20, lvTo: 20, snap: R.statSnap(p), after: R.statSnap(p), kills: 0, part1End: false, ending: false, tower: null, abyss: null };
+        const h = document.createElement('div'); h.innerHTML = R.dropsHtml(G.last);
+        return { rs, inBag: p.bag.includes(strongRare), btns: h.querySelectorAll('[data-act="mEquip"]').length, sold: h.querySelectorAll('.ds-tag').length };
+    }''')
+    check('基準15_今の装備より強いドロップは自動売却されず切り替えボタンが出る（弱いものだけ自動売却と明示）', r15['rs'] == ['bag', 'sold', 'sold'] and r15['inBag'] and r15['btns'] == 1 and r15['sold'] == 2, r15)
     check('基準13b_最強装備で一括切り替え、元の装備に戻すボタンで戻せる', r13['bothEquipped'] and r13['backBtn'] and r13['reverted'], r13)
 
     check('ページエラーなし', len(errors) == 0, errors)

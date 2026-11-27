@@ -1836,6 +1836,10 @@ function dropCompareHtml(it, snap) {
 }
 function dropCardHtml(it, snap) {
   const p = G.p, isW = it.slot === 'weapon', nm = isW ? '武器' : '防具';
+  if (it.soldFor != null && !p.bag.some(x => x.id === it.id) && !(p[it.slot] && p[it.slot].id === it.id)) {
+    // 自動売却された装備（今の装備より弱いものだけが対象）。切り替えはできない
+    return `<div class="drop-sold">${itemCard(it, { sell: false, showRec: false })}<div class="ds-tag">💰 自動売却済み（+${fmt(it.soldFor)}G）<small>今の${nm}より強くなかったため</small></div></div>`;
+  }
   const inBag = p.bag.some(x => x.id === it.id);
   const eq = p[it.slot] && p[it.slot].id === it.id;
   if (!eq && inBag) {

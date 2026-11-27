@@ -591,3 +591,8 @@ body[data-view="help"]{--h1:#ffd05a;--h2:#4fd08a;--h3:#5aa6ee}
 /* 結果画面：装備の切り替え */
 .drops-best{display:flex;align-items:center;gap:10px;margin:0 0 8px;flex-wrap:wrap}
 .drops .swap-card .it-act .btn{flex:1 1 auto}
+
+.drop-sold{position:relative;opacity:.72}
+.drop-sold .item{filter:saturate(.6)}
+.ds-tag{padding:6px 10px;border:1px dashed var(--line);border-top:none;border-radius:0 0 8px 8px;font-size:12px;font-weight:700;color:var(--muted)}
+.ds-tag small{margin-left:8px;font-weight:400}
