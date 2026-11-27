@@ -112,7 +112,7 @@ with sync_playwright() as pw:
         return results;
     }''')
     check('基準2_旧版v1〜v8書き出しの読み込みと最新v移行',
-          all(x['ok'] and x['applied'] and x['curV'] == 9 and x['lv'] == 20 + x['v'] for x in old_mig),
+          all(x['ok'] and x['applied'] and x['curV'] == 10 and x['lv'] == 20 + x['v'] for x in old_mig),
           old_mig)
 
     # 基準3: 不正入力（壊れたコード・別アプリJSON・途切れコード・未来のsaveVersion）で何も変わらずエラー

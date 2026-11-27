@@ -92,7 +92,7 @@ with sync_playwright() as pw:
     pg1.wait_for_timeout(300)
     second_load_modal = pg1.evaluate('() => G.modalOpen || !document.getElementById("modal").hidden')
     check('1_v8->v9移行で全SPが欠損なく返却（15+110=125）されスキル・スロット・パッシブがリセット＆_bak_v8保持',
-          mig_res['v'] == 9 and mig_res['sp'] == expected_total_sp and mig_res['hasBak8']
+          mig_res['v'] == 10 and mig_res['sp'] == expected_total_sp and mig_res['hasBak8']
           and mig_res['skillsEmpty'] and mig_res['passivesEmpty'] and mig_res['eqEmpty'] and mig_res['charsOk'],
           mig_res)
     check('1_v8->v9移行案内が初回のみ1回表示され閉じると再表示されない',

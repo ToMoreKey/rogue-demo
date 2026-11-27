@@ -52,8 +52,8 @@ with sync_playwright() as pw:
     # 1. v1 → v9 連鎖変換と内容の保持（v8→v9 で全SPが返却されスキル・パッシブ・スロットがリセットされる）
     ctx, pg, errs = fresh_page(b, raw_v1)
     stored = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('v1 save is rewritten as v9', stored.get('v') == 9, stored.get('v'))
-    check('SAVE_VERSION is 9', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 9)
+    check('v1 save is rewritten as v9', stored.get('v') == 10, stored.get('v'))
+    check('SAVE_VERSION is 9', pg.evaluate('()=>window.__rogue.SAVE_VERSION') == 10)
     sp, op = stored['p'], v1['p']
     for k in ['lv', 'exp', 'gold', 'bank', 'hp', 'mp', 'potions', 'stats', 'weapon', 'armor', 'bag']:
         check('v1 p.%s kept' % k, strip_ids(sp.get(k)) == strip_ids(op.get(k)), (sp.get(k), op.get(k)))
@@ -94,13 +94,13 @@ with sync_playwright() as pw:
     check('v3 save is stable across reload', before == after)
     pg.evaluate('()=>{G.p.gold+=100; window.__rogue.save();}')
     s3 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('later saves are v9', s3['v'] == 9 and s3['p']['gold'] == op['gold'] + 100)
+    check('later saves are v9', s3['v'] == 10 and s3['p']['gold'] == op['gold'] + 100)
     ctx.close()
 
     # 2. v2 → v9 変換 (Lv22: A上級 rec18 がクリア済みとなり A超級が解放される)
     ctx, pg, errs = fresh_page(b, raw_v2)
     stored2 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
-    check('v2 save is rewritten as v9', stored2.get('v') == 9, stored2.get('v'))
+    check('v2 save is rewritten as v9', stored2.get('v') == 10, stored2.get('v'))
     check('v2->v3 A.high cleared & super unlocked',
           pg.evaluate('()=>window.__rogue.isDiffUnlocked(G.p, window.__rogue.DUNGEONS[0], window.__rogue.DIFFS[3])') is True)
     check('v2->v3 C.high (rec33) not cleared & C.super locked',
@@ -113,7 +113,7 @@ with sync_playwright() as pw:
     # 3. v が無いセーブは v1 扱い → v9 になる
     nov = dict(v1); nov.pop('v')
     ctx, pg, errs = fresh_page(b, json.dumps(nov))
-    check('save without v is treated as v1 -> v9', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 9)
+    check('save without v is treated as v1 -> v9', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 10)
     ctx.close()
 
     # 4. migrateSave 単体 (v1->v9, v3->v9, v4->v9, v5->v9, v6->v9, v7->v9, v8->v9)
@@ -129,7 +129,7 @@ with sync_playwright() as pw:
       return {null1:m(null), noP:m({v:1}), v1v:a&&a.v, same:m(a)===a, v3v:v3&&v3.v, hasTower:!!(v3&&v3.p&&v3.p.tower), v4v:v4&&v4.v, hasAbyss:!!(v4&&v4.p&&v4.p.abyss), hasMastery:!!(v4&&v4.p&&v4.p.mastery), propsOk:Array.isArray(v4&&v4.p&&v4.p.weapon&&v4.p.weapon.props)&&v4.p.weapon.props[0]==='flame', v5v:v5&&v5.v, hasDex:!!(v5&&v5.p&&v5.p.dex&&v5.p.dex.enemies&&v5.p.dex.enemies.a_boss&&v5.p.dex.items&&v5.p.dex.items.weapon_5), v6v:v6&&v6.v, hasAch:!!(v6&&v6.p&&v6.p.ach), v7v:v7&&v7.v, noticeShown:v7&&v7.p&&v7.p.unlockNoticeShown===true, v8v:v8&&v8.v, v8sp:v8&&v8.p&&v8.p.sp, v8notice:v8&&v8.p&&v8.p.v9ResetNoticePending, v8chars:!!(v8&&v8.p&&v8.p.chars&&v8.p.chars.stella), future:m({v:99,p:{}}).v, str:m('x')};}''', v1)
     check('migrateSave(null/garbage) -> null', r['null1'] is None and r['noP'] is None and r['str'] is None, r)
     check('migrateSave v1..v8 -> v9, v9 unchanged & v8->v9 SP refunded (12+90=102)',
-          r['v1v'] == 9 and r['same'] and r['v3v'] == 9 and r['hasTower'] and r['v4v'] == 9 and r['hasAbyss'] and r['hasMastery'] and r['propsOk'] and r['v5v'] == 9 and r['hasDex'] and r['v6v'] == 9 and r['hasAch'] and r['v7v'] == 9 and r['noticeShown'] and r['v8v'] == 9 and r['v8sp'] == 102 and r['v8notice'] is True and r['v8chars'], r)
+          r['v1v'] == 10 and r['same'] and r['v3v'] == 10 and r['hasTower'] and r['v4v'] == 10 and r['hasAbyss'] and r['hasMastery'] and r['propsOk'] and r['v5v'] == 10 and r['hasDex'] and r['v6v'] == 10 and r['hasAch'] and r['v7v'] == 10 and r['noticeShown'] and r['v8v'] == 10 and r['v8sp'] == 102 and r['v8notice'] is True and r['v8chars'], r)
     check('migrateSave leaves future versions alone', r['future'] == 99)
     ctx.close()
 
@@ -143,7 +143,7 @@ with sync_playwright() as pw:
     # 6. セーブなしの新規 → 保存すると v9
     ctx, pg, errs = fresh_page(b)
     pg.evaluate('()=>window.__rogue.save()')
-    check('new game saves as v9', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 9)
+    check('new game saves as v9', json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))['v'] == 10)
     ctx.close()
     b.close()
 
