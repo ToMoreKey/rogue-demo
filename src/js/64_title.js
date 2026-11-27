@@ -73,8 +73,9 @@ function showCredits() {
   const el = document.createElement('div');
   el.id = 'credits-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'クレジット');
   el.innerHTML = `<div class="cr-box"><div class="cr-scroll">${creditsHtml()}</div><button type="button" class="cr-close" id="cr-close">閉じる</button></div>`;
-  const prev = document.activeElement;
-  const close = () => { document.removeEventListener('keydown', onKey, true); el.remove(); try { if (prev && prev.focus) prev.focus(); } catch (e) {} };
+  const prev = document.activeElement, prevScene = G._bgmScene;
+  try { Sound.setScene('title'); } catch (e) {}
+  const close = () => { try { Sound.setScene(prevScene || 'town'); } catch (e) {} document.removeEventListener('keydown', onKey, true); el.remove(); try { if (prev && prev.focus) prev.focus(); } catch (e) {} };
   const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
   el.addEventListener('click', e => { e.stopPropagation(); if (e.target === el || e.target.id === 'cr-close') close(); });
   document.addEventListener('keydown', onKey, true);
