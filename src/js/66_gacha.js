@@ -10,6 +10,8 @@ function ensureGacha(p) {
   if (!g.eq || typeof g.eq !== 'object') g.eq = {};
   for (const s of COS_SLOTS) if (typeof g.eq[s.k] !== 'string') g.eq[s.k] = null;
   if (typeof g.frame !== 'string') g.frame = null;
+  if (!g.outfit || typeof g.outfit !== 'object') g.outfit = {};
+  for (const sk of CHAR_SKINS) g.outfit[sk.id] = [3, 4, 5].includes(g.outfit[sk.id]) ? g.outfit[sk.id] : 0;
   if (!p.login || typeof p.login !== 'object') p.login = { last: '', claims: 0 };
   p.login.claims = Math.max(0, Math.floor(Number(p.login.claims) || 0)); if (typeof p.login.last !== 'string') p.login.last = '';
   return g;
@@ -24,11 +26,14 @@ function rewardDropsAch(a) { addDrops(Math.max(2, Math.round((a.coins || 0) / 3)
 function cosById(id) { return COSMETICS.find(c => c.id === id) || null; }
 
 // ---------- 抽選 ----------
+const gachaGenreOf = k => GACHA_GENRES.find(x => x.k === k) || GACHA_GENRES[0];
+const gachaRates = k => gachaGenreOf(k).rates || GACHA_CFG.rates;
+const gachaPity = k => gachaGenreOf(k).pity || GACHA_CFG.pity;
 function gachaRollRarity(genre, forceMin) {
-  const g = ensureGacha(G.p);
-  if (g.pities[genre] + 1 >= GACHA_CFG.pity) return 3;
+  const g = ensureGacha(G.p), rates = gachaRates(genre);
+  if (g.pities[genre] + 1 >= gachaPity(genre)) return 3;
   let r = rng() * 100, k = 0;
-  for (; k < 3; k++) { r -= GACHA_CFG.rates[k]; if (r < 0) break; }
+  for (; k < 3; k++) { r -= rates[k]; if (r < 0) break; }
   return Math.max(k, forceMin || 0);
 }
 function gachaPick(genre, rar) { const pool = GACHA_POOL[genre][rar]; return pool[Math.floor(rng() * pool.length) % pool.length]; }
@@ -89,17 +94,17 @@ function heroWithCos(sk, style) { return `<div class="cos-stage">${skinArt(sk, s
 
 // ---------- 画面 ----------
 function gachaRatesHtml(genre) {
-  const r = GACHA_CFG.rates;
+  const r = gachaRates(genre);
   const rows = GACHA_RARITY.map((q, i) => `<tr><td style="color:${q.color};font-weight:700">${q.name}</td><td>${r[i]}%</td><td>${GACHA_POOL[genre][i].length}種</td><td>ダブり → しずく${GACHA_CFG.refund[i]}</td></tr>`).join('');
   return `<table class="gc-rates"><tr><th>ランク</th><th>提供割合</th><th>景品数</th><th>ダブり</th></tr>${rows}</table>
-    <p class="sub" style="margin:6px 0 0">・10連の最後の1枠はSR以上が確定。<br>・SSRが出ないまま${GACHA_CFG.pity}回引くと、次の1回はSSR確定（天井）。天井の回数はくじのジャンルごとに数えます。<br>・景品はすべて見た目だけで、強さには影響しません。「鐘のしずく」はゲーム内で入手でき、お金では買えません。</p>`;
+    <p class="sub" style="margin:6px 0 0">・10連の最後の1枠はSR以上が確定。<br>・SSRが出ないまま${gachaPity(genre)}回引くと、次の1回はSSR確定（天井）。天井の回数はくじのジャンルごとに数えます。<br>・景品はすべて見た目だけで、強さには影響しません。「鐘のしずく」はゲーム内で入手でき、お金では買えません。</p>`;
 }
 
 function renderGachaFacility(p) {
   const g = ensureGacha(p), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
   const gk = GACHA_GENRES.some(x => x.k === G.gcGenre) ? G.gcGenre : 'cos', gr = GACHA_GENRES.find(x => x.k === gk);
-  const left = GACHA_CFG.pity - g.pities[gk];
-  const total = Object.keys(g.owned).length, all = COSMETICS.length + DEX_FRAMES.length + GACHA_TITLES.length;
+  const left = gachaPity(gk) - g.pities[gk];
+  const total = Object.keys(g.owned).length, all = COSMETICS.length + DEX_FRAMES.length + GACHA_TITLES.length + OUTFITS.length;
   const poolN = GACHA_POOL[gk].reduce((s, l) => s + l.length, 0), ownN = Object.keys(g.owned).filter(k => k.startsWith(gk + ':')).length;
   const tabs = GACHA_GENRES.map(x => `<button class="seg-b ${x.k === gk ? 'on' : ''}" aria-pressed="${x.k === gk}" data-act="gachaGenre" data-g="${x.k}">${x.icon} ${x.name}<small>${Object.keys(g.owned).filter(k => k.startsWith(x.k + ':')).length}/${GACHA_POOL[x.k].reduce((s, l) => s + l.length, 0)}</small></button>`).join('');
   return `
@@ -121,14 +126,14 @@ function renderGachaFacility(p) {
 // ---------- 景品一覧・着せ替え（試着つき） ----------
 function gcState() {
   const g = ensureGacha(G.p);
-  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null };
+  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null, outfit: Object.assign({}, g.outfit), view: (G.p && G.p.skin) || 'ruby' };
   return G._gc;
 }
 // 指定の装備で立ち絵を描く（実際の装備は書き換えない）
-function heroPreviewHtml(sk, style, eq) {
-  const g = ensureGacha(G.p), keep = g.eq;
-  g.eq = eq;
-  try { return heroWithCos(sk, style); } finally { g.eq = keep; }
+function heroPreviewHtml(sk, style, eq, outfit) {
+  const g = ensureGacha(G.p), keep = g.eq, keepO = g.outfit;
+  g.eq = eq; if (outfit) g.outfit = outfit;
+  try { return heroWithCos(sk, style); } finally { g.eq = keep; g.outfit = keepO; }
 }
 function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
   const q = GACHA_RARITY[rar];
@@ -136,16 +141,21 @@ function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
 }
 function openGachaCollection(tab, keepScroll) {
   const sh0 = $('#m-sheet'), bd0 = sh0.querySelector('.gc-body'), sc0 = keepScroll ? [sh0.scrollTop, bd0 ? bd0.scrollTop : 0] : null;
-  const p = G.p, g = ensureGacha(p), st = gcState(), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
+  const p = G.p, g = ensureGacha(p), st = gcState(), sk = CHAR_SKINS.find(s => s.id === (st.view || p.skin || 'ruby')) || CHAR_SKINS[0];
   if (tab) st.tab = tab;
   const n = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
-  const tabs = [['cos', 'おまけ装備', n('cos', COSMETICS)], ['frame', '図鑑の飾り', n('frame', DEX_FRAMES)], ['title', '称号', n('title', GACHA_TITLES)]]
+  const tabs = [['cos', 'おまけ装備', n('cos', COSMETICS)], ['outfit', '衣装', n('outfit', OUTFITS)], ['frame', '図鑑の飾り', n('frame', DEX_FRAMES)], ['title', '称号', n('title', GACHA_TITLES)]]
     .map(([k, l, c]) => `<button class="seg-b ${st.tab === k ? 'on' : ''}" aria-pressed="${st.tab === k}" data-act="gcTab" data-tab="${k}">${l}<small>${c}</small></button>`).join('');
   let body = '';
   if (st.tab === 'cos') {
     body = COS_SLOTS.map(s => {
       const cards = COSMETICS.filter(c => c.slot === s.k).map(c => gcItemCard('cos', c.id, c.name, c.rar, !!g.owned['cos:' + c.id], st.eq[s.k] === c.id, 'gcTry', `data-slot="${s.k}" data-id="${c.id}"`)).join('');
       return `<div class="gc-slot"><b>${s.name}</b><div class="gc-grid"><button class="gc-card none${!st.eq[s.k] ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcTry" data-slot="${s.k}" data-id=""><span class="gc-n">なし</span></button>${cards}</div></div>`;
+    }).join('');
+  } else if (st.tab === 'outfit') {
+    body = CHAR_SKINS.map(h => {
+      const cards = OUTFITS.filter(o => o.skin === h.id).map(o => gcItemCard('outfit', o.id, `${'★'.repeat(o.tier)} ${(TIER_NAMES[h.id] || {})[o.tier] || ''}`, o.rar, !!g.owned['outfit:' + o.id], st.outfit[h.id] === o.tier, 'gcOutfit', `data-skin="${h.id}" data-tier="${o.tier}"`)).join('');
+      return `<div class="gc-slot"><b>${esc(h.name)}（${esc(h.job)}）</b><div class="gc-grid"><button class="gc-card none${!st.outfit[h.id] ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcOutfit" data-skin="${h.id}" data-tier="0"><span class="gc-n">基本の装い</span></button>${cards}</div></div>`;
     }).join('');
   } else if (st.tab === 'frame') {
     body = `<div class="gc-slot"><b>図鑑・実績の額縁</b><div class="gc-grid"><button class="gc-card none${!st.frame ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcFrame" data-id=""><span class="gc-n">なし</span></button>${DEX_FRAMES.map(f => gcItemCard('frame', f.id, f.name, f.rar, !!g.owned['frame:' + f.id], st.frame === f.id, 'gcFrame', `data-id="${f.id}"`)).join('')}</div></div>`;
@@ -154,12 +164,12 @@ function openGachaCollection(tab, keepScroll) {
     body = `<div class="gc-slot"><b>称号（ステータスにも表示されます）</b><div class="gc-grid">${GACHA_TITLES.map(t => gcItemCard('title', t.id, t.name, t.rar, !!g.owned['title:' + t.id], tw === t.id, 'gcTitle', `data-id="${t.id}"`)).join('')}</div></div>`;
   }
   const fr = DEX_FRAMES.find(f => f.id === st.frame);
-  const need = COS_SLOTS.filter(s => st.eq[s.k] && !g.owned['cos:' + st.eq[s.k]]).length + (st.frame && !g.owned['frame:' + st.frame] ? 1 : 0);
-  const dirty = COS_SLOTS.some(s => (st.eq[s.k] || null) !== (g.eq[s.k] || null)) || (st.frame || null) !== (g.frame || null);
+  const need = COS_SLOTS.filter(s => st.eq[s.k] && !g.owned['cos:' + st.eq[s.k]]).length + (st.frame && !g.owned['frame:' + st.frame] ? 1 : 0) + CHAR_SKINS.filter(h => st.outfit[h.id] && !g.owned['outfit:o_' + h.id + '_' + st.outfit[h.id]]).length;
+  const dirty = COS_SLOTS.some(s => (st.eq[s.k] || null) !== (g.eq[s.k] || null)) || (st.frame || null) !== (g.frame || null) || CHAR_SKINS.some(h => (st.outfit[h.id] || 0) !== (g.outfit[h.id] || 0));
   const sample = fr ? `style="--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}"` : '';
   $('#m-sheet').innerHTML = `
     <h2 class="win" id="m-title">📖 景品一覧・着せ替え</h2>
-    <div class="gc-prev"><div class="gc-stage big">${heroPreviewHtml(sk, 'width:130px;height:130px', st.eq)}</div>
+    <div class="gc-prev"><div class="gc-stage big">${heroPreviewHtml(sk, 'width:130px;height:130px', st.eq, st.outfit)}</div>
       <div class="gc-prev-r"><div class="gc-frame-sample${fr ? ' on' : ''}" ${sample}>図鑑の額縁</div>
         <small class="sub">タップで試着。${need ? `<b style="color:#ffb347">未入手が ${need} 点含まれています（試着のみ）</b>` : '入手済みの景品は「着る」で反映できます。'}</small></div></div>
     <div class="seg gc-tabs" role="tablist">${tabs}</div>

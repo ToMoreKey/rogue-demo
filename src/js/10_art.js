@@ -56,11 +56,11 @@ function enemyArt(en, dId) {
   return `<div${st}>${spriteSVG(en.shape, PAL[dId][en.shape])}</div>`;
 }
 
-// 防具の★に応じた見た目（★3以上で差分画像があれば切り替え。なければ基本絵）
+// 衣装（ガチャで入手した★3〜5の装い）に応じた見た目。選んでいなければ基本絵
+// 衣装（ガチャで入手）の選択に従う。防具の★では変わらない
 function skinFrames(sk) {
-  const st = (G.p && G.p.armor && G.p.armor.star) || 1;
-  if (sk.tiers) for (const k of [5, 4, 3]) if (st >= k && sk.tiers[k]) return sk.tiers[k];
-  return { img: sk.img, atk: sk.atk };
+  const t = skinTier(sk);
+  return t ? sk.tiers[t] : { img: sk.img, atk: sk.atk };
 }
 function auraClass(p) {
   const s = Math.max((p && p.weapon && p.weapon.star) || 0, (p && p.armor && p.armor.star) || 0);
@@ -72,11 +72,10 @@ function skinArt(sk, extraStyle) {
   if (fr.img) return `<img class="sprite sprite-img${au}" src="${hc ? hairSrc(fr.img, sk.id, hc) : fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
   return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
-// 防具の★に応じた「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
+// 選択中の衣装の「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
 function skinTier(sk) {
-  const st = (G.p && G.p.armor && G.p.armor.star) || 1;
-  if (sk.tiers) for (const k of [5, 4, 3]) if (st >= k && sk.tiers[k]) return k;
-  return 0;
+  const o = G.p && G.p.gacha && G.p.gacha.outfit, t = o && o[sk.id];
+  return (t && sk.tiers && sk.tiers[t]) ? t : 0;
 }
 const tierName = (sk, t) => ((TIER_NAMES[sk.id] || {})[t]) || (t ? '★' + t + 'の装い' : '基本の装い');
 function getPlayerSVG() {

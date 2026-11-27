@@ -292,10 +292,11 @@ function load() {
     p.gacha = { drops: num(s.gacha && s.gacha.drops, 0, 0, 999999), pity: 0, pities: {}, total: num(s.gacha && s.gacha.total, 0, 0, 999999), owned: {}, eq: {}, frame: null };
     for (const gr of GACHA_GENRES) p.gacha.pities[gr.k] = num(s.gacha && s.gacha.pities && s.gacha.pities[gr.k], num(s.gacha && s.gacha.pity, 0, 0, 999), 0, 999);   // 旧セーブの共通天井は各ジャンルに引き継ぐ
     if (s.gacha && typeof s.gacha === 'object') {
-      if (s.gacha.owned && typeof s.gacha.owned === 'object') for (const k of Object.keys(s.gacha.owned)) { const n = Math.floor(Number(s.gacha.owned[k])); if (n > 0 && /^(cos|title|frame):/.test(k)) p.gacha.owned[k] = Math.min(n, 9999); }
+      if (s.gacha.owned && typeof s.gacha.owned === 'object') for (const k of Object.keys(s.gacha.owned)) { const n = Math.floor(Number(s.gacha.owned[k])); if (n > 0 && /^(cos|title|frame|outfit):/.test(k)) p.gacha.owned[k] = Math.min(n, 9999); }
       if (s.gacha.eq && typeof s.gacha.eq === 'object') for (const sl of COS_SLOTS) { const c = cosById(s.gacha.eq[sl.k]); p.gacha.eq[sl.k] = c && c.slot === sl.k && p.gacha.owned['cos:' + c.id] ? c.id : null; }
       p.gacha.frame = DEX_FRAMES.some(f => f.id === s.gacha.frame) && p.gacha.owned['frame:' + s.gacha.frame] ? s.gacha.frame : null;
     }
+    p.gacha.outfit = {}; for (const sk of CHAR_SKINS) { const t = Number(s.gacha && s.gacha.outfit && s.gacha.outfit[sk.id]); const o = OUTFITS.find(x => x.skin === sk.id && x.tier === t); p.gacha.outfit[sk.id] = o && p.gacha.owned['outfit:' + o.id] ? t : 0; }
     p.login = { last: typeof (s.login && s.login.last) === 'string' ? s.login.last.slice(0, 10) : '', claims: num(s.login && s.login.claims, 0, 0, 99999) };
     p.daily = { date: typeof (s.daily && s.daily.date) === 'string' ? s.daily.date.slice(0, 10) : '', used: num(s.daily && s.daily.used, 0, 0, 99), clears: num(s.daily && s.daily.clears, 0, 0, 99999) };
     p.goalDrops = {}; if (s.goalDrops && typeof s.goalDrops === 'object') for (const k of Object.keys(s.goalDrops)) if (s.goalDrops[k]) p.goalDrops[String(k).slice(0, 30)] = true;

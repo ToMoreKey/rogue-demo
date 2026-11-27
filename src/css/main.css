@@ -926,3 +926,6 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .gc-genres .seg-b{padding:8px 2px;font-size:12px}
 .cos-circle.big{left:-16%;right:-16%;height:30%;box-shadow:0 0 16px var(--fc),inset 0 0 12px var(--fc)}
 .cos-circle.big::before{content:'';position:absolute;inset:-14%;border:1px dotted var(--fc);border-radius:50%;opacity:.8}
+.gc-genres{grid-template-columns:repeat(2,1fr)}
+.gc-tabs{grid-template-columns:repeat(4,1fr)}
+.gc-tabs .seg-b{font-size:11px;padding:6px 1px}

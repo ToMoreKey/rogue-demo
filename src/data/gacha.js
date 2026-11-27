@@ -100,6 +100,7 @@ GACHA_TITLES.forEach(t => TOWER_TITLES.push(t));
 // 抽選プール（景品を混ぜる＝闇鍋）
 // ジャンル別のくじ（おまけ装備 / 図鑑の飾り / 称号）。ジャンルごとに専用の景品プールと天井カウントを持つ
 const GACHA_GENRES = [
+  { k: 'outfit', icon: '👘', name: '衣装', desc: '防具の見た目だった「装い」。各キャラの★3・★4・★5の衣装が出る（SR・SSRのみ）', rates: [0, 0, 85, 15], pity: 30 },
   { k: 'cos',   icon: '👗', name: 'おまけ装備', desc: '染め・背中・足元・オーラ。キャラの見た目が変わる' },
   { k: 'frame', icon: '🖼️', name: '図鑑の飾り', desc: '図鑑・実績画面を飾る額縁' },
   { k: 'title', icon: '🏷️', name: '称号',       desc: 'ステータスの名前の横に付けられる二つ名' }

@@ -381,12 +381,15 @@ const ACTS = {
   gcTab(d) { openGachaCollection(d.tab); },
   gcTry(d) { const st = gcState(); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) st.eq[d.slot] = null; else if (cosById(d.id) && cosById(d.id).slot === d.slot) st.eq[d.slot] = d.id; openGachaCollection(null, true); },
   gcFrame(d) { const st = gcState(); st.frame = d.id && DEX_FRAMES.some(f => f.id === d.id) ? d.id : null; openGachaCollection(null, true); },
+  gcOutfit(d) { const st = gcState(), t = Number(d.tier) || 0; if (!CHAR_SKINS.some(h => h.id === d.skin) || (t && !OUTFITS.some(o => o.skin === d.skin && o.tier === t))) return; st.outfit[d.skin] = t; st.view = d.skin; openGachaCollection(null, true); },
   gcTitle(d) { const p = G.p, g = ensureGacha(p); if (!g.owned['title:' + d.id]) { toast('未入手の称号です'); return; } p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }; p.tower.title = p.tower.title === d.id ? null : d.id; save(); openGachaCollection(null, true); },
   gcApply() {
     const g = ensureGacha(G.p), st = gcState();
     for (const s of COS_SLOTS) { const id = st.eq[s.k]; if (id && !g.owned['cos:' + id]) { toast('未入手の景品は反映できません'); return; } }
     if (st.frame && !g.owned['frame:' + st.frame]) { toast('未入手の景品は反映できません'); return; }
+    for (const h of CHAR_SKINS) { const t = st.outfit[h.id] || 0; if (t && !g.owned['outfit:o_' + h.id + '_' + t]) { toast('未入手の景品は反映できません'); return; } }
     for (const s of COS_SLOTS) g.eq[s.k] = st.eq[s.k] || null;
+    for (const h of CHAR_SKINS) g.outfit[h.id] = st.outfit[h.id] || 0;
     g.frame = st.frame || null; save(); toast('見た目を変更した'); G._gc = null; openGachaCollection(); renderTown(); renderAll();
   },
   gcReset() { G._gc = null; openGachaCollection(); },

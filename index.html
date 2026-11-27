@@ -940,6 +940,9 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .gc-genres .seg-b{padding:8px 2px;font-size:12px}
 .cos-circle.big{left:-16%;right:-16%;height:30%;box-shadow:0 0 16px var(--fc),inset 0 0 12px var(--fc)}
 .cos-circle.big::before{content:'';position:absolute;inset:-14%;border:1px dotted var(--fc);border-radius:50%;opacity:.8}
+.gc-genres{grid-template-columns:repeat(2,1fr)}
+.gc-tabs{grid-template-columns:repeat(4,1fr)}
+.gc-tabs .seg-b{font-size:11px;padding:6px 1px}
 </style>
 
 <div id="app" class="wrap">
@@ -1050,7 +1053,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v112';
+const APP_VERSION = 'rogue-v113';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2064,6 +2067,7 @@ GACHA_TITLES.forEach(t => TOWER_TITLES.push(t));
 // 抽選プール（景品を混ぜる＝闇鍋）
 // ジャンル別のくじ（おまけ装備 / 図鑑の飾り / 称号）。ジャンルごとに専用の景品プールと天井カウントを持つ
 const GACHA_GENRES = [
+  { k: 'outfit', icon: '👘', name: '衣装', desc: '防具の見た目だった「装い」。各キャラの★3・★4・★5の衣装が出る（SR・SSRのみ）', rates: [0, 0, 85, 15], pity: 30 },
   { k: 'cos',   icon: '👗', name: 'おまけ装備', desc: '染め・背中・足元・オーラ。キャラの見た目が変わる' },
   { k: 'frame', icon: '🖼️', name: '図鑑の飾り', desc: '図鑑・実績画面を飾る額縁' },
   { k: 'title', icon: '🏷️', name: '称号',       desc: 'ステータスの名前の横に付けられる二つ名' }
@@ -2827,6 +2831,14 @@ const TIER_NAMES = {
   silia:  { 0: '白と紫の聖衣',   3: '金縁の聖衣',       4: '魔銀の聖衣',   5: '聖女' },
   chloe:  { 0: '黒の忍装束',     3: '軽装鎧の忍装束',   4: '魔銀の忍装束', 5: '影の暗殺者' }
 };
+/* ================= 衣装（ガチャ景品）: 旧「防具★で自動で変わる見た目」 =================
+   基本の装いは最初から着られる。★3・★4はSR、★5はSSR。 */
+const OUTFITS = [];
+for (const sk of CHAR_SKINS) for (const t of [3, 4, 5]) if (sk.tiers && sk.tiers[t]) {
+  OUTFITS.push({ id: `o_${sk.id}_${t}`, skin: sk.id, tier: t, rar: t === 5 ? 3 : 2, name: `${sk.name}「${(TIER_NAMES[sk.id] || {})[t] || '★' + t + 'の装い'}」` });
+}
+OUTFITS.forEach(o => GACHA_POOL.outfit[o.rar].push({ type: 'outfit', id: o.id, name: o.name }));
+const outfitById = id => OUTFITS.find(o => o.id === id) || null;
 /* ================= pixel sprites ================= */
 const SHAPES = {
   slime: ['............','............','....oooo....','..oobbbboo..','.obbhhbbbbo.','.obhhbbbbbo.','obbbbbbbbbbo','obwwbbbwwbbo','obwebbbwebbo','obbbbbbbbbbo','.oobbbbbboo.','...oooooo...'],
@@ -2911,11 +2923,11 @@ function enemyArt(en, dId) {
   return `<div${st}>${spriteSVG(en.shape, PAL[dId][en.shape])}</div>`;
 }
 
-// 防具の★に応じた見た目（★3以上で差分画像があれば切り替え。なければ基本絵）
+// 衣装（ガチャで入手した★3〜5の装い）に応じた見た目。選んでいなければ基本絵
+// 衣装（ガチャで入手）の選択に従う。防具の★では変わらない
 function skinFrames(sk) {
-  const st = (G.p && G.p.armor && G.p.armor.star) || 1;
-  if (sk.tiers) for (const k of [5, 4, 3]) if (st >= k && sk.tiers[k]) return sk.tiers[k];
-  return { img: sk.img, atk: sk.atk };
+  const t = skinTier(sk);
+  return t ? sk.tiers[t] : { img: sk.img, atk: sk.atk };
 }
 function auraClass(p) {
   const s = Math.max((p && p.weapon && p.weapon.star) || 0, (p && p.armor && p.armor.star) || 0);
@@ -2927,11 +2939,10 @@ function skinArt(sk, extraStyle) {
   if (fr.img) return `<img class="sprite sprite-img${au}" src="${hc ? hairSrc(fr.img, sk.id, hc) : fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
   return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
-// 防具の★に応じた「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
+// 選択中の衣装の「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
 function skinTier(sk) {
-  const st = (G.p && G.p.armor && G.p.armor.star) || 1;
-  if (sk.tiers) for (const k of [5, 4, 3]) if (st >= k && sk.tiers[k]) return k;
-  return 0;
+  const o = G.p && G.p.gacha && G.p.gacha.outfit, t = o && o[sk.id];
+  return (t && sk.tiers && sk.tiers[t]) ? t : 0;
 }
 const tierName = (sk, t) => ((TIER_NAMES[sk.id] || {})[t]) || (t ? '★' + t + 'の装い' : '基本の装い');
 function getPlayerSVG() {
@@ -3590,10 +3601,11 @@ function load() {
     p.gacha = { drops: num(s.gacha && s.gacha.drops, 0, 0, 999999), pity: 0, pities: {}, total: num(s.gacha && s.gacha.total, 0, 0, 999999), owned: {}, eq: {}, frame: null };
     for (const gr of GACHA_GENRES) p.gacha.pities[gr.k] = num(s.gacha && s.gacha.pities && s.gacha.pities[gr.k], num(s.gacha && s.gacha.pity, 0, 0, 999), 0, 999);   // 旧セーブの共通天井は各ジャンルに引き継ぐ
     if (s.gacha && typeof s.gacha === 'object') {
-      if (s.gacha.owned && typeof s.gacha.owned === 'object') for (const k of Object.keys(s.gacha.owned)) { const n = Math.floor(Number(s.gacha.owned[k])); if (n > 0 && /^(cos|title|frame):/.test(k)) p.gacha.owned[k] = Math.min(n, 9999); }
+      if (s.gacha.owned && typeof s.gacha.owned === 'object') for (const k of Object.keys(s.gacha.owned)) { const n = Math.floor(Number(s.gacha.owned[k])); if (n > 0 && /^(cos|title|frame|outfit):/.test(k)) p.gacha.owned[k] = Math.min(n, 9999); }
       if (s.gacha.eq && typeof s.gacha.eq === 'object') for (const sl of COS_SLOTS) { const c = cosById(s.gacha.eq[sl.k]); p.gacha.eq[sl.k] = c && c.slot === sl.k && p.gacha.owned['cos:' + c.id] ? c.id : null; }
       p.gacha.frame = DEX_FRAMES.some(f => f.id === s.gacha.frame) && p.gacha.owned['frame:' + s.gacha.frame] ? s.gacha.frame : null;
     }
+    p.gacha.outfit = {}; for (const sk of CHAR_SKINS) { const t = Number(s.gacha && s.gacha.outfit && s.gacha.outfit[sk.id]); const o = OUTFITS.find(x => x.skin === sk.id && x.tier === t); p.gacha.outfit[sk.id] = o && p.gacha.owned['outfit:' + o.id] ? t : 0; }
     p.login = { last: typeof (s.login && s.login.last) === 'string' ? s.login.last.slice(0, 10) : '', claims: num(s.login && s.login.claims, 0, 0, 99999) };
     p.daily = { date: typeof (s.daily && s.daily.date) === 'string' ? s.daily.date.slice(0, 10) : '', used: num(s.daily && s.daily.used, 0, 0, 99), clears: num(s.daily && s.daily.clears, 0, 0, 99999) };
     p.goalDrops = {}; if (s.goalDrops && typeof s.goalDrops === 'object') for (const k of Object.keys(s.goalDrops)) if (s.goalDrops[k]) p.goalDrops[String(k).slice(0, 30)] = true;
@@ -5946,12 +5958,15 @@ const ACTS = {
   gcTab(d) { openGachaCollection(d.tab); },
   gcTry(d) { const st = gcState(); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) st.eq[d.slot] = null; else if (cosById(d.id) && cosById(d.id).slot === d.slot) st.eq[d.slot] = d.id; openGachaCollection(null, true); },
   gcFrame(d) { const st = gcState(); st.frame = d.id && DEX_FRAMES.some(f => f.id === d.id) ? d.id : null; openGachaCollection(null, true); },
+  gcOutfit(d) { const st = gcState(), t = Number(d.tier) || 0; if (!CHAR_SKINS.some(h => h.id === d.skin) || (t && !OUTFITS.some(o => o.skin === d.skin && o.tier === t))) return; st.outfit[d.skin] = t; st.view = d.skin; openGachaCollection(null, true); },
   gcTitle(d) { const p = G.p, g = ensureGacha(p); if (!g.owned['title:' + d.id]) { toast('未入手の称号です'); return; } p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }; p.tower.title = p.tower.title === d.id ? null : d.id; save(); openGachaCollection(null, true); },
   gcApply() {
     const g = ensureGacha(G.p), st = gcState();
     for (const s of COS_SLOTS) { const id = st.eq[s.k]; if (id && !g.owned['cos:' + id]) { toast('未入手の景品は反映できません'); return; } }
     if (st.frame && !g.owned['frame:' + st.frame]) { toast('未入手の景品は反映できません'); return; }
+    for (const h of CHAR_SKINS) { const t = st.outfit[h.id] || 0; if (t && !g.owned['outfit:o_' + h.id + '_' + t]) { toast('未入手の景品は反映できません'); return; } }
     for (const s of COS_SLOTS) g.eq[s.k] = st.eq[s.k] || null;
+    for (const h of CHAR_SKINS) g.outfit[h.id] = st.outfit[h.id] || 0;
     g.frame = st.frame || null; save(); toast('見た目を変更した'); G._gc = null; openGachaCollection(); renderTown(); renderAll();
   },
   gcReset() { G._gc = null; openGachaCollection(); },
@@ -7718,7 +7733,7 @@ function renderStatus() {
         <div class="pt-info">
           <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span>${(() => { const tid = p.tower && p.tower.title; const tt = tid && TOWER_TITLES.find(x => x.id === tid); return tt ? ` <span class="badge">${esc(tt.name)}</span>` : ''; })()}</div>
           <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(tierName(pSkin, pTier))}</div>
-          <div class="pt-hint">${pTier ? '防具の見た目が反映されています' : '防具★3以上で見た目が変わります'}</div>
+          <div class="pt-hint">${pTier ? 'ガチャで手に入れた衣装を着ています' : '衣装は「福音のくじ」で手に入ります'}</div>
           ${tierChanged ? '<div class="pt-new">見た目が変わった！</div>' : ''}
         </div>
       </div>
@@ -9452,6 +9467,8 @@ function ensureGacha(p) {
   if (!g.eq || typeof g.eq !== 'object') g.eq = {};
   for (const s of COS_SLOTS) if (typeof g.eq[s.k] !== 'string') g.eq[s.k] = null;
   if (typeof g.frame !== 'string') g.frame = null;
+  if (!g.outfit || typeof g.outfit !== 'object') g.outfit = {};
+  for (const sk of CHAR_SKINS) g.outfit[sk.id] = [3, 4, 5].includes(g.outfit[sk.id]) ? g.outfit[sk.id] : 0;
   if (!p.login || typeof p.login !== 'object') p.login = { last: '', claims: 0 };
   p.login.claims = Math.max(0, Math.floor(Number(p.login.claims) || 0)); if (typeof p.login.last !== 'string') p.login.last = '';
   return g;
@@ -9466,11 +9483,14 @@ function rewardDropsAch(a) { addDrops(Math.max(2, Math.round((a.coins || 0) / 3)
 function cosById(id) { return COSMETICS.find(c => c.id === id) || null; }
 
 // ---------- 抽選 ----------
+const gachaGenreOf = k => GACHA_GENRES.find(x => x.k === k) || GACHA_GENRES[0];
+const gachaRates = k => gachaGenreOf(k).rates || GACHA_CFG.rates;
+const gachaPity = k => gachaGenreOf(k).pity || GACHA_CFG.pity;
 function gachaRollRarity(genre, forceMin) {
-  const g = ensureGacha(G.p);
-  if (g.pities[genre] + 1 >= GACHA_CFG.pity) return 3;
+  const g = ensureGacha(G.p), rates = gachaRates(genre);
+  if (g.pities[genre] + 1 >= gachaPity(genre)) return 3;
   let r = rng() * 100, k = 0;
-  for (; k < 3; k++) { r -= GACHA_CFG.rates[k]; if (r < 0) break; }
+  for (; k < 3; k++) { r -= rates[k]; if (r < 0) break; }
   return Math.max(k, forceMin || 0);
 }
 function gachaPick(genre, rar) { const pool = GACHA_POOL[genre][rar]; return pool[Math.floor(rng() * pool.length) % pool.length]; }
@@ -9531,17 +9551,17 @@ function heroWithCos(sk, style) { return `<div class="cos-stage">${skinArt(sk, s
 
 // ---------- 画面 ----------
 function gachaRatesHtml(genre) {
-  const r = GACHA_CFG.rates;
+  const r = gachaRates(genre);
   const rows = GACHA_RARITY.map((q, i) => `<tr><td style="color:${q.color};font-weight:700">${q.name}</td><td>${r[i]}%</td><td>${GACHA_POOL[genre][i].length}種</td><td>ダブり → しずく${GACHA_CFG.refund[i]}</td></tr>`).join('');
   return `<table class="gc-rates"><tr><th>ランク</th><th>提供割合</th><th>景品数</th><th>ダブり</th></tr>${rows}</table>
-    <p class="sub" style="margin:6px 0 0">・10連の最後の1枠はSR以上が確定。<br>・SSRが出ないまま${GACHA_CFG.pity}回引くと、次の1回はSSR確定（天井）。天井の回数はくじのジャンルごとに数えます。<br>・景品はすべて見た目だけで、強さには影響しません。「鐘のしずく」はゲーム内で入手でき、お金では買えません。</p>`;
+    <p class="sub" style="margin:6px 0 0">・10連の最後の1枠はSR以上が確定。<br>・SSRが出ないまま${gachaPity(genre)}回引くと、次の1回はSSR確定（天井）。天井の回数はくじのジャンルごとに数えます。<br>・景品はすべて見た目だけで、強さには影響しません。「鐘のしずく」はゲーム内で入手でき、お金では買えません。</p>`;
 }
 
 function renderGachaFacility(p) {
   const g = ensureGacha(p), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
   const gk = GACHA_GENRES.some(x => x.k === G.gcGenre) ? G.gcGenre : 'cos', gr = GACHA_GENRES.find(x => x.k === gk);
-  const left = GACHA_CFG.pity - g.pities[gk];
-  const total = Object.keys(g.owned).length, all = COSMETICS.length + DEX_FRAMES.length + GACHA_TITLES.length;
+  const left = gachaPity(gk) - g.pities[gk];
+  const total = Object.keys(g.owned).length, all = COSMETICS.length + DEX_FRAMES.length + GACHA_TITLES.length + OUTFITS.length;
   const poolN = GACHA_POOL[gk].reduce((s, l) => s + l.length, 0), ownN = Object.keys(g.owned).filter(k => k.startsWith(gk + ':')).length;
   const tabs = GACHA_GENRES.map(x => `<button class="seg-b ${x.k === gk ? 'on' : ''}" aria-pressed="${x.k === gk}" data-act="gachaGenre" data-g="${x.k}">${x.icon} ${x.name}<small>${Object.keys(g.owned).filter(k => k.startsWith(x.k + ':')).length}/${GACHA_POOL[x.k].reduce((s, l) => s + l.length, 0)}</small></button>`).join('');
   return `
@@ -9563,14 +9583,14 @@ function renderGachaFacility(p) {
 // ---------- 景品一覧・着せ替え（試着つき） ----------
 function gcState() {
   const g = ensureGacha(G.p);
-  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null };
+  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null, outfit: Object.assign({}, g.outfit), view: (G.p && G.p.skin) || 'ruby' };
   return G._gc;
 }
 // 指定の装備で立ち絵を描く（実際の装備は書き換えない）
-function heroPreviewHtml(sk, style, eq) {
-  const g = ensureGacha(G.p), keep = g.eq;
-  g.eq = eq;
-  try { return heroWithCos(sk, style); } finally { g.eq = keep; }
+function heroPreviewHtml(sk, style, eq, outfit) {
+  const g = ensureGacha(G.p), keep = g.eq, keepO = g.outfit;
+  g.eq = eq; if (outfit) g.outfit = outfit;
+  try { return heroWithCos(sk, style); } finally { g.eq = keep; g.outfit = keepO; }
 }
 function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
   const q = GACHA_RARITY[rar];
@@ -9578,16 +9598,21 @@ function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
 }
 function openGachaCollection(tab, keepScroll) {
   const sh0 = $('#m-sheet'), bd0 = sh0.querySelector('.gc-body'), sc0 = keepScroll ? [sh0.scrollTop, bd0 ? bd0.scrollTop : 0] : null;
-  const p = G.p, g = ensureGacha(p), st = gcState(), sk = CHAR_SKINS.find(s => s.id === (p.skin || 'ruby'));
+  const p = G.p, g = ensureGacha(p), st = gcState(), sk = CHAR_SKINS.find(s => s.id === (st.view || p.skin || 'ruby')) || CHAR_SKINS[0];
   if (tab) st.tab = tab;
   const n = (type, list) => Object.keys(g.owned).filter(k => k.startsWith(type + ':')).length + '/' + list.length;
-  const tabs = [['cos', 'おまけ装備', n('cos', COSMETICS)], ['frame', '図鑑の飾り', n('frame', DEX_FRAMES)], ['title', '称号', n('title', GACHA_TITLES)]]
+  const tabs = [['cos', 'おまけ装備', n('cos', COSMETICS)], ['outfit', '衣装', n('outfit', OUTFITS)], ['frame', '図鑑の飾り', n('frame', DEX_FRAMES)], ['title', '称号', n('title', GACHA_TITLES)]]
     .map(([k, l, c]) => `<button class="seg-b ${st.tab === k ? 'on' : ''}" aria-pressed="${st.tab === k}" data-act="gcTab" data-tab="${k}">${l}<small>${c}</small></button>`).join('');
   let body = '';
   if (st.tab === 'cos') {
     body = COS_SLOTS.map(s => {
       const cards = COSMETICS.filter(c => c.slot === s.k).map(c => gcItemCard('cos', c.id, c.name, c.rar, !!g.owned['cos:' + c.id], st.eq[s.k] === c.id, 'gcTry', `data-slot="${s.k}" data-id="${c.id}"`)).join('');
       return `<div class="gc-slot"><b>${s.name}</b><div class="gc-grid"><button class="gc-card none${!st.eq[s.k] ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcTry" data-slot="${s.k}" data-id=""><span class="gc-n">なし</span></button>${cards}</div></div>`;
+    }).join('');
+  } else if (st.tab === 'outfit') {
+    body = CHAR_SKINS.map(h => {
+      const cards = OUTFITS.filter(o => o.skin === h.id).map(o => gcItemCard('outfit', o.id, `${'★'.repeat(o.tier)} ${(TIER_NAMES[h.id] || {})[o.tier] || ''}`, o.rar, !!g.owned['outfit:' + o.id], st.outfit[h.id] === o.tier, 'gcOutfit', `data-skin="${h.id}" data-tier="${o.tier}"`)).join('');
+      return `<div class="gc-slot"><b>${esc(h.name)}（${esc(h.job)}）</b><div class="gc-grid"><button class="gc-card none${!st.outfit[h.id] ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcOutfit" data-skin="${h.id}" data-tier="0"><span class="gc-n">基本の装い</span></button>${cards}</div></div>`;
     }).join('');
   } else if (st.tab === 'frame') {
     body = `<div class="gc-slot"><b>図鑑・実績の額縁</b><div class="gc-grid"><button class="gc-card none${!st.frame ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcFrame" data-id=""><span class="gc-n">なし</span></button>${DEX_FRAMES.map(f => gcItemCard('frame', f.id, f.name, f.rar, !!g.owned['frame:' + f.id], st.frame === f.id, 'gcFrame', `data-id="${f.id}"`)).join('')}</div></div>`;
@@ -9596,12 +9621,12 @@ function openGachaCollection(tab, keepScroll) {
     body = `<div class="gc-slot"><b>称号（ステータスにも表示されます）</b><div class="gc-grid">${GACHA_TITLES.map(t => gcItemCard('title', t.id, t.name, t.rar, !!g.owned['title:' + t.id], tw === t.id, 'gcTitle', `data-id="${t.id}"`)).join('')}</div></div>`;
   }
   const fr = DEX_FRAMES.find(f => f.id === st.frame);
-  const need = COS_SLOTS.filter(s => st.eq[s.k] && !g.owned['cos:' + st.eq[s.k]]).length + (st.frame && !g.owned['frame:' + st.frame] ? 1 : 0);
-  const dirty = COS_SLOTS.some(s => (st.eq[s.k] || null) !== (g.eq[s.k] || null)) || (st.frame || null) !== (g.frame || null);
+  const need = COS_SLOTS.filter(s => st.eq[s.k] && !g.owned['cos:' + st.eq[s.k]]).length + (st.frame && !g.owned['frame:' + st.frame] ? 1 : 0) + CHAR_SKINS.filter(h => st.outfit[h.id] && !g.owned['outfit:o_' + h.id + '_' + st.outfit[h.id]]).length;
+  const dirty = COS_SLOTS.some(s => (st.eq[s.k] || null) !== (g.eq[s.k] || null)) || (st.frame || null) !== (g.frame || null) || CHAR_SKINS.some(h => (st.outfit[h.id] || 0) !== (g.outfit[h.id] || 0));
   const sample = fr ? `style="--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}"` : '';
   $('#m-sheet').innerHTML = `
     <h2 class="win" id="m-title">📖 景品一覧・着せ替え</h2>
-    <div class="gc-prev"><div class="gc-stage big">${heroPreviewHtml(sk, 'width:130px;height:130px', st.eq)}</div>
+    <div class="gc-prev"><div class="gc-stage big">${heroPreviewHtml(sk, 'width:130px;height:130px', st.eq, st.outfit)}</div>
       <div class="gc-prev-r"><div class="gc-frame-sample${fr ? ' on' : ''}" ${sample}>図鑑の額縁</div>
         <small class="sub">タップで試着。${need ? `<b style="color:#ffb347">未入手が ${need} 点含まれています（試着のみ）</b>` : '入手済みの景品は「着る」で反映できます。'}</small></div></div>
     <div class="seg gc-tabs" role="tablist">${tabs}</div>
@@ -10159,7 +10184,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  startRunGuarded, dangerOf, startDailyRun, openGachaCollection, gcState, hairSrc, hairRecolorData, HAIR_CFG, cosHair, GACHA_GENRES, gachaRevealEnd, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  startRunGuarded, dangerOf, startDailyRun, openGachaCollection, gcState, OUTFITS, skinTier, hairSrc, hairRecolorData, HAIR_CFG, cosHair, GACHA_GENRES, gachaRevealEnd, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,

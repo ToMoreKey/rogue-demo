@@ -40,6 +40,7 @@ JS_ORDER = [
     'assets/npc_portraits.js',
     'assets/scene_images.js',
     'data/skins.js',
+    'data/outfits.js',
     'data/sprites.js',
     'js/10_art.js',
     'js/20_state.js',
