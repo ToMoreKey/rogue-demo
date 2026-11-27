@@ -230,6 +230,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .dc-spr{width:56px;flex:none}
 .sprite{display:block;width:100%;height:auto;image-rendering:pixelated}
 .sprite-img{image-rendering:auto;object-fit:contain}
+.sprite-img.flip{transform:scaleX(-1)}
 .aura-6{filter:drop-shadow(0 0 6px #ffd45a) drop-shadow(0 0 12px rgba(255,212,90,.55))}
 .aura-7{filter:drop-shadow(0 0 6px #6de7ff) drop-shadow(0 0 12px rgba(109,231,255,.6))}
 .aura-8{filter:drop-shadow(0 0 7px #c56bff) drop-shadow(0 0 14px rgba(197,107,255,.65))}
@@ -850,7 +851,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v82';
+const APP_VERSION = 'rogue-v84';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -2430,11 +2431,17 @@ function masteryBonus(p) {
   }
   return { atkMult, defMult, hpMult, mpMult, healMult, critAdd, dmgMult, takenMult, expMult, goldMult };
 }
+/* 元絵が右向きの敵: プレイヤー（左側）に向くよう左右反転して表示する */
+const ENEMY_FLIP = new Set([
+  'd_beetle', 'j_lizard', 'h_turret', 'j_hag',
+  'a_skel', 'c_witch', 'd_mushroom', 'e_golem', 'f_jelly', 'f_siren', 'g_valkyrie', 'h_android', 'h_drone',
+  'h_gear', 'j_banshee', 'j_bog', 'j_wisp', 'k_golem', 'm_moon', 'n_egg', 'n_slayer', 'o_void']);
 function enemyArt(en, dId) {
   const im = (en && ENEMY_IMG[en.id]) || (en && en.fallbackId && ENEMY_IMG[en.fallbackId]);
   const filterVal = (en && en.raged) ? 'hue-rotate(140deg) saturate(1.6)' : ((en && en.bossFilter) || '');
   const st = filterVal ? ` style="filter:${filterVal}"` : '';
-  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
+  const flip = en && (ENEMY_FLIP.has(en.id) || ENEMY_FLIP.has(en.fallbackId)) ? ' flip' : '';
+  if (im) return `<img class="sprite sprite-img${flip}" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
   return `<div${st}>${spriteSVG(en.shape, PAL[dId][en.shape])}</div>`;
 }
 
@@ -8924,7 +8931,7 @@ window.__rogue = {
   idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
-  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
+  smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,
   maxHp, maxMp, playerAtk, playerDef, armorDef, skillMpCost, expNeed, renderAll, renderBattle, renderEnemy, save, load, equipBest, newPlayer, usePotion, scaleOf,
   SKILL_FX_MAP, getSkillFxSpec, playSkillFx, triggerRageFx, clearRageFx, clearSkillFxLayer, clearAllBattleFx, syncBuffAura, isFxEnabled, isReducedMotion, openFxDebugModal, fxDebugTarget,
   playerAct, enemyAct, useSkillEffect, genBuffMult, statSnap, playerPower, powerRank, powerVerdict, refPower, powerAfterimage, POWER_RANKS, openModal, dropsHtml, growthHtml, sceneUri, SCENE_ACCENT, weaponAtk,

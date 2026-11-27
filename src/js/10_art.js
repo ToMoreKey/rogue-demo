@@ -42,11 +42,17 @@ function masteryBonus(p) {
   }
   return { atkMult, defMult, hpMult, mpMult, healMult, critAdd, dmgMult, takenMult, expMult, goldMult };
 }
+/* 元絵が右向きの敵: プレイヤー（左側）に向くよう左右反転して表示する */
+const ENEMY_FLIP = new Set([
+  'd_beetle', 'j_lizard', 'h_turret', 'j_hag',
+  'a_skel', 'c_witch', 'd_mushroom', 'e_golem', 'f_jelly', 'f_siren', 'g_valkyrie', 'h_android', 'h_drone',
+  'h_gear', 'j_banshee', 'j_bog', 'j_wisp', 'k_golem', 'm_moon', 'n_egg', 'n_slayer', 'o_void']);
 function enemyArt(en, dId) {
   const im = (en && ENEMY_IMG[en.id]) || (en && en.fallbackId && ENEMY_IMG[en.fallbackId]);
   const filterVal = (en && en.raged) ? 'hue-rotate(140deg) saturate(1.6)' : ((en && en.bossFilter) || '');
   const st = filterVal ? ` style="filter:${filterVal}"` : '';
-  if (im) return `<img class="sprite sprite-img" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
+  const flip = en && (ENEMY_FLIP.has(en.id) || ENEMY_FLIP.has(en.fallbackId)) ? ' flip' : '';
+  if (im) return `<img class="sprite sprite-img${flip}" src="${im.src}" alt="${en.name}" draggable="false"${st}>`;
   return `<div${st}>${spriteSVG(en.shape, PAL[dId][en.shape])}</div>`;
 }
 

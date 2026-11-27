@@ -38,6 +38,9 @@ with sync_playwright() as pw:
     ev("() => { __rogue.bossBanner('A'); __rogue.bossBanner('B'); }"); pg.wait_for_selector('.boss-banner', timeout=5000); check('バナーは重複しない(ノード上限)', pg.locator('.boss-banner').count() == 1, pg.locator('.boss-banner').count())
     ev("() => { G.run.introUntil = Date.now() + 5000; }"); __t = ev("() => { const h = G.run.enemy.hp; __rogue.tick(); return h === G.run.enemy.hp; }")
     check('演出中は tick で戦闘が進まない', __t)
+    # 右向きの敵は左向きに反転
+    check('右向きの敵(d_beetle)は反転クラス', 'flip' in ev("() => __rogue.enemyArt({ id: 'd_beetle', name: 'x' }, 'D')"))
+    check('左向き/正面の敵は反転しない', 'flip' not in ev("() => __rogue.enemyArt({ id: 'a_slime', name: 'x' }, 'A')"))
     # 低HP
     ev("() => { G.p.hp = Math.floor(__rogue.maxHp(G.p) * 0.2); __rogue.lowHpWarn(); }")
     check('HP25%以下で低HP警告', ev("() => document.body.classList.contains('lowhp')"))
