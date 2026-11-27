@@ -774,3 +774,15 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .ttl-ver{position:absolute;z-index:1;right:max(12px,env(safe-area-inset-right));bottom:max(8px,env(safe-area-inset-bottom));font-size:10px;color:#9a917c;opacity:.7}
 @media (max-height:520px){.ttl-heroes{display:none}.ttl-sub{display:none}.ttl-bell{width:34px}}
 @media (prefers-reduced-motion:reduce){#title-screen,.ttl-bg,.ttl-bell,.ttl-motes i,.ttl-heroes img,.ttl-start{animation:none!important}.ttl-motes{display:none}}
+.ttl-credit{position:absolute;z-index:2;left:max(12px,env(safe-area-inset-left));bottom:max(6px,env(safe-area-inset-bottom));padding:8px 10px;font:12px var(--font-body);color:#cdbf9a;background:none;border:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.ttl-credit:focus-visible{outline:2px solid #fff;border-radius:4px}
+#credits-screen{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:rgba(4,5,10,.82);animation:ttlin .25s ease-out}
+.cr-box{display:flex;flex-direction:column;width:100%;max-width:440px;max-height:100%;background:linear-gradient(#1a1f2c,#10131c);border:1px solid #3a4259;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.6);overflow:hidden}
+.cr-scroll{overflow-y:auto;padding:22px 22px 8px;text-align:center;color:#e6e9f2}
+.cr-title{font:900 22px var(--font-display);letter-spacing:.12em;color:#f2c14e;margin-bottom:14px}
+.cr-g{margin:0 0 14px}.cr-g h3{margin:0 0 4px;font:700 12px var(--font-body);letter-spacing:.14em;color:#9aa3bd}
+.cr-g p{margin:2px 0;font-size:14px;line-height:1.55}
+.cr-note{margin:14px 0 4px;font-size:11px;color:#8a92a8}.cr-copy{margin:0 0 6px;font-size:12px;color:#9aa3bd}
+.cr-close{margin:6px 16px 16px;padding:12px;font:700 15px var(--font-body);color:#10131c;background:#e9b43c;border:0;border-radius:8px;cursor:pointer}
+.cr-close:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){#credits-screen{animation:none}}

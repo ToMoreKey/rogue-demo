@@ -1506,6 +1506,7 @@ function renderStatus() {
           <button class="btn small" data-act="openImportModal">セーブを読み込む</button>
           <button class="btn small" data-act="openRecovery">バックアップから復元</button>
           <button class="btn small" data-act="openBugReport">不具合・ご意見を送る</button>
+          <button class="btn small" data-act="openCredits">クレジット</button>
         </div>
       </div>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid #2b3245" id="sound-panel">

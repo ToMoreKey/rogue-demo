@@ -33,6 +33,7 @@ function showTitle() {
       <button class="ttl-start" id="ttl-start" type="button">${hasSave ? 'つづきから' : 'はじめる'}</button>
       <div class="ttl-hint">${hasSave ? `Lv${p.lv} ・ タップでもはじめられます` : 'タップでもはじめられます'}</div>
     </div>
+    <button class="ttl-credit" id="ttl-credit" type="button">クレジット</button>
     <div class="ttl-ver">ver ${typeof APP_VERSION === 'string' ? APP_VERSION.replace(/^rogue-/, '') : ''}</div>`;
   document.body.appendChild(el);
   G._titleUp = true;
@@ -43,7 +44,40 @@ function showTitle() {
     el.classList.add('out');
     setTimeout(() => { el.remove(); try { renderAll(); } catch (e) {} }, isReducedMotion() ? 0 : 450);
   };
-  el.addEventListener('click', close);
-  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); close(); } });
+  el.addEventListener('click', e => { if (e.target.closest('#ttl-credit')) { e.stopPropagation(); showCredits(); return; } close(); });
+  el.addEventListener('keydown', e => { if (e.target.id === 'ttl-credit') return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); close(); } });
   const btn = el.querySelector('#ttl-start'); if (btn) btn.focus();
+}
+
+/* ================= クレジット（タイトル・データ画面から開く） ================= */
+const CREDITS = {
+  title: '鐘鳴りのダンジョン',
+  groups: [
+    { h: '企画・制作', rows: ['ToMoreKey'] },
+    { h: 'イラスト（キャラクター・敵・NPC・背景）', rows: ['画像生成 AI（Google Gemini）で生成し、制作者が選定・調整'] },
+    { h: 'プログラム・制作補助', rows: ['Claude（Anthropic）'] },
+    { h: 'サウンド', rows: ['効果音・BGM はゲーム内で合成（外部の音源は使用していません）'] },
+    { h: 'フォント', rows: ['DotGothic16', 'Zen Kaku Gothic New', 'いずれも SIL Open Font License 1.1（Google Fonts より配信）'] }
+  ],
+  note: 'この作品はフィクションです。登場する人物・団体・出来事は架空のものです。',
+  copy: '© 2026 ToMoreKey'
+};
+function creditsHtml() {
+  const c = CREDITS;
+  return `<div class="cr-title">${esc(c.title)}</div>` +
+    c.groups.map(g => `<section class="cr-g"><h3>${esc(g.h)}</h3>${g.rows.map(r => `<p>${esc(r)}</p>`).join('')}</section>`).join('') +
+    `<p class="cr-note">${esc(c.note)}</p><p class="cr-copy">${esc(c.copy)}</p>`;
+}
+function showCredits() {
+  if (document.getElementById('credits-screen')) return;
+  const el = document.createElement('div');
+  el.id = 'credits-screen'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'クレジット');
+  el.innerHTML = `<div class="cr-box"><div class="cr-scroll">${creditsHtml()}</div><button type="button" class="cr-close" id="cr-close">閉じる</button></div>`;
+  const prev = document.activeElement;
+  const close = () => { document.removeEventListener('keydown', onKey, true); el.remove(); try { if (prev && prev.focus) prev.focus(); } catch (e) {} };
+  const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  el.addEventListener('click', e => { e.stopPropagation(); if (e.target === el || e.target.id === 'cr-close') close(); });
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(el);
+  const b = el.querySelector('#cr-close'); if (b) b.focus();
 }
