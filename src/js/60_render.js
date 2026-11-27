@@ -1083,6 +1083,14 @@ function levelBand(lv) {
   a.querySelectorAll('.lv-band').forEach(n => n.remove());
   const b = document.createElement('div'); b.className = 'lv-band'; b.textContent = `LEVEL UP!  Lv${lv}`; a.appendChild(b);
   setTimeout(() => b.remove(), 1300);
+  // キャラが喜ぶモーション: 2回ジャンプ＋きらめき
+  const f = $('#f-player');
+  if (f) {
+    f.classList.remove('lv-joy'); void f.offsetWidth; f.classList.add('lv-joy');
+    f.querySelectorAll('.lv-spark').forEach(n => n.remove());
+    ['✦', '✧', '✦', '✧'].forEach((c, i) => { const sp = document.createElement('span'); sp.className = 'lv-spark'; sp.textContent = c; sp.style.setProperty('--sx', (i - 1.5) * 22 + 'px'); sp.style.animationDelay = (i * 0.12) + 's'; f.appendChild(sp); });
+    clearTimeout(f._lj); f._lj = setTimeout(() => { f.classList.remove('lv-joy'); f.querySelectorAll('.lv-spark').forEach(n => n.remove()); }, 1300);
+  }
 }
 function killFx(boss) {
   if (G.headless || !isFxEnabled() || isReducedMotion()) return;

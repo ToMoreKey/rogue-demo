@@ -34,6 +34,7 @@ with sync_playwright() as pw:
     pg.wait_for_selector('.boss-banner', timeout=3000)
     check('名前バナー', pg.locator('.boss-banner').count() == 1)
     ev("() => { __rogue.levelBand(31); }"); check('レベルアップ帯', pg.locator('.lv-band').count() == 1)
+    check('レベルアップ時にキャラの喜びモーション(ジャンプ+きらめき)', pg.locator('#f-player.lv-joy').count() == 1 and pg.locator('#f-player .lv-spark').count() == 4)
     ev("() => { __rogue.bossBanner('A'); __rogue.bossBanner('B'); }"); pg.wait_for_selector('.boss-banner', timeout=5000); check('バナーは重複しない(ノード上限)', pg.locator('.boss-banner').count() == 1, pg.locator('.boss-banner').count())
     ev("() => { G.run.introUntil = Date.now() + 5000; }"); __t = ev("() => { const h = G.run.enemy.hp; __rogue.tick(); return h === G.run.enemy.hp; }")
     check('演出中は tick で戦闘が進まない', __t)

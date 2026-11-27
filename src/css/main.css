@@ -719,3 +719,10 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 #f-enemy.boss-hide{opacity:0}
 #f-enemy.boss-rise{animation:bossrise 1.05s ease-out both}
 @keyframes bossrise{0%{opacity:0;transform:translateY(40px) scale(.55);filter:brightness(0)}60%{opacity:1;filter:brightness(.5)}100%{opacity:1;transform:none;filter:none}}
+/* レベルアップ時のキャラ喜びモーション */
+#f-player{position:relative}
+#f-player.lv-joy .spr{animation:lvjoy .65s ease-out 2}
+@keyframes lvjoy{0%,100%{transform:translateY(0) scale(1,1)}15%{transform:translateY(0) scale(1.06,.92)}50%{transform:translateY(-16px) scale(.97,1.05)}80%{transform:translateY(0) scale(1.05,.94)}}
+.lv-spark{position:absolute;left:50%;top:30%;margin-left:-6px;pointer-events:none;z-index:6;font-size:16px;color:#ffe27a;text-shadow:0 0 6px #ffb800;opacity:0;animation:lvspark .9s ease-out forwards}
+@keyframes lvspark{0%{opacity:0;transform:translate(0,10px) scale(.4)}25%{opacity:1}100%{opacity:0;transform:translate(var(--sx),-46px) scale(1.2) rotate(40deg)}}
+@media (prefers-reduced-motion:reduce){#f-player.lv-joy .spr,.lv-spark{animation:none!important}}
