@@ -236,6 +236,7 @@ function spawnEnemy(boss, miniboss = false) {
   };
   run.phase = 'battle';
   Sound.setScene(run.tower ? 'tower' : (boss ? 'boss' : 'dungeon'));
+  if (boss) bossBanner(name);
   if (boss) run.bossHitTaken = false;
   recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
@@ -511,7 +512,7 @@ function battleRound() {
 function onKill() {
   const p = G.p, run = G.run, en = run.enemy, te = towerEff(run), pb = masteryBonus(p);
   run.kills++; p.stats.kills++; run.cleared++;
-  Sound.play(en.boss ? 'bossKill' : 'kill');
+  Sound.play(en.boss ? 'bossKill' : 'kill'); killFx(en.boss);
   recordDexEnemy(p, en.id, true);
   const expGain = Math.round(en.exp * te.expMult * pb.expMult);
   const goldGain = Math.round(en.gold * te.goldMult * pb.goldMult);
@@ -623,7 +624,7 @@ function gainExp(n) {
     const dh = maxHp(p) - oh, dm = maxMp(p) - om;
     p.hp = Math.min(maxHp(p), p.hp + dh + Math.round(maxHp(p) * 0.2));
     p.mp = Math.min(maxMp(p), p.mp + dm);
-    addLog(`レベルアップ！ Lv${p.lv} になった。SP+1`, 'l-gold'); Sound.play('levelup');
+    addLog(`レベルアップ！ Lv${p.lv} になった。SP+1`, 'l-gold'); Sound.play('levelup'); levelBand(p.lv);
   }
   if (p.lv >= LV_CAP) p.exp = 0;
   if (p.lv > lv0) checkAchievements('lv');

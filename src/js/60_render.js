@@ -24,6 +24,7 @@ function powerAfterimage(a, b) {
   document.body.appendChild(box); setTimeout(() => box.remove(), 1900);
 }
 function renderHUD() {
+  lowHpWarn();
   const p = G.p, mh = maxHp(p), mm = maxMp(p), need = expNeed(p.lv);
   { const pw = playerPower(p); const pe = $('#h-pwv'); if (pe) pe.textContent = fmt(pw);
     const pc = $('#h-pw'); if (pc) { const rk = powerRank(pw); pc.style.setProperty('--rc', rk.color); pc.title = `戦闘力（攻撃＋防御＋HP/8＋MP/20）ランク：${rk.name}`; }
@@ -938,6 +939,7 @@ function playSkillFx(id, hitCount, target) {
 let lastEnemyShape = '';
 function renderEnemy(fresh) {
   const run = G.run; if (G.headless || !run || !run.enemy) return;
+  { const fe = $('#f-enemy'); if (fe && fresh) fe.classList.remove('die', 'die-boss'); }
   const en = run.enemy;
   if (fresh || lastEnemyShape !== en.id) {
     $('#spr-enemy').innerHTML = enemyArt(en, run.d.id);
@@ -1037,9 +1039,46 @@ function popDamage(who, text, cls) {
   if (who === 'enemy') Sound.play(cls === 'crit' ? 'crit' : 'atk'); else Sound.play(cls === 'heal' ? 'heal' : 'hit');
   if (G.headless) return;
   const f = $(who === 'player' ? '#f-player' : '#f-enemy'); if (!f) return;
-  const s = document.createElement('span'); s.className = 'pop ' + cls; s.textContent = text; f.appendChild(s);
+  let tier = '';
+  if (who === 'enemy' && G.run && G.run.enemy && /^\d+$/.test(text)) { const rt = Number(text) / Math.max(1, G.run.enemy.maxHp); tier = rt >= 0.2 ? ' huge' : rt >= 0.08 ? ' big' : ''; }
+  const s = document.createElement('span'); s.className = 'pop ' + cls + (isFxEnabled() ? tier : ''); s.textContent = (cls === 'crit' && isFxEnabled()) ? 'CRITICAL!\n' + text : text; f.appendChild(s);
+  if (cls === 'crit' || tier === ' huge') battleImpact('big'); else if (who === 'player' && cls === 'bad') battleImpact('hit');
   setTimeout(() => s.remove(), 900);
   const pops = f.querySelectorAll('.pop'); if (pops.length > 6) pops[0].remove();
+}
+// ヒットストップ(約80ms停止)と画面の微振動。演出OFF・reduced-motion・ヘッドレスでは何もしない
+function battleImpact(kind) {
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
+  const a = $('#arena'); if (!a) return;
+  const cls = kind === 'big' ? 'shake-b' : 'shake-s';
+  a.classList.remove('shake-b', 'shake-s'); void a.offsetWidth; a.classList.add(cls, 'hitstop');
+  clearTimeout(a._hs); a._hs = setTimeout(() => a.classList.remove('hitstop'), 80);
+  clearTimeout(a._sk); a._sk = setTimeout(() => a.classList.remove('shake-b', 'shake-s'), 260);
+  if (kind === 'big') { a.classList.remove('crit-flash'); void a.offsetWidth; a.classList.add('crit-flash'); clearTimeout(a._cf); a._cf = setTimeout(() => a.classList.remove('crit-flash'), 260); }
+}
+function bossBanner(name) {
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
+  const a = $('#arena'); if (!a) return;
+  a.querySelectorAll('.boss-banner').forEach(n => n.remove());
+  const b = document.createElement('div'); b.className = 'boss-banner'; b.textContent = '⚠ ' + name; a.appendChild(b);
+  setTimeout(() => b.remove(), 1100);
+}
+function levelBand(lv) {
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
+  const a = $('#arena'); if (!a) return;
+  a.querySelectorAll('.lv-band').forEach(n => n.remove());
+  const b = document.createElement('div'); b.className = 'lv-band'; b.textContent = `LEVEL UP!  Lv${lv}`; a.appendChild(b);
+  setTimeout(() => b.remove(), 1300);
+}
+function killFx(boss) {
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
+  const f = $('#f-enemy'); if (!f) return;
+  f.classList.remove('die', 'die-boss'); void f.offsetWidth; f.classList.add(boss ? 'die-boss' : 'die');
+  if (boss) { const a = $('#arena'); if (a) { a.classList.remove('boss-glow'); void a.offsetWidth; a.classList.add('boss-glow'); setTimeout(() => a.classList.remove('boss-glow'), 900); } }
+}
+function lowHpWarn() {
+  const on = !!(G.run && !G.headless && isFxEnabled() && G.p.hp > 0 && G.p.hp <= maxHp(G.p) * 0.25);
+  document.body.classList.toggle('lowhp', on);
 }
 function playAttackMotion() {
   // ①立ち絵 → ②攻撃絵(skin.atk があれば) → ③立ち絵に戻る
