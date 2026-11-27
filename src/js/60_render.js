@@ -17,7 +17,7 @@ function powerAfterimage(a, b) {
   if (G.headless || (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
   const up = b > a, rk = powerRank(b);
   const old = document.getElementById('pw-ghosts'); if (old) old.remove();
-  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', rk.color);
+  const box = document.createElement('div'); box.id = 'pw-ghosts'; box.className = 'pw-ghosts ' + (up ? 'up' : 'down'); box.style.setProperty('--rc', up ? rk.color : '#7fa8ff'); // 下降は青系で区別
   let h = '';
   for (let i = 0; i < 4; i++) h += `<span class="pw-gh g${i}">${fmt(b)}</span>`;
   box.innerHTML = `<div class="pw-lab">戦闘力 ${rk.name}</div>${h}<span class="pw-gh main">${fmt(b)}</span><div class="pw-dl">${up ? '▲ +' : '▼ −'}${fmt(Math.abs(b - a))}</div>`;
@@ -1058,12 +1058,24 @@ function battleImpact(kind) {
   clearTimeout(a._sk); a._sk = setTimeout(() => a.classList.remove('shake-b', 'shake-s'), 260);
   if (kind === 'big') { a.classList.remove('crit-flash'); void a.offsetWidth; a.classList.add('crit-flash'); clearTimeout(a._cf); a._cf = setTimeout(() => a.classList.remove('crit-flash'), 260); }
 }
+/* ボス登場演出: WARNING×3 → ゴゴゴゴ（揺れ＋ボスせり上がり）→ 名前バナー。戻り値＝戦闘開始までの待ち(ms)。演出OFF/headless/動きを減らす設定は 0 */
+const BOSS_INTRO_MS = 3300;
 function bossBanner(name) {
-  if (G.headless || !isFxEnabled() || isReducedMotion()) return;
-  const a = $('#arena'); if (!a) return;
-  a.querySelectorAll('.boss-banner').forEach(n => n.remove());
-  const b = document.createElement('div'); b.className = 'boss-banner'; b.textContent = '⚠ ' + name; a.appendChild(b);
-  setTimeout(() => b.remove(), 1100);
+  if (G.headless || !isFxEnabled() || isReducedMotion()) return 0;
+  const a = $('#arena'); if (!a) return 0;
+  (a._bt || []).forEach(clearTimeout); a._bt = [];
+  a.querySelectorAll('.boss-banner,.warn-txt,.warn-flash,.goro-txt').forEach(n => n.remove());
+  const fe = $('#f-enemy'); if (fe) { fe.classList.remove('boss-rise'); fe.classList.add('boss-hide'); }
+  const at = (ms, fn) => a._bt.push(setTimeout(fn, ms));
+  const add = (cls, text) => { const n = document.createElement('div'); n.className = cls; if (text) n.textContent = text; a.appendChild(n); return n; };
+  [0, 750, 1500].forEach(ms => at(ms, () => { Sound.play('warn'); add('warn-flash'); add('warn-txt', '⚠ WARNING ⚠'); at(ms + 650, () => a.querySelectorAll('.warn-txt,.warn-flash').forEach(n => n.remove())); }));
+  at(2250, () => {
+    Sound.play('rumble'); a.classList.add('rumble'); add('goro-txt', 'ゴゴゴゴゴゴ…');
+    const f = $('#f-enemy'); if (f) { f.classList.remove('boss-hide'); f.classList.add('boss-rise'); }
+    at(1050, () => { a.classList.remove('rumble'); a.querySelectorAll('.goro-txt').forEach(n => n.remove()); const f2 = $('#f-enemy'); if (f2) f2.classList.remove('boss-rise'); });
+  });
+  at(BOSS_INTRO_MS, () => { const bn = add('boss-banner', '⚠ ' + name); setTimeout(() => bn.remove(), 1100); });
+  return BOSS_INTRO_MS;
 }
 function levelBand(lv) {
   if (G.headless || !isFxEnabled() || isReducedMotion()) return;
@@ -1071,6 +1083,14 @@ function levelBand(lv) {
   a.querySelectorAll('.lv-band').forEach(n => n.remove());
   const b = document.createElement('div'); b.className = 'lv-band'; b.textContent = `LEVEL UP!  Lv${lv}`; a.appendChild(b);
   setTimeout(() => b.remove(), 1300);
+  // キャラが喜ぶモーション: 2回ジャンプ＋きらめき
+  const f = $('#f-player');
+  if (f) {
+    f.classList.remove('lv-joy'); void f.offsetWidth; f.classList.add('lv-joy');
+    f.querySelectorAll('.lv-spark').forEach(n => n.remove());
+    ['✦', '✧', '✦', '✧'].forEach((c, i) => { const sp = document.createElement('span'); sp.className = 'lv-spark'; sp.textContent = c; sp.style.setProperty('--sx', (i - 1.5) * 22 + 'px'); sp.style.animationDelay = (i * 0.12) + 's'; f.appendChild(sp); });
+    clearTimeout(f._lj); f._lj = setTimeout(() => { f.classList.remove('lv-joy'); f.querySelectorAll('.lv-spark').forEach(n => n.remove()); }, 1300);
+  }
 }
 function killFx(boss) {
   if (G.headless || !isFxEnabled() || isReducedMotion()) return;

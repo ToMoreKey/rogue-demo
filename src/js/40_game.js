@@ -236,7 +236,7 @@ function spawnEnemy(boss, miniboss = false) {
   };
   run.phase = 'battle';
   Sound.setScene(run.tower ? 'tower' : (boss ? 'boss' : 'dungeon'));
-  if (boss) bossBanner(name);
+  if (boss) { const ms = bossBanner(name); run.introUntil = ms ? Date.now() + ms : 0; }
   if (boss) run.bossHitTaken = false;
   recordDexEnemy(G.p, run.enemy.id, false);
   addLog(`【${run.floor}F】${boss ? 'ボス ' : miniboss ? '節目の強敵 ' : ''}${name}が現れた！`, (boss || miniboss) ? 'l-gold' : 'l-sys');
@@ -727,6 +727,7 @@ function finishRun(result) {
 let loopTimer = null;
 function tick() {
   const run = G.run; if (!run) return;
+  if (run.introUntil && Date.now() < run.introUntil) return; // ボス登場演出中は戦闘を止める
   try {
     if (run.phase === 'next') nextFloor();
     else if (run.phase === 'pause') run.phase = 'next';

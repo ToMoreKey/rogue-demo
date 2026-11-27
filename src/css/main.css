@@ -707,3 +707,22 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 @keyframes achb{0%{opacity:0;transform:translateX(-50%) scale(.7)}12%{opacity:1;transform:translateX(-50%) scale(1.06)}20%{transform:translateX(-50%) scale(1)}85%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.ach-banner{animation:none}}
 .goal-card.mini{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px}.goal-card.mini span{font-weight:700;font-size:14px}
+/* ボス登場演出（WARNING×3 → ゴゴゴ → せり上がり） */
+.warn-flash{position:absolute;inset:0;z-index:5;pointer-events:none;background:rgba(220,0,0,.42);animation:warnflash .65s ease-out forwards}
+.warn-txt{position:absolute;left:0;right:0;top:34%;z-index:7;text-align:center;pointer-events:none;font-family:var(--font-display);font-size:30px;font-weight:900;letter-spacing:.12em;color:#ff4040;text-shadow:0 0 12px #f00,0 2px 0 #000;padding:6px 0;background:linear-gradient(90deg,transparent,rgba(0,0,0,.75),transparent);animation:warntxt .65s steps(1,end) forwards}
+@keyframes warnflash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+@keyframes warntxt{0%{opacity:0}10%,45%{opacity:1}55%{opacity:.25}70%{opacity:1}100%{opacity:0}}
+.goro-txt{position:absolute;left:0;right:0;top:20%;z-index:7;text-align:center;pointer-events:none;font-family:var(--font-display);font-size:28px;font-weight:900;color:#d8c9a8;text-shadow:0 0 10px #000,0 3px 0 #000;animation:goro .09s linear infinite alternate}
+@keyframes goro{from{transform:translate(-2px,1px) rotate(-.6deg)}to{transform:translate(2px,-1px) rotate(.6deg)}}
+.arena.rumble{animation:rumble .07s linear infinite alternate}
+@keyframes rumble{from{transform:translate(-2px,1px)}to{transform:translate(2px,-1px)}}
+#f-enemy.boss-hide{opacity:0}
+#f-enemy.boss-rise{animation:bossrise 1.05s ease-out both}
+@keyframes bossrise{0%{opacity:0;transform:translateY(40px) scale(.55);filter:brightness(0)}60%{opacity:1;filter:brightness(.5)}100%{opacity:1;transform:none;filter:none}}
+/* レベルアップ時のキャラ喜びモーション */
+#f-player{position:relative}
+#f-player.lv-joy .spr{animation:lvjoy .65s ease-out 2}
+@keyframes lvjoy{0%,100%{transform:translateY(0) scale(1,1)}15%{transform:translateY(0) scale(1.06,.92)}50%{transform:translateY(-16px) scale(.97,1.05)}80%{transform:translateY(0) scale(1.05,.94)}}
+.lv-spark{position:absolute;left:50%;top:30%;margin-left:-6px;pointer-events:none;z-index:6;font-size:16px;color:#ffe27a;text-shadow:0 0 6px #ffb800;opacity:0;animation:lvspark .9s ease-out forwards}
+@keyframes lvspark{0%{opacity:0;transform:translate(0,10px) scale(.4)}25%{opacity:1}100%{opacity:0;transform:translate(var(--sx),-46px) scale(1.2) rotate(40deg)}}
+@media (prefers-reduced-motion:reduce){#f-player.lv-joy .spr,.lv-spark{animation:none!important}}
