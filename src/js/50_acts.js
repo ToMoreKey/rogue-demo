@@ -374,6 +374,30 @@ const ACTS = {
   buyBuildBook() { buyBuildBook(); },
   npcTalk(d) { npcTalk(d.f); },
   openCredits() { showCredits(); },
+  gachaGenre(d) { if (GACHA_GENRES.some(x => x.k === d.g)) { G.gcGenre = d.g; renderTown(); } },
+  gachaPull(d) { const res = gachaPull(Number(d.n) === 10 ? 10 : 1, G.gcGenre); if (res) { renderTown(); renderHUD && renderHUD(); openGachaResult(res); } },
+  gachaEquip(d) { const g = ensureGacha(G.p); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) g.eq[d.slot] = null; else if (g.owned['cos:' + d.id] && cosById(d.id) && cosById(d.id).slot === d.slot) g.eq[d.slot] = d.id; save(); renderTown(); },
+  gachaCollection() { G._gc = null; openGachaCollection('cos'); },
+  gcTab(d) { openGachaCollection(d.tab); },
+  gcTry(d) { const st = gcState(); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) st.eq[d.slot] = null; else if (cosById(d.id) && cosById(d.id).slot === d.slot) st.eq[d.slot] = d.id; openGachaCollection(null, true); },
+  gcFrame(d) { const st = gcState(); st.frame = d.id && DEX_FRAMES.some(f => f.id === d.id) ? d.id : null; openGachaCollection(null, true); },
+  gcOutfit(d) { const st = gcState(), t = /^\d+$/.test(String(d.tier)) ? Number(d.tier) : String(d.tier || ''); if (!CHAR_SKINS.some(h => h.id === d.skin) || (t && !outfitValid(d.skin, t))) return; st.outfit[d.skin] = t; st.view = d.skin; openGachaCollection(null, true); },
+  gcTitle(d) { const p = G.p, g = ensureGacha(p); if (!g.owned['title:' + d.id]) { toast('未入手の称号です'); return; } p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }; p.tower.title = p.tower.title === d.id ? null : d.id; save(); openGachaCollection(null, true); },
+  gcApply() {
+    const g = ensureGacha(G.p), st = gcState();
+    for (const s of COS_SLOTS) { const id = st.eq[s.k]; if (id && !g.owned['cos:' + id]) { toast('未入手の景品は反映できません'); return; } }
+    if (st.frame && !g.owned['frame:' + st.frame]) { toast('未入手の景品は反映できません'); return; }
+    for (const h of CHAR_SKINS) { const t = st.outfit[h.id] || 0; if (t && !g.owned['outfit:o_' + h.id + '_' + t]) { toast('未入手の景品は反映できません'); return; } }
+    for (const s of COS_SLOTS) g.eq[s.k] = st.eq[s.k] || null;
+    for (const h of CHAR_SKINS) g.outfit[h.id] = st.outfit[h.id] || 0;
+    g.frame = st.frame || null; save(); toast('見た目を変更した'); G._gc = null; openGachaCollection(); renderTown(); renderAll();
+  },
+  gcAtk() { const st = gcState(); st.atk = !st.atk; openGachaCollection(null, true); },
+  gcReset() { G._gc = null; openGachaCollection(); },
+  gcClose() { gcClose(); },
+  gcSkip() { gachaRevealEnd(); },
+  gachaFrame(d) { const g = ensureGacha(G.p); if (!d.id) g.frame = null; else if (g.owned['frame:' + d.id]) g.frame = d.id; save(); renderTown(); },
+  loginClaim() { loginClaim(); },
   openStoryList() { openStoryList(); },
   storyPlay(d) { closeModal(); playStory(d.id); },
   hintOk(d) { const p = G.p; if (!p.hints) p.hints = {}; p.hints[d.k] = true; save(); renderAll(); },
@@ -407,13 +431,17 @@ const ACTS = {
   },
   mRetry() {
     const l = G.last; closeModal();
-    if (l && l.tower) startTowerRun();
+    if (l && l.daily) startDailyRun(l.daily.df);
+    else if (l && l.tower) startTowerRun();
     else if (l && l.abyss) startAbyssRun(l.abyss.lv);
     else if (l) startRunGuarded(l.d.id, l.df.id);
   },
   abyssSel(d) { G.abyssLv = Number(d.lv) || 1; renderTown(); },
   goAbyss() { startAbyssRun(G.abyssLv || 1); },
   goTower() { startTowerRun(); },
+  goDaily() { startDailyRun(G.dailyDf); },
+  dgTab(d) { G.dgTab = d.tab === 'daily' ? 'daily' : 'normal'; renderDungeonSelect(); },
+  dailyDf(d) { if (DAILY_DIFFS.some(x => x.id === d.df)) { G.dailyDf = d.df; try { localStorage.setItem(DAILY_DF_KEY, d.df); } catch (e) {} renderDungeonSelect(); } },
   openDex() { openDexModal(G.dexTab || 'enemies'); },
   openAch() { openDexModal('ach'); },
   dexFilter(d) { G.dexFilter = d.v; openDexModal(G.dexTab || 'enemies'); },

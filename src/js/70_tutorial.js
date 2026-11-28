@@ -36,6 +36,7 @@ function tutDone() {
   try { localStorage.setItem(TUT_SAVE_KEY, '1'); } catch (e) {}
   if (G._charSelectOpen) { G._charSelectOpen = false; closeModal(); }
   tutHide();
+  setTimeout(() => { try { loginBonusPrompt(); } catch (e) {} }, 1500);
 }
 
 // step 0: ダンジョンタブを押す

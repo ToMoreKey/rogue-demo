@@ -66,6 +66,7 @@ function renderPlaza() {
     { v: 'shop',  icon: '💰', name: '売却専門ショップ',       desc: 'アイテム売却・自動売却設定' },
     { v: 'smith', icon: '🔨', name: '鍛冶屋「鉄の大地」',     desc: '武器・防具の強化' },
     { v: 'bank',  icon: '🏦', name: '福音銀行',               desc: 'ゴールドの預け入れ・引き出し' },
+    { v: 'gacha', icon: '🔔', name: '福音のくじ',             desc: '鐘のしずくで回す・着せ替え' },
   ];
 
   $('#view-town').innerHTML = `
@@ -92,7 +93,9 @@ function renderFacility(fac) {
   const p = G.p;
   let content = '';
 
-  if (fac === 'inn') {
+  if (fac === 'gacha') {
+    content = renderGachaFacility(p);
+  } else if (fac === 'inn') {
     content = `
       <h2>宿屋「満月亭」</h2>
       <p class="sub">MPを無料で全回復します。</p>
@@ -181,9 +184,9 @@ function renderFacility(fac) {
       </div>`;
   }
 
-  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行' };
+  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行', gacha: '福音のくじ' };
   $('#view-town').innerHTML = `
-    ${viewHero(fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦' }[fac] || '', FAC_NAMES[fac] || '', '')}
+    ${viewHero(fac === 'gacha' ? 'town' : fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦', gacha: '🔔' }[fac] || '', FAC_NAMES[fac] || '', '')}
     <div class="facility-back-bar">
       <button class="btn small" data-act="townBack">← 広場に戻る</button>
     </div>
@@ -223,7 +226,8 @@ function renderDungeonSelect() {
   const hint = learnable.length ? `<button class="panel hint hint-btn" data-act="goLearnSkill" style="width:100%;text-align:left;cursor:pointer"><b>✨ スキルを習得できます！</b><span class="sub" style="margin:0;display:block">SPが${p0.sp}あります。「${SK[learnable[0]].name}」などを覚えると戦闘がぐっと楽に。<b style="color:var(--accent)"> → スキル習得画面へ</b></span></button>` : '';
   const goal = dgNextGoal(p0);
   const goalCard = goal ? `<div class="panel dg-goal"><b>🎯 次の目標</b><span>ダンジョン${goal.d.id}「${esc(goal.d.name)}」${esc(goal.df.name)}をクリア</span><small>目安戦闘力 ${fmt(refPower(goal.d, DIFFS.indexOf(goal.df)))}／あなた ${fmt(playerPower(p0))}　推奨Lv${goal.d.rec[DIFFS.indexOf(goal.df)]}／あなた Lv${p0.lv}</small></div>` : '';
-  $('#dg-list').innerHTML = hint + goalCard + DUNGEONS.map(d => {
+  if (!G.dailyDf) { try { G.dailyDf = localStorage.getItem(DAILY_DF_KEY) || 'normal'; } catch (e) { G.dailyDf = 'normal'; } }
+  const normalHtml = hint + goalCard + DUNGEONS.map(d => {
     const dgUnlocked = isDungeonUnlocked(p0, d);
     let sel = diffOf(G.sel[d.id]) || DIFFS[0];
     if (!isDiffUnlocked(p0, d, sel)) { sel = DIFFS[0]; G.sel[d.id] = sel.id; }
@@ -284,6 +288,9 @@ function renderDungeonSelect() {
         : `<p class="dc-info">🔒 深淵（全ダンジョンの極級をクリアで解放・残り ${abSt.remaining}個）</p><button class="btn primary wide" disabled>🔒 未解放</button>`}
     </div></article>`;
   })();
+  const dgTab = G.dgTab === 'daily' ? 'daily' : 'normal';
+  const tabs = `<div class="seg dg-tabs" role="tablist" aria-label="ダンジョンの種類"><button class="seg-b ${dgTab === 'normal' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'normal'}" data-act="dgTab" data-tab="normal">通常ダンジョン</button><button class="seg-b ${dgTab === 'daily' ? 'on' : ''}" role="tab" aria-selected="${dgTab === 'daily'}" data-act="dgTab" data-tab="daily">🔔 限定ダンジョン</button></div>`;
+  $('#dg-list').innerHTML = tabs + (dgTab === 'daily' ? renderDailyCard(p0) : normalHtml);
 }
 
 /* ================= render: battle ================= */
@@ -974,7 +981,7 @@ function renderBattle() {
     }
     $('#b-pips').innerHTML = pips;
   } else {
-    $('#b-title').textContent = `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
+    $('#b-title').textContent = run.daily ? `🔔 鐘の試練「${run.daily.theme.name}」　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F` : `${run.d.id} ${run.d.name}（${run.df.name}）　${Math.min(Math.max(run.floor, 1), run.floors)} / ${run.floors}F`;
     let pips = '';
     const pipCount = Math.min(run.floors, 20);
     for (let k = 1; k <= pipCount; k++) {
@@ -1000,8 +1007,8 @@ function renderBattle() {
     $('#b-ename').textContent = '探索中…'; $('#b-ehp').style.width = '0%'; $('#b-ehpn').textContent = '';
     $('#spr-enemy').innerHTML = ''; lastEnemyShape = '';
   }
-  { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1);
-    if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG(); box.dataset.k = k; } }
+  { const box = $('#spr-player'), k = ((G.p && G.p.skin) || 'ruby') + ':' + ((G.p && G.p.armor && G.p.armor.star) || 1) + ':' + cosKey(G.p);
+    if (!box.innerHTML || box.dataset.k !== k) { box.innerHTML = getPlayerSVG() + cosOverlayHtml(); box.dataset.k = k; } }
   const stTxt = run.guard > 0 ? `鉄壁 あと${run.guard}回` : (run.queued ? `予約：${SK[run.queued].name}` : '');
   $('#b-status').innerHTML = run.tower
     ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
@@ -1132,9 +1139,10 @@ function playAttackMotion() {
   const img = box.querySelector('img.sprite-img');
   const fr = skin && skinFrames(skin);
   if (fr && fr.atk && img) {
-    img.src = fr.atk;
+    const hc = cosHair(G.p), a0 = hc ? hairSrc(fr.atk, skin.id, hc) : fr.atk, b0 = hc ? hairSrc(fr.img, skin.id, hc) : fr.img;
+    img.src = a0;
     clearTimeout(img._atkT);
-    img._atkT = setTimeout(() => { img.src = fr.img; }, ms);
+    img._atkT = setTimeout(() => { img.src = b0; }, ms);
   }
 }
 function hitFlash(who) {
@@ -1397,7 +1405,7 @@ function renderStatus() {
   const tab = ['hero', 'gear', 'skill', 'mastery', 'data'].includes(G.statusTab) ? G.statusTab : 'hero';
   G.statusTab = tab;
   const pSkin = CHAR_SKINS.find(x => x.id === (p.skin || 'ruby')) || CHAR_SKINS[0];
-  const pTier = skinTier(pSkin), pKey = pSkin.id + ':' + pTier;
+  const pTier = skinTier(pSkin), pSel = skinSel(pSkin), pKey = pSkin.id + ':' + pSel;
   let tierChanged = false;
   if (G._lastLook && G._lastLook.startsWith(pSkin.id + ':') && G._lastLook !== pKey) tierChanged = true;
   G._lastLook = pKey;
@@ -1429,11 +1437,11 @@ function renderStatus() {
     ${powerPanel}
     <div class="panel"><h2>勇者</h2>
       <div class="portrait${tierChanged ? ' changed' : ''}" id="st-portrait">
-        <div class="pt-img">${skinArt(pSkin, 'width:96px;height:96px')}</div>
+        <div class="pt-img cos-stage">${skinArt(pSkin, 'width:96px;height:96px')}${cosOverlayHtml(p)}</div>
         <div class="pt-info">
           <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span>${(() => { const tid = p.tower && p.tower.title; const tt = tid && TOWER_TITLES.find(x => x.id === tid); return tt ? ` <span class="badge">${esc(tt.name)}</span>` : ''; })()}</div>
-          <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(tierName(pSkin, pTier))}</div>
-          <div class="pt-hint">${pTier ? '防具の見た目が反映されています' : '防具★3以上で見た目が変わります'}</div>
+          <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(skinLook(pSkin))}</div>
+          <div class="pt-hint">${pSel ? 'ガチャで手に入れた衣装を着ています' : '衣装は「福音のくじ」で手に入ります'}</div>
           ${tierChanged ? '<div class="pt-new">見た目が変わった！</div>' : ''}
         </div>
       </div>
@@ -1962,7 +1970,9 @@ function openDexModal(tab = 'enemies') {
       </div>`;
   }
 
-  $('#m-sheet').innerHTML = `
+  { const fr = DEX_FRAMES.find(f => p && p.gacha && f.id === p.gacha.frame);
+    G._dexFrame = fr ? `--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}` : ''; }
+  $('#m-sheet').innerHTML = `<div class="dxf">
     <h2 class="win" id="m-title">📖 図鑑・実績</h2>
     ${dexBar(allDone, allTotal, '全体のコンプ率')}
     <div class="dex-tabs">
@@ -1971,7 +1981,8 @@ function openDexModal(tab = 'enemies') {
       <button class="btn small ${G.dexTab === 'ach' ? 'primary' : ''}" data-act="dexTab" data-tab="ach">実績（${achTotal}/${ACHIEVEMENTS.length}）${Object.keys(fresh.a || {}).length && G.dexTab !== 'ach' ? '<i class="st-dot"></i>' : ''}</button>
     </div>
     ${body}
-    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div>`;
+    <div class="act" style="grid-template-columns:1fr"><button class="btn primary" data-act="closeTowerModal">閉じる</button></div></div>`;
+  { const fr = DEX_FRAMES.find(f => p && p.gacha && f.id === p.gacha.frame), sh = $('#m-sheet'); sh.classList.toggle('dxon', !!fr); if (fr) { sh.style.setProperty('--dxb', fr.bd); sh.style.setProperty('--dxg', fr.glow); sh.style.setProperty('--dxbg', fr.bg); } }
   $('#modal').hidden = false; G.modalOpen = true;
   // 見た時点でNEWを消す（このタブ分）。ステータスのドットも更新
   if (p && p.dexNew) { const k = G.dexTab === 'enemies' ? 'e' : G.dexTab === 'items' ? 'i' : 'a'; if (Object.keys(p.dexNew[k] || {}).length) { p.dexNew[k] = {}; save(); if (G.view === 'status') renderStatus(); } }
@@ -2121,8 +2132,9 @@ function openModal() {
   const items = [...l.items].sort((a, b) => b.rarity - a.rarity || b.star - a.star);
   $('#m-sheet').innerHTML = `
     <h2 class="${cls}" id="m-title">${title}</h2>
-    <p class="sub" style="margin:0">${l.abyss ? `深淵（難度${l.abyss.lv}）` : `ダンジョン${l.d.id}「${esc(l.d.name)}」（${l.df.name}）`}　到達 ${l.floor} / ${l.floors}F　撃破 ${l.kills}体</p>
+    <p class="sub" style="margin:0">${l.daily ? `鐘の試練「${esc(l.daily.theme.name)}」` : l.abyss ? `深淵（難度${l.abyss.lv}）` : `ダンジョン${l.d.id}「${esc(l.d.name)}」（${l.df.name}）`}　到達 ${l.floor} / ${l.floors}F　撃破 ${l.kills}体</p>
     ${l.abyss && l.abyss.mythicDrops && l.abyss.mythicDrops.length ? `<p class="l-r4" style="margin:6px 0;font-weight:700">★ 深淵の主から神話レア装備を獲得！（${l.abyss.mythicDrops.map(it => esc(itemName(it))).join(', ')}）</p>` : ''}
+    ${l.daily && l.result === 'clear' ? `<p class="l-good" style="margin:4px 0">💧 鐘のしずく +${l.daily.drops}個 獲得！${l.daily.sp ? `　SP +${l.daily.sp}` : ''}${l.daily.chest ? `　宝箱：${esc(itemName(l.daily.chest))}` : ''}</p>` : ''}
     ${l.abyss && l.abyss.coins ? `<p class="l-good" style="margin:4px 0">回廊コイン 🪙 +${l.abyss.coins}枚 獲得！</p>` : ''}
     <div class="res">
       <div><small>獲得Gold</small><b>+${fmt(l.gold)}G</b>${l.lost ? `<span class="neg">敗北で所持金が半減（−${fmt(l.lost)}G）</span>` : ''}${l.clearGold ? `<small>うち踏破ボーナス ${fmt(l.clearGold)}G</small>` : ''}</div>
@@ -2299,6 +2311,7 @@ function startRunGuarded(dId, dfId) {
 }
 function closeModal() {
   if (G._charSelectOpen) return;
+  { const sh = $('#m-sheet'); if (sh) { sh.classList.remove('dxon'); sh.removeAttribute('data-dx'); sh.style.removeProperty('--dxb'); sh.style.removeProperty('--dxg'); sh.style.removeProperty('--dxbg'); } }
   if ($('#fxd-arena')) {
     _fxDbgState.raged = false;
     _fxDbgState.buff = 'none';

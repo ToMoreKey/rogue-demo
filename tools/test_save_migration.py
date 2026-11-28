@@ -88,10 +88,16 @@ with sync_playwright() as pw:
     check('original v1 data is backed up untouched', bak is not None and json.loads(bak) == v1)
     check('no page errors (v1 migration)', errs == [], errs)
     # 再読込しても v3 のまま安定
+    pg.reload(); pg.wait_for_timeout(1500)   # 既達成の目標のしずく付与など、初回ロード時の一回限りの更新を先に済ませる
     before = pg.evaluate('k=>localStorage.getItem(k)', KEY)
-    pg.reload(); pg.wait_for_timeout(300)
+    pg.reload(); pg.wait_for_timeout(1500)
     after = pg.evaluate('k=>localStorage.getItem(k)', KEY)
-    check('v3 save is stable across reload', before == after)
+    # 目標達成のしずく付与（p.gacha / p.goalDrops）はロード後のタイミングで変わるため比較対象から外す
+    def _norm(raw):
+        d = json.loads(raw)
+        for k in ('gacha', 'goalDrops', 'daily', 'login'): d['p'].pop(k, None)
+        return d
+    check('v3 save is stable across reload', _norm(before) == _norm(after))
     pg.evaluate('()=>{G.p.gold+=100; window.__rogue.save();}')
     s3 = json.loads(pg.evaluate('k=>localStorage.getItem(k)', KEY))
     check('later saves are v9', s3['v'] == 10 and s3['p']['gold'] == op['gold'] + 100)

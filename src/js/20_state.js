@@ -330,6 +330,7 @@ function checkAchievements(ev = null, silent = false) {
       }
     }
     unlocked.push(a);
+    try { rewardDropsAch(a); } catch (e) {}
     if (!silent && !G.headless) {
       const tObj = a.titleId && TOWER_TITLES.find(t => t.id === a.titleId);
       const tail = p.ending ? `🪙+${a.coins}` : `🪙+${a.coins}(クリア後付与)`;
