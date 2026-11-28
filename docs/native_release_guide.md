@@ -26,9 +26,9 @@
    | 商品ID | 名前 | 説明 |
    |---|---|---|
    | `speed4` | 4倍速 | 戦闘を4倍の速さで進められます（**500円**） |
-   | `adfree` | 広告スキップ | リワード広告を見ずに報酬を受け取れます |
+   | `adfree` | 広告スキップ | リワード広告を見ずに報酬を受け取れます（**300円**） |
    | `bundle` | お得セット | 4倍速と広告スキップのセット（**700円**） |
-   `speed4` は **500円**（2倍速は無料）。`bundle`（セット）は **700円**。`adfree` 単体は未定（案: 300円）。Play Console で円建てに設定。
+   `speed4` は **500円**（2倍速は無料）。`bundle`（セット）は **700円**。`adfree`（広告スキップ単体）は **300円**。Play Console で円建てに設定。
 7. **広告ユニットIDをコードに入れる**（Claude に ID を渡す）: `src/js/69_monet.js` の `MONET_AD_UNIT_REWARDED` を本番IDに、`MONET_AD_TESTING` を `false` にする。**テスト中は Google のテストIDのまま**でよい（自分の広告を自分で押すとAdMobの規約違反になるため）。
 8. 本番（main）へ公開してから、Actions → **Build Android** → Run workflow（ref=main、versionCode=1）。成果物 `kanenari-aab` をダウンロード。
 9. Play Console の**内部テスト**にアップロード → テスターに自分のGoogleアカウントを追加 →「ライセンステスト」に同じアカウントを登録（テスト購入が無料になる）。
