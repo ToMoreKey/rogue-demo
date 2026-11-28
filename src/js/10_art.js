@@ -70,6 +70,7 @@ function auraClass(p) {
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う
   const fr = skinFrames(sk), au = auraClass(G.p), hc = (typeof cosHair === 'function') ? cosHair(G.p) : null;
+  if (hc && fr.atk) hairSrc(fr.atk, sk.id, hc);   // 攻撃の絵も先に染めておく（初回の攻撃で元の色が出ないように）
   if (fr.img) return `<img class="sprite sprite-img${au}" src="${hc ? hairSrc(fr.img, sk.id, hc) : fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
   return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }

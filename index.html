@@ -1059,7 +1059,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_dev_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = true;
-const APP_VERSION = 'rogue-dev-v121';
+const APP_VERSION = 'rogue-dev-v122';
 const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';
 const BAG_CAP = 60;
@@ -2960,6 +2960,7 @@ function auraClass(p) {
 function skinArt(sk, extraStyle) {
   // 画像(img)があれば高品質PNGを、なければ従来のSVGを使う
   const fr = skinFrames(sk), au = auraClass(G.p), hc = (typeof cosHair === 'function') ? cosHair(G.p) : null;
+  if (hc && fr.atk) hairSrc(fr.atk, sk.id, hc);   // 攻撃の絵も先に染めておく（初回の攻撃で元の色が出ないように）
   if (fr.img) return `<img class="sprite sprite-img${au}" src="${hc ? hairSrc(fr.img, sk.id, hc) : fr.img}" alt="${sk.name}" draggable="false" style="${extraStyle || ''}">`;
   return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
@@ -7461,7 +7462,7 @@ function playAttackMotion() {
   const skin = CHAR_SKINS.find(s => s.id === ((G.p && G.p.skin) || 'ruby'));
   const img = box.querySelector('img.sprite-img');
   const fr = skin && skinFrames(skin);
-  if (fr && fr.atk && img) {
+  if (fr && fr.atk && img && hairCached(fr.atk, skin.id, cosHair(G.p))) {
     const hc = cosHair(G.p), a0 = hc ? hairSrc(fr.atk, skin.id, hc) : fr.atk, b0 = hc ? hairSrc(fr.img, skin.id, hc) : fr.img;
     img.src = a0;
     clearTimeout(img._atkT);
@@ -9634,7 +9635,9 @@ function heroPreviewFrames(sk, eq, outfit) {
   g.eq = eq; if (outfit) g.outfit = outfit;
   try {
     const fr = skinFrames(sk), hc = cosHair(G.p);
-    return [fr.img, fr.atk].map(x => x && (hc ? hairSrc(x, sk.id, hc) : x));
+    const r = [fr.img, fr.atk].map(x => x && (hc ? hairSrc(x, sk.id, hc) : x));
+    if (fr.atk && !hairCached(fr.atk, sk.id, hc)) r[1] = null;   // 染め済みの攻撃絵ができるまでは出さない
+    return r;
   } finally { g.eq = keep; g.outfit = keepO; }
 }
 // 立ち絵 ⇄ 攻撃絵 を交互に表示（モーダルを閉じたら止まる）
@@ -9953,6 +9956,8 @@ function hairRecolorData(data, w, hh, cfg, tg) {
   }
   return cnt;
 }
+// 髪染め済みの画像ができているか（できる前は元の色が出てしまうので、攻撃の絵の差し替えなどで確認に使う）
+const hairCached = (src, skinId, c) => !c || !HAIR_CFG[skinId] || _hairCache.has(c.id + '|' + skinId + '|' + src);
 function hairSrc(src, skinId, c) {
   if (!c || !HAIR_CFG[skinId]) return src;
   const key = c.id + '|' + skinId + '|' + src;
@@ -10300,7 +10305,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
-  startRunGuarded, dangerOf, startDailyRun, openGachaCollection, gcState, OUTFITS, OUTFIT_IMG, OUTFIT_SPECIAL, skinTier, skinSel, hairSrc, hairRecolorData, HAIR_CFG, cosHair, GACHA_GENRES, gachaRevealEnd, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
+  hairCached, startRunGuarded, dangerOf, startDailyRun, openGachaCollection, gcState, OUTFITS, OUTFIT_IMG, OUTFIT_SPECIAL, skinTier, skinSel, hairSrc, hairRecolorData, HAIR_CFG, cosHair, GACHA_GENRES, gachaRevealEnd, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,
   smithCost, smithUpgrade, reforgeCost, smithReforge, SHOP_ITEMS, buyShopItem, bagExpandCost, expandBag, skillResetCost, markDexNew, dexNewCount, achBanner, openDexModal, NPCS, NPC_EXTRA, NPC_PNG, npcReact, renderEnemy, ENEMY_FLIP, enemyArt, GUIDE_LINES, npcSay, npcTalk, npcStage, npcTalkPool, Sound, popDamage, battleImpact, bossBanner, levelBand, killFx, lowHpWarn, buyBuildBook, switchBuild, FIRST_GOALS, goalState, checkGoals, goalsVisible, resetAllTrees, allResetInfo, buildCount, BUILD_BOOK_PRICES, syncActiveCharState, STONES, STONE_REQ,

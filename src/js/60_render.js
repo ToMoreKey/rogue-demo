@@ -1138,7 +1138,7 @@ function playAttackMotion() {
   const skin = CHAR_SKINS.find(s => s.id === ((G.p && G.p.skin) || 'ruby'));
   const img = box.querySelector('img.sprite-img');
   const fr = skin && skinFrames(skin);
-  if (fr && fr.atk && img) {
+  if (fr && fr.atk && img && hairCached(fr.atk, skin.id, cosHair(G.p))) {
     const hc = cosHair(G.p), a0 = hc ? hairSrc(fr.atk, skin.id, hc) : fr.atk, b0 = hc ? hairSrc(fr.img, skin.id, hc) : fr.img;
     img.src = a0;
     clearTimeout(img._atkT);

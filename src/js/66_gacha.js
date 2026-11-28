@@ -146,7 +146,9 @@ function heroPreviewFrames(sk, eq, outfit) {
   g.eq = eq; if (outfit) g.outfit = outfit;
   try {
     const fr = skinFrames(sk), hc = cosHair(G.p);
-    return [fr.img, fr.atk].map(x => x && (hc ? hairSrc(x, sk.id, hc) : x));
+    const r = [fr.img, fr.atk].map(x => x && (hc ? hairSrc(x, sk.id, hc) : x));
+    if (fr.atk && !hairCached(fr.atk, sk.id, hc)) r[1] = null;   // 染め済みの攻撃絵ができるまでは出さない
+    return r;
   } finally { g.eq = keep; g.outfit = keepO; }
 }
 // 立ち絵 ⇄ 攻撃絵 を交互に表示（モーダルを閉じたら止まる）

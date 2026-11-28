@@ -103,6 +103,8 @@ function hairRecolorData(data, w, hh, cfg, tg) {
   }
   return cnt;
 }
+// 髪染め済みの画像ができているか（できる前は元の色が出てしまうので、攻撃の絵の差し替えなどで確認に使う）
+const hairCached = (src, skinId, c) => !c || !HAIR_CFG[skinId] || _hairCache.has(c.id + '|' + skinId + '|' + src);
 function hairSrc(src, skinId, c) {
   if (!c || !HAIR_CFG[skinId]) return src;
   const key = c.id + '|' + skinId + '|' + src;
