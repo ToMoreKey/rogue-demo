@@ -9,7 +9,7 @@
 import argparse, json, os, re, shutil, subprocess, sys
 
 FILES = ['index.html', 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png',
-         'apple-touch-icon.png', 'favicon-32.png', '.nojekyll']
+         'apple-touch-icon.png', 'favicon-32.png', '.nojekyll', 'privacy.html']
 
 
 def copy_common(src, dst):
