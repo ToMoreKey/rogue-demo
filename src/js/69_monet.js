@@ -3,9 +3,8 @@
      'free'   … ウェブ版（PWA）。課金も広告もなし。倍速は全部使える（従来どおり）
      'native' … Capacitor 製アプリ。Play Billing（買い切り）と AdMob（リワード）を使う
      'mock'   … URLに ?monet=mock を付けたテスト用。購入・広告を画面上で疑似的に再現する
-   商品: speed2（2倍速）・speed4（4倍速）・adfree（広告スキップ）。価格は表示時にストアから取る。 */
+   商品: speed4（4倍速・500円）・adfree（広告スキップ）。2倍速は無料。価格は表示時にストアから取る。 */
 const MONET_PRODUCTS = [
-  { id: 'speed2', name: '2倍速', icon: '⏩', desc: '戦闘を2倍の速さで進められます（買い切り）' },
   { id: 'speed4', name: '4倍速', icon: '⏭️', desc: '戦闘を4倍の速さで進められます（買い切り）' },
   { id: 'adfree', name: '広告スキップ', icon: '📺', desc: 'リワード広告を見ずに、報酬をすぐ受け取れます（買い切り）' }
 ];
@@ -26,8 +25,8 @@ function ensureIap(p) {
 }
 // 所有しているか（ウェブ版は常に所有扱い）
 function ownsIap(id) { if (monetMode() === 'free') return true; const p = G.p; return !!(p && p.iap && p.iap[id] === true); }
-function speedLocked(v) { return (v === 2 && !ownsIap('speed2')) || (v === 4 && !ownsIap('speed4')); }
-function monetClampSpeed() { if (G.opts && speedLocked(G.opts.speed)) G.opts.speed = ownsIap('speed2') && G.opts.speed >= 2 ? 2 : 1; }
+function speedLocked(v) { return v === 4 && !ownsIap('speed4'); }   // ×2は無料
+function monetClampSpeed() { if (G.opts && speedLocked(G.opts.speed)) G.opts.speed = 2; }
 function monetAdsOn() { return monetMode() !== 'free'; }
 
 // ---------- 提供元（プロバイダ） ----------

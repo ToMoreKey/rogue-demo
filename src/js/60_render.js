@@ -1514,7 +1514,7 @@ function renderStatus() {
           <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
     </div>`;
   const dataPanels = `
-    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">倍速・広告スキップ（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
+    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">4倍速・広告スキップ（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
@@ -2495,7 +2495,7 @@ function renderHelp() {
       ${row('装備', '装備中の武器・防具、おまかせ装備・自動装備、バッグ（ロック・拡張）、薬の使用、強化石の所持数')}
       ${row('スキル', 'ビルド切り替え、スキルセット（S1〜S3）、スキル枠へのSP割り振り・リセット')}
       ${row('極意', '本編クリア後に解放。全キャラ共通のパッシブ（10項目・各最大Lv10）の強化とリセット')}
-      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。アプリ版ではショップ（倍速・広告スキップ）もここ')}
+      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。アプリ版ではショップ（4倍速・広告スキップ）もここ')}
     </div>
   </div>
   <div class="panel">

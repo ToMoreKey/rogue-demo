@@ -27,19 +27,19 @@ with sync_playwright() as pw:
     # mock（ネイティブ相当）
     b, pg, errs = boot(pw, '?monet=mock')
     r = pg.evaluate("() => [__rogue.speedLocked(1), __rogue.speedLocked(2), __rogue.speedLocked(4), __rogue.monetAdsOn()]")
-    check('mock: 初期は×2・×4が鍵つき、広告あり', r == [False, True, True, True], r)
-    pg.evaluate("() => { __rogue.ACTS.speed({ v: 2 }); }")
-    check('鍵つき倍速を押すとショップが開き、速度は変わらない', pg.evaluate("() => G.modalOpen && !!document.querySelector('[data-act=monetBuy][data-id=speed2]') && G.opts.speed") == 1)
-    pg.evaluate("() => { __rogue.ACTS.monetBuy({ id: 'speed2' }); }"); pg.wait_for_timeout(300)
-    r = pg.evaluate("() => [G.p.iap.speed2, __rogue.speedLocked(2), __rogue.speedLocked(4)]")
-    check('2倍速を購入→×2だけ解放', r == [True, False, True], r)
-    pg.evaluate("() => { __rogue.closeModal(); __rogue.ACTS.speed({ v: 2 }); }")
-    check('購入後は×2に切り替えられる', pg.evaluate("() => G.opts.speed") == 2)
+    check('mock: ×2は無料、×4だけ鍵つき、広告あり', r == [False, False, True, True], r)
+    pg.evaluate("() => { __rogue.ACTS.speed({ v: 4 }); }")
+    check('鍵つき×4を押すとショップが開き、速度は変わらない', pg.evaluate("() => G.modalOpen && !!document.querySelector('[data-act=monetBuy][data-id=speed4]') && G.opts.speed") == 1)
+    pg.evaluate("() => { __rogue.ACTS.monetBuy({ id: 'speed4' }); }"); pg.wait_for_timeout(300)
+    r = pg.evaluate("() => [G.p.iap.speed4, __rogue.speedLocked(2), __rogue.speedLocked(4)]")
+    check('4倍速を購入→×4が解放', r == [True, False, False], r)
+    pg.evaluate("() => { __rogue.closeModal(); __rogue.ACTS.speed({ v: 4 }); }")
+    check('購入後は×4に切り替えられる', pg.evaluate("() => G.opts.speed") == 4)
     # 保存→再読込で購入が残り、速度は有効
     pg.evaluate("() => __rogue.save()"); pg.reload(); pg.wait_for_timeout(600)
-    check('購入はセーブされる', pg.evaluate("() => G.p.iap.speed2") is True)
-    # ×4を持たずに×4で保存されたセーブは、読み込み時に引き下げる
-    pg.evaluate("() => { G.opts.speed = 4; __rogue.save(); }"); pg.goto(BASE + '?monet=mock'); pg.wait_for_timeout(700)
+    check('購入はセーブされる', pg.evaluate("() => G.p.iap.speed4") is True)
+    # 未購入のまま×4で保存されたセーブは、読み込み時に×2へ引き下げる
+    pg.evaluate("() => { G.p.iap.speed4 = false; G.opts.speed = 4; __rogue.save(); }"); pg.goto(BASE + '?monet=mock'); pg.wait_for_timeout(700)
     check('未購入の×4は起動時に×2へ戻る', pg.evaluate("() => G.opts.speed") == 2)
     # しずく広告: 1日3回まで、+1ずつ
     pg.evaluate("() => { G._titleUp = false; G.view='town'; __rogue.renderAll(); __rogue.ACTS.townEnter({v:'gacha'}); }")

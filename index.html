@@ -1060,7 +1060,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_dev_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = true;
-const APP_VERSION = 'rogue-dev-v128';
+const APP_VERSION = 'rogue-dev-v129';
 const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';
 const BAG_CAP = 60;
@@ -3742,7 +3742,7 @@ function load() {
     }
     p.gacha.outfit = {}; for (const sk of CHAR_SKINS) { let t = s.gacha && s.gacha.outfit && s.gacha.outfit[sk.id]; if (typeof t !== 'string') t = Number(t); const o = OUTFITS.find(x => x.skin === sk.id && x.tier === t); p.gacha.outfit[sk.id] = o && p.gacha.owned['outfit:' + o.id] ? t : 0; }
     p.login = { last: typeof (s.login && s.login.last) === 'string' ? s.login.last.slice(0, 10) : '', claims: num(s.login && s.login.claims, 0, 0, 99999) };
-    p.iap = {}; for (const k of ['speed2', 'speed4', 'adfree']) p.iap[k] = !!(s.iap && s.iap[k] === true);
+    p.iap = {}; for (const k of ['speed4', 'adfree']) p.iap[k] = !!(s.iap && s.iap[k] === true);
     p.ads = { date: typeof (s.ads && s.ads.date) === 'string' ? s.ads.date.slice(0, 10) : '', drops: num(s.ads && s.ads.drops, 0, 0, 99), daily: num(s.ads && s.ads.daily, 0, 0, 99) };
     p.daily = { date: typeof (s.daily && s.daily.date) === 'string' ? s.daily.date.slice(0, 10) : '', used: num(s.daily && s.daily.used, 0, 0, 99), clears: num(s.daily && s.daily.clears, 0, 0, 99999) };
     p.goalDrops = {}; if (s.goalDrops && typeof s.goalDrops === 'object') for (const k of Object.keys(s.goalDrops)) if (s.goalDrops[k]) p.goalDrops[String(k).slice(0, 30)] = true;
@@ -7949,7 +7949,7 @@ function renderStatus() {
           <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
     </div>`;
   const dataPanels = `
-    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">倍速・広告スキップ（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
+    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">4倍速・広告スキップ（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
@@ -8930,7 +8930,7 @@ function renderHelp() {
       ${row('装備', '装備中の武器・防具、おまかせ装備・自動装備、バッグ（ロック・拡張）、薬の使用、強化石の所持数')}
       ${row('スキル', 'ビルド切り替え、スキルセット（S1〜S3）、スキル枠へのSP割り振り・リセット')}
       ${row('極意', '本編クリア後に解放。全キャラ共通のパッシブ（10項目・各最大Lv10）の強化とリセット')}
-      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。アプリ版ではショップ（倍速・広告スキップ）もここ')}
+      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。アプリ版ではショップ（4倍速・広告スキップ）もここ')}
     </div>
   </div>
   <div class="panel">
@@ -10188,9 +10188,8 @@ function hairReady() {
      'free'   … ウェブ版（PWA）。課金も広告もなし。倍速は全部使える（従来どおり）
      'native' … Capacitor 製アプリ。Play Billing（買い切り）と AdMob（リワード）を使う
      'mock'   … URLに ?monet=mock を付けたテスト用。購入・広告を画面上で疑似的に再現する
-   商品: speed2（2倍速）・speed4（4倍速）・adfree（広告スキップ）。価格は表示時にストアから取る。 */
+   商品: speed4（4倍速・500円）・adfree（広告スキップ）。2倍速は無料。価格は表示時にストアから取る。 */
 const MONET_PRODUCTS = [
-  { id: 'speed2', name: '2倍速', icon: '⏩', desc: '戦闘を2倍の速さで進められます（買い切り）' },
   { id: 'speed4', name: '4倍速', icon: '⏭️', desc: '戦闘を4倍の速さで進められます（買い切り）' },
   { id: 'adfree', name: '広告スキップ', icon: '📺', desc: 'リワード広告を見ずに、報酬をすぐ受け取れます（買い切り）' }
 ];
@@ -10211,8 +10210,8 @@ function ensureIap(p) {
 }
 // 所有しているか（ウェブ版は常に所有扱い）
 function ownsIap(id) { if (monetMode() === 'free') return true; const p = G.p; return !!(p && p.iap && p.iap[id] === true); }
-function speedLocked(v) { return (v === 2 && !ownsIap('speed2')) || (v === 4 && !ownsIap('speed4')); }
-function monetClampSpeed() { if (G.opts && speedLocked(G.opts.speed)) G.opts.speed = ownsIap('speed2') && G.opts.speed >= 2 ? 2 : 1; }
+function speedLocked(v) { return v === 4 && !ownsIap('speed4'); }   // ×2は無料
+function monetClampSpeed() { if (G.opts && speedLocked(G.opts.speed)) G.opts.speed = 2; }
 function monetAdsOn() { return monetMode() !== 'free'; }
 
 // ---------- 提供元（プロバイダ） ----------
