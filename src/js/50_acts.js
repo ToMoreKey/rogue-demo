@@ -381,7 +381,7 @@ const ACTS = {
   gcTab(d) { openGachaCollection(d.tab); },
   gcTry(d) { const st = gcState(); if (!COS_SLOTS.some(s => s.k === d.slot)) return; if (!d.id) st.eq[d.slot] = null; else if (cosById(d.id) && cosById(d.id).slot === d.slot) st.eq[d.slot] = d.id; openGachaCollection(null, true); },
   gcFrame(d) { const st = gcState(); st.frame = d.id && DEX_FRAMES.some(f => f.id === d.id) ? d.id : null; openGachaCollection(null, true); },
-  gcOutfit(d) { const st = gcState(), t = Number(d.tier) || 0; if (!CHAR_SKINS.some(h => h.id === d.skin) || (t && !OUTFITS.some(o => o.skin === d.skin && o.tier === t))) return; st.outfit[d.skin] = t; st.view = d.skin; openGachaCollection(null, true); },
+  gcOutfit(d) { const st = gcState(), t = /^\d+$/.test(String(d.tier)) ? Number(d.tier) : String(d.tier || ''); if (!CHAR_SKINS.some(h => h.id === d.skin) || (t && !outfitValid(d.skin, t))) return; st.outfit[d.skin] = t; st.view = d.skin; openGachaCollection(null, true); },
   gcTitle(d) { const p = G.p, g = ensureGacha(p); if (!g.owned['title:' + d.id]) { toast('未入手の称号です'); return; } p.tower = p.tower || { best: 0, coins: 0, totalCoins: 0, title: null, titles: [] }; p.tower.title = p.tower.title === d.id ? null : d.id; save(); openGachaCollection(null, true); },
   gcApply() {
     const g = ensureGacha(G.p), st = gcState();

@@ -1405,7 +1405,7 @@ function renderStatus() {
   const tab = ['hero', 'gear', 'skill', 'mastery', 'data'].includes(G.statusTab) ? G.statusTab : 'hero';
   G.statusTab = tab;
   const pSkin = CHAR_SKINS.find(x => x.id === (p.skin || 'ruby')) || CHAR_SKINS[0];
-  const pTier = skinTier(pSkin), pKey = pSkin.id + ':' + pTier;
+  const pTier = skinTier(pSkin), pSel = skinSel(pSkin), pKey = pSkin.id + ':' + pSel;
   let tierChanged = false;
   if (G._lastLook && G._lastLook.startsWith(pSkin.id + ':') && G._lastLook !== pKey) tierChanged = true;
   G._lastLook = pKey;
@@ -1440,8 +1440,8 @@ function renderStatus() {
         <div class="pt-img cos-stage">${skinArt(pSkin, 'width:96px;height:96px')}${cosOverlayHtml(p)}</div>
         <div class="pt-info">
           <div class="pt-name">${esc(pSkin.name)} <span class="sub">${esc(pSkin.job)}</span>${(() => { const tid = p.tower && p.tower.title; const tt = tid && TOWER_TITLES.find(x => x.id === tid); return tt ? ` <span class="badge">${esc(tt.name)}</span>` : ''; })()}</div>
-          <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(tierName(pSkin, pTier))}</div>
-          <div class="pt-hint">${pTier ? 'ガチャで手に入れた衣装を着ています' : '衣装は「福音のくじ」で手に入ります'}</div>
+          <div class="pt-tier">${pTier ? '<span class="pt-star">' + '★'.repeat(pTier) + '</span> ' : ''}${esc(skinLook(pSkin))}</div>
+          <div class="pt-hint">${pSel ? 'ガチャで手に入れた衣装を着ています' : '衣装は「福音のくじ」で手に入ります'}</div>
           ${tierChanged ? '<div class="pt-new">見た目が変わった！</div>' : ''}
         </div>
       </div>

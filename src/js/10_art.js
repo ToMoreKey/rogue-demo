@@ -59,8 +59,9 @@ function enemyArt(en, dId) {
 // 衣装（ガチャで入手した★3〜5の装い）に応じた見た目。選んでいなければ基本絵
 // 衣装（ガチャで入手）の選択に従う。防具の★では変わらない
 function skinFrames(sk) {
-  const t = skinTier(sk);
-  return t ? sk.tiers[t] : { img: sk.img, atk: sk.atk };
+  const v = skinSel(sk);
+  if (!v) return { img: sk.img, atk: sk.atk };
+  return typeof v === 'number' ? sk.tiers[v] : OUTFIT_IMG[v + '_' + sk.id];
 }
 function auraClass(p) {
   const s = Math.max((p && p.weapon && p.weapon.star) || 0, (p && p.armor && p.armor.star) || 0);
@@ -73,10 +74,16 @@ function skinArt(sk, extraStyle) {
   return sk.svg.replace('<svg class="sprite"', `<svg class="sprite${au}" style="width:100%;height:auto;${extraStyle || ''}"`);
 }
 // 選択中の衣装の「見た目の段階」(0=基本 / 3 / 4 / 5) と、その呼び名
-function skinTier(sk) {
+// 選択中の衣装: 0=基本 / 3・4・5=★の装い / 'swim'などの文字=特別衣装
+function skinSel(sk) {
   const o = G.p && G.p.gacha && G.p.gacha.outfit, t = o && o[sk.id];
-  return (t && sk.tiers && sk.tiers[t]) ? t : 0;
+  if (typeof t === 'number') return (t && sk.tiers && sk.tiers[t]) ? t : 0;
+  if (typeof t === 'string' && OUTFIT_IMG[t + '_' + sk.id]) return t;
+  return 0;
 }
+// ★の装いの段階（特別衣装・基本は0）
+function skinTier(sk) { const v = skinSel(sk); return typeof v === 'number' ? v : 0; }
+const skinLook = sk => { const v = skinSel(sk); return typeof v === 'string' ? ((OUTFIT_SPECIAL.find(x => x.key === v) || {}).name || v) : tierName(sk, v); };
 const tierName = (sk, t) => ((TIER_NAMES[sk.id] || {})[t]) || (t ? '★' + t + 'の装い' : '基本の装い');
 function getPlayerSVG() {
   const skin = CHAR_SKINS.find(s => s.id === ((G.p && G.p.skin) || 'ruby'));

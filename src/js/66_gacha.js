@@ -11,7 +11,7 @@ function ensureGacha(p) {
   for (const s of COS_SLOTS) if (typeof g.eq[s.k] !== 'string') g.eq[s.k] = null;
   if (typeof g.frame !== 'string') g.frame = null;
   if (!g.outfit || typeof g.outfit !== 'object') g.outfit = {};
-  for (const sk of CHAR_SKINS) g.outfit[sk.id] = [3, 4, 5].includes(g.outfit[sk.id]) ? g.outfit[sk.id] : 0;
+  for (const sk of CHAR_SKINS) g.outfit[sk.id] = ([3, 4, 5].includes(g.outfit[sk.id]) || outfitValid(sk.id, g.outfit[sk.id])) ? g.outfit[sk.id] : 0;
   if (!p.login || typeof p.login !== 'object') p.login = { last: '', claims: 0 };
   p.login.claims = Math.max(0, Math.floor(Number(p.login.claims) || 0)); if (typeof p.login.last !== 'string') p.login.last = '';
   return g;
@@ -154,7 +154,7 @@ function openGachaCollection(tab, keepScroll) {
     }).join('');
   } else if (st.tab === 'outfit') {
     body = CHAR_SKINS.map(h => {
-      const cards = OUTFITS.filter(o => o.skin === h.id).map(o => gcItemCard('outfit', o.id, `${'★'.repeat(o.tier)} ${(TIER_NAMES[h.id] || {})[o.tier] || ''}`, o.rar, !!g.owned['outfit:' + o.id], st.outfit[h.id] === o.tier, 'gcOutfit', `data-skin="${h.id}" data-tier="${o.tier}"`)).join('');
+      const cards = OUTFITS.filter(o => o.skin === h.id).map(o => gcItemCard('outfit', o.id, o.label, o.rar, !!g.owned['outfit:' + o.id], st.outfit[h.id] === o.tier, 'gcOutfit', `data-skin="${h.id}" data-tier="${o.tier}"`)).join('');
       return `<div class="gc-slot"><b>${esc(h.name)}（${esc(h.job)}）</b><div class="gc-grid"><button class="gc-card none${!st.outfit[h.id] ? ' on' : ''}" style="--qc:#9aa7b4" data-act="gcOutfit" data-skin="${h.id}" data-tier="0"><span class="gc-n">基本の装い</span></button>${cards}</div></div>`;
     }).join('');
   } else if (st.tab === 'frame') {

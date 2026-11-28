@@ -296,7 +296,7 @@ function load() {
       if (s.gacha.eq && typeof s.gacha.eq === 'object') for (const sl of COS_SLOTS) { const c = cosById(s.gacha.eq[sl.k]); p.gacha.eq[sl.k] = c && c.slot === sl.k && p.gacha.owned['cos:' + c.id] ? c.id : null; }
       p.gacha.frame = DEX_FRAMES.some(f => f.id === s.gacha.frame) && p.gacha.owned['frame:' + s.gacha.frame] ? s.gacha.frame : null;
     }
-    p.gacha.outfit = {}; for (const sk of CHAR_SKINS) { const t = Number(s.gacha && s.gacha.outfit && s.gacha.outfit[sk.id]); const o = OUTFITS.find(x => x.skin === sk.id && x.tier === t); p.gacha.outfit[sk.id] = o && p.gacha.owned['outfit:' + o.id] ? t : 0; }
+    p.gacha.outfit = {}; for (const sk of CHAR_SKINS) { let t = s.gacha && s.gacha.outfit && s.gacha.outfit[sk.id]; if (typeof t !== 'string') t = Number(t); const o = OUTFITS.find(x => x.skin === sk.id && x.tier === t); p.gacha.outfit[sk.id] = o && p.gacha.owned['outfit:' + o.id] ? t : 0; }
     p.login = { last: typeof (s.login && s.login.last) === 'string' ? s.login.last.slice(0, 10) : '', claims: num(s.login && s.login.claims, 0, 0, 99999) };
     p.daily = { date: typeof (s.daily && s.daily.date) === 'string' ? s.daily.date.slice(0, 10) : '', used: num(s.daily && s.daily.used, 0, 0, 99), clears: num(s.daily && s.daily.clears, 0, 0, 99999) };
     p.goalDrops = {}; if (s.goalDrops && typeof s.goalDrops === 'object') for (const k of Object.keys(s.goalDrops)) if (s.goalDrops[k]) p.goalDrops[String(k).slice(0, 30)] = true;
