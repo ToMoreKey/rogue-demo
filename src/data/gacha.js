@@ -2,9 +2,9 @@
    景品は見た目のみ（ゲーム性に影響しない）。提供割合は画面にも表示する。 */
 const GACHA_CFG = {
   costSingle: 3, costTen: 30,
-  rates: [60, 28, 10, 2],         // N / R / SR / SSR (%)
-  pity: 50,                        // SSRが出ないまま引いた回数がこの値に達すると次はSSR確定
-  refund: [1, 1, 2, 3]             // ダブり時に還元されるしずく
+  rates: [55, 28, 13, 4],         // N / R / SR / SSR (%)
+  pity: 40,                        // SSRが出ないまま引いた回数がこの値に達すると次はSSR確定（ジャンル別に上書き可）
+  refund: [1, 2, 2, 3]             // ダブり時に還元されるしずく
 };
 const GACHA_RARITY = [
   { k: 'N',   name: 'N',   color: '#9aa7b4' },
@@ -102,8 +102,8 @@ GACHA_TITLES.forEach(t => TOWER_TITLES.push(t));
 const GACHA_GENRES = [
   { k: 'outfit', icon: '👘', name: '衣装', desc: '防具の見た目だった「装い」。各キャラの★3・★4・★5の衣装が出る（SR・SSRのみ）', rates: [0, 0, 85, 15], pity: 30 },
   { k: 'cos',   icon: '👗', name: 'おまけ装備', desc: '染め・背中・足元・オーラ。キャラの見た目が変わる' },
-  { k: 'frame', icon: '🖼️', name: '図鑑の飾り', desc: '図鑑・実績画面を飾る額縁' },
-  { k: 'title', icon: '🏷️', name: '称号',       desc: 'ステータスの名前の横に付けられる二つ名' }
+  { k: 'frame', icon: '🖼️', name: '図鑑の飾り', desc: '図鑑・実績画面を飾る額縁', pity: 30 },
+  { k: 'title', icon: '🏷️', name: '称号',       desc: 'ステータスの名前の横に付けられる二つ名', pity: 30 }
 ];
 const GACHA_POOL = {};      // GACHA_POOL[genre][rarity] = [景品...]
 for (const gr of GACHA_GENRES) GACHA_POOL[gr.k] = [[], [], [], []];

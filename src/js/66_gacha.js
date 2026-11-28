@@ -36,7 +36,12 @@ function gachaRollRarity(genre, forceMin) {
   for (; k < 3; k++) { r -= rates[k]; if (r < 0) break; }
   return Math.max(k, forceMin || 0);
 }
-function gachaPick(genre, rar) { const pool = GACHA_POOL[genre][rar]; return pool[Math.floor(rng() * pool.length) % pool.length]; }
+// 景品を選ぶ。天井（pity=true）のときは、未所持の景品があればその中から選ぶ（ダブりで天井を無駄にしない）
+function gachaPick(genre, rar, pity) {
+  let pool = GACHA_POOL[genre][rar];
+  if (pity) { const g = ensureGacha(G.p), un = pool.filter(it => !g.owned[it.type + ':' + it.id]); if (un.length) pool = un; }
+  return pool[Math.floor(rng() * pool.length) % pool.length];
+}
 function gachaPull(n, genre) {
   const p = G.p; if (!p || G.run) return null;
   if (!GACHA_GENRES.some(x => x.k === genre)) genre = 'cos';
@@ -45,7 +50,7 @@ function gachaPull(n, genre) {
   g.drops -= cost;
   const out = [];
   for (let i = 0; i < n; i++) {
-    const rar = gachaRollRarity(genre, n === 10 && i === 9 ? 2 : 0), it = gachaPick(genre, rar);
+    const hit = g.pities[genre] + 1 >= gachaPity(genre), rar = gachaRollRarity(genre, n === 10 && i === 9 ? 2 : 0), it = gachaPick(genre, rar, hit && rar === 3);
     g.total++; g.pities[genre] = rar === 3 ? 0 : g.pities[genre] + 1;
     const key = it.type + ':' + it.id, had = !!g.owned[key];
     g.owned[key] = (g.owned[key] || 0) + 1;

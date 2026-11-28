@@ -86,12 +86,16 @@ with sync_playwright() as pw:
     pg.evaluate("() => { __rogue.closeModal && 0; G.modalOpen = false; document.getElementById('modal').hidden = true; G.p.gacha.pities.frame = 5; G.p.gacha.pities.cos = 20; }")
     pg.evaluate("() => { __rogue.renderAll(); }")
     pg.locator('[data-act="gachaGenre"][data-g="frame"]').click(); pg.wait_for_timeout(200)
-    check('ジャンル切替・天井はジャンル別', '天井まであと 45 回' in pg.locator('.gc-bal').inner_text(), pg.locator('.gc-bal').inner_text())
+    check('ジャンル切替・天井はジャンル別', ('天井まであと %d 回' % (pg.evaluate("() => __rogue.GACHA_GENRES.find(x => x.k === 'frame').pity") - 5)) in pg.locator('.gc-bal').inner_text(), pg.locator('.gc-bal').inner_text())
     check('ジャンル切替で4タブ', pg.locator('.gc-genres .seg-b').count() == 4)
     # 重複時の返却・天井
-    pg.evaluate("() => { const g = G.p.gacha; g.pities.cos = 49; g.drops = 10; }")
+    pg.evaluate("() => { const g = G.p.gacha; g.pities.cos = __rogue.GACHA_CFG.pity - 1; g.drops = 10; }")
     r = pg.evaluate("() => { const x = __rogue.gachaPull(1, 'cos'); return x && x[0].rar; }")
     check('天井でSSR', r == 3, r)
+    # 天井のSSRは未所持を優先（1つだけ未所持にして確認）
+    r = pg.evaluate("""() => { const R = __rogue, g = G.p.gacha, ssr = R.GACHA_POOL.cos[3]; ssr.forEach(it => g.owned['cos:' + it.id] = 1); delete g.owned['cos:' + ssr[2].id];
+      g.pities.cos = R.GACHA_CFG.pity - 1; g.drops = 10; const x = R.gachaPull(1, 'cos'); return [x[0].it.id === ssr[2].id, x[0].isNew]; }""")
+    check('天井は未所持のSSRを優先', r == [True, True], r)
     # 実績ドロップ
     before = pg.evaluate("() => G.p.gacha.drops")
     pg.evaluate("() => { __rogue.addDrops(3, 'test'); }")
