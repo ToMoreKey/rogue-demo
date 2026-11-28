@@ -8,7 +8,8 @@
 - 課金: `cordova-plugin-purchase`（Google Play Billing・買い切り）。広告: `@capacitor-community/admob`（リワード）。
 - コード側の窓口は `src/js/69_monet.js`。ウェブ版は課金も広告もなし（倍速は従来どおり全部使える）。アプリ版だけ ×4 に鍵がつく（×2は無料）。
 - ビルドは GitHub Actions（`.github/workflows/android.yml`）が AAB を作る。**未検証**（この環境では実行不可）。初回は失敗する可能性が高いので、ログを見せてほしい。直す。
-- `?monet=mock` を URL に付けると、ブラウザでアプリ版相当（×4の鍵・購入・広告の疑似表示）を試せる。例: https://tomorekey.github.io/rogue-demo/dev/?monet=mock
+- **ブラウザ版（本番）は課金・広告が一切出ない**（×4も無料）。課金・広告はネイティブアプリ（Capacitor）だけ。
+- テスト版（/dev/）だけ、URL に `?monet=mock` を付けるとアプリ版相当（×4の鍵・購入・広告の疑似表示）を試せる（本番ビルドでは無効）。例: https://tomorekey.github.io/rogue-demo/dev/?monet=mock
 
 ## あなたがやること（順番）
 1. **Play デベロッパー登録**（$25）と本人確認。

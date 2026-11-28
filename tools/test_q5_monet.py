@@ -7,17 +7,29 @@ F = 0
 def check(n, c, d=''):
     global F
     print('PASS' if c else 'FAIL', n, '' if c else d); F += 0 if c else 1
-BASE = 'file://' + ROOT + '/index.html'
-def boot(pw, q=''):
+import subprocess, sys, tempfile
+BASE_PROD = 'file://' + ROOT + '/index.html'
+_dev = os.path.join(tempfile.mkdtemp(), 'index.html')
+subprocess.check_call([sys.executable, ROOT + '/tools/build.py', _dev, '--variant', 'dev'], stdout=subprocess.DEVNULL)
+BASE = 'file://' + _dev     # ?monet=mock はテスト版のみ有効（本番ビルドでは無視される）
+def boot(pw, q='', base=None):
+    BASE_ = base or BASE
     b = pw.chromium.launch(); pg = b.new_page(viewport={'width': 390, 'height': 844}); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
-    pg.goto(BASE); pg.wait_for_timeout(400)
+    pg.goto(BASE_); pg.wait_for_timeout(400)
     pg.evaluate("() => { localStorage.setItem('rogue_tut_done_v1','1'); G.p.lv = 5; __rogue.ensureGacha(G.p).drops = 0; __rogue.save(); }")
-    pg.goto(BASE + q); pg.wait_for_timeout(700)
+    pg.goto(BASE_ + q); pg.wait_for_timeout(700)
     pg.evaluate("() => { G._titleUp = false; }")
     return b, pg, errs
 R = '__rogue.'
 with sync_playwright() as pw:
-    # ウェブ版: 従来どおり
+    # 本番ビルド: ?monet=mock を付けても、課金・広告は出ない（ブラウザ版は課金不可）
+    b, pg, errs = boot(pw, '?monet=mock', BASE_PROD)
+    r = pg.evaluate("() => [__rogue.monetMode(), __rogue.monetAdsOn(), __rogue.speedLocked(4)]")
+    check('本番ビルドは ?monet=mock を無視（free・広告なし・×4も使える）', r == ['free', False, False], r)
+    pg.evaluate("() => { __rogue.ACTS.monetShop(); }")
+    check('本番ビルドのデータタブにショップが出ない', pg.evaluate("() => { G.view='status'; G.statusTab='data'; __rogue.renderAll(); return !document.querySelector('[data-act=monetShop]'); }"))
+    b.close()
+    # ウェブ版（テスト版ビルド・パラメータなし）: 従来どおり
     b, pg, errs = boot(pw)
     r = pg.evaluate("() => [1, __rogue.speedLocked(2), __rogue.speedLocked(4), __rogue.monetAdsOn(), __rogue.adButtonHtml('drops')]")
     check('ウェブ版: 倍速は全部使える・広告ボタンなし', r[1] is False and r[2] is False and r[3] is False and r[4] == '', r)

@@ -2,7 +2,7 @@
    モード:
      'free'   … ウェブ版（PWA）。課金も広告もなし。倍速は全部使える（従来どおり）
      'native' … Capacitor 製アプリ。Play Billing（買い切り）と AdMob（リワード）を使う
-     'mock'   … URLに ?monet=mock を付けたテスト用。購入・広告を画面上で疑似的に再現する
+     'mock'   … テスト版（dev）で URL に ?monet=mock を付けたとき。購入・広告を画面上で疑似的に再現する（本番ビルドでは無効）
    商品: speed4（4倍速）・adfree（広告スキップ）・bundle（上の2つのセット）。2倍速は無料。価格は表示時にストアから取る。 */
 const MONET_PRODUCTS = [
   { id: 'speed4', name: '4倍速', icon: '⏭️', desc: '戦闘を4倍の速さで進められます（買い切り）' },
@@ -13,7 +13,7 @@ const BUNDLE_INCLUDES = ['speed4', 'adfree'];
 const AD_CFG = { dropsPerDay: 3, dropsReward: 1, dailyPerDay: 1 };
 const monetProduct = id => MONET_PRODUCTS.find(x => x.id === id);
 function monetMode() {
-  try { if (/[?&]monet=mock\b/.test(location.search)) return 'mock'; } catch (e) {}
+  try { if (IS_DEV_BUILD && /[?&]monet=mock\b/.test(location.search)) return 'mock'; } catch (e) {}   // テスト版のみ。本番ビルドでは無視する
   try { if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return 'native'; } catch (e) {}
   return 'free';
 }
