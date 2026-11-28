@@ -63,7 +63,7 @@ with sync_playwright() as pw:
     # 衣装（旧・防具★の見た目）
     pg.evaluate("() => { G._gc = null; }"); pg.locator('[data-act="gcTab"][data-tab="cos"]').click(); pg.wait_for_timeout(100)
     pg.locator('[data-act="gcTab"][data-tab="outfit"]').click(); pg.wait_for_timeout(200)
-    check('衣装タブ（4人×(基本+3段階)）', pg.locator('[data-act="gcOutfit"]').count() == 16)
+    check('衣装タブ（4人×(基本+3段階+特別衣装)）', pg.locator('[data-act="gcOutfit"]').count() == 16 + pg.evaluate('() => __rogue.OUTFITS.filter(o => o.special).length'))
     pg.evaluate("() => { const g = G.p.gacha; g.owned['outfit:o_ruby_4'] = 1; g.owned['outfit:o_ruby_3'] = 1; delete g.owned['outfit:o_ruby_5']; }")
     pg.locator('[data-act="gcOutfit"][data-skin="ruby"][data-tier="4"]').click(); pg.wait_for_timeout(200)
     check('衣装を試着して反映できる', pg.locator('[data-act="gcApply"]').is_enabled())
