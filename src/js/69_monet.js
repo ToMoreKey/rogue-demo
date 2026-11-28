@@ -100,13 +100,13 @@ async function monetRestore() {
   for (const id of got) if (monetProduct(id) && !G.p.iap[id]) { ensureIap(G.p).iap[id] = true; n++; }
   save(); renderAll(); toast(n ? `購入を${n}件復元しました` : '復元できる購入はありませんでした'); if (G.modalOpen) openMonetShop();
 }
-function monetShopHtml() {
+function monetShopHtml(inTown) {
   const showBundle = !BUNDLE_INCLUDES.some(id => ownsIap(id));   // どちらかを持っていたらセットは出さない（二重払い防止）
   return MONET_PRODUCTS.filter(x => x.id !== 'bundle' || showBundle).sort((a, b) => (b.id === 'bundle') - (a.id === 'bundle')).map(x => { const own = ownsIap(x.id), pr = monetProvider().price(x.id);
     return `<div class="smith-item"><div class="it-h"><span class="it-name">${x.icon} ${x.name}</span><span class="sub" style="margin-left:auto">${own ? '✔ 購入済み' : esc(pr || '')}</span></div>
       <div class="it-meta"><span>${x.desc}</span></div>
       <button class="btn small${own ? '' : ' primary'}" data-act="monetBuy" data-id="${x.id}" ${own ? 'disabled' : ''}>${own ? '購入済み' : '購入する'}</button></div>`; }).join('')
-    + `<div class="act"><button class="btn small" data-act="monetRestore">購入を復元</button><button class="btn" data-act="monetClose">閉じる</button></div>`;
+    + `<div class="act"><button class="btn small" data-act="monetRestore">購入を復元</button>${inTown ? '' : '<button class="btn" data-act="monetClose">閉じる</button>'}</div>`;
 }
 function openMonetShop() { $('#m-sheet').innerHTML = '<h2 id="m-title">💎 ショップ</h2><div class="stack" style="gap:8px">' + monetShopHtml() + '</div>'; $('#modal').hidden = false; G.modalOpen = true; }
 

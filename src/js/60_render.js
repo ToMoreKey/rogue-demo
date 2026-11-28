@@ -68,6 +68,7 @@ function renderPlaza() {
     { v: 'bank',  icon: '🏦', name: '福音銀行',               desc: 'ゴールドの預け入れ・引き出し' },
     { v: 'gacha', icon: '🔔', name: '福音のくじ',             desc: '鐘のしずくで回す・着せ替え' },
   ];
+  if (monetMode() !== 'free') FACILITIES.push({ v: 'premium', icon: '💎', name: 'プレミアム売店', desc: '4倍速・広告スキップ（買い切り）' });
 
   $('#view-town').innerHTML = `
     ${viewHero('town', '🏘️', '福音の里　広場', 'ここにいる間、HPが1秒ごとに <b>+2</b> 回復します。')}
@@ -95,6 +96,8 @@ function renderFacility(fac) {
 
   if (fac === 'gacha') {
     content = renderGachaFacility(p);
+  } else if (fac === 'premium') {
+    content = `<h2>💎 プレミアム売店</h2><p class="sub" style="margin:0 0 10px">4倍速・広告スキップ・お得セット（すべて買い切り）。購入済みの内容は、端末を変えても「購入を復元」で戻せます。</p><div class="stack" style="gap:8px">${monetShopHtml(true)}</div>`;
   } else if (fac === 'inn') {
     content = `
       <h2>宿屋「満月亭」</h2>
@@ -184,9 +187,9 @@ function renderFacility(fac) {
       </div>`;
   }
 
-  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行', gacha: '福音のくじ' };
+  const FAC_NAMES = { inn: '宿屋「満月亭」', shop: '売却専門ショップ', smith: '鍛冶屋「鉄の大地」', bank: '福音銀行', gacha: '福音のくじ', premium: 'プレミアム売店' };
   $('#view-town').innerHTML = `
-    ${viewHero(fac === 'gacha' ? 'town' : fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦', gacha: '🔔' }[fac] || '', FAC_NAMES[fac] || '', '')}
+    ${viewHero((fac === 'gacha' || fac === 'premium') ? 'town' : fac, { inn: '🏨', shop: '💰', smith: '🔨', bank: '🏦', gacha: '🔔', premium: '💎' }[fac] || '', FAC_NAMES[fac] || '', '')}
     <div class="facility-back-bar">
       <button class="btn small" data-act="townBack">← 広場に戻る</button>
     </div>
@@ -1514,7 +1517,6 @@ function renderStatus() {
           <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
     </div>`;
   const dataPanels = `
-    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">4倍速・広告スキップ・お得セット（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
@@ -2404,6 +2406,7 @@ function renderHelp() {
       ${row('鍛冶屋「鉄の大地」', 'ゴールドと強化石で装備を★強化（最大★9。★6以上は上位の強化素材が必要）')}
       ${row('福音銀行', 'ゴールドの預け入れ・引き出し。敗北時のロストを防ぐ')}
       ${row('福音のくじ', '鐘のしずくでくじを引く／衣装・おまけ装備の着せ替え（「くじ」を参照）')}
+      ${monetAdsOn() ? row('プレミアム売店', '4倍速・広告スキップ・お得セットの購入と復元（アプリ版のみ）') : ''}
     </div>
   </div>
   <div class="panel">
@@ -2495,7 +2498,7 @@ function renderHelp() {
       ${row('装備', '装備中の武器・防具、おまかせ装備・自動装備、バッグ（ロック・拡張）、薬の使用、強化石の所持数')}
       ${row('スキル', 'ビルド切り替え、スキルセット（S1〜S3）、スキル枠へのSP割り振り・リセット')}
       ${row('極意', '本編クリア後に解放。全キャラ共通のパッシブ（10項目・各最大Lv10）の強化とリセット')}
-      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。アプリ版ではショップ（4倍速・広告スキップ）もここ')}
+      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。')}
     </div>
   </div>
   <div class="panel">
