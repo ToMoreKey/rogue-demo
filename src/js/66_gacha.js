@@ -123,6 +123,7 @@ function renderGachaFacility(p) {
     <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="1" ${g.drops >= GACHA_CFG.costSingle ? '' : 'disabled'}>1回（💧${GACHA_CFG.costSingle}）</button>
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="10" ${g.drops >= GACHA_CFG.costTen ? '' : 'disabled'}>10連（💧${GACHA_CFG.costTen}）</button></div>
+    ${adButtonHtml('drops')}
     <button class="btn wide gc-coll" data-act="gachaCollection">📖 景品一覧・着せ替え<small>集めた景品 ${total} / ${all}</small></button>
     <details class="gc-det"><summary>${gr.name}くじの提供割合・天井</summary>${gachaRatesHtml(gk)}</details>
     <p class="sub" style="margin:10px 0 0"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／限定ダンジョン</p>`;

@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.tomorekey.kanenari",
+  "appName": "鐘鳴りのダンジョン",
+  "webDir": "www",
+  "backgroundColor": "#0e151b",
+  "android": { "allowMixedContent": false },
+  "server": { "androidScheme": "https" }
+}

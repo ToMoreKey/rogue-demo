@@ -255,6 +255,7 @@ input[type=number]:focus-visible{outline:2px solid var(--accent);outline-offset:
 .pip.boss{width:14px}
 .speed{display:flex;gap:4px}
 .speed .btn{min-height:32px;padding:3px 10px;font-size:13px}
+.speed .btn.locked{opacity:.65}
 .arena{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(rgba(6,8,12,.26),rgba(6,8,12,.62)),var(--scene,none) center/cover no-repeat,linear-gradient(var(--a1),var(--a2));padding:14px 12px 12px;margin-bottom:10px}
 .arena.rage-active{box-shadow:inset 0 0 28px rgba(235,45,75,.38);border-color:#9e3348}
 .arena.rage-burst::after{content:'';position:absolute;inset:0;background:radial-gradient(circle,rgba(255,60,80,.55),rgba(180,20,50,.35) 70%);pointer-events:none;z-index:5;animation:rageFlash .32s ease-out forwards}
@@ -1059,7 +1060,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_dev_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = true;
-const APP_VERSION = 'rogue-dev-v127';
+const APP_VERSION = 'rogue-dev-v128';
 const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';
 const BAG_CAP = 60;
@@ -3741,6 +3742,8 @@ function load() {
     }
     p.gacha.outfit = {}; for (const sk of CHAR_SKINS) { let t = s.gacha && s.gacha.outfit && s.gacha.outfit[sk.id]; if (typeof t !== 'string') t = Number(t); const o = OUTFITS.find(x => x.skin === sk.id && x.tier === t); p.gacha.outfit[sk.id] = o && p.gacha.owned['outfit:' + o.id] ? t : 0; }
     p.login = { last: typeof (s.login && s.login.last) === 'string' ? s.login.last.slice(0, 10) : '', claims: num(s.login && s.login.claims, 0, 0, 99999) };
+    p.iap = {}; for (const k of ['speed2', 'speed4', 'adfree']) p.iap[k] = !!(s.iap && s.iap[k] === true);
+    p.ads = { date: typeof (s.ads && s.ads.date) === 'string' ? s.ads.date.slice(0, 10) : '', drops: num(s.ads && s.ads.drops, 0, 0, 99), daily: num(s.ads && s.ads.daily, 0, 0, 99) };
     p.daily = { date: typeof (s.daily && s.daily.date) === 'string' ? s.daily.date.slice(0, 10) : '', used: num(s.daily && s.daily.used, 0, 0, 99), clears: num(s.daily && s.daily.clears, 0, 0, 99999) };
     p.goalDrops = {}; if (s.goalDrops && typeof s.goalDrops === 'object') for (const k of Object.keys(s.goalDrops)) if (s.goalDrops[k]) p.goalDrops[String(k).slice(0, 30)] = true;
     p.goalsHidden = !!s.goalsHidden;
@@ -5779,7 +5782,12 @@ const ACTS = {
   },
   dangerCancel() { G._pendingRun = null; closeModal(); },
   dangerGo() { const r = G._pendingRun; G._pendingRun = null; closeModal(); if (r) startRun(r.d, r.df); },
-  speed(d) { G.opts.speed = Number(d.v); save(); renderBattle(); ensureLoop(); },
+  speed(d) { const v = Number(d.v); if (speedLocked(v)) { openMonetShop(); return; } G.opts.speed = v; save(); renderBattle(); ensureLoop(); },
+  monetShop() { openMonetShop(); },
+  monetBuy(d) { monetBuy(d.id); },
+  monetRestore() { monetRestore(); },
+  monetReward(d) { monetReward(d.kind); },
+  monetClose() { closeModal(); },
   autoSkill() { G.opts.autoSkill = !G.opts.autoSkill; save(); renderBattle(); },
   skill(d) {
     const run = G.run; if (!run) return;
@@ -7450,7 +7458,7 @@ function renderBattle() {
   $('#b-status').innerHTML = run.tower
     ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
     : stTxt;
-  document.querySelectorAll('.speed .btn').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === G.opts.speed));
+  document.querySelectorAll('.speed .btn').forEach(b => { const v = Number(b.dataset.v), lk = speedLocked(v); b.classList.toggle('on', v === G.opts.speed); b.classList.toggle('locked', lk); b.textContent = (lk ? '🔒' : '') + '×' + v; });
   const as = $('#btn-autoskill'); as.innerHTML = `スキル自動<small>${G.opts.autoSkill ? 'ON' : 'OFF'}</small>`; as.classList.toggle('on', G.opts.autoSkill);
   const bh = $('#btn-pot-hp'), bm = $('#btn-pot-mp');
   bh.textContent = `生命の薬 ×${p.potions.hp}`; bh.disabled = p.potions.hp <= 0;
@@ -7941,6 +7949,7 @@ function renderStatus() {
           <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
     </div>`;
   const dataPanels = `
+    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">倍速・広告スキップ（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
@@ -8829,7 +8838,7 @@ function renderHelp() {
       ${row('ショップ', '装備の売却・自動売却フィルターの設定、薬・強化石・ビルドの書の購入')}
       ${row('鍛冶屋「鉄の大地」', 'ゴールドと強化石で装備を★強化（最大★9。★6以上は上位の強化素材が必要）')}
       ${row('福音銀行', 'ゴールドの預け入れ・引き出し。敗北時のロストを防ぐ')}
-      ${row('福音のくじ', '鐘のしずくでくじを引く／衣装・おまけ装備の着せ替え（「くじ・着替え」を参照）')}
+      ${row('福音のくじ', '鐘のしずくでくじを引く／衣装・おまけ装備の着せ替え（「くじ」を参照）')}
     </div>
   </div>
   <div class="panel">
@@ -8861,6 +8870,7 @@ function renderHelp() {
       ${row('難易度', 'やさしい／ふつう／むずかしい。むずかしいほど強敵で、貰えるしずくとゴールドが増える')}
       ${row('曜日テーマ', '曜日ごとに舞台と追加ボーナスが変わる（しずく増量、EXP・Gold倍率、装備宝箱、SP+1 など）')}
       ${row('クリア報酬', '鐘のしずく。くじで衣装などを手に入れるための主な入手源')}
+      ${monetAdsOn() ? row('回数の追加', '本日の3回を使い切ったとき、広告を見ると挑戦回数が +1（1日1回）') : ''}
     </div>
   </div>`;
   const _routeTable = (() => {
@@ -8920,7 +8930,7 @@ function renderHelp() {
       ${row('装備', '装備中の武器・防具、おまかせ装備・自動装備、バッグ（ロック・拡張）、薬の使用、強化石の所持数')}
       ${row('スキル', 'ビルド切り替え、スキルセット（S1〜S3）、スキル枠へのSP割り振り・リセット')}
       ${row('極意', '本編クリア後に解放。全キャラ共通のパッシブ（10項目・各最大Lv10）の強化とリセット')}
-      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化')}
+      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。アプリ版ではショップ（倍速・広告スキップ）もここ')}
     </div>
   </div>
   <div class="panel">
@@ -8953,6 +8963,7 @@ function renderHelp() {
       ${row('限定ダンジョン', '「鐘の試練」のクリア報酬（1日3回）')}
       ${row('初踏破', '各ダンジョンを初めてクリアした難易度（初級〜上級）ごと')}
       ${row('実績・目標', '実績の初達成、「はじめの目標」の達成')}
+      ${monetAdsOn() ? row('広告（任意）', 'くじ画面で広告を見ると +1（1日3回まで）。「広告スキップ」を購入すると、広告を見ずに受け取れる') : ''}
     </div>
   </div>
   <div class="panel">
@@ -9791,6 +9802,7 @@ function renderGachaFacility(p) {
     <div class="act" style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="1" ${g.drops >= GACHA_CFG.costSingle ? '' : 'disabled'}>1回（💧${GACHA_CFG.costSingle}）</button>
       <button class="btn primary" style="flex:1;min-width:120px" data-act="gachaPull" data-n="10" ${g.drops >= GACHA_CFG.costTen ? '' : 'disabled'}>10連（💧${GACHA_CFG.costTen}）</button></div>
+    ${adButtonHtml('drops')}
     <button class="btn wide gc-coll" data-act="gachaCollection">📖 景品一覧・着せ替え<small>集めた景品 ${total} / ${all}</small></button>
     <details class="gc-det"><summary>${gr.name}くじの提供割合・天井</summary>${gachaRatesHtml(gk)}</details>
     <p class="sub" style="margin:10px 0 0"><b>しずくの集め方</b>：ログインボーナス／実績の初達成／ダンジョンの初踏破／はじめの目標／限定ダンジョン</p>`;
@@ -10028,6 +10040,7 @@ function renderDailyCard(p) {
     <div class="seg dl-seg" role="group" aria-label="難易度">${seg}</div>
     <p class="dc-info">全 <b>${DAILY_CFG.floors}階層</b>　今日の曜日ボーナス <b>${esc(th.bonusTxt)}</b><br>踏破報酬 <b>💧${dfx.drops + (th.bonus.drops || 0)}</b> ＋ Gold<span class="dl-pips" aria-label="残り${left}回">${pips}</span> 残り <b>${left}</b> / ${DAILY_CFG.perDay} 回</p>
     <button class="btn primary wide" data-act="goDaily" ${left > 0 ? '' : 'disabled'}>${left > 0 ? `${dfx.name}で挑戦する` : '本日は終了（明日また）'}</button>
+    ${left === 0 ? adButtonHtml('daily') : ''}
     </div></article>`;
 }
 /* ================= おまけ装備「髪染め」: 立ち絵の髪の色だけを変える =================
@@ -10169,6 +10182,136 @@ function hairReady() {
     if (G._gc && G.modalOpen && typeof openGachaCollection === 'function') openGachaCollection(null, true);
     else if (typeof renderAll === 'function') renderAll();
   } catch (e) {}
+}
+/* ================= 課金（倍速・広告スキップ）とリワード広告 =================
+   モード:
+     'free'   … ウェブ版（PWA）。課金も広告もなし。倍速は全部使える（従来どおり）
+     'native' … Capacitor 製アプリ。Play Billing（買い切り）と AdMob（リワード）を使う
+     'mock'   … URLに ?monet=mock を付けたテスト用。購入・広告を画面上で疑似的に再現する
+   商品: speed2（2倍速）・speed4（4倍速）・adfree（広告スキップ）。価格は表示時にストアから取る。 */
+const MONET_PRODUCTS = [
+  { id: 'speed2', name: '2倍速', icon: '⏩', desc: '戦闘を2倍の速さで進められます（買い切り）' },
+  { id: 'speed4', name: '4倍速', icon: '⏭️', desc: '戦闘を4倍の速さで進められます（買い切り）' },
+  { id: 'adfree', name: '広告スキップ', icon: '📺', desc: 'リワード広告を見ずに、報酬をすぐ受け取れます（買い切り）' }
+];
+const AD_CFG = { dropsPerDay: 3, dropsReward: 1, dailyPerDay: 1 };
+const monetProduct = id => MONET_PRODUCTS.find(x => x.id === id);
+function monetMode() {
+  try { if (/[?&]monet=mock\b/.test(location.search)) return 'mock'; } catch (e) {}
+  try { if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) return 'native'; } catch (e) {}
+  return 'free';
+}
+function ensureIap(p) {
+  if (!p.iap || typeof p.iap !== 'object') p.iap = {};
+  for (const x of MONET_PRODUCTS) p.iap[x.id] = p.iap[x.id] === true;
+  if (!p.ads || typeof p.ads !== 'object') p.ads = {};
+  if (p.ads.date !== todayStr()) { p.ads.date = todayStr(); p.ads.drops = 0; p.ads.daily = 0; }
+  p.ads.drops = Math.max(0, Math.floor(Number(p.ads.drops) || 0)); p.ads.daily = Math.max(0, Math.floor(Number(p.ads.daily) || 0));
+  return p;
+}
+// 所有しているか（ウェブ版は常に所有扱い）
+function ownsIap(id) { if (monetMode() === 'free') return true; const p = G.p; return !!(p && p.iap && p.iap[id] === true); }
+function speedLocked(v) { return (v === 2 && !ownsIap('speed2')) || (v === 4 && !ownsIap('speed4')); }
+function monetClampSpeed() { if (G.opts && speedLocked(G.opts.speed)) G.opts.speed = ownsIap('speed2') && G.opts.speed >= 2 ? 2 : 1; }
+function monetAdsOn() { return monetMode() !== 'free'; }
+
+// ---------- 提供元（プロバイダ） ----------
+const MonetMock = {
+  price: id => '（テスト）',
+  async buy(id) { return true; },
+  async restore() { return []; },
+  async rewarded() {
+    return new Promise(res => {
+      const el = document.createElement('div'); el.id = 'mock-ad';
+      el.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#000d;color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:16px';
+      el.innerHTML = '<div>📺 広告（テスト表示）</div><div id="mock-ad-n">2</div>'; document.body.appendChild(el);
+      let n = 2; const t = setInterval(() => { n--; const e = document.getElementById('mock-ad-n'); if (e) e.textContent = String(Math.max(n, 0)); if (n <= 0) { clearInterval(t); el.remove(); res(true); } }, 500);
+    });
+  }
+};
+// Capacitor 版（端末上でのみ動く）。プラグイン: @capacitor-community/admob、cordova-plugin-purchase
+const MonetNative = {
+  _prices: {}, _ready: false, _admobReady: false,
+  price(id) { return this._prices[id] || ''; },
+  _store() { return window.CdvPurchase && window.CdvPurchase.store; },
+  async init() {
+    if (this._ready) return; this._ready = true;
+    try {
+      const S = this._store(), C = window.CdvPurchase; if (!S) return;
+      for (const x of MONET_PRODUCTS) S.register({ id: x.id, type: C.ProductType.NON_CONSUMABLE, platform: C.Platform.GOOGLE_PLAY });
+      S.when().approved(t => t.verify()).verified(r => r.finish());
+      S.when().productUpdated(() => { for (const x of MONET_PRODUCTS) { const pr = S.get(x.id, C.Platform.GOOGLE_PLAY); if (pr && pr.pricing) this._prices[x.id] = pr.pricing.price; } });
+      S.when().finished(t => { for (const pr of t.products) if (monetProduct(pr.id) && G.p) { ensureIap(G.p).iap[pr.id] = true; save(); try { renderAll(); } catch (e) {} } });
+      await S.initialize([C.Platform.GOOGLE_PLAY]);
+      for (const x of MONET_PRODUCTS) { const pr = S.get(x.id, C.Platform.GOOGLE_PLAY); if (pr && pr.owned && G.p) ensureIap(G.p).iap[x.id] = true; }
+    } catch (e) { console.warn('billing init', e); }
+  },
+  async buy(id) {
+    try { const S = this._store(), C = window.CdvPurchase, pr = S.get(id, C.Platform.GOOGLE_PLAY); if (!pr) return false; const off = pr.getOffer(); if (!off) return false; const err = await off.order(); return !err; } catch (e) { return false; }
+  },
+  async restore() { try { await this._store().restorePurchases(); } catch (e) {} const S = this._store(), C = window.CdvPurchase, got = []; try { for (const x of MONET_PRODUCTS) { const pr = S.get(x.id, C.Platform.GOOGLE_PLAY); if (pr && pr.owned) got.push(x.id); } } catch (e) {} return got; },
+  async rewarded() {
+    try {
+      const C = window.Capacitor, A = (C.registerPlugin ? C.registerPlugin('AdMob') : C.Plugins.AdMob); if (!A) return false;
+      if (!this._admobReady) { await A.initialize({}); this._admobReady = true; }
+      let ok = false; const h = await A.addListener('onRewardedVideoAdReward', () => { ok = true; });
+      await A.prepareRewardVideoAd({ adId: MONET_AD_UNIT_REWARDED, isTesting: MONET_AD_TESTING });
+      const item = await A.showRewardVideoAd();
+      if (item && typeof item.amount === 'number') ok = true;
+      try { h && h.remove && h.remove(); } catch (e) {}
+      return ok;
+    } catch (e) { return false; }
+  }
+};
+const MONET_AD_TESTING = true;   // 公開前に false にする
+const MONET_AD_UNIT_REWARDED = 'ca-app-pub-3940256099942544/5224354917';   // Google の公開テスト用ID。本番IDに差し替える
+function monetProvider() { return monetMode() === 'native' ? MonetNative : MonetMock; }
+async function monetBoot() {
+  if (monetMode() === 'native') { await MonetNative.init(); }
+  if (G.p) ensureIap(G.p);
+  monetClampSpeed();
+}
+
+// ---------- 購入 ----------
+async function monetBuy(id) {
+  if (!monetProduct(id) || ownsIap(id)) return;
+  const ok = await monetProvider().buy(id);
+  if (ok) { ensureIap(G.p).iap[id] = true; save(); toast(`「${monetProduct(id).name}」を購入しました`); renderAll(); if (G.modalOpen) openMonetShop(); }
+  else toast('購入できませんでした');
+}
+async function monetRestore() {
+  const got = await monetProvider().restore(); let n = 0;
+  for (const id of got) if (monetProduct(id) && !G.p.iap[id]) { ensureIap(G.p).iap[id] = true; n++; }
+  save(); renderAll(); toast(n ? `購入を${n}件復元しました` : '復元できる購入はありませんでした'); if (G.modalOpen) openMonetShop();
+}
+function monetShopHtml() {
+  return MONET_PRODUCTS.map(x => { const own = ownsIap(x.id), pr = monetProvider().price(x.id);
+    return `<div class="smith-item"><div class="it-h"><span class="it-name">${x.icon} ${x.name}</span><span class="sub" style="margin-left:auto">${own ? '✔ 購入済み' : esc(pr || '')}</span></div>
+      <div class="it-meta"><span>${x.desc}</span></div>
+      <button class="btn small${own ? '' : ' primary'}" data-act="monetBuy" data-id="${x.id}" ${own ? 'disabled' : ''}>${own ? '購入済み' : '購入する'}</button></div>`; }).join('')
+    + `<div class="act"><button class="btn small" data-act="monetRestore">購入を復元</button><button class="btn" data-act="monetClose">閉じる</button></div>`;
+}
+function openMonetShop() { $('#m-sheet').innerHTML = '<h2 id="m-title">💎 ショップ</h2><div class="stack" style="gap:8px">' + monetShopHtml() + '</div>'; $('#modal').hidden = false; G.modalOpen = true; }
+
+// ---------- リワード広告 ----------
+function adLeft(kind) { const a = ensureIap(G.p).ads; return Math.max(0, (kind === 'drops' ? AD_CFG.dropsPerDay : AD_CFG.dailyPerDay) - (a[kind] || 0)); }
+async function monetReward(kind) {
+  if (!monetAdsOn() || adLeft(kind) <= 0) return;
+  if (G._adBusy) return; G._adBusy = true;
+  try {
+    const ok = ownsIap('adfree') ? true : await monetProvider().rewarded(kind);   // 広告スキップ購入済みなら、見ずに受け取れる
+    if (!ok) { toast('広告を最後まで見られませんでした'); return; }
+    const p = G.p, a = ensureIap(p).ads;
+    if (kind === 'drops') { ensureGacha(p).drops += AD_CFG.dropsReward; a.drops++; toast(`💧 鐘のしずく +${AD_CFG.dropsReward}`); }
+    else if (kind === 'daily') { const d = ensureDaily(p); d.used = Math.max(0, d.used - 1); a.daily++; toast('限定ダンジョンの挑戦回数 +1'); }
+    save(); renderAll();
+  } finally { G._adBusy = false; }
+}
+function adButtonHtml(kind) {
+  if (!monetAdsOn()) return '';
+  const left = adLeft(kind), skip = ownsIap('adfree');
+  const label = kind === 'drops' ? `鐘のしずく +${AD_CFG.dropsReward}` : '挑戦回数 +1';
+  return `<button class="btn small wide" data-act="monetReward" data-kind="${kind}" ${left > 0 ? '' : 'disabled'}>${skip ? '🎁' : '📺'} ${skip ? '受け取る' : '広告を見て'}：${label}（今日 あと${left}回）</button>`;
 }
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_dev_tut_done_v1';
@@ -10470,6 +10613,7 @@ function boot() {
   flushBugQueue();
   recordAnalyticsLaunch();
   maybeSendAnalytics();
+  try { monetBoot().then(() => { try { renderAll(); } catch (e) {} }); } catch (e) {}
   renderAll();
   renderSaveWarn();
   if (hadLocalSave && !corrupt) setTimeout(() => idbMirrorSave(true), 1500);   // 起動時にも1世代
@@ -10494,6 +10638,7 @@ function boot() {
 
 window.G = G;
 window.__rogue = {
+  monetMode, speedLocked, monetAdsOn, adButtonHtml, monetReward, adLeft, monetBuy, ensureIap, ensureDaily, ensureGacha, dailyLeft, closeModal, save,
   hairCached, startRunGuarded, dangerOf, startDailyRun, openGachaCollection, gcState, OUTFITS, OUTFIT_IMG, OUTFIT_SPECIAL, skinTier, skinSel, hairSrc, hairRecolorData, HAIR_CFG, cosHair, GACHA_GENRES, gachaRevealEnd, dailyScale, ensureDaily, dailyUsed, dailyLeft, dailyTheme, DAILY_CFG, DAILY_THEMES, DAILY_DIFFS, ensureGacha, gachaPull, addDrops, cosOverlayHtml, loginBonusPrompt, loginClaim, GACHA_CFG, GACHA_POOL, COSMETICS, DEX_FRAMES, GACHA_TITLES, LOGIN_REWARDS, todayStr, STORY, playStory, queueStory, storySeen, openStoryList, idbReadHistory, openRecoveryModal, renderSaveWarn, saveSummaryOf, probeStorage, migrateSave, claimDexReward, ACH_CATS, ACHIEVEMENTS, checkAchievements, flushPendingAchCoins, SAVE_VERSION, SAVE_KEY, BACKUP_META_KEY, IDB_BACKUP_NAME, BUGREPORT_CFG, ANALYTICS_CFG, APP_VERSION, IS_DEV_BUILD, buildBugDiag, isBugReportConfigured, bugReportWaitSec, readBugQueue, sendBugReport, flushBugQueue, pushBugError, openBugReportModal, getOrCreateAnonId, recordAnalyticsLaunch, flushAnalyticsPlayTime, isAnalyticsOptOut, setAnalyticsOptOut, buildAnalyticsLine, maybeSendAnalytics, buildSavePayload, encodeSaveCode, decodeAndValidateSaveInput, applyImportedSave, idbMirrorSave, idbReadSave, readBackupMeta, maybeShowBackupToast, migrations, isDungeonUnlocked, isDiffUnlocked, MAX_BAG_CAP, MAX_STAR, SMITH_MAX_STAR, gearPower, gearScore, bestGearItem, itemProps, hasProp, ARMOR_PROPS, genMythic9, runEvent, nextFloor, onKill, gainExp, battleRound, spawnEnemy, calcDmg, itemName, PROPS, RARITY, BAG_CAP, LV_CAP,
   TUNE, EARLY_EASE, earlyEase, G, ACTS, tick, startRun, startTowerRun, startAbyssRun, isAbyssUnlocked, isAbyssDiffUnlocked, abyssEff, ABYSS_CFG, ABYSS_CURSES, ABYSS_BOSSES, RANKING_CFG, validateRankingData, calcRankPosition, fetchRanking, cleanRankNick, submitTowerRank, isRankingSubmitConfigured, DEX_ITEM_HINTS, DEX_STARS, DEX_MYTHICS, dexItemKey, dexEnemyGroups, recordDexEnemy, recordDexItem, pickBlessing, towerEff, TOWER_CFG, TOWER_BLESSINGS, TOWER_SHOP, TOWER_TITLES, finishRun, genItem, receiveItem, itemPower, weaponAtk, sellValue, spriteSVG, SHAPES, PAL, DUNGEONS, DIFFS, SK,
   SKILL_TREES, CHAR_IDS, CHAR_CLASS_META, CHAR_TREES, getCharTrees, getCharSkillPts, getCharTutorialTarget, makeDefaultChars, syncActiveCharState, openCharSelectModal, openV9ResetNoticeModal, MASTERY_LIST, MASTERY_MAX, masteryCost, passiveBonus, masteryBonus, CHAR_SKINS,

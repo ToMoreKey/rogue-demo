@@ -89,5 +89,6 @@ function renderDailyCard(p) {
     <div class="seg dl-seg" role="group" aria-label="難易度">${seg}</div>
     <p class="dc-info">全 <b>${DAILY_CFG.floors}階層</b>　今日の曜日ボーナス <b>${esc(th.bonusTxt)}</b><br>踏破報酬 <b>💧${dfx.drops + (th.bonus.drops || 0)}</b> ＋ Gold<span class="dl-pips" aria-label="残り${left}回">${pips}</span> 残り <b>${left}</b> / ${DAILY_CFG.perDay} 回</p>
     <button class="btn primary wide" data-act="goDaily" ${left > 0 ? '' : 'disabled'}>${left > 0 ? `${dfx.name}で挑戦する` : '本日は終了（明日また）'}</button>
+    ${left === 0 ? adButtonHtml('daily') : ''}
     </div></article>`;
 }

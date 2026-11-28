@@ -1023,7 +1023,7 @@ function renderBattle() {
   $('#b-status').innerHTML = run.tower
     ? `${esc(stTxt)} <button class="btn small" data-act="towerBlessList">✨祝福(${run.tower.blessings.length})</button>`
     : stTxt;
-  document.querySelectorAll('.speed .btn').forEach(b => b.classList.toggle('on', Number(b.dataset.v) === G.opts.speed));
+  document.querySelectorAll('.speed .btn').forEach(b => { const v = Number(b.dataset.v), lk = speedLocked(v); b.classList.toggle('on', v === G.opts.speed); b.classList.toggle('locked', lk); b.textContent = (lk ? '🔒' : '') + '×' + v; });
   const as = $('#btn-autoskill'); as.innerHTML = `スキル自動<small>${G.opts.autoSkill ? 'ON' : 'OFF'}</small>`; as.classList.toggle('on', G.opts.autoSkill);
   const bh = $('#btn-pot-hp'), bm = $('#btn-pot-mp');
   bh.textContent = `生命の薬 ×${p.potions.hp}`; bh.disabled = p.potions.hp <= 0;
@@ -1514,6 +1514,7 @@ function renderStatus() {
           <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
     </div>`;
   const dataPanels = `
+    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">倍速・広告スキップ（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>
@@ -2402,7 +2403,7 @@ function renderHelp() {
       ${row('ショップ', '装備の売却・自動売却フィルターの設定、薬・強化石・ビルドの書の購入')}
       ${row('鍛冶屋「鉄の大地」', 'ゴールドと強化石で装備を★強化（最大★9。★6以上は上位の強化素材が必要）')}
       ${row('福音銀行', 'ゴールドの預け入れ・引き出し。敗北時のロストを防ぐ')}
-      ${row('福音のくじ', '鐘のしずくでくじを引く／衣装・おまけ装備の着せ替え（「くじ・着替え」を参照）')}
+      ${row('福音のくじ', '鐘のしずくでくじを引く／衣装・おまけ装備の着せ替え（「くじ」を参照）')}
     </div>
   </div>
   <div class="panel">
@@ -2434,6 +2435,7 @@ function renderHelp() {
       ${row('難易度', 'やさしい／ふつう／むずかしい。むずかしいほど強敵で、貰えるしずくとゴールドが増える')}
       ${row('曜日テーマ', '曜日ごとに舞台と追加ボーナスが変わる（しずく増量、EXP・Gold倍率、装備宝箱、SP+1 など）')}
       ${row('クリア報酬', '鐘のしずく。くじで衣装などを手に入れるための主な入手源')}
+      ${monetAdsOn() ? row('回数の追加', '本日の3回を使い切ったとき、広告を見ると挑戦回数が +1（1日1回）') : ''}
     </div>
   </div>`;
   const _routeTable = (() => {
@@ -2493,7 +2495,7 @@ function renderHelp() {
       ${row('装備', '装備中の武器・防具、おまかせ装備・自動装備、バッグ（ロック・拡張）、薬の使用、強化石の所持数')}
       ${row('スキル', 'ビルド切り替え、スキルセット（S1〜S3）、スキル枠へのSP割り振り・リセット')}
       ${row('極意', '本編クリア後に解放。全キャラ共通のパッシブ（10項目・各最大Lv10）の強化とリセット')}
-      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化')}
+      ${row('データ', 'セーブの書き出し・読み込み、不具合・ご意見の送信、匿名送信の設定、初期化。アプリ版ではショップ（倍速・広告スキップ）もここ')}
     </div>
   </div>
   <div class="panel">
@@ -2526,6 +2528,7 @@ function renderHelp() {
       ${row('限定ダンジョン', '「鐘の試練」のクリア報酬（1日3回）')}
       ${row('初踏破', '各ダンジョンを初めてクリアした難易度（初級〜上級）ごと')}
       ${row('実績・目標', '実績の初達成、「はじめの目標」の達成')}
+      ${monetAdsOn() ? row('広告（任意）', 'くじ画面で広告を見ると +1（1日3回まで）。「広告スキップ」を購入すると、広告を見ずに受け取れる') : ''}
     </div>
   </div>
   <div class="panel">

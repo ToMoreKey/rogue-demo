@@ -1,1 +1,4 @@
 __pycache__/
+native/node_modules/
+native/android/
+native/www/

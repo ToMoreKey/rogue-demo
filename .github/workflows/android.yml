@@ -1,0 +1,54 @@
+# Android アプリ（AAB）を作る。手動実行（Actions → Build Android → Run workflow）。
+# 事前に GitHub の Settings → Secrets and variables → Actions に次を登録する（docs/native_release_guide.md 参照）:
+#   ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD / ADMOB_APP_ID
+# 注意: 作成者の環境では未検証。初回は失敗する可能性があるので、ログを見て直す。
+name: Build Android
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'ビルドするブランチ（本番は main）'
+        default: 'main'
+      version_code:
+        description: 'versionCode（Play にアップするたびに増やす整数）'
+        default: '1'
+      version_name:
+        description: 'versionName'
+        default: '1.0.0'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ inputs.ref }}' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - name: Make www (production build only)
+        run: python3 tools/make_native_www.py
+      - name: Install Capacitor
+        working-directory: native
+        run: |
+          npm install
+          npx cap add android
+          npx cap sync android
+      - name: Patch Android project (AdMob ID, version, signing)
+        working-directory: native
+        env:
+          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VCODE: ${{ inputs.version_code }}
+          VNAME: ${{ inputs.version_name }}
+        run: |
+          python3 ../tools/patch_android.py android
+      - name: Build AAB
+        working-directory: native/android
+        run: ./gradlew bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kanenari-aab
+          path: native/android/app/build/outputs/bundle/release/*.aab

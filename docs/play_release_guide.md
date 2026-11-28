@@ -1,4 +1,5 @@
 # Google Play 公開ガイド（TWA / PWABuilder 方式）
+> **注意（2026-11-28）**: 広告・課金を入れる方針になったため、アプリ化は TWA ではなく Capacitor 方式に変更。手順は `docs/native_release_guide.md` を見る。このファイルの §0（用意済みのもの）・§4（申告）・§5（ストア文面）は引き続き有効（申告は広告あり・課金ありに読み替え）。
 
 目的: 公開中のPWA（https://tomorekey.github.io/rogue-demo/）を、Android アプリ（AAB）として Google Play に出す。
 役割: 資料・画像・文面は Claude が用意済み。**アカウント登録・署名キー・申請ボタンは運営者の操作**。

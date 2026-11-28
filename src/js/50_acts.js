@@ -68,7 +68,12 @@ const ACTS = {
   },
   dangerCancel() { G._pendingRun = null; closeModal(); },
   dangerGo() { const r = G._pendingRun; G._pendingRun = null; closeModal(); if (r) startRun(r.d, r.df); },
-  speed(d) { G.opts.speed = Number(d.v); save(); renderBattle(); ensureLoop(); },
+  speed(d) { const v = Number(d.v); if (speedLocked(v)) { openMonetShop(); return; } G.opts.speed = v; save(); renderBattle(); ensureLoop(); },
+  monetShop() { openMonetShop(); },
+  monetBuy(d) { monetBuy(d.id); },
+  monetRestore() { monetRestore(); },
+  monetReward(d) { monetReward(d.kind); },
+  monetClose() { closeModal(); },
   autoSkill() { G.opts.autoSkill = !G.opts.autoSkill; save(); renderBattle(); },
   skill(d) {
     const run = G.run; if (!run) return;

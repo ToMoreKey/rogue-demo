@@ -1,0 +1,13 @@
+{
+  "name": "kanenari-native",
+  "version": "1.0.0",
+  "private": true,
+  "description": "鐘鳴りのダンジョン Android ラッパー（Capacitor）。中身はリポジトリ直下の index.html（本番ビルド）",
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor-community/admob": "^6.0.0",
+    "cordova-plugin-purchase": "^13.12.1"
+  }
+}

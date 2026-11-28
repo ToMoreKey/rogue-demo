@@ -95,7 +95,7 @@ with sync_playwright() as pw:
     # 目標達成のしずく付与（p.gacha / p.goalDrops）はロード後のタイミングで変わるため比較対象から外す
     def _norm(raw):
         d = json.loads(raw)
-        for k in ('gacha', 'goalDrops', 'daily', 'login'): d['p'].pop(k, None)
+        for k in ('gacha', 'goalDrops', 'daily', 'login', 'ads'): d['p'].pop(k, None)
         return d
     check('v3 save is stable across reload', _norm(before) == _norm(after))
     pg.evaluate('()=>{G.p.gold+=100; window.__rogue.save();}')
