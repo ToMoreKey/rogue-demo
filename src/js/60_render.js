@@ -1514,7 +1514,7 @@ function renderStatus() {
           <div style="margin-top:8px"><button class="btn small danger" data-act="masteryReset">極意リセット (${fmt(skillResetCost(p))}G)</button></div>`}
     </div>`;
   const dataPanels = `
-    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">4倍速・広告スキップ（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
+    ${monetMode() !== 'free' ? `<div class="panel"><h2>💎 ショップ</h2><p class="sub">4倍速・広告スキップ・お得セット（買い切り）。購入済みの内容は端末を変えても「購入を復元」で戻せます。</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn small primary" data-act="monetShop">ショップを開く</button><button class="btn small" data-act="monetRestore">購入を復元</button></div></div>` : ''}
     <div class="panel"><h2>データ</h2><p class="sub">進行状況はこのブラウザに自動保存されます。</p>
       ${IS_DEV_BUILD ? '<button class="btn small" data-act="debugAllGear">テスト用：全装備を入手</button> <button class="btn small" data-act="openFxDebug">🎬 エフェクト確認</button>' : ''}
       <button class="btn small danger" data-act="reset">${G.resetArm ? 'もう一度押すと初期化します' : 'セーブデータを初期化'}</button>

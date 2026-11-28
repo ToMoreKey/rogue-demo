@@ -3,11 +3,13 @@
      'free'   … ウェブ版（PWA）。課金も広告もなし。倍速は全部使える（従来どおり）
      'native' … Capacitor 製アプリ。Play Billing（買い切り）と AdMob（リワード）を使う
      'mock'   … URLに ?monet=mock を付けたテスト用。購入・広告を画面上で疑似的に再現する
-   商品: speed4（4倍速・500円）・adfree（広告スキップ）。2倍速は無料。価格は表示時にストアから取る。 */
+   商品: speed4（4倍速）・adfree（広告スキップ）・bundle（上の2つのセット）。2倍速は無料。価格は表示時にストアから取る。 */
 const MONET_PRODUCTS = [
   { id: 'speed4', name: '4倍速', icon: '⏭️', desc: '戦闘を4倍の速さで進められます（買い切り）' },
-  { id: 'adfree', name: '広告スキップ', icon: '📺', desc: 'リワード広告を見ずに、報酬をすぐ受け取れます（買い切り）' }
+  { id: 'adfree', name: '広告スキップ', icon: '📺', desc: 'リワード広告を見ずに、報酬をすぐ受け取れます（買い切り）' },
+  { id: 'bundle', name: 'お得セット', icon: '🎁', desc: '4倍速＋広告スキップのセット（買い切り）' }
 ];
+const BUNDLE_INCLUDES = ['speed4', 'adfree'];
 const AD_CFG = { dropsPerDay: 3, dropsReward: 1, dailyPerDay: 1 };
 const monetProduct = id => MONET_PRODUCTS.find(x => x.id === id);
 function monetMode() {
@@ -24,7 +26,7 @@ function ensureIap(p) {
   return p;
 }
 // 所有しているか（ウェブ版は常に所有扱い）
-function ownsIap(id) { if (monetMode() === 'free') return true; const p = G.p; return !!(p && p.iap && p.iap[id] === true); }
+function ownsIap(id) { if (monetMode() === 'free') return true; const p = G.p; if (!(p && p.iap)) return false; return p.iap[id] === true || (BUNDLE_INCLUDES.includes(id) && p.iap.bundle === true); }
 function speedLocked(v) { return v === 4 && !ownsIap('speed4'); }   // ×2は無料
 function monetClampSpeed() { if (G.opts && speedLocked(G.opts.speed)) G.opts.speed = 2; }
 function monetAdsOn() { return monetMode() !== 'free'; }
@@ -99,7 +101,8 @@ async function monetRestore() {
   save(); renderAll(); toast(n ? `購入を${n}件復元しました` : '復元できる購入はありませんでした'); if (G.modalOpen) openMonetShop();
 }
 function monetShopHtml() {
-  return MONET_PRODUCTS.map(x => { const own = ownsIap(x.id), pr = monetProvider().price(x.id);
+  const showBundle = !BUNDLE_INCLUDES.some(id => ownsIap(id));   // どちらかを持っていたらセットは出さない（二重払い防止）
+  return MONET_PRODUCTS.filter(x => x.id !== 'bundle' || showBundle).sort((a, b) => (b.id === 'bundle') - (a.id === 'bundle')).map(x => { const own = ownsIap(x.id), pr = monetProvider().price(x.id);
     return `<div class="smith-item"><div class="it-h"><span class="it-name">${x.icon} ${x.name}</span><span class="sub" style="margin-left:auto">${own ? '✔ 購入済み' : esc(pr || '')}</span></div>
       <div class="it-meta"><span>${x.desc}</span></div>
       <button class="btn small${own ? '' : ' primary'}" data-act="monetBuy" data-id="${x.id}" ${own ? 'disabled' : ''}>${own ? '購入済み' : '購入する'}</button></div>`; }).join('')
