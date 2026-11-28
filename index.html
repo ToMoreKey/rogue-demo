@@ -1059,7 +1059,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_dev_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = true;
-const APP_VERSION = 'rogue-dev-v123';
+const APP_VERSION = 'rogue-dev-v125';
 const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';
 const BAG_CAP = 60;
@@ -1215,11 +1215,21 @@ const SK = {
   divineWrath: { id: 'divineWrath', name: '神罰', mp: 55, ct: 7, type: 'atk', hits: 1, mult: 9.0, desc: '9倍の神罰の一撃' },
   angelMiracle: { id: 'angelMiracle', name: '天使の奇跡', mp: 50, ct: 7, type: 'atk', hits: 3, mult: 3.0, desc: '3回攻撃（各3倍）の聖なる光' },
   celestialLance: { id: 'celestialLance', name: '聖槍の極意', mp: 70, ct: 9, type: 'atk', hits: 5, mult: 3.0, desc: '5回攻撃（各3倍）の聖槍' },
-  heavenStars: { id: 'heavenStars', name: '蒼穹の聖星', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の聖星' }
+  heavenStars: { id: 'heavenStars', name: '蒼穹の聖星', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の聖星' },
+  // ルート式で追加（各ツリーの分岐先「もう一方のルート」専用）
+  shuraSlash: { id: 'shuraSlash', name: '修羅連斬', mp: 55, ct: 7, type: 'atk', hits: 4, mult: 3.0, desc: '修羅の連斬を4回放つ（各3倍）' },
+  thunderGod: { id: 'thunderGod', name: '雷神の怒り', mp: 50, ct: 8, type: 'atk', hits: 5, mult: 1.8, desc: '雷神の怒りを5回放つ（各1.8倍）' },
+  holyBarrage: { id: 'holyBarrage', name: '聖光連弾', mp: 36, ct: 5, type: 'atk', hits: 4, mult: 1.6, desc: '聖なる光弾を4回放つ（各1.6倍）' },
+  heavenLight: { id: 'heavenLight', name: '天光の裁き', mp: 60, ct: 8, type: 'atk', hits: 1, mult: 10.0, desc: '10倍の天光の一撃' },
+  smite: { id: 'smite', name: '断罪', mp: 70, ct: 8, type: 'atk', hits: 3, mult: 4.0, desc: '断罪の光を3回放つ（各4倍）' },
+  assassinate: { id: 'assassinate', name: '急所突き', mp: 32, ct: 6, type: 'atk', hits: 2, mult: 4.5, desc: '急所を突く一撃を2回放つ（各4.5倍）' },
+  nightFall: { id: 'nightFall', name: '宵闇の一撃', mp: 60, ct: 8, type: 'atk', hits: 1, mult: 11.0, desc: '11倍の宵闇の一撃' },
+  counterBlade: { id: 'counterBlade', name: '返し刃', mp: 40, ct: 6, type: 'atk', hits: 3, mult: 2.5, desc: '返し刃を3回放つ（各2.5倍）' },
+  mirageBlade: { id: 'mirageBlade', name: '幻惑の連刃', mp: 55, ct: 7, type: 'atk', hits: 5, mult: 3.0, desc: '幻惑の刃を5回放つ（各3倍）' }
 };
 const SK_ORDER = ['strike', 'doubleStab', 'heal', 'firstAid', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'tenma', 'kishin', 'blizzard', 'iceAge', 'cosmicNova', 'zeroAbs', 'meteorNova', 'resurrection', 'holyLight', 'requiem', 'goddess', 'eternal', 'heroic', 'heroAwaken', 'starSword', 'heroAdvent', 'skyStar', 'genesisRay',
   // R1b 追加（キャラ専用）
-  'shadowStep', 'rush', 'bladeDance', 'phantomSlash', 'swiftStance', 'shadowPierce', 'frenzyEdge', 'mirageStance', 'thousandCuts', 'nightParade', 'phantomAdvent', 'grandHeist', 'trumpCard', 'thousandMask', 'nightSky', 'swordGod', 'arcaneMiracle', 'starDust', 'skyMeteorite', 'endMagic', 'holyBolt', 'judgment', 'holyNova', 'divineWrath', 'angelMiracle', 'celestialLance', 'heavenStars'];
+  'shadowStep', 'rush', 'bladeDance', 'phantomSlash', 'swiftStance', 'shadowPierce', 'frenzyEdge', 'mirageStance', 'thousandCuts', 'nightParade', 'phantomAdvent', 'grandHeist', 'trumpCard', 'thousandMask', 'nightSky', 'swordGod', 'arcaneMiracle', 'starDust', 'skyMeteorite', 'endMagic', 'holyBolt', 'judgment', 'holyNova', 'divineWrath', 'angelMiracle', 'celestialLance', 'heavenStars', 'shuraSlash', 'thunderGod', 'holyBarrage', 'heavenLight', 'smite', 'assassinate', 'nightFall', 'mirageBlade', 'counterBlade'];
 
 // ============ DQ8スタイル スキルツリー定義 ============
 const SKILL_TREES = [
@@ -1439,6 +1449,13 @@ function getCharSkillPts(p, charId) {
   return (p && p.skillPts) || {};
 }
 
+
+// ルート式: 1つのツリーの合計SP（共通枠 + 選んだルート）
+function treeTotal(p, cid, base) {
+  const s = getCharSkillPts(p, cid);
+  return (s[base] || 0) + (s[base + '_a'] || 0) + (s[base + '_b'] || 0);
+}
+
 const CHAR_TREES = {
   // -------- ステラ（剣士）: 剣枠・戦士枠・英雄枠 --------
   stella: [
@@ -1469,8 +1486,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#e85a5a',
       desc: '剣枠10以上で解放。超攻撃特化の戦士スキル。',
-      unlockWhen: (p) => (getCharSkillPts(p, 'stella').sword || 0) >= 10,
-      stage2When: (p) => (getCharSkillPts(p, 'stella').sword || 0) >= 30,
+      unlockWhen: (p) => treeTotal(p, 'stella', 'sword') >= 10,
+      stage2When: (p) => treeTotal(p, 'stella', 'sword') >= 30,
       stage2Desc: '剣枠30で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1490,8 +1507,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#e8dc9b',
       desc: '剣枠20かつ戦士枠20以上で解放。唯一無二の英雄スキル。',
-      unlockWhen: (p) => { const s = getCharSkillPts(p, 'stella'); return (s.sword || 0) >= 20 && (s.warrior || 0) >= 20; },
-      stage2When: (p) => { const s = getCharSkillPts(p, 'stella'); return (s.sword || 0) >= 30 && (s.warrior || 0) >= 20; },
+      unlockWhen: (p) => treeTotal(p, 'stella', 'sword') >= 20 && treeTotal(p, 'stella', 'warrior') >= 20,
+      stage2When: (p) => treeTotal(p, 'stella', 'sword') >= 30 && treeTotal(p, 'stella', 'warrior') >= 20,
       stage2Desc: '剣枠30かつ戦士枠20で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1536,8 +1553,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#a07af5',
       desc: '魔法枠10以上で解放。超強力な魔術師スキル。',
-      unlockWhen: (p) => (getCharSkillPts(p, 'ruby').magic || 0) >= 10,
-      stage2When: (p) => (getCharSkillPts(p, 'ruby').magic || 0) >= 30,
+      unlockWhen: (p) => treeTotal(p, 'ruby', 'magic') >= 10,
+      stage2When: (p) => treeTotal(p, 'ruby', 'magic') >= 30,
       stage2Desc: '魔法枠30で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1557,8 +1574,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#e8dc9b',
       desc: '魔法枠20かつ魔術師枠20以上で解放。大魔導の奥義スキル。',
-      unlockWhen: (p) => { const s = getCharSkillPts(p, 'ruby'); return (s.magic || 0) >= 20 && (s.mage || 0) >= 20; },
-      stage2When: (p) => { const s = getCharSkillPts(p, 'ruby'); return (s.magic || 0) >= 30 && (s.mage || 0) >= 20; },
+      unlockWhen: (p) => treeTotal(p, 'ruby', 'magic') >= 20 && treeTotal(p, 'ruby', 'mage') >= 20,
+      stage2When: (p) => treeTotal(p, 'ruby', 'magic') >= 30 && treeTotal(p, 'ruby', 'mage') >= 20,
       stage2Desc: '魔法枠30かつ魔術師枠20で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1605,8 +1622,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#5ac9a0',
       desc: '生命枠10以上で解放。究極の回復術士スキル。',
-      unlockWhen: (p) => (getCharSkillPts(p, 'silia').life || 0) >= 10,
-      stage2When: (p) => (getCharSkillPts(p, 'silia').life || 0) >= 30,
+      unlockWhen: (p) => treeTotal(p, 'silia', 'life') >= 10,
+      stage2When: (p) => treeTotal(p, 'silia', 'life') >= 30,
       stage2Desc: '生命枠30で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1627,8 +1644,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#e8dc9b',
       desc: '生命枠20かつ詠唱枠20以上で解放。聖女の奥義スキル。',
-      unlockWhen: (p) => { const s = getCharSkillPts(p, 'silia'); return (s.life || 0) >= 20 && (s.cleric || 0) >= 20; },
-      stage2When: (p) => { const s = getCharSkillPts(p, 'silia'); return (s.life || 0) >= 30 && (s.cleric || 0) >= 20; },
+      unlockWhen: (p) => treeTotal(p, 'silia', 'life') >= 20 && treeTotal(p, 'silia', 'cleric') >= 20,
+      stage2When: (p) => treeTotal(p, 'silia', 'life') >= 30 && treeTotal(p, 'silia', 'cleric') >= 20,
       stage2Desc: '生命枠30かつ詠唱枠20で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1673,8 +1690,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#b98af7',
       desc: '盗技枠10以上で解放。怪盗の奥の手スキル。',
-      unlockWhen: (p) => (getCharSkillPts(p, 'chloe').sword || 0) >= 10,
-      stage2When: (p) => (getCharSkillPts(p, 'chloe').sword || 0) >= 30,
+      unlockWhen: (p) => treeTotal(p, 'chloe', 'sword') >= 10,
+      stage2When: (p) => treeTotal(p, 'chloe', 'sword') >= 30,
       stage2Desc: '盗技枠30で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1694,8 +1711,8 @@ const CHAR_TREES = {
       maxSp: 30,
       color: '#e8dc9b',
       desc: '盗技枠20かつ怪盗枠20以上で解放。大怪盗の奥義スキル。',
-      unlockWhen: (p) => { const s = getCharSkillPts(p, 'chloe'); return (s.sword || 0) >= 20 && (s.warrior || 0) >= 20; },
-      stage2When: (p) => { const s = getCharSkillPts(p, 'chloe'); return (s.sword || 0) >= 30 && (s.warrior || 0) >= 20; },
+      unlockWhen: (p) => treeTotal(p, 'chloe', 'sword') >= 20 && treeTotal(p, 'chloe', 'warrior') >= 20,
+      stage2When: (p) => treeTotal(p, 'chloe', 'sword') >= 30 && treeTotal(p, 'chloe', 'warrior') >= 20,
       stage2Desc: '盗技枠30かつ怪盗枠20で第2段階（SP11〜20）解放',
       stage3When: (p) => !!(p && p.ending),
       stage3Desc: '本編クリアで第3段階（SP21〜30）解放',
@@ -1711,6 +1728,77 @@ const CHAR_TREES = {
     }
   ]
 };
+
+// ============ ルート式スキルツリー ============
+// 各キャラの「主ツリー」と「第2ツリー」は、途中（at SP）から2つのルートに分かれ、どちらか一方しか進められない。
+// 共通枠(id)を at まで進めると、ルートA(id_a)かルートB(id_b)の片方が選べる（もう一方は取れない）。
+// リセットで共通枠・ルートを戻せば選び直せる。SPの合計は従来と同じ（共通at + ルート(30-at)）。
+const ROUTE_DEFS = {
+  stella: {
+    sword: { at: 15,
+      a: { name: '剣豪ルート', icon: '⚔️', color: '#e88b5a', desc: '一撃の火力を磨く剣の道', ms: [[5, 'ult'], [8, 'flameSlash'], [15, 'skySlash']] },
+      b: { name: '守護ルート', icon: '🛡️', color: '#7aa8e8', desc: '構えと結界で耐えて、返し刃で反撃する守りの道', ms: [[5, 'warGod'], [8, 'barrier'], [11, 'holyBarrier'], [15, 'counterBlade']] } },
+    warrior: { at: 10,
+      a: { name: '破軍ルート', icon: '💥', color: '#e85a5a', desc: '超高威力の一撃で決める道', ms: [[5, 'shura'], [10, 'hagun'], [15, 'tenma']] },
+      b: { name: '鬼神ルート', icon: '👹', color: '#c9487a', desc: '連斬と鬼神の構えで押し切る道', ms: [[5, 'shura'], [12, 'shuraSlash'], [20, 'kishin']] } }
+  },
+  ruby: {
+    magic: { at: 15,
+      a: { name: '爆炎ルート', icon: '🔥', color: '#f0804a', desc: '高威力の炎魔法を極める道', ms: [[5, 'meteor'], [8, 'blaze'], [15, 'ultima']] },
+      b: { name: '結界ルート', icon: '⚡', color: '#7a9ff5', desc: '雷と結界で安定して戦う道', ms: [[5, 'lightningStorm'], [8, 'barrier'], [11, 'holyBarrier'], [15, 'thunderGod']] } },
+    mage: { at: 10,
+      a: { name: '氷結ルート', icon: '❄️', color: '#6fd0f0', desc: '敵を凍らせて封じる道', ms: [[5, 'iceAge'], [15, 'zeroAbs']] },
+      b: { name: '星辰ルート', icon: '🌠', color: '#b48cff', desc: '星の爆発で一気に決める道', ms: [[10, 'cosmicNova'], [20, 'meteorNova']] } }
+  },
+  silia: {
+    life: { at: 15,
+      a: { name: '癒しルート', icon: '💚', color: '#58c98a', desc: '回復と結界で仲間を守る道', ms: [[5, 'fullheal'], [8, 'highRegen'], [11, 'holyBarrier'], [15, 'saintPrayer']] },
+      b: { name: '聖光ルート', icon: '☀️', color: '#f0d060', desc: '聖なる光で攻める道', ms: [[5, 'holyNova'], [10, 'holyBarrage'], [15, 'heavenLight']] } },
+    cleric: { at: 10,
+      a: { name: '蘇生ルート', icon: '🕊️', color: '#9bd0e8', desc: '全回復と奇跡で立て直す道', ms: [[5, 'holyLight'], [10, 'requiem'], [15, 'goddess'], [20, 'eternal']] },
+      b: { name: '神罰ルート', icon: '⚖️', color: '#d8a0f0', desc: '神の裁きで敵を討つ道', ms: [[5, 'holyLight'], [12, 'divineWrath'], [20, 'smite']] } }
+  },
+  chloe: {
+    sword: { at: 15,
+      a: { name: '連撃ルート', icon: '🌀', color: '#e88b5a', desc: '手数と素早さで攻める道', ms: [[5, 'bladeDance'], [8, 'phantomSlash'], [11, 'swiftStance']] },
+      b: { name: '暗殺ルート', icon: '🗡️', color: '#8a7ad8', desc: '急所を狙う一撃必殺の道', ms: [[5, 'shadowPierce'], [10, 'assassinate'], [15, 'nightFall']] } },
+    warrior: { at: 10,
+      a: { name: '千刃ルート', icon: '🌪️', color: '#e85a5a', desc: '無数の刃で圧倒する道', ms: [[5, 'mirageStance'], [10, 'thousandCuts'], [15, 'nightParade']] },
+      b: { name: '変幻ルート', icon: '🎭', color: '#c9487a', desc: '幻惑の連刃と降臨で戦う道', ms: [[5, 'mirageStance'], [12, 'mirageBlade'], [20, 'phantomAdvent']] } }
+  }
+};
+(function applyRoutes() {
+  for (const cid of Object.keys(ROUTE_DEFS)) {
+    const out = [];
+    for (const t of CHAR_TREES[cid]) {
+      const d = ROUTE_DEFS[cid][t.id];
+      if (!d) { out.push(t); continue; }
+      const at = d.at, second = !!t.stage2When;           // 第2ツリーは、元の第2・第3段階の条件を各ルートが引き継ぐ
+      const common = Object.assign({}, t, { maxSp: at, milestones: t.milestones.filter(m => m.sp <= at) });
+      delete common.stage2When; delete common.stage3When; delete common.stage2Desc; delete common.stage3Desc;
+      common.desc = t.desc + `（${at}SPまでが共通。以降は2つのルートから1つを選ぶ）`;
+      out.push(common);
+      for (const k of ['a', 'b']) {
+        const r = d[k], o = k === 'a' ? 'b' : 'a', rid = t.id + '_' + k, oid = t.id + '_' + o;
+        const tr = {
+          id: rid, base: t.id, route: k, at, name: `${t.name}：${r.name}`, icon: r.icon, color: r.color, maxSp: 30 - at,
+          desc: r.desc,
+          milestones: r.ms.map(([sp, id]) => ({ sp, id, name: SK[id].name, desc: SK[id].desc })),
+          unlockWhen: (p) => { const s = getCharSkillPts(p, cid); return (s[t.id] || 0) >= at && !(s[oid] > 0) && (!second || !t.stage2When || t.stage2When(p)); },
+          lockNote: (p) => {
+            const s = getCharSkillPts(p, cid);
+            if ((s[t.id] || 0) < at) return `${t.name}の共通部分を${at}SPまで進めると選べます`;
+            if (s[oid] > 0) return '別のルートを選んでいるため、このルートは取れません（リセットで選び直せます）';
+            return t.stage2Desc ? t.stage2Desc.replace(/で第2段階.*$/, 'で解放') : '条件を満たすと解放されます';
+          }
+        };
+        if (second) { tr.stage2When = (p) => !!(p && p.ending); tr.stage2Desc = '本編クリアで後半（SP11〜）解放'; }
+        out.push(tr);
+      }
+    }
+    CHAR_TREES[cid] = out;
+  }
+})();
 
 function getCharTrees(charId) {
   const cid = (charId && CHAR_TREES[charId]) ? charId : 'stella';
@@ -3584,14 +3672,16 @@ function load() {
       p.achStats.noDmgBoss = !!s.achStats.noDmgBoss;
     }
     if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
-    p.chars = makeDefaultChars();
+    p.chars = makeDefaultChars(); let routeRefund = 0;
     if (s.chars && typeof s.chars === 'object') {
       for (const cid of CHAR_IDS) {
         const sc = s.chars[cid];
         if (!sc || typeof sc !== 'object') continue;
         if (sc.skillPts && typeof sc.skillPts === 'object') {
           for (const t of getCharTrees(cid)) {
-            p.chars[cid].skillPts[t.id] = num(sc.skillPts[t.id], 0, 0, t.maxSp || 30);
+            const raw = num(sc.skillPts[t.id], 0, 0, 999), v = Math.min(raw, t.maxSp || 30);
+            p.chars[cid].skillPts[t.id] = v;
+            if (raw > v) { p.sp += raw - v; routeRefund += raw - v; }   // ルート式になる前の分（共通枠の上限を超えたSP）は返却
           }
         }
         if (Array.isArray(sc.equippedSkills)) {
@@ -3624,6 +3714,14 @@ function load() {
         }
       }
     }
+    // ルート式: 条件を満たさなくなったツリー（例: ルート未選択のまま残った英雄枠）のSPを返却して0に戻す
+    for (const cid of CHAR_IDS) {
+      for (const t of getCharTrees(cid)) {
+        const pts = p.chars[cid].skillPts[t.id] || 0;
+        if (pts > 0 && t.unlockWhen && !t.unlockWhen(p)) { p.sp += pts; routeRefund += pts; p.chars[cid].skillPts[t.id] = 0; }
+      }
+    }
+    p.routeNotice = routeRefund;
     syncActiveCharState(p);
     p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop', 'guide']) if (s.hints[k]) p.hints[k] = true;
     if ((Number(s.lv) || 1) > 1 || (s.stats && Number(s.stats.runs) > 0)) p.hints.guide = true;   // 進行済みのセーブはルルの初回紹介を済ませた扱い
@@ -6680,6 +6778,16 @@ const SKILL_FX_MAP = {
   nightSky: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1150, nodes: 12, span: 235, sig: 'ult_u4_nightSky', style: 'dark' },
   swordGod: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_swordGod', style: 'slash' },
   endMagic: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_endMagic', style: 'dark' },
+  // ルート式で追加したスキル（手続き型の共通演出）
+  shuraSlash: { cat: 'slash', proc: true, tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_shuraSlash', color: 'gold' },
+  counterBlade: { cat: 'slash', proc: true, tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_counterBlade', color: 'gold' },
+  mirageBlade: { cat: 'slash', proc: true, tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_mirageBlade', color: 'dark' },
+  assassinate: { cat: 'slash', proc: true, tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_assassinate', color: 'dark' },
+  nightFall: { cat: 'slash', proc: true, tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_nightFall', color: 'dark' },
+  thunderGod: { cat: 'magic', proc: true, tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_thunderGod', elem: 'default' },
+  holyBarrage: { cat: 'magic', proc: true, tier: 'T3', rank: 3, durMs: 600, nodes: 7, span: 118, sig: 'magic_t3_holyBarrage', elem: 'holy' },
+  heavenLight: { cat: 'magic', proc: true, tier: 'T5', rank: 5, durMs: 880, nodes: 11, span: 180, sig: 'magic_t5_heavenLight', elem: 'holy' },
+  smite: { cat: 'magic', proc: true, tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_smite', elem: 'holy' },
   // 強化（バフ 10種：変更なし）
   guard:          { cat: 'buff',  tone: 'def' },
   magicshield:    { cat: 'buff',  tone: 'def' },
@@ -7559,7 +7667,7 @@ function renderSkillTrees(p) {
           <span class="st-icon">${tree.icon}</span>
           <div class="st-info">
             <span class="st-name">${tree.name}</span>
-            <span class="st-lock-note">🔒 ${tree.desc}</span>
+            <span class="st-lock-note">🔒 ${esc(typeof tree.lockNote === 'function' ? tree.lockNote(p) : tree.desc)}</span>${tree.route ? `<span class="sub">${esc(tree.desc)}</span>` : ''}
           </div>
         </div>
       </div>`;
@@ -7651,7 +7759,7 @@ function renderSkillTrees(p) {
   return `<div class="panel" id="skill-trees-panel">
     <h2>スキル枠（${esc(cMeta.name)}・${esc(cMeta.job)}）</h2>
     ${buildPanel}
-    <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
+    <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>各ツリーは途中から<b>2つのルートに分かれ、どちらか一方しか進められません</b>（リセットで選び直せます）。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
     <div class="st-grid">${baseTrees.map(treeCard).join('')}</div>
     ${unlockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（解放済み）──</p><div class="st-grid">${unlockedEvo.map(treeCard).join('')}</div></div>` : ''}
     ${lockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（未解放）──</p><div class="st-grid locked-trees">${lockedEvo.map(treeCard).join('')}</div></div>` : ''}
@@ -9994,12 +10102,19 @@ function hairReady() {
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_dev_tut_done_v1';
 
+// スキルツリーがルート式になったとき、旧セーブで戻したSPがあれば一度だけ知らせる
+function routeNoticeShow() {
+  const p = G.p; if (!p || !p.routeNotice || G.headless) return;
+  const n = p.routeNotice; p.routeNotice = 0;
+  setTimeout(() => toast(`スキルツリーがルート式になりました。上限を超えた分のSP ${n} を返却しました。振り直してください`), 1500);
+}
 function tutInit() {
   // 初回のみ（localStorageに完了フラグがなければ）
   try {
     if (localStorage.getItem(TUT_SAVE_KEY)) {
       tutHide();
       if (G.p && G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+      routeNoticeShow();
       return;
     }
   } catch (e) {}
@@ -10007,6 +10122,7 @@ function tutInit() {
   if (G.p && (G.p.lv > 1 || (G.p.stats && G.p.stats.runs > 0))) {
     tutDone();
     if (G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+    routeNoticeShow();
     return;
   }
   G.tutorial = { step: 0, done: false };

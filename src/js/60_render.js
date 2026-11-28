@@ -356,6 +356,16 @@ const SKILL_FX_MAP = {
   nightSky: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1150, nodes: 12, span: 235, sig: 'ult_u4_nightSky', style: 'dark' },
   swordGod: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_swordGod', style: 'slash' },
   endMagic: { cat: 'ult', tier: 'U4', rank: 4, durMs: 1180, nodes: 12, span: 240, sig: 'ult_u4_endMagic', style: 'dark' },
+  // ルート式で追加したスキル（手続き型の共通演出）
+  shuraSlash: { cat: 'slash', proc: true, tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_shuraSlash', color: 'gold' },
+  counterBlade: { cat: 'slash', proc: true, tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_counterBlade', color: 'gold' },
+  mirageBlade: { cat: 'slash', proc: true, tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_mirageBlade', color: 'dark' },
+  assassinate: { cat: 'slash', proc: true, tier: 'T3', rank: 3, durMs: 580, nodes: 6, span: 118, sig: 'slash_t3_assassinate', color: 'dark' },
+  nightFall: { cat: 'slash', proc: true, tier: 'T4', rank: 4, durMs: 700, nodes: 8, span: 136, sig: 'slash_t4_nightFall', color: 'dark' },
+  thunderGod: { cat: 'magic', proc: true, tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_thunderGod', elem: 'default' },
+  holyBarrage: { cat: 'magic', proc: true, tier: 'T3', rank: 3, durMs: 600, nodes: 7, span: 118, sig: 'magic_t3_holyBarrage', elem: 'holy' },
+  heavenLight: { cat: 'magic', proc: true, tier: 'T5', rank: 5, durMs: 880, nodes: 11, span: 180, sig: 'magic_t5_heavenLight', elem: 'holy' },
+  smite: { cat: 'magic', proc: true, tier: 'T4', rank: 4, durMs: 740, nodes: 9, span: 148, sig: 'magic_t4_smite', elem: 'holy' },
   // 強化（バフ 10種：変更なし）
   guard:          { cat: 'buff',  tone: 'def' },
   magicshield:    { cat: 'buff',  tone: 'def' },
@@ -1235,7 +1245,7 @@ function renderSkillTrees(p) {
           <span class="st-icon">${tree.icon}</span>
           <div class="st-info">
             <span class="st-name">${tree.name}</span>
-            <span class="st-lock-note">🔒 ${tree.desc}</span>
+            <span class="st-lock-note">🔒 ${esc(typeof tree.lockNote === 'function' ? tree.lockNote(p) : tree.desc)}</span>${tree.route ? `<span class="sub">${esc(tree.desc)}</span>` : ''}
           </div>
         </div>
       </div>`;
@@ -1327,7 +1337,7 @@ function renderSkillTrees(p) {
   return `<div class="panel" id="skill-trees-panel">
     <h2>スキル枠（${esc(cMeta.name)}・${esc(cMeta.job)}）</h2>
     ${buildPanel}
-    <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
+    <p class="sub">SP（全キャラ共通プール）を現在のキャラの枠に割り振ると自動でスキルを習得します。<br>各ツリーは途中から<b>2つのルートに分かれ、どちらか一方しか進められません</b>（リセットで選び直せます）。<br>残りSP: <b style="color:var(--accent)">${p.sp}</b></p>
     <div class="st-grid">${baseTrees.map(treeCard).join('')}</div>
     ${unlockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（解放済み）──</p><div class="st-grid">${unlockedEvo.map(treeCard).join('')}</div></div>` : ''}
     ${lockedEvo.length ? `<div style="margin-top:12px"><p class="sub" style="margin:0 0 8px">── 進化枠（未解放）──</p><div class="st-grid locked-trees">${lockedEvo.map(treeCard).join('')}</div></div>` : ''}

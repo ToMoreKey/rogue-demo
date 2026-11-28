@@ -244,14 +244,16 @@ function load() {
       p.achStats.noDmgBoss = !!s.achStats.noDmgBoss;
     }
     if (s.skin && CHAR_SKINS.some(sk => sk.id === s.skin)) p.skin = s.skin;
-    p.chars = makeDefaultChars();
+    p.chars = makeDefaultChars(); let routeRefund = 0;
     if (s.chars && typeof s.chars === 'object') {
       for (const cid of CHAR_IDS) {
         const sc = s.chars[cid];
         if (!sc || typeof sc !== 'object') continue;
         if (sc.skillPts && typeof sc.skillPts === 'object') {
           for (const t of getCharTrees(cid)) {
-            p.chars[cid].skillPts[t.id] = num(sc.skillPts[t.id], 0, 0, t.maxSp || 30);
+            const raw = num(sc.skillPts[t.id], 0, 0, 999), v = Math.min(raw, t.maxSp || 30);
+            p.chars[cid].skillPts[t.id] = v;
+            if (raw > v) { p.sp += raw - v; routeRefund += raw - v; }   // ルート式になる前の分（共通枠の上限を超えたSP）は返却
           }
         }
         if (Array.isArray(sc.equippedSkills)) {
@@ -284,6 +286,14 @@ function load() {
         }
       }
     }
+    // ルート式: 条件を満たさなくなったツリー（例: ルート未選択のまま残った英雄枠）のSPを返却して0に戻す
+    for (const cid of CHAR_IDS) {
+      for (const t of getCharTrees(cid)) {
+        const pts = p.chars[cid].skillPts[t.id] || 0;
+        if (pts > 0 && t.unlockWhen && !t.unlockWhen(p)) { p.sp += pts; routeRefund += pts; p.chars[cid].skillPts[t.id] = 0; }
+      }
+    }
+    p.routeNotice = routeRefund;
     syncActiveCharState(p);
     p.hints = {}; if (s.hints && typeof s.hints === 'object') for (const k of ['status', 'shop', 'drop', 'guide']) if (s.hints[k]) p.hints[k] = true;
     if ((Number(s.lv) || 1) > 1 || (s.stats && Number(s.stats.runs) > 0)) p.hints.guide = true;   // 進行済みのセーブはルルの初回紹介を済ませた扱い

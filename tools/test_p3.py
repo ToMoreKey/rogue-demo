@@ -160,26 +160,28 @@ with sync_playwright() as pw:
         G.p.lv = 90; G.p.sp = 300;
         // ステラで基礎ツリー(sword)を20SP、第2ツリー(warrior)を20SP(うち第2段階は未解放なので10で止まる)
         R.ACTS.changeSkin({ id: 'stella' });
-        R.ACTS.spAlloc({ tree: 'sword', amount: 20 });
+        R.ACTS.spAlloc({ tree: 'sword', amount: 15 });
+        R.ACTS.spAlloc({ tree: 'sword_a', amount: 5 });
         R.ACTS.spAlloc({ tree: 'warrior', amount: 10 });
-        R.ACTS.spAlloc({ tree: 'warrior', amount: 1 });  // 10で止まるべき
-        const blockedAt10 = G.p.skillPts.warrior === 10 && !G.p.skills.shura;
-        // 基礎ツリーを30SPにして第2段階解放 -> warrior 20, hero 20
-        R.ACTS.spAlloc({ tree: 'sword', amount: 10 });
-        R.ACTS.spAlloc({ tree: 'warrior', amount: 10 });
+        R.ACTS.spAlloc({ tree: 'warrior_a', amount: 1 });  // 剣系の合計が30になるまで取れない
+        const blockedAt10 = (G.p.skillPts.warrior_a || 0) === 0 && !G.p.skills.shura;
+        // 基礎ツリー系を合計30SPにして後半解放 -> warrior_a 10, hero 20
+        R.ACTS.spAlloc({ tree: 'sword_a', amount: 10 });
+        R.ACTS.spAlloc({ tree: 'warrior_a', amount: 10 });
         R.ACTS.spAlloc({ tree: 'hero', amount: 20 });
         const stellaS2 = ['shura', 'hagun', 'heroAwaken', 'starSword'].every(id => !!G.p.skills[id])
-            && G.p.skillPts.warrior === 20 && G.p.skillPts.hero === 20;
-        // ルビィで magic 30 -> mage 20
+            && G.p.skillPts.warrior_a === 10 && G.p.skillPts.hero === 20;
+        // ルビィで magic 15 + magic_a 15 -> mage 10 + mage_a 10（もう一方の星辰ルートは取れない）
         R.ACTS.changeSkin({ id: 'ruby' });
-        R.ACTS.spAlloc({ tree: 'magic', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'mage', amount: 20 });
-        const rubyS2 = ['iceAge', 'cosmicNova'].every(id => !!G.p.skills[id]) && G.p.skillPts.mage === 20;
-        // シリアで life 30 -> cleric 20
+        R.ACTS.spAlloc({ tree: 'magic', amount: 15 }); R.ACTS.spAlloc({ tree: 'magic_a', amount: 15 });
+        R.ACTS.spAlloc({ tree: 'mage', amount: 10 }); R.ACTS.spAlloc({ tree: 'mage_a', amount: 10 });
+        R.ACTS.spAlloc({ tree: 'mage_b', amount: 5 });
+        const rubyS2 = !!G.p.skills.iceAge && !G.p.skills.cosmicNova && G.p.skillPts.mage_a === 10 && !(G.p.skillPts.mage_b > 0);
+        // シリアで life 15 + life_a 15 -> cleric 10 + cleric_a 10
         R.ACTS.changeSkin({ id: 'silia' });
-        R.ACTS.spAlloc({ tree: 'life', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'cleric', amount: 20 });
-        const siliaS2 = ['holyLight', 'requiem'].every(id => !!G.p.skills[id]) && G.p.skillPts.cleric === 20;
+        R.ACTS.spAlloc({ tree: 'life', amount: 15 }); R.ACTS.spAlloc({ tree: 'life_a', amount: 15 });
+        R.ACTS.spAlloc({ tree: 'cleric', amount: 10 }); R.ACTS.spAlloc({ tree: 'cleric_a', amount: 10 });
+        const siliaS2 = ['holyLight', 'requiem'].every(id => !!G.p.skills[id]) && G.p.skillPts.cleric_a === 10;
         const learnedAll = stellaS2 && rubyS2 && siliaS2;
         const pts20 = stellaS2 && rubyS2 && siliaS2;
         // 戦闘で発動確認

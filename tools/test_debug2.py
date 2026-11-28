@@ -52,7 +52,7 @@ with sync_playwright() as pw:
         const baseMp = R.SK.fireball.mp;
 
         // magic 20 で mage10 取得し、p.mp === skillMpCost の境界で発動できるか
-        R.ACTS.spAlloc({ tree: 'magic', amount: 20 });
+        R.ACTS.spAlloc({ tree: 'magic', amount: 15 });
         R.ACTS.spAlloc({ tree: 'mage', amount: 10 });
         const reducedMp = R.skillMpCost(p, R.SK.fireball);
         p.equippedSkills = ['fireball', null, null];
@@ -68,7 +68,7 @@ with sync_playwright() as pw:
         R.ACTS.spAllocReset({ tree: 'mage' }); R.ACTS.spAllocReset({ tree: 'mage' });
         const mpAfterReset = R.skillMpCost(p, R.SK.fireball);
         R.ACTS.changeSkin({ id: 'stella' });
-        R.ACTS.spAlloc({ tree: 'sword', amount: 20 });
+        R.ACTS.spAlloc({ tree: 'sword', amount: 15 });
         const atkWithSword15 = R.playerAtk(p);
         R.ACTS.spAllocReset({ tree: 'sword' }); R.ACTS.spAllocReset({ tree: 'sword' });
         const atkAfterReset = R.playerAtk(p);

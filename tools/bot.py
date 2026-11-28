@@ -19,8 +19,9 @@ BOT = r"""
  const maxSmith=R.SMITH_MAX_STAR||5;
  const spPlan=()=>{const p=G.p;
    const trees=R.getCharTrees?R.getCharTrees(p.skin):R.SKILL_TREES;
-   const t0=trees[0]&&trees[0].id, t1=trees[1]&&trees[1].id, t2=trees[2]&&trees[2].id;
-   const cap={}; trees.forEach((t,i)=>{cap[t.id]=p.ending?30:(i===0?30:20);});
+   // ルート式: 主ツリー=共通15+ルートA15、第2ツリー=共通10+ルートA20、最後が英雄枠
+   const t0=trees[0].id, t3=trees[3]?trees[3].id:null, t2=trees[trees.length-1].id;
+   const cap={}; trees.forEach(t=>{cap[t.id]=t.maxSp;});
    const A=(t,n)=>{
      if(!t) return;
      const tree=trees.find(x=>x.id===t);
@@ -29,8 +30,10 @@ BOT = r"""
      n=Math.min(n,p.sp,mx-(p.skillPts[t]||0));
      if(n>0) R.ACTS.spAlloc({tree:t,amount:n});
    };
-   A(t0,20); A(t1,20); A(t2,10);
-   A(t0,10); A(t1,10); A(t2,20);
+   const AM=n=>{ const c=Math.min(n,15-(p.skillPts[t0]||0)); if(c>0) A(t0,c); const r=n-Math.max(c,0); if(r>0) A(t0+'_a',r); };
+   const AS=n=>{ if(!t3) return; const c=Math.min(n,10-(p.skillPts[t3]||0)); if(c>0) A(t3,c); const r=n-Math.max(c,0); if(r>0) A(t3+'_a',r); };
+   AM(20); AS(20); A(t2,10);
+   AM(10); AS(10); A(t2,20);
    const order=['genesisRay','swordGod','endMagic','nightSky','skyStar','skyMeteorite','heavenStars','thousandMask','meteorNova','tenma','nightParade','starSword','starDust','celestialLance','trumpCard','cosmicNova','hagun','thousandCuts','zeroAbs','divineWrath','ultima','skySlash','shadowPierce','heroic','arcaneMiracle','angelMiracle','grandHeist','iceAge','meteor','holyNova','blizzard','bladeDance','lightningStorm','ult','phantomSlash','flameSlash','judgment','blaze','thunder','rush','multi','doubleStab','strike','fireball','holyBolt','berserk'];
    const heal=['eternal','goddess','requiem','holyLight','saintPrayer','resurrection','fullheal','highRegen','heal','regen','firstAid'];
    const buff=['heroAdvent','heroAwaken','phantomAdvent','kishin','mirageStance','shura','swiftStance','warGod','frenzyEdge','holyBarrier','barrier','guard','shadowStep','magicshield'];
@@ -125,14 +128,16 @@ BOT = r"""
          if(bld==='std'){
            p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=3; p.weapon.roll=0.9; p.weapon.prop='flame'; p.weapon.props=['flame'];
            p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=3; p.armor.roll=0.9;
-           if(trees[0]) R.ACTS.spAlloc({tree:trees[0].id,amount:30});
-           if(trees[1]) R.ACTS.spAlloc({tree:trees[1].id,amount:20});
-           if(trees[2]) R.ACTS.spAlloc({tree:trees[2].id,amount:20});
+           // ルート式: 共通枠→ルートA（主30SP相当）、第2も共通→ルートAで20SP、英雄枠20
+           const mainId=trees[0].id, secId=trees[3]?trees[3].id:null, heroId=trees[trees.length-1].id;
+           R.ACTS.spAlloc({tree:mainId,amount:15}); R.ACTS.spAlloc({tree:mainId+'_a',amount:15});
+           if(secId){ R.ACTS.spAlloc({tree:secId,amount:10}); R.ACTS.spAlloc({tree:secId+'_a',amount:10}); }
+           R.ACTS.spAlloc({tree:heroId,amount:20});
            spPlan();
          }else{
            p.weapon=R.genItem(R.DIFFS[4],false,'weapon',8,8); p.weapon.rarity=4; p.weapon.roll=1.0; p.weapon.prop='flame'; p.weapon.props=['flame'];
            p.armor=R.genItem(R.DIFFS[4],false,'armor',8,8); p.armor.rarity=4; p.armor.roll=1.0;
-           for(const t of trees) R.ACTS.spAlloc({tree:t.id,amount:30});
+           for(let rr=0;rr<4;rr++) for(const t of trees){ if(!t.unlockWhen||t.unlockWhen(p)) R.ACTS.spAlloc({tree:t.id,amount:t.maxSp-(p.skillPts[t.id]||0)}); }
            for(const m of R.MASTERY_LIST) for(let k=0;k<8;k++) R.ACTS.masteryUp({id:m.id});
            spPlan();
          }

@@ -56,7 +56,7 @@ with sync_playwright() as pw:
         const R = window.__rogue; const bad = [], used = new Set(); const passives = new Set();
         for (const cid of R.CHAR_IDS) {
             const trees = R.getCharTrees(cid);
-            if (trees.length !== 3) bad.push(cid + ':trees=' + trees.length);
+            if (trees.length !== 7) bad.push(cid + ':trees=' + trees.length);
             for (const t of trees) {
                 let last = 0;
                 for (const m of t.milestones) {
@@ -206,9 +206,9 @@ with sync_playwright() as pw:
         for (const cid of R.CHAR_IDS) {
             G.p = R.newPlayer(); const p = G.p; p.skin = cid; R.syncActiveCharState(p); p.ending = true; p.sp = 999; p.lv = 100;
             const trees = R.getCharTrees(cid);
-            for (let r = 0; r < 4; r++) for (const t of trees) { const tr = trees.find(x => x.id === t.id); if (!tr.unlockWhen || tr.unlockWhen(p)) R.ACTS.spAlloc({ tree: t.id, amount: 30 }); }
+            for (let r = 0; r < 4; r++) for (const t of trees) { const tr = trees.find(x => x.id === t.id); if (!tr.unlockWhen || tr.unlockWhen(p)) R.ACTS.spAlloc({ tree: t.id, amount: t.maxSp - (p.skillPts[t.id] || 0) }); }
             const learned = Object.keys(p.skills).filter(k => p.skills[k]).length;
-            const want = new Set(); trees.forEach(t => t.milestones.forEach(m => m.id && want.add(m.id)));
+            const want = new Set(); trees.filter(t => !t.id.endsWith('_b')).forEach(t => t.milestones.forEach(m => m.id && want.add(m.id)));
             out[cid] = { learned, want: want.size, passives: Object.keys(p.passiveSkills || {}).filter(k => p.passiveSkills[k]) };
         }
         return out;

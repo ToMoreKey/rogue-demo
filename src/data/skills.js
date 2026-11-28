@@ -80,11 +80,21 @@ const SK = {
   divineWrath: { id: 'divineWrath', name: '神罰', mp: 55, ct: 7, type: 'atk', hits: 1, mult: 9.0, desc: '9倍の神罰の一撃' },
   angelMiracle: { id: 'angelMiracle', name: '天使の奇跡', mp: 50, ct: 7, type: 'atk', hits: 3, mult: 3.0, desc: '3回攻撃（各3倍）の聖なる光' },
   celestialLance: { id: 'celestialLance', name: '聖槍の極意', mp: 70, ct: 9, type: 'atk', hits: 5, mult: 3.0, desc: '5回攻撃（各3倍）の聖槍' },
-  heavenStars: { id: 'heavenStars', name: '蒼穹の聖星', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の聖星' }
+  heavenStars: { id: 'heavenStars', name: '蒼穹の聖星', mp: 85, ct: 8, type: 'atk', hits: 6, mult: 4.0, desc: '6回攻撃（各4倍）の聖星' },
+  // ルート式で追加（各ツリーの分岐先「もう一方のルート」専用）
+  shuraSlash: { id: 'shuraSlash', name: '修羅連斬', mp: 55, ct: 7, type: 'atk', hits: 4, mult: 3.0, desc: '修羅の連斬を4回放つ（各3倍）' },
+  thunderGod: { id: 'thunderGod', name: '雷神の怒り', mp: 50, ct: 8, type: 'atk', hits: 5, mult: 1.8, desc: '雷神の怒りを5回放つ（各1.8倍）' },
+  holyBarrage: { id: 'holyBarrage', name: '聖光連弾', mp: 36, ct: 5, type: 'atk', hits: 4, mult: 1.6, desc: '聖なる光弾を4回放つ（各1.6倍）' },
+  heavenLight: { id: 'heavenLight', name: '天光の裁き', mp: 60, ct: 8, type: 'atk', hits: 1, mult: 10.0, desc: '10倍の天光の一撃' },
+  smite: { id: 'smite', name: '断罪', mp: 70, ct: 8, type: 'atk', hits: 3, mult: 4.0, desc: '断罪の光を3回放つ（各4倍）' },
+  assassinate: { id: 'assassinate', name: '急所突き', mp: 32, ct: 6, type: 'atk', hits: 2, mult: 4.5, desc: '急所を突く一撃を2回放つ（各4.5倍）' },
+  nightFall: { id: 'nightFall', name: '宵闇の一撃', mp: 60, ct: 8, type: 'atk', hits: 1, mult: 11.0, desc: '11倍の宵闇の一撃' },
+  counterBlade: { id: 'counterBlade', name: '返し刃', mp: 40, ct: 6, type: 'atk', hits: 3, mult: 2.5, desc: '返し刃を3回放つ（各2.5倍）' },
+  mirageBlade: { id: 'mirageBlade', name: '幻惑の連刃', mp: 55, ct: 7, type: 'atk', hits: 5, mult: 3.0, desc: '幻惑の刃を5回放つ（各3倍）' }
 };
 const SK_ORDER = ['strike', 'doubleStab', 'heal', 'firstAid', 'guard', 'multi', 'ult', 'flameSlash', 'warGod', 'skySlash', 'fireball', 'magicshield', 'thunder', 'meteor', 'blaze', 'lightningStorm', 'ultima', 'regen', 'barrier', 'fullheal', 'highRegen', 'holyBarrier', 'saintPrayer', 'berserk', 'shura', 'hagun', 'tenma', 'kishin', 'blizzard', 'iceAge', 'cosmicNova', 'zeroAbs', 'meteorNova', 'resurrection', 'holyLight', 'requiem', 'goddess', 'eternal', 'heroic', 'heroAwaken', 'starSword', 'heroAdvent', 'skyStar', 'genesisRay',
   // R1b 追加（キャラ専用）
-  'shadowStep', 'rush', 'bladeDance', 'phantomSlash', 'swiftStance', 'shadowPierce', 'frenzyEdge', 'mirageStance', 'thousandCuts', 'nightParade', 'phantomAdvent', 'grandHeist', 'trumpCard', 'thousandMask', 'nightSky', 'swordGod', 'arcaneMiracle', 'starDust', 'skyMeteorite', 'endMagic', 'holyBolt', 'judgment', 'holyNova', 'divineWrath', 'angelMiracle', 'celestialLance', 'heavenStars'];
+  'shadowStep', 'rush', 'bladeDance', 'phantomSlash', 'swiftStance', 'shadowPierce', 'frenzyEdge', 'mirageStance', 'thousandCuts', 'nightParade', 'phantomAdvent', 'grandHeist', 'trumpCard', 'thousandMask', 'nightSky', 'swordGod', 'arcaneMiracle', 'starDust', 'skyMeteorite', 'endMagic', 'holyBolt', 'judgment', 'holyNova', 'divineWrath', 'angelMiracle', 'celestialLance', 'heavenStars', 'shuraSlash', 'thunderGod', 'holyBarrage', 'heavenLight', 'smite', 'assassinate', 'nightFall', 'mirageBlade', 'counterBlade'];
 
 // ============ DQ8スタイル スキルツリー定義 ============
 const SKILL_TREES = [

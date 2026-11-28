@@ -186,21 +186,21 @@ with sync_playwright() as pw:
         R.setHeadless(true); R.noTimer(true);
         G.p = R.newPlayer(); G.p.lv = 130; G.p.sp = 400;
         R.ACTS.changeSkin({ id: 'stella' });
-        R.ACTS.spAlloc({ tree: 'sword', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'warrior', amount: 20 });
-        R.ACTS.spAlloc({ tree: 'warrior', amount: 1 }); // 本編クリア前は20で止まる
-        const blockedPre = G.p.skillPts.warrior === 20 && !G.p.skills.tenma;
+        R.ACTS.spAlloc({ tree: 'sword', amount: 15 }); R.ACTS.spAlloc({ tree: 'sword_a', amount: 15 });
+        R.ACTS.spAlloc({ tree: 'warrior', amount: 10 }); R.ACTS.spAlloc({ tree: 'warrior_a', amount: 10 });
+        R.ACTS.spAlloc({ tree: 'warrior_a', amount: 1 }); // 本編クリア前は10（通算20）で止まる
+        const blockedPre = G.p.skillPts.warrior_a === 10 && !G.p.skills.tenma;
         G.p.ending = true;
-        R.ACTS.spAlloc({ tree: 'warrior', amount: 10 });
+        R.ACTS.spAlloc({ tree: 'warrior_a', amount: 10 });
         R.ACTS.spAlloc({ tree: 'hero', amount: 30 });
-        const sOk = ['tenma', 'kishin', 'heroAdvent', 'skyStar', 'swordGod'].every(id => !!G.p.skills[id]);
+        const sOk = ['tenma', 'heroAdvent', 'skyStar', 'swordGod'].every(id => !!G.p.skills[id]);
         R.ACTS.changeSkin({ id: 'ruby' });
-        R.ACTS.spAlloc({ tree: 'magic', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'mage', amount: 30 });
-        const rOk = ['zeroAbs', 'meteorNova'].every(id => !!G.p.skills[id]);
+        R.ACTS.spAlloc({ tree: 'magic', amount: 15 }); R.ACTS.spAlloc({ tree: 'magic_a', amount: 15 });
+        R.ACTS.spAlloc({ tree: 'mage', amount: 10 }); R.ACTS.spAlloc({ tree: 'mage_a', amount: 20 });
+        const rOk = ['zeroAbs'].every(id => !!G.p.skills[id]);
         R.ACTS.changeSkin({ id: 'silia' });
-        R.ACTS.spAlloc({ tree: 'life', amount: 30 });
-        R.ACTS.spAlloc({ tree: 'cleric', amount: 30 });
+        R.ACTS.spAlloc({ tree: 'life', amount: 15 }); R.ACTS.spAlloc({ tree: 'life_a', amount: 15 });
+        R.ACTS.spAlloc({ tree: 'cleric', amount: 10 }); R.ACTS.spAlloc({ tree: 'cleric_a', amount: 20 });
         const cOk = ['goddess', 'eternal'].every(id => !!G.p.skills[id]);
         const learnedAll = sOk && rOk && cOk;
         // 5F祝福モーダル文言チェック (2-0)

@@ -1,12 +1,19 @@
 /* ================= tutorial ================= */
 const TUT_SAVE_KEY = 'rogue_tut_done_v1';
 
+// スキルツリーがルート式になったとき、旧セーブで戻したSPがあれば一度だけ知らせる
+function routeNoticeShow() {
+  const p = G.p; if (!p || !p.routeNotice || G.headless) return;
+  const n = p.routeNotice; p.routeNotice = 0;
+  setTimeout(() => toast(`スキルツリーがルート式になりました。上限を超えた分のSP ${n} を返却しました。振り直してください`), 1500);
+}
 function tutInit() {
   // 初回のみ（localStorageに完了フラグがなければ）
   try {
     if (localStorage.getItem(TUT_SAVE_KEY)) {
       tutHide();
       if (G.p && G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+      routeNoticeShow();
       return;
     }
   } catch (e) {}
@@ -14,6 +21,7 @@ function tutInit() {
   if (G.p && (G.p.lv > 1 || (G.p.stats && G.p.stats.runs > 0))) {
     tutDone();
     if (G.p.v9ResetNoticePending && !G.headless) openV9ResetNoticeModal();
+    routeNoticeShow();
     return;
   }
   G.tutorial = { step: 0, done: false };

@@ -111,7 +111,7 @@ with sync_playwright() as pw:
             const first3 = trees[0].milestones.find(m => m.sp === 3);
             summary[cid] = {
                 treeCount: trees.length,
-                all30: trees.every(t => t.maxSp === 30),
+                all30: trees.length === 7 && trees.every(t => t.maxSp <= 30) && trees[trees.length - 1].maxSp === 30,
                 first3Id: first3 ? first3.id : null,
                 hasFirstAidInMain: mainSkillIds.includes('firstAid'),
                 hasStrongHeal: allSkillIds.some(id => ['heal', 'regen', 'fullheal'].includes(id))
@@ -124,8 +124,8 @@ with sync_playwright() as pw:
         };
     }''')
     s_map = tree_def_res['summary']
-    check('2_4キャラすべて3ツリー×30SP構成・クロエ初期3SPがダブルスタブ(2回×1.1倍,MP7,CT2)',
-          all(s_map[c]['treeCount'] == 3 and s_map[c]['all30'] for c in ('stella', 'ruby', 'silia', 'chloe'))
+    check('2_4キャラすべて7ツリー（共通・ルートA/B×2と英雄枠）構成・クロエ初期3SPがダブルスタブ(2回×1.1倍,MP7,CT2)',
+          all(s_map[c]['treeCount'] == 7 and s_map[c]['all30'] for c in ('stella', 'ruby', 'silia', 'chloe'))
           and s_map['stella']['first3Id'] == 'strike'
           and s_map['ruby']['first3Id'] == 'fireball'
           and s_map['silia']['first3Id'] == 'heal'
@@ -234,9 +234,9 @@ with sync_playwright() as pw:
           and (not char_switch_res['stellaRestored']['hasMagic15'])
           and char_switch_res['stellaRestored']['eq0'] == 'strike',
           char_switch_res)
-    check('3_スキルタブに現キャラの3ツリーのみ表示＆ラン中はキャラ変更不可',
-          char_switch_res['stellaTreeNames'] == ['剣枠', '戦士枠', '英雄枠']
-          and char_switch_res['rubyTreeNames'] == ['魔法枠', '魔術師枠', '英雄枠']
+    check('3_スキルタブに現キャラのツリー（共通・ルートA/B）のみ表示＆ラン中はキャラ変更不可',
+          sorted(char_switch_res['stellaTreeNames']) == sorted(['剣枠', '剣枠：剣豪ルート', '剣枠：守護ルート', '戦士枠', '戦士枠：破軍ルート', '戦士枠：鬼神ルート', '英雄枠'])
+          and sorted(char_switch_res['rubyTreeNames']) == sorted(['魔法枠', '魔法枠：爆炎ルート', '魔法枠：結界ルート', '魔術師枠', '魔術師枠：氷結ルート', '魔術師枠：星辰ルート', '英雄枠'])
           and char_switch_res['skinDuringRun'] == 'stella'
           and char_switch_res['heroCardsDisabled'],
           char_switch_res)

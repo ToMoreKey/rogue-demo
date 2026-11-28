@@ -153,7 +153,7 @@ with sync_playwright() as pw:
     skill_res = pg.evaluate('''() => {
         const R = window.__rogue;
         R.setHeadless(true); R.noTimer(true);
-        const treesOk = ['sword', 'magic', 'life'].every(k => R.SKILL_TREES.find(t => t.id === k).maxSp === 30);
+        const treesOk = ['sword', 'magic', 'life'].every(k => R.SKILL_TREES.find(t => t.id === k).maxSp === 30) && R.getCharTrees('stella').filter(t => t.id.startsWith('sword')).reduce((a, t) => a + t.maxSp, 0) === 45;   // 共通15 + ルートA15 + ルートB15（取れるのは片方）
         const saveKey = R.SAVE_KEY || 'rogue_test_save_v1';
         const oldSave = {
             v: R.SAVE_VERSION,
@@ -170,17 +170,17 @@ with sync_playwright() as pw:
         localStorage.setItem(saveKey, JSON.stringify(oldSave));
         const loaded = R.load();
         R.ACTS.changeSkin({ id: 'stella' });
-        const kept20 = loaded && G.p.skillPts.sword === 20 && !!G.p.skills.strike;
+        const kept20 = loaded && G.p.skillPts.sword === 15 && !!G.p.skills.strike && G.p.sp >= 35;   // ルート式: 共通枠は15まで。超過した5SPは返却される
         // 新スキル9種を各キャラの主ツリー30SPで習得できるか
         G.p.sp = 90;
-        R.ACTS.spAlloc({ tree: 'sword', amount: 10 });
-        const s3 = ['flameSlash', 'warGod', 'skySlash'].every(id => !!G.p.skills[id]) && G.p.skillPts.sword === 30;
+        R.ACTS.spAlloc({ tree: 'sword_a', amount: 15 });
+        const s3 = ['ult', 'flameSlash', 'skySlash'].every(id => !!G.p.skills[id]) && G.p.skillPts.sword === 15 && G.p.skillPts.sword_a === 15;
         R.ACTS.changeSkin({ id: 'ruby' });
-        R.ACTS.spAlloc({ tree: 'magic', amount: 20 });
-        const m3 = ['blaze', 'lightningStorm', 'ultima'].every(id => !!G.p.skills[id]) && G.p.skillPts.magic === 30;
+        R.ACTS.spAlloc({ tree: 'magic', amount: 5 }); R.ACTS.spAlloc({ tree: 'magic_a', amount: 15 });
+        const m3 = ['meteor', 'blaze', 'ultima'].every(id => !!G.p.skills[id]) && G.p.skillPts.magic === 15 && G.p.skillPts.magic_a === 15;
         R.ACTS.changeSkin({ id: 'silia' });
-        R.ACTS.spAlloc({ tree: 'life', amount: 25 });
-        const l3 = ['highRegen', 'holyBarrier', 'saintPrayer'].every(id => !!G.p.skills[id]) && G.p.skillPts.life === 30;
+        R.ACTS.spAlloc({ tree: 'life', amount: 10 }); R.ACTS.spAlloc({ tree: 'life_a', amount: 15 });
+        const l3 = ['highRegen', 'holyBarrier', 'saintPrayer'].every(id => !!G.p.skills[id]) && G.p.skillPts.life === 15 && G.p.skillPts.life_a === 15;
         const learnedAll = s3 && m3 && l3;
         const pts30 = s3 && m3 && l3;
         // 戦闘で holyBarrier / highRegen 発動確認
