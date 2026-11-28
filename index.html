@@ -1053,7 +1053,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_test_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = false;
-const APP_VERSION = 'rogue-v113';
+const APP_VERSION = 'rogue-v115';
 const BACKUP_META_KEY = 'rogue_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_backup_db_v1';
 const BAG_CAP = 60;
@@ -9818,24 +9818,81 @@ function _hsl2rgb(h, s, l) {
   return [f(h + 1 / 3), f(h), f(h - 1 / 3)];
 }
 function hairRecolorData(data, w, hh, cfg, tg) {
-  const hit = [];
-  let sumL = 0;
-  for (let y = 0; y < Math.min(hh, cfg.y); y++) for (let x = 0; x < w; x++) {
-    const i = (y * w + x) * 4; if (data[i + 3] < 128) continue;
-    const [h, s, l] = _rgb2hsl(data[i], data[i + 1], data[i + 2]);
+  const H = Math.min(hh, cfg.y), N = w * hh;
+  const L = new Float32Array(N), S = new Float32Array(N), HU = new Float32Array(N);
+  const mask = new Uint8Array(N);   // 1=髪(判定) 2=髪(ハイライトの穴埋め)
+  const op = i => data[i * 4 + 3] >= 128;
+  let sumL = 0, cnt = 0;
+  for (let y = 0; y < H; y++) for (let x = 0; x < w; x++) {
+    const k = y * w + x; if (!op(k)) continue;
+    const [h, s, l] = _rgb2hsl(data[k * 4], data[k * 4 + 1], data[k * 4 + 2]);
+    HU[k] = h; S[k] = s; L[k] = l;
     if (s < cfg.s[0] || s > cfg.s[1] || l < cfg.l[0] || l > cfg.l[1]) continue;
     if (!cfg.h.some(([a, b]) => h >= a && h <= b)) continue;
-    hit.push(i, l); sumL += l;
+    mask[k] = 1; sumL += l; cnt++;
   }
-  if (!hit.length) return 0;
-  const meanL = sumL / (hit.length / 2);
-  for (let k = 0; k < hit.length; k += 2) {
-    const i = hit[k], l = hit[k + 1];
-    const nl = Math.max(0.04, Math.min(0.97, tg.l + (l - meanL) * 0.95));
-    const [r, g, b] = _hsl2rgb(tg.h, tg.s, nl);
-    data[i] = r; data[i + 1] = g; data[i + 2] = b;
+  if (!cnt) return 0;
+  const nb = (k, m) => { // 周囲8マスのうち、髪と判定された数
+    const x = k % w, y = (k / w) | 0; let c = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue; const xx = x + dx, yy = y + dy;
+      if (xx >= 0 && xx < w && yy >= 0 && yy < H && mask[yy * w + xx]) c++;
+    }
+    return c;
+  };
+  // ① 孤立した画素（ほぼ髪に囲まれていない）は髪から外す → ティアラなど他の飾りのギザギザを防ぐ
+  const iso = []; for (let k = 0; k < N; k++) if (mask[k] === 1 && nb(k) < 2) iso.push(k);
+  for (const k of iso) { mask[k] = 0; sumL -= L[k]; cnt--; }
+  if (cnt <= 0) return 0;
+  // ② 髪に囲まれた「光の反射（ハイライト）」の画素を髪に含める（2回まで広げる）
+  for (let pass = 0; pass < 2; pass++) {
+    const add = [];
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < w - 1; x++) {
+      const k = y * w + x; if (mask[k] || !op(k)) continue;
+      if (L[k] < 0.2) continue;                                              // 輪郭線は除く
+      if (HU[k] >= 8 && HU[k] <= 45 && S[k] > 0.5 && L[k] > 0.7) continue;   // 肌は除く
+      if (nb(k) >= 6) add.push(k);
+    }
+    for (const k of add) mask[k] = 2;
+    if (!add.length) break;
   }
-  return hit.length / 2;
+  // ③ 髪に囲まれた小さな光の塊（2〜3画素幅のハイライト）も髪に含める
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]], seen = new Uint8Array(N);
+  const cand = k => !mask[k] && op(k) && L[k] >= 0.3 && !(HU[k] >= 8 && HU[k] <= 45 && S[k] > 0.5 && L[k] > 0.7) && (S[k] < 0.35 || L[k] > 0.8);
+  for (let y = 0; y < H; y++) for (let x = 0; x < w; x++) {
+    const k0 = y * w + x; if (seen[k0] || !cand(k0)) continue;
+    const comp = [k0], st = [k0]; seen[k0] = 1; let hair = 0, other = 0, dark = 0, big = false;
+    const bseen = new Set();
+    while (st.length) {
+      const k = st.pop(), cx = k % w, cy = (k / w) | 0;
+      for (const [dx, dy] of dirs) {
+        const xx = cx + dx, yy = cy + dy; if (xx < 0 || xx >= w || yy < 0 || yy >= H) { other++; continue; }
+        const q = yy * w + xx;
+        if (cand(q)) { if (!seen[q]) { seen[q] = 1; comp.push(q); st.push(q); if (comp.length > 30) big = true; } }
+        else if (op(q) && !bseen.has(q)) { bseen.add(q); if (mask[q]) hair++; else { other++; if (L[q] < 0.25) dark++; } }
+      }
+      if (big) break;
+    }
+    if (!big && !dark && comp.length <= 30 && hair / Math.max(1, hair + other) >= 0.6) for (const k of comp) mask[k] = 2;
+  }
+  // ④ 髪の縁にある、髪と近い色味の画素（明るさが範囲外だった縁）を髪に含める
+  const hc = (cfg.h[0][0] + cfg.h[0][1]) / 2, near = h => Math.min(Math.abs(h - hc), 360 - Math.abs(h - hc)) <= 35;
+  const edge = [];
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const k = y * w + x; if (mask[k] || !op(k) || L[k] < 0.2 || S[k] < 0.08) continue;
+    if (HU[k] >= 8 && HU[k] <= 45 && S[k] > 0.5 && L[k] > 0.7) continue;
+    if (near(HU[k]) && nb(k) >= 4) edge.push(k);
+  }
+  for (const k of edge) mask[k] = 2;
+  const meanL = sumL / cnt;
+  for (let k = 0; k < N; k++) {
+    if (!mask[k]) continue;
+    const nl = Math.max(0.04, Math.min(0.97, tg.l + (L[k] - meanL) * 0.95));
+    const sat = mask[k] === 2 ? tg.s * 0.6 : tg.s;
+    const [r, g, b] = _hsl2rgb(tg.h, sat, nl);
+    data[k * 4] = r; data[k * 4 + 1] = g; data[k * 4 + 2] = b;
+  }
+  return cnt;
 }
 function hairSrc(src, skinId, c) {
   if (!c || !HAIR_CFG[skinId]) return src;
