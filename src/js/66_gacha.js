@@ -126,7 +126,7 @@ function renderGachaFacility(p) {
 // ---------- 景品一覧・着せ替え（試着つき） ----------
 function gcState() {
   const g = ensureGacha(G.p);
-  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null, outfit: Object.assign({}, g.outfit), view: (G.p && G.p.skin) || 'ruby' };
+  if (!G._gc) G._gc = { tab: 'cos', eq: Object.assign({}, g.eq), frame: g.frame || null, outfit: Object.assign({}, g.outfit), view: (G.p && G.p.skin) || 'ruby', atk: true };
   return G._gc;
 }
 // 指定の装備で立ち絵を描く（実際の装備は書き換えない）
@@ -134,6 +134,26 @@ function heroPreviewHtml(sk, style, eq, outfit) {
   const g = ensureGacha(G.p), keep = g.eq, keepO = g.outfit;
   g.eq = eq; if (outfit) g.outfit = outfit;
   try { return heroWithCos(sk, style); } finally { g.eq = keep; g.outfit = keepO; }
+}
+// 試着中の立ち絵・攻撃絵（髪染め込み）。攻撃絵が無ければ [立ち絵, null]
+function heroPreviewFrames(sk, eq, outfit) {
+  const g = ensureGacha(G.p), keep = g.eq, keepO = g.outfit;
+  g.eq = eq; if (outfit) g.outfit = outfit;
+  try {
+    const fr = skinFrames(sk), hc = cosHair(G.p);
+    return [fr.img, fr.atk].map(x => x && (hc ? hairSrc(x, sk.id, hc) : x));
+  } finally { g.eq = keep; g.outfit = keepO; }
+}
+// 立ち絵 ⇄ 攻撃絵 を交互に表示（モーダルを閉じたら止まる）
+function gcStartLoop(a0, a1) {
+  clearInterval(G._gcT);
+  if (!a1 || !a0 || G.headless) return;
+  let on = false;
+  G._gcT = setInterval(() => {
+    const st = $('.gc-stage.big'), im = st && st.querySelector('img.sprite-img');
+    if (!im || !G.modalOpen || $('#modal').hidden) { clearInterval(G._gcT); return; }
+    on = !on; im.src = on ? a1 : a0; st.classList.toggle('atk', on);
+  }, 520);
 }
 function gcItemCard(kind, id, name, rar, owned, on, act, attrs) {
   const q = GACHA_RARITY[rar];
@@ -164,6 +184,7 @@ function openGachaCollection(tab, keepScroll) {
     body = `<div class="gc-slot"><b>称号（ステータスにも表示されます）</b><div class="gc-grid">${GACHA_TITLES.map(t => gcItemCard('title', t.id, t.name, t.rar, !!g.owned['title:' + t.id], tw === t.id, 'gcTitle', `data-id="${t.id}"`)).join('')}</div></div>`;
   }
   const fr = DEX_FRAMES.find(f => f.id === st.frame);
+  const pf = heroPreviewFrames(sk, st.eq, st.outfit), hasAtk = !!pf[1];
   const need = COS_SLOTS.filter(s => st.eq[s.k] && !g.owned['cos:' + st.eq[s.k]]).length + (st.frame && !g.owned['frame:' + st.frame] ? 1 : 0) + CHAR_SKINS.filter(h => st.outfit[h.id] && !g.owned['outfit:o_' + h.id + '_' + st.outfit[h.id]]).length;
   const dirty = COS_SLOTS.some(s => (st.eq[s.k] || null) !== (g.eq[s.k] || null)) || (st.frame || null) !== (g.frame || null) || CHAR_SKINS.some(h => (st.outfit[h.id] || 0) !== (g.outfit[h.id] || 0));
   const sample = fr ? `style="--dxb:${fr.bd};--dxg:${fr.glow};--dxbg:${fr.bg}"` : '';
@@ -171,6 +192,7 @@ function openGachaCollection(tab, keepScroll) {
     <h2 class="win" id="m-title">📖 景品一覧・着せ替え</h2>
     <div class="gc-prev"><div class="gc-stage big">${heroPreviewHtml(sk, 'width:130px;height:130px', st.eq, st.outfit)}</div>
       <div class="gc-prev-r"><div class="gc-frame-sample${fr ? ' on' : ''}" ${sample}>図鑑の額縁</div>
+        ${hasAtk ? `<button class="btn gc-atk${st.atk ? ' on' : ''}" data-act="gcAtk" aria-pressed="${!!st.atk}">⚔ 攻撃モーション ${st.atk ? 'ON' : 'OFF'}</button>` : ''}
         <small class="sub">タップで試着。${need ? `<b style="color:#ffb347">未入手が ${need} 点含まれています（試着のみ）</b>` : '入手済みの景品は「着る」で反映できます。'}</small></div></div>
     <div class="seg gc-tabs" role="tablist">${tabs}</div>
     <div class="gc-body">${body}</div>
@@ -179,9 +201,10 @@ function openGachaCollection(tab, keepScroll) {
       <button class="btn" data-act="gcReset" ${dirty ? '' : 'disabled'}>元に戻す</button>
       <button class="btn" data-act="gcClose">閉じる</button></div>`;
   $('#modal').hidden = false; G.modalOpen = true;
+  if (st.atk && hasAtk) gcStartLoop(pf[0], pf[1]); else clearInterval(G._gcT);
   if (sc0) { sh0.scrollTop = sc0[0]; const bd1 = sh0.querySelector('.gc-body'); if (bd1) bd1.scrollTop = sc0[1]; }   // 試着のたびにスクロールが戻らないように
 }
-function gcClose() { G._gc = null; closeModal(); renderTown(); }
+function gcClose() { clearInterval(G._gcT); G._gc = null; closeModal(); renderTown(); }
 
 // ---------- 引く演出 ----------
 function gachaRevealSkip() {

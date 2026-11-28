@@ -888,6 +888,10 @@ body.lowhp::before{content:"";position:fixed;inset:0;pointer-events:none;z-index
 .gc-coll small{opacity:.75;font-size:12px}
 .gc-prev{display:flex;gap:12px;align-items:center}
 .gc-stage.big{width:150px;height:150px}
+.gc-atk{padding:8px 10px;font-size:13px}
+.gc-atk.on{border-color:#ffd45a;color:#ffd45a}
+.gc-stage.big .cos-stage{transition:transform .12s}
+.gc-stage.big.atk .cos-stage{transform:translateX(8px) scale(1.04)}
 .gc-prev-r{display:grid;gap:8px;min-width:0;flex:1}
 .gc-frame-sample{padding:10px;border:1px dashed #2b3245;border-radius:10px;text-align:center;font-size:13px;color:var(--muted,#9aa3bd)}
 .gc-frame-sample.on{border:2px solid var(--dxb);background:var(--dxbg);box-shadow:0 0 14px var(--dxg);color:inherit}

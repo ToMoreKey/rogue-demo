@@ -392,6 +392,7 @@ const ACTS = {
     for (const h of CHAR_SKINS) g.outfit[h.id] = st.outfit[h.id] || 0;
     g.frame = st.frame || null; save(); toast('見た目を変更した'); G._gc = null; openGachaCollection(); renderTown(); renderAll();
   },
+  gcAtk() { const st = gcState(); st.atk = !st.atk; openGachaCollection(null, true); },
   gcReset() { G._gc = null; openGachaCollection(); },
   gcClose() { gcClose(); },
   gcSkip() { gachaRevealEnd(); },
