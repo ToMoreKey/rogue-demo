@@ -1059,7 +1059,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_dev_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = true;
-const APP_VERSION = 'rogue-dev-v125';
+const APP_VERSION = 'rogue-dev-v126';
 const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';
 const BAG_CAP = 60;
@@ -2495,6 +2495,11 @@ const STORY = {
     { sp: 'guide', ex: 'normal', t: 'この里は、「福音の鐘」の音に守られてきました。でも最近、鐘の音が弱まって、ダンジョンから魔物があふれ出しているんです……。' },
     { sp: 'hero', t: { ruby: '鐘の音が弱まる……。古書庫の記録にも、そんな一節がありました。放っておけません。', stella: '私は鐘守の家の者です。里の鐘が危ないなら、黙ってはいられません。', silia: '鐘の祈りを継ぐ者として、行かなければなりませんね。', chloe: '里の外から来た身だけど、困ってるやつを放っとけないんだよな。引き受けるぜ。' } },
     { sp: 'guide', ex: 'joy', t: 'ありがとうございます！ 目標は、魔王ガルゼを倒して鐘の音を取り戻すこと。まずは操作を、私と一緒に覚えましょう！' }
+  ] },
+  TUT2: { title: '準備完了', bg: 'town', lines: [
+    { sp: 'guide', ex: 'joy', t: 'スキルの準備もできましたね！ スキルは戦闘中に自動で発動しますよ。' },
+    { sp: 'guide', ex: 'normal', t: '分からないことがあったら、下の「ヘルプ」を見てくださいね！ いつでも読み返せます。' },
+    { sp: 'guide', ex: 'joy', t: 'それでは、いってらっしゃい！ 鐘の音を取り戻しましょう！' }
   ] },
   A: { title: '鐘の欠片', lines: [
     { sp: 'narr', t: '墓守の王が崩れ落ちた。玉座の奥で、ひび割れた小さな鐘の欠片が淡く光っている。' },
@@ -5722,7 +5727,7 @@ const ACTS = {
       G.view = v; renderAll(); ensureLoop();
       setTimeout(() => {
         if (G.p.sp < 3) { G.p.sp = 3; renderHUD(); renderStatus(); }
-        G.tutorial.step = 41; renderTutorial();
+        G.tutorial.step = 41; renderStatus(); renderTutorial();
       }, 300);
       return;
     }
@@ -7727,6 +7732,7 @@ function renderSkillTrees(p) {
       ${nextHtml}
       <div class="ms-list">${msHtml}</div>
       <div class="st-actions">
+        ${(G.tutorial && !G.tutorial.done && G.tutorial.step === 41 && tree.id === getCharTutorialTarget(p.skin).treeId) ? `<button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="${getCharTutorialTarget(p.skin).spReq}" data-tut="1">まとめて振る (+${getCharTutorialTarget(p.skin).spReq})</button>` : ''}
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="1" ${canAdd1 ? '' : 'disabled'}>+1 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="5" ${canAdd5 ? '' : 'disabled'}>+5 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="${remaining}" ${canAddAll && remaining > 1 ? '' : 'disabled'}>全て割り振る (+${remaining})</button>
@@ -10162,7 +10168,7 @@ const TUT_MSGS = {
   2:  { ex: 'normal',   body: '戦闘は自動で進みますよ。HPが減りすぎないか、私も見てますね！', place: 'below' },
   3:  { ex: 'surprise', body: 'あっ、HPが半分を切りました！ 無理は禁物です。<b>撤退</b> を押して、街へ帰りましょう！', place: 'above' },
   4:  { ex: 'joy',      body: 'ナイス判断です！ 次は下の <b>ステータス</b> タブで、スキルを覚えましょう。', place: 'above' },
-  41: { ex: 'normal',   body: '<b>生命枠</b> の「+1 SP」を3回押して、<b>ヒール</b> を覚えましょう！', place: 'below' },
+  41: { ex: 'normal',   body: '<b>生命枠</b> の「まとめて振る」を押して、<b>ヒール</b> を覚えましょう！', place: 'below' },
   5:  { ex: 'normal',   body: '覚えた <b>ヒール</b> のS1〜S3を押して、スロットにセットしましょう！', place: 'below' },
   6:  { ex: 'joy',      body: 'これで準備OKです！ スキルは戦闘で自動発動しますよ。困ったら <b>ヘルプ</b> を見てくださいね。いってらっしゃい！', place: 'above' },
 };
@@ -10172,7 +10178,7 @@ function getTutMsg(step) {
   if (step === 41) {
     return {
       ex: 'normal',
-      body: `<b>${esc(tgt.treeName)}</b> の「+1 SP」を3回押して、<b>${esc(tgt.skillName)}</b> を覚えましょう！<br><span class="sub">${esc(tgt.hint)}</span>`,
+      body: `<b>${esc(tgt.treeName)}</b> の「まとめて振る」を押して、<b>${esc(tgt.skillName)}</b> を覚えましょう！<br><span class="sub">${esc(tgt.hint)}</span>`,
       place: 'below'
     };
   }
@@ -10218,8 +10224,10 @@ function tutStep(step) {
     return;
   }
   if (step === 6) {
-    renderTutorial();
-    setTimeout(tutDone, 3200);
+    // スキルセット後にもう一度ルルとの会話 → 終わったらチュートリアル完了
+    if (storySkip() || !STORY.TUT2) { renderTutorial(); setTimeout(tutDone, 3200); return; }
+    tutHide();
+    playStory('TUT2', { onEnd: () => { G.tutorial && (G.tutorial.step = 6); tutDone(); } });
     return;
   }
   renderTutorial();
@@ -10232,7 +10240,7 @@ function tutGetTarget(step) {
     case 1:  return document.querySelector('[data-act="go"][data-d="A"]');
     case 3:  return document.querySelector('[data-act="retreat"]');
     case 4:  return document.getElementById('nav-status');
-    case 41: return document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-amount="1"]`);
+    case 41: return document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-tut="1"]`) || document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-amount="1"]`);
     case 5:  return document.querySelector(`[data-act="equipSkill"][data-id="${tgt.skillId}"]:not([disabled])`);
     case 6:  return document.getElementById('nav-help');
     default: return null;

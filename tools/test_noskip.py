@@ -53,8 +53,7 @@ with sync_playwright() as pw:
     click('#nav-status')
     pg.wait_for_timeout(600)
     check('step41（SP割り振り）へ進む', pg.evaluate('() => G.tutorial.step') == 41, pg.evaluate('() => G.tutorial.step'))
-    for _ in range(3):
-        click('[data-act="spAlloc"][data-tree="life"][data-amount="1"]')
+    click('[data-act="spAlloc"][data-tree="life"][data-tut="1"]')
     pg.wait_for_timeout(800)
     check('step5（スキル装備）へ進む', pg.evaluate('() => G.tutorial.step') == 5, pg.evaluate('() => [G.tutorial.step, !!G.p.skills.heal]'))
     click('[data-act="equipSkill"][data-id="heal"]:not([disabled])')

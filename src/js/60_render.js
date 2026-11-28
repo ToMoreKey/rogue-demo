@@ -1305,6 +1305,7 @@ function renderSkillTrees(p) {
       ${nextHtml}
       <div class="ms-list">${msHtml}</div>
       <div class="st-actions">
+        ${(G.tutorial && !G.tutorial.done && G.tutorial.step === 41 && tree.id === getCharTutorialTarget(p.skin).treeId) ? `<button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="${getCharTutorialTarget(p.skin).spReq}" data-tut="1">まとめて振る (+${getCharTutorialTarget(p.skin).spReq})</button>` : ''}
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="1" ${canAdd1 ? '' : 'disabled'}>+1 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="5" ${canAdd5 ? '' : 'disabled'}>+5 SP</button>
         <button class="btn small" data-act="spAlloc" data-tree="${tree.id}" data-amount="${remaining}" ${canAddAll && remaining > 1 ? '' : 'disabled'}>全て割り振る (+${remaining})</button>

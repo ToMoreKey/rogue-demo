@@ -16,7 +16,7 @@ const ACTS = {
       G.view = v; renderAll(); ensureLoop();
       setTimeout(() => {
         if (G.p.sp < 3) { G.p.sp = 3; renderHUD(); renderStatus(); }
-        G.tutorial.step = 41; renderTutorial();
+        G.tutorial.step = 41; renderStatus(); renderTutorial();
       }, 300);
       return;
     }

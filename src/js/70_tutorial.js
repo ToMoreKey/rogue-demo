@@ -61,7 +61,7 @@ const TUT_MSGS = {
   2:  { ex: 'normal',   body: '戦闘は自動で進みますよ。HPが減りすぎないか、私も見てますね！', place: 'below' },
   3:  { ex: 'surprise', body: 'あっ、HPが半分を切りました！ 無理は禁物です。<b>撤退</b> を押して、街へ帰りましょう！', place: 'above' },
   4:  { ex: 'joy',      body: 'ナイス判断です！ 次は下の <b>ステータス</b> タブで、スキルを覚えましょう。', place: 'above' },
-  41: { ex: 'normal',   body: '<b>生命枠</b> の「+1 SP」を3回押して、<b>ヒール</b> を覚えましょう！', place: 'below' },
+  41: { ex: 'normal',   body: '<b>生命枠</b> の「まとめて振る」を押して、<b>ヒール</b> を覚えましょう！', place: 'below' },
   5:  { ex: 'normal',   body: '覚えた <b>ヒール</b> のS1〜S3を押して、スロットにセットしましょう！', place: 'below' },
   6:  { ex: 'joy',      body: 'これで準備OKです！ スキルは戦闘で自動発動しますよ。困ったら <b>ヘルプ</b> を見てくださいね。いってらっしゃい！', place: 'above' },
 };
@@ -71,7 +71,7 @@ function getTutMsg(step) {
   if (step === 41) {
     return {
       ex: 'normal',
-      body: `<b>${esc(tgt.treeName)}</b> の「+1 SP」を3回押して、<b>${esc(tgt.skillName)}</b> を覚えましょう！<br><span class="sub">${esc(tgt.hint)}</span>`,
+      body: `<b>${esc(tgt.treeName)}</b> の「まとめて振る」を押して、<b>${esc(tgt.skillName)}</b> を覚えましょう！<br><span class="sub">${esc(tgt.hint)}</span>`,
       place: 'below'
     };
   }
@@ -117,8 +117,10 @@ function tutStep(step) {
     return;
   }
   if (step === 6) {
-    renderTutorial();
-    setTimeout(tutDone, 3200);
+    // スキルセット後にもう一度ルルとの会話 → 終わったらチュートリアル完了
+    if (storySkip() || !STORY.TUT2) { renderTutorial(); setTimeout(tutDone, 3200); return; }
+    tutHide();
+    playStory('TUT2', { onEnd: () => { G.tutorial && (G.tutorial.step = 6); tutDone(); } });
     return;
   }
   renderTutorial();
@@ -131,7 +133,7 @@ function tutGetTarget(step) {
     case 1:  return document.querySelector('[data-act="go"][data-d="A"]');
     case 3:  return document.querySelector('[data-act="retreat"]');
     case 4:  return document.getElementById('nav-status');
-    case 41: return document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-amount="1"]`);
+    case 41: return document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-tut="1"]`) || document.querySelector(`[data-act="spAlloc"][data-tree="${tgt.treeId}"][data-amount="1"]`);
     case 5:  return document.querySelector(`[data-act="equipSkill"][data-id="${tgt.skillId}"]:not([disabled])`);
     case 6:  return document.getElementById('nav-help');
     default: return null;
