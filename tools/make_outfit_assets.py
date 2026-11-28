@@ -24,14 +24,15 @@ def main():
         if not m or m.group(1) not in KEYS: print('skip', fn); continue
         k = m.group(1) + '_' + m.group(2)
         out.setdefault(k, {})['atk' if m.group(3) else 'img'] = enc(os.path.join(src, fn))
-    out = {k: v for k, v in out.items() if 'img' in v}
     dst = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src', 'assets', 'outfit_images.js')
     # 既存分とマージ
     old = {}
     if os.path.exists(dst):
         t = open(dst, encoding='utf-8').read(); m = re.search(r'const OUTFIT_IMG = (\{.*\});', t, re.S)
         if m and m.group(1).strip() != '{}': old = json.loads(m.group(1))
-    old.update(out)
+    for k, v in out.items():
+        if 'img' not in v and k not in old: print('skip(立ち絵なし)', k); continue
+        old.setdefault(k, {}).update(v)
     open(dst, 'w', encoding='utf-8').write('/* 特別衣装の立ち絵（tools/make_outfit_assets.py が生成）。キー: <衣装キー>_<キャラID> → { img, atk? } */\nconst OUTFIT_IMG = ' + json.dumps(old, ensure_ascii=False) + ';\n')
     print('埋め込み:', ', '.join(sorted(old)), f'（{os.path.getsize(dst)//1024}KB）')
 main()
