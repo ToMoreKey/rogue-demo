@@ -1059,7 +1059,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const SAVE_KEY = 'rogue_dev_save_v1';
 // テスト版ビルドのみ true（tools/build.py の to_dev が置換）。本番では開発用の機能を出さない
 const IS_DEV_BUILD = true;
-const APP_VERSION = 'rogue-dev-v122';
+const APP_VERSION = 'rogue-dev-v123';
 const BACKUP_META_KEY = 'rogue_dev_backup_meta_v1';
 const IDB_BACKUP_NAME = 'rogue_dev_backup_db_v1';
 const BAG_CAP = 60;
@@ -9859,7 +9859,7 @@ const HAIR_CFG = {
   ruby:   { h: [[330, 360], [0, 6]], s: [0.40, 1], l: [0.30, 0.86], y: 160 },
   stella: { h: [[28, 58]],           s: [0.45, 1], l: [0.40, 0.86], y: 132 },
   silia:  { h: [[200, 290]],         s: [0.05, 0.38], l: [0.50, 0.93], y: 150 },
-  chloe:  { h: [[0, 22]],            s: [0.18, 0.46], l: [0.15, 0.56], y: 118 }
+  chloe:  { h: [[0, 22], [335, 360]],          s: [0.18, 0.46], l: [0.15, 0.56], y: 118 }
 };
 const _hairCache = new Map(), _hairBusy = new Set();
 let _hairTimer = null;
