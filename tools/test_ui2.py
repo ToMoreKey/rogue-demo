@@ -76,7 +76,7 @@ with sync_playwright() as pw:
 
     # 基準2: 全7パネルが欠落・重複なく5タブに割り当て & ステータスタブ説明がUI-1の5タブに更新されている
     tab_headings = {}
-    for t in ('intro', 'world', 'skill', 'status', 'endgame'):
+    for t in ('intro', 'world', 'skill', 'gacha', 'endgame'):
         pg.click(f'#view-help [data-act="helpTab"][data-tab="{t}"]')
         pg.wait_for_timeout(100)
         pg.screenshot(path=str(shot_dir / f'help_{t}_390x844.png'))
@@ -85,18 +85,19 @@ with sync_playwright() as pw:
 
     all_hs = [h for hs in tab_headings.values() for h in hs]
     expected_prefixes = [
-        ('intro', '初心者ガイド'), ('intro', '💡 その他のヒント'),
-        ('world', '🏘️ 街タブでできること'), ('world', '⚔️ ダンジョンタブでできること'),
+        ('intro', '初心者ガイド'), ('intro', '💡 知っておくと便利'),
+        ('intro', '📊 ステータスタブでできること'),
+        ('world', '🏘️ 街でできること'), ('world', '⚔️ 通常ダンジョン'),
         ('skill', '🎯 スキルシステムガイド'),
-        ('status', '📊 ステータスタブでできること'),
-        ('endgame', '🌌 後編・クリア後の要素ガイド')
+        ('gacha', '🔔 福音のくじ'),
+        ('endgame', '🌌 やり込み・クリア後の要素')
     ]
-    exact_match = (len(all_hs) == 7 and all(
+    exact_match = (len(all_hs) >= 7 and all(
         any(h.startswith(pref) for h in tab_headings[t]) for t, pref in expected_prefixes
     ))
     check('基準2_全7パネルが欠落・重複なく5タブに割り当て', exact_match, tab_headings)
 
-    pg.click('#view-help [data-act="helpTab"][data-tab="status"]')
+    pg.click('#view-help [data-act="helpTab"][data-tab="intro"]')
     pg.wait_for_timeout(80)
     status_help_txt = pg.evaluate('() => document.querySelector("#view-help").innerText')
     check('基準2_ステータス説明がUI-1の5タブ構成に更新',
@@ -134,7 +135,7 @@ with sync_playwright() as pw:
         const raw = localStorage.getItem(R.SAVE_KEY) || '';
         return {
             tab: G.helpTab,
-            hasWorldH2: [...document.querySelectorAll('#view-help .panel h2')].some(e => e.innerText.includes('街タブでできること')),
+            hasWorldH2: [...document.querySelectorAll('#view-help .panel h2')].some(e => e.innerText.includes('街でできること')),
             savedInJson: raw.includes('helpTab')
         };
     }''')

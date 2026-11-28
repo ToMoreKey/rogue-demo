@@ -65,7 +65,7 @@ with sync_playwright() as pw:
     check('鍛冶屋最大★9表記', '最大★9。★6以上は上位の強化素材が必要' in help_text)
     check('ダンジョンA〜Oの15種表記', 'A〜O の15種（前編A〜I、後編J〜O）。前のダンジョンをクリアすると次が開く' in help_text)
     check('難易度5段階表記', '初級・中級・上級・超級・極級の5段階（上の難易度は下をクリアすると開く）' in help_text)
-    check('進化スキル枠条件表記', '対応する基本枠10SP' in help_text and '3つの基本枠すべて20SP' in help_text)
+    check('進化スキル枠条件表記（ルート式）', '共通10SP' in help_text and '基本枠30SPかつ進化枠20SP' in help_text)
     check('初級目標文言維持', 'まずはダンジョンAの初級クリアを目標に！' in help_text)
     check('help-endgame維持', has_endgame)
 

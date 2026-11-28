@@ -11,7 +11,7 @@ const G = {
   smithOpen: false,
   townView: 'plaza',  // 'plaza'|'inn'|'shop'|'smith'|'bank'
   statusTab: 'hero',  // 'hero'|'gear'|'skill'|'mastery'|'data' (memory only)
-  helpTab: 'intro',   // 'intro'|'world'|'skill'|'status'|'endgame' (memory only)
+  helpTab: 'intro',   // 'intro'|'world'|'dungeon'|'skill'|'status'|'gacha'|'endgame' (memory only)
   get tutorial() { return _tutorialState; },
   set tutorial(v) {
     _tutorialState = v;

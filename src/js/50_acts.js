@@ -33,7 +33,7 @@ const ACTS = {
   },
   helpTab(d) {
     const t = d && d.tab;
-    if (!['intro', 'world', 'skill', 'status', 'endgame'].includes(t)) return;
+    if (!HELP_TABS.includes(t)) return;
     G.helpTab = t;
     renderHelp();
     const app = document.getElementById('app');
